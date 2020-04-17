@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "244a2b9f_20cdc084",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3769,
+      "author": {
+        "id": 1306855
+      },
+      "writtenOn": "2020-04-17T06:08:43Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "681a0653_93c8fa98",
+      "range": {
+        "startLine": 3769,
+        "startChar": 0,
+        "endLine": 3769,
+        "endChar": 61
+      },
+      "revId": "68a11443c11b2f9078fb4796863b82b9e3dbefe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1c81024b_67e247ed",
         "filename": "vp9/encoder/vp9_encodeframe.c",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "68a11443c11b2f9078fb4796863b82b9e3dbefe2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a754192b_fe6e08b8",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3783,
+      "author": {
+        "id": 1306855
+      },
+      "writtenOn": "2020-04-17T06:08:43Z",
+      "side": 1,
+      "message": "we don\u0027t have tpl_frame before checking gf_group_index",
+      "parentUuid": "1c81024b_67e247ed",
+      "range": {
+        "startLine": 3783,
+        "startChar": 0,
+        "endLine": 3783,
+        "endChar": 51
+      },
+      "revId": "68a11443c11b2f9078fb4796863b82b9e3dbefe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
