@@ -40,6 +40,14 @@ class RealtimeTest
     // which overrides the one specified in SetUp() above.
     cfg_.g_pass = VPX_RC_FIRST_PASS;
   }
+
+  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                                  ::libvpx_test::Encoder *encoder) {
+    if (video->frame() == 0) {
+      encoder->Control(VP8E_SET_CPUUSED, 8);
+    }
+  }
+
   virtual void FramePktHook(const vpx_codec_cx_pkt_t * /*pkt*/) {
     frame_packets_++;
   }
@@ -53,6 +61,23 @@ TEST_P(RealtimeTest, RealtimeFirstPassProducesFrames) {
   video.set_limit(kFramesToEncode);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
   EXPECT_EQ(kFramesToEncode, frame_packets_);
+}
+
+TEST_P(RealtimeTest, IntegerOverflow) {
+  ::libvpx_test::RandomVideoSource video;
+  video.SetSize(800, 480);
+  video.set_limit(20);
+  // TODO(https://crbug.com/webm/1685): this should be silently capped
+  // internally to the raw yuv rate or below.
+  cfg_.rc_target_bitrate = 140000000;
+#if CONFIG_VP9_ENCODER
+  if (GET_PARAM(0) == &libvpx_test::kVP9) {
+    // TODO(https://crbug.com/webm/1685): this should be removed when the
+    // overflows using the same target as vp8 are fixed.
+    cfg_.rc_target_bitrate = 128000;
+  }
+#endif
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
 VP8_INSTANTIATE_TEST_CASE(RealtimeTest,
