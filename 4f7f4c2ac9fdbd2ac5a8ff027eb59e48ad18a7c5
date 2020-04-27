@@ -34,6 +34,24 @@
       "revId": "4f7f4c2ac9fdbd2ac5a8ff027eb59e48ad18a7c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5b98aa95_fecd6fb0",
+        "filename": "vpx/vpx_frame_buffer.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2020-04-27T23:34:33Z",
+      "side": 1,
+      "message": "Frank: Thanks for the reply! I already abandoned this CL but apparently neglected to mark it as abandoned.",
+      "parentUuid": "2135ed26_9a4a11d8",
+      "revId": "4f7f4c2ac9fdbd2ac5a8ff027eb59e48ad18a7c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
