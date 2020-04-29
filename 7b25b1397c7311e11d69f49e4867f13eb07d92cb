@@ -22,6 +22,30 @@
       "revId": "7b25b1397c7311e11d69f49e4867f13eb07d92cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f6db92a2_0cd66957",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1126865
+      },
+      "writtenOn": "2020-04-29T19:32:59Z",
+      "side": 1,
+      "message": "Yes, it is possible. I did observe this during testing (diamond search clamps ref_mv_full to the limits, but doesn\u0027t check whether the limits are empty, and then considers that starting position valid).\n\nAs for return value, it seems this function only updates best_motion_err and best_mv when the calculated error is valid.",
+      "parentUuid": "5affbf11_92c0fe80",
+      "range": {
+        "startLine": 434,
+        "startChar": 4,
+        "endLine": 434,
+        "endChar": 10
+      },
+      "revId": "7b25b1397c7311e11d69f49e4867f13eb07d92cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
