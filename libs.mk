@@ -501,13 +501,13 @@ test_rc_interface.$(VCPROJ_SFX): \
             --target=$(TOOLCHAIN) \
             --name=test_rc_interface \
             -D_VARIADIC_MAX=10 \
-            --proj-guid=CD837F5F-52D8-4314-A370-895D614166A7 \
+            --proj-guid=30458F88-1BC6-4689-B41C-50F3737AAB27 \
             --ver=$(CONFIG_VS_VERSION) \
             --src-path-bare="$(SRC_PATH_BARE)" \
             $(if $(CONFIG_STATIC_MSVCRT),--static-crt) \
             --out=$@ $(INTERNAL_CFLAGS) $(CFLAGS) \
-            -I.-I"$(SRC_PATH_BARE)/third_party/googletest/src/include" \
-            -L. -l$(CODEC_LIB) -l$(GTEST_LIB) -lvp9rc$^
+            -I. -I"$(SRC_PATH_BARE)/third_party/googletest/src/include" \
+            -L. -l$(CODEC_LIB) -l$(GTEST_LIB) -lvp9rc $^
 endif  # RC_INTERFACE_TEST
 endif
 else
