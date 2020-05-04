@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "44476027_acd9c425",
+        "filename": "vpx/src/vpx_codec.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2020-05-04T18:23:08Z",
+      "side": 1,
+      "message": "The null check for ctx-\u003eiface-\u003ectrl_maps is here.",
+      "range": {
+        "startLine": 93,
+        "startChar": 40,
+        "endLine": 93,
+        "endChar": 62
+      },
+      "revId": "1647d0c62c565c9bbe7ba7d993418a2f1185ca71",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
