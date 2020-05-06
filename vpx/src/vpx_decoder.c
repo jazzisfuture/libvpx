@@ -27,6 +27,9 @@ vpx_codec_err_t vpx_codec_dec_init_ver(vpx_codec_ctx_t *ctx,
                                        vpx_codec_flags_t flags, int ver) {
   vpx_codec_err_t res;
 
+  if (ctx)
+    memset(ctx, 0, sizeof(*ctx));
+
   if (ver != VPX_DECODER_ABI_VERSION)
     res = VPX_CODEC_ABI_MISMATCH;
   else if (!ctx || !iface)
@@ -45,7 +48,6 @@ vpx_codec_err_t vpx_codec_dec_init_ver(vpx_codec_ctx_t *ctx,
   else if (!(iface->caps & VPX_CODEC_CAP_DECODER))
     res = VPX_CODEC_INCAPABLE;
   else {
-    memset(ctx, 0, sizeof(*ctx));
     ctx->iface = iface;
     ctx->name = iface->name;
     ctx->priv = NULL;
