@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "4e82f92e_bbf2df51",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-05-07T19:52:26Z",
+      "side": 1,
+      "message": "\u003e 0xa0 has two bits set. Just wanted to confirm that \u0027enable\u0027 should be true if either of those bits is set in data[IVF_FILE_HDR_SZ].\n\nThat\u0027s correct. The guidance from the fuzzing team is we shouldn\u0027t have a dependency on data that\u0027s going to get passed through to the decoder. This was meant for a little bit of randomness, it\u0027s the first byte in the size of the first frame. Doing a quick pass on some of the corpus made this a bit more even than having 0xaa to capture the low bits. I\u0027m open to suggestions though.",
+      "parentUuid": "74bb2421_f689d759",
+      "range": {
+        "startLine": 98,
+        "startChar": 48,
+        "endLine": 98,
+        "endChar": 52
+      },
+      "revId": "8c1c7471f88978a21db872fa866ed0228a3e1fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "0bf24455_3fddd48d",
         "filename": "examples/vpx_dec_fuzzer.cc",
         "patchSetId": 2
@@ -45,6 +69,30 @@
       "revId": "8c1c7471f88978a21db872fa866ed0228a3e1fe2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72eea8b6_01d672b4",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-05-07T19:52:26Z",
+      "side": 1,
+      "message": "\u003e Optional: At this point we have not started fuzzing the decoder yet, so this vpx_codec_control() should succeed. Should we check for failure, as we do at line 93?\n\nIn that case we\u0027d need to check the decoder in use to avoid disabling vp8. Ignoring it should be harmless if we rely on other test coverage for the library.",
+      "parentUuid": "0bf24455_3fddd48d",
+      "range": {
+        "startLine": 99,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 27
+      },
+      "revId": "8c1c7471f88978a21db872fa866ed0228a3e1fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
