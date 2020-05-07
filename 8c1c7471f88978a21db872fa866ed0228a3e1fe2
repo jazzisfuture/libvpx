@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "74bb2421_f689d759",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2020-05-07T17:47:00Z",
+      "side": 1,
+      "message": "0xa0 has two bits set. Just wanted to confirm that \u0027enable\u0027 should be true if either of those bits is set in data[IVF_FILE_HDR_SZ].",
+      "range": {
+        "startLine": 98,
+        "startChar": 48,
+        "endLine": 98,
+        "endChar": 52
+      },
+      "revId": "8c1c7471f88978a21db872fa866ed0228a3e1fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0bf24455_3fddd48d",
+        "filename": "examples/vpx_dec_fuzzer.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2020-05-07T17:47:00Z",
+      "side": 1,
+      "message": "Optional: At this point we have not started fuzzing the decoder yet, so this vpx_codec_control() should succeed. Should we check for failure, as we do at line 93?",
+      "range": {
+        "startLine": 99,
+        "startChar": 0,
+        "endLine": 101,
+        "endChar": 27
+      },
+      "revId": "8c1c7471f88978a21db872fa866ed0228a3e1fe2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
