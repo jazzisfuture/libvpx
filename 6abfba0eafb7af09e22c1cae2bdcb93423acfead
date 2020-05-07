@@ -16,6 +16,24 @@
       "revId": "6abfba0eafb7af09e22c1cae2bdcb93423acfead",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "583255db_298f6c7b",
+        "filename": "libs.mk",
+        "patchSetId": 4
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-05-07T19:54:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "328b4e5b_80a0d7f7",
+      "revId": "6abfba0eafb7af09e22c1cae2bdcb93423acfead",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
