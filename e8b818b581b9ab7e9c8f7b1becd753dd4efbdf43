@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "268e6c76_0fa03fb7",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4536,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-05-11T20:11:44Z",
+      "side": 1,
+      "message": "I think this can just be #if CONFIG_INTERNAL_STATS, this configuration isn\u0027t enabled outside of test environments",
+      "revId": "e8b818b581b9ab7e9c8f7b1becd753dd4efbdf43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
