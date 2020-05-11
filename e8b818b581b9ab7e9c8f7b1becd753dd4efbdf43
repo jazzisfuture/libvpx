@@ -16,6 +16,24 @@
       "revId": "e8b818b581b9ab7e9c8f7b1becd753dd4efbdf43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "8a7e5936_7814f420",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4536,
+      "author": {
+        "id": 1178975
+      },
+      "writtenOn": "2020-05-11T21:28:01Z",
+      "side": 1,
+      "message": "This is exactly the same as line 4597. It does look weird to me, but I didn\u0027t want to make it different since that `#if 0` could be there for a reason.",
+      "parentUuid": "268e6c76_0fa03fb7",
+      "revId": "e8b818b581b9ab7e9c8f7b1becd753dd4efbdf43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
