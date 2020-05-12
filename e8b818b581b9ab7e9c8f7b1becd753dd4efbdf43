@@ -34,6 +34,24 @@
       "revId": "e8b818b581b9ab7e9c8f7b1becd753dd4efbdf43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "f02b6e2e_cc0c3f81",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4536,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-05-12T00:42:00Z",
+      "side": 1,
+      "message": "\u003e This is exactly the same as line 4597. It does look weird to me, but I didn\u0027t want to make it different since that `#if 0` could be there for a reason.\n\nGood point, I was mixing this up with other usage of CONFIG_INTERNAL_STATS. This got reworked a little in vp9, the only remaining instance there is an int64_t.",
+      "parentUuid": "8a7e5936_7814f420",
+      "revId": "e8b818b581b9ab7e9c8f7b1becd753dd4efbdf43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
