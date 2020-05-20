@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e07e7aea_6f0cc75f",
+        "filename": "test/decode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-05-20T00:33:05Z",
+      "side": 1,
+      "message": "you don\u0027t have to do it here, but note the order can be swapped to something a bit more natural/readable now that googletest has updated the failure output.",
+      "revId": "efe15f1c061ff1e3b835b622bbb53bf7aceb48a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "b3db3017_254d81dd",
+        "filename": "test/decode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-05-20T00:33:05Z",
+      "side": 1,
+      "message": "these two can be EXPECT_EQ() now, that\u0027s the preferred form for comparing nullptr.",
+      "revId": "efe15f1c061ff1e3b835b622bbb53bf7aceb48a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "dd7bdab0_b807ad66",
+        "filename": "test/decode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-05-20T00:33:05Z",
+      "side": 1,
+      "message": "ASSERT_NE",
+      "revId": "efe15f1c061ff1e3b835b622bbb53bf7aceb48a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
