@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "2ac70a0c_f01aa8d1",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 826,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-05-27T01:55:50Z",
+      "side": 1,
+      "message": "Could you add a comment to this condition? I could figure it out in the unit test code.\nBut without it, it is not straightforward to see why this means it is end of a gop.",
+      "range": {
+        "startLine": 826,
+        "startChar": 12,
+        "endLine": 826,
+        "endChar": 60
+      },
+      "revId": "3d906e94e44031a853de77f2cdae52528c37782b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d0304bb4_829fd642",
         "filename": "vp9/simple_encode.h",
         "patchSetId": 1
