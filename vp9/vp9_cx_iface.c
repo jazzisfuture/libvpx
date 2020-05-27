@@ -355,13 +355,14 @@ static vpx_codec_err_t validate_img(vpx_codec_alg_priv_t *ctx,
   switch (img->fmt) {
     case VPX_IMG_FMT_YV12:
     case VPX_IMG_FMT_I420:
-    case VPX_IMG_FMT_I42016: break;
+    case VPX_IMG_FMT_I42016:
+    case VPX_IMG_FMT_NV12: break;
     case VPX_IMG_FMT_I422:
     case VPX_IMG_FMT_I444:
     case VPX_IMG_FMT_I440:
       if (ctx->cfg.g_profile != (unsigned int)PROFILE_1) {
         ERROR(
-            "Invalid image format. I422, I444, I440 images are "
+            "Invalid image format. I422, I444, I440, NV12 images are "
             "not supported in profile.");
       }
       break;
