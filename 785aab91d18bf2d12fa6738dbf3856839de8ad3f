@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "6072f509_b511581f",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 811,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-05-29T01:08:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f1b86e9e_3ad7bee5",
+      "range": {
+        "startLine": 811,
+        "startChar": 41,
+        "endLine": 811,
+        "endChar": 54
+      },
+      "revId": "785aab91d18bf2d12fa6738dbf3856839de8ad3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "1365b867_f786452a",
         "filename": "vp9/simple_encode.cc",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2020-05-28T20:16:43Z",
       "side": 1,
       "message": "This means the first gop will always use altref. Is this as expected?",
+      "range": {
+        "startLine": 822,
+        "startChar": 6,
+        "endLine": 822,
+        "endChar": 42
+      },
+      "revId": "785aab91d18bf2d12fa6738dbf3856839de8ad3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "5fc419ec_50b77740",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 822,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-05-29T01:08:51Z",
+      "side": 1,
+      "message": "This is a remedy for the circumstance that user didn\u0027t set a gop start at the key frame position.\nAs long as they set a gop start, this part won\u0027t triggered.\nAnd they can choose whether use an alt ref or not.",
+      "parentUuid": "1365b867_f786452a",
       "range": {
         "startLine": 822,
         "startChar": 6,
@@ -68,6 +116,30 @@
       "revId": "785aab91d18bf2d12fa6738dbf3856839de8ad3f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "264d76b9_ba77afcc",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 341,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-05-29T01:08:51Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20414ed6_f0a0aa52",
+      "range": {
+        "startLine": 341,
+        "startChar": 36,
+        "endLine": 341,
+        "endChar": 37
+      },
+      "revId": "785aab91d18bf2d12fa6738dbf3856839de8ad3f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
