@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "b44cc609_b89e2b8c",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-06-01T20:11:03Z",
+      "side": 1,
+      "message": "these could be \u0027width_/height_\u0027 for readability. would there be a benefit in parameterizing the test for width/height or other options?",
+      "range": {
+        "startLine": 32,
+        "startChar": 12,
+        "endLine": 32,
+        "endChar": 14
+      },
+      "revId": "64be3e542e84300de899375c479e978ed32cee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c470f3b9_49873c46",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-06-01T20:11:03Z",
+      "side": 1,
+      "message": "you\u0027re missing \u003cstring\u003e for this. given how it\u0027s used you could just make it a const char[]",
+      "range": {
+        "startLine": 38,
+        "startChar": 7,
+        "endLine": 38,
+        "endChar": 20
+      },
+      "revId": "64be3e542e84300de899375c479e978ed32cee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
