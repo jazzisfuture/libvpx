@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "814f5868_198837da",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-06-02T22:35:33Z",
+      "side": 1,
+      "message": "Yes, we can do that when we need to test more videos.",
+      "parentUuid": "b44cc609_b89e2b8c",
+      "range": {
+        "startLine": 32,
+        "startChar": 12,
+        "endLine": 32,
+        "endChar": 14
+      },
+      "revId": "64be3e542e84300de899375c479e978ed32cee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "c470f3b9_49873c46",
         "filename": "test/simple_encode_test.cc",
         "patchSetId": 4
@@ -45,6 +69,30 @@
       "revId": "64be3e542e84300de899375c479e978ed32cee2f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "fe9a8513_561ee340",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-06-02T22:35:33Z",
+      "side": 1,
+      "message": "Added \u003cstring\u003e\n\nI got\n\"initializer for flexible array member\"\nwhen using const char[] \u003d initializer for flexible array member\";",
+      "parentUuid": "c470f3b9_49873c46",
+      "range": {
+        "startLine": 38,
+        "startChar": 7,
+        "endLine": 38,
+        "endChar": 20
+      },
+      "revId": "64be3e542e84300de899375c479e978ed32cee2f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
