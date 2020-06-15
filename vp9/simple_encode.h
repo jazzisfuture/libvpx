@@ -304,6 +304,11 @@ class SimpleEncode {
   SimpleEncode(SimpleEncode &) = delete;
   SimpleEncode &operator=(const SimpleEncode &) = delete;
 
+  // Adjusts the encoder's coding speed.
+  // If this function is not called, the encoder will use default encode_speed
+  // 0. Call this function before ComputeFirstPassStats() if needed.
+  void SetEncodeSpeed(int encode_speed);
+
   // Makes encoder compute the first pass stats and store it at
   // impl_ptr_->first_pass_stats. key_frame_map_ is also computed based on the
   // first pass stats.
@@ -405,6 +410,7 @@ class SimpleEncode {
   int frame_rate_den_;
   int target_bitrate_;
   int num_frames_;
+  int encode_speed_;
 
   std::FILE *in_file_;
   std::FILE *out_file_;
