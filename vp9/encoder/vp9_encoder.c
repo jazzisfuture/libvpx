@@ -3747,7 +3747,7 @@ static void set_frame_size(VP9_COMP *cpi) {
   }
 #endif  // !CONFIG_REALTIME_ONLY
 
-  if (oxcf->pass == 0 && oxcf->rc_mode == VPX_CBR && !cpi->use_svc &&
+  if (oxcf->pass == 0 && oxcf->rc_mode == VPX_CBR &&
       oxcf->resize_mode == RESIZE_DYNAMIC && cpi->resize_pending != 0) {
     oxcf->scaled_frame_width =
         (oxcf->width * cpi->resize_scale_num) / cpi->resize_scale_den;
@@ -3766,8 +3766,8 @@ static void set_frame_size(VP9_COMP *cpi) {
     if (cpi->oxcf.noise_sensitivity > 0) {
       vp9_denoiser_free(&(cpi->denoiser));
       setup_denoiser_buffer(cpi);
-      // Dynamic resize is only triggered for non-SVC, so we can force
-      // golden frame update here as temporary fix to denoiser.
+      // For SVC dynamic resize is only allowed for single layer/simulcast mode,
+      // so we can force golden frame update here.
       cpi->refresh_golden_frame = 1;
     }
 #endif
