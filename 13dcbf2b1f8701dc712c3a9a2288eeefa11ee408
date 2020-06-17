@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "22e18e98_5fc3245c",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-06-17T00:27:20Z",
+      "side": 1,
+      "message": "...of the vpxenc command",
+      "range": {
+        "startLine": 310,
+        "startChar": 50,
+        "endLine": 310,
+        "endChar": 59
+      },
+      "revId": "13dcbf2b1f8701dc712c3a9a2288eeefa11ee408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6b5b3ccd_c63ec9de",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-06-17T00:27:20Z",
+      "side": 1,
+      "message": "...to a higher level...",
+      "range": {
+        "startLine": 312,
+        "startChar": 30,
+        "endLine": 312,
+        "endChar": 45
+      },
+      "revId": "13dcbf2b1f8701dc712c3a9a2288eeefa11ee408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
