@@ -2376,8 +2376,7 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
   if (cm->show_frame) update_buffer_level_svc_preencode(cpi);
 
   if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC && svc->single_layer_svc == 1 &&
-      svc->spatial_layer_id == svc->first_spatial_layer_to_encode &&
-      svc->temporal_layer_id == 0) {
+      svc->spatial_layer_id == svc->first_spatial_layer_to_encode) {
     LAYER_CONTEXT *lc = NULL;
     cpi->resize_pending = vp9_resize_one_pass_cbr(cpi);
     if (cpi->resize_pending) {
@@ -2391,7 +2390,13 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
             cpi->resize_scale_num * lc->scaling_factor_num;
         lc->scaling_factor_den_resize =
             cpi->resize_scale_den * lc->scaling_factor_den;
+        // Reset rate control for all temporal layers.
+        lc->rc.buffer_level = rc->buffer_level;
+        lc->rc.bits_off_target = rc->bits_off_target;
+        lc->rc.rate_correction_factors[INTER_FRAME] =
+            rc->rate_correction_factors[INTER_FRAME];
       }
+      vp9_svc_reset_temporal_layers(cpi, 0);
       // Set the size for this current temporal layer.
       lc = &svc->layer_context[svc->spatial_layer_id *
                                    svc->number_temporal_layers +
@@ -2685,8 +2690,8 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
 
   // Resize based on average buffer underflow and QP over some window.
   // Ignore samples close to key frame, since QP is usually high after key.
-  if (cpi->rc.frames_since_key > 2 * cpi->framerate) {
-    const int window = (int)(4 * cpi->framerate);
+  if (cpi->rc.frames_since_key > cpi->framerate) {
+    const int window = VPXMAX(15, (int)(2 * cpi->framerate));
     cpi->resize_avg_qp += cm->base_qindex;
     if (cpi->rc.buffer_level < (int)(30 * rc->optimal_buffer_level / 100))
       ++cpi->resize_buffer_underflow;
