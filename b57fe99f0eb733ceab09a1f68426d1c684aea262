@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "36e331c4_82599584",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1221903
+      },
+      "writtenOn": "2020-06-28T08:30:03Z",
+      "side": 1,
+      "message": "Suggest to add a prefix to point out related model or platform, such as \"[loongson]\"",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 59
+      },
+      "revId": "b57fe99f0eb733ceab09a1f68426d1c684aea262",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
