@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "dddec73d_fa0875b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-07T17:54:17Z",
+      "side": 1,
+      "message": "Thanks for making the update. Out of curiosity how are you configuring and building this using clang?",
+      "revId": "5b7882139c2f64d4ff830e1665e04a4d72f9e484",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
