@@ -34,6 +34,24 @@
       "revId": "5b7882139c2f64d4ff830e1665e04a4d72f9e484",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d67aea03_02b1d50c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-08T01:30:46Z",
+      "side": 1,
+      "message": "\u003e Thanks for reviewing the patch. We use the following commands to configure and build:\n\u003e $ export CC\u003dclang; export CXX\u003dclang++; export LD\u003dclang++\n\u003e $ ./configure --enable-mmi \u0026\u0026 make\n\nThanks, I was wondering if it was a native solution or a cross compile.",
+      "parentUuid": "d4c56a0b_1598225e",
+      "revId": "5b7882139c2f64d4ff830e1665e04a4d72f9e484",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
