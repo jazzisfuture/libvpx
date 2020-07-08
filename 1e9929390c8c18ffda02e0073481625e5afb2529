@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7f5a9bf8_24048f20",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2020-07-08T16:03:55Z",
+      "side": 1,
+      "message": "\u003e Patch Set 2:\n\u003e \n\u003e \u003e Patch Set 2:\n\u003e \u003e \n\u003e \u003e \u003e Patch Set 2:\n\u003e \u003e \u003e \n\u003e \u003e \u003e Thank you for the review. Can you folks merge the patch since I don\u0027t have commit access?\n\u003e \u003e \n\u003e \u003e done\n\u003e \n\u003e Many thanks!\n\nThis change has been rolled into chromium, since yesterday.",
+      "revId": "1e9929390c8c18ffda02e0073481625e5afb2529",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
