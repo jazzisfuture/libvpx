@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <limits.h>
 #include "vpx/vpx_encoder.h"
+#include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/system_state.h"
 #include "bitstream.h"
@@ -222,7 +223,7 @@ void vp8_pack_tokens(vp8_writer *w, const TOKENEXTRA *p, int xcount) {
 
             validate_buffer(w->buffer + w->pos, 1, w->buffer_end, w->error);
 
-            w->buffer[w->pos++] = (lowvalue >> (24 - offset));
+            w->buffer[w->pos++] = (lowvalue >> (24 - offset)) & 0xff;
             lowvalue <<= offset;
             shift = count;
             lowvalue &= 0xffffff;
