@@ -16,6 +16,24 @@
       "revId": "5b7882139c2f64d4ff830e1665e04a4d72f9e484",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "d4c56a0b_1598225e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1409109
+      },
+      "writtenOn": "2020-07-08T01:14:08Z",
+      "side": 1,
+      "message": "Thanks for reviewing the patch. We use the following commands to configure and build:\n$ export CC\u003dclang; export CXX\u003dclang++; export LD\u003dclang++\n$ ./configure --enable-mmi \u0026\u0026 make",
+      "parentUuid": "dddec73d_fa0875b4",
+      "revId": "5b7882139c2f64d4ff830e1665e04a4d72f9e484",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
