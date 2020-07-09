@@ -16,6 +16,52 @@
       "revId": "04342a2a8ea31c76ac2f8d4f45fded820b96aa82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3b9852bf_0f604d7e",
+        "filename": "vp8/encoder/bitstream.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-09T02:31:51Z",
+      "side": 1,
+      "message": "it doesn\u0027t look like this change added anything that needs this header",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 21,
+        "endChar": 35
+      },
+      "revId": "04342a2a8ea31c76ac2f8d4f45fded820b96aa82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a9183af8_e84ddeae",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1575,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-09T02:31:51Z",
+      "side": 1,
+      "message": "I think this intermediate could easily overflow with higher resolutions, no? 4K@60 for example?",
+      "range": {
+        "startLine": 1575,
+        "startChar": 6,
+        "endLine": 1575,
+        "endChar": 72
+      },
+      "revId": "04342a2a8ea31c76ac2f8d4f45fded820b96aa82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
