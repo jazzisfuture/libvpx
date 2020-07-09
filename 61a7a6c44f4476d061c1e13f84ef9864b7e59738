@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "ab824eea_513d591d",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 1575,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-09T23:56:27Z",
+      "side": 1,
+      "message": "\u003e Oh yeah it should be /1000.\n\u003e \n\u003e unsigned int is 4 bytes so it\u0027s 0 - 4,294,967,295\n\u003e \n\u003e 4K @ 30 will be 3840 x 2160 * 8 * 30 / 1000 \u003d 1990656 so it\u0027s well below the range?\n\nyes but:\n3840 x 2160 * 8 * 3 * 30 \u003d 5971968000",
+      "parentUuid": "63a63553_2f609e08",
+      "range": {
+        "startLine": 1575,
+        "startChar": 75,
+        "endLine": 1575,
+        "endChar": 79
+      },
+      "revId": "61a7a6c44f4476d061c1e13f84ef9864b7e59738",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "a028d0d6_73522308",
         "filename": "vp9/vp9_cx_iface.c",
         "patchSetId": 8
