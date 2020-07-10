@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "ff7ceab3_60b41d80",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 1575,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-10T02:43:02Z",
+      "side": 1,
+      "message": "these ()s aren\u0027t necessary",
+      "range": {
+        "startLine": 1575,
+        "startChar": 69,
+        "endLine": 1575,
+        "endChar": 70
+      },
+      "revId": "d25d5d09b1f5b363cae3131b89c9cf80a5842b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c644815e_faed31fa",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 3624,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-10T02:43:02Z",
+      "side": 1,
+      "message": "I guess clang-format got better...",
+      "revId": "d25d5d09b1f5b363cae3131b89c9cf80a5842b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "15cee598_afdc9820",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 505,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-10T02:43:02Z",
+      "side": 1,
+      "message": "same here for the ()s, but it\u0027s up to you",
+      "range": {
+        "startLine": 505,
+        "startChar": 55,
+        "endLine": 505,
+        "endChar": 56
+      },
+      "revId": "d25d5d09b1f5b363cae3131b89c9cf80a5842b43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
