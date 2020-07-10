@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4eb1b633_0f8bb341",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1245378
+      },
+      "writtenOn": "2020-07-10T00:00:03Z",
+      "side": 1,
+      "message": "Please review.\nIt is a static code analyzer complained issue.",
+      "revId": "46cff2ea25b765b48e083dcabc2e3975d67d6fc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
