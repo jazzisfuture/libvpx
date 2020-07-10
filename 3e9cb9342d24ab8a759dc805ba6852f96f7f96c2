@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "57ce7e2b_c119f7c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-10T02:36:34Z",
+      "side": 1,
+      "message": "this isn\u0027t strictly necessary, but makes the update a little more coherent.",
+      "revId": "3e9cb9342d24ab8a759dc805ba6852f96f7f96c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
