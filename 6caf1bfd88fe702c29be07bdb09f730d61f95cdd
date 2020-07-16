@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "2116cb09_82be2aff",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-16T02:36:49Z",
+      "side": 1,
+      "message": "We added visual studio support for the rtc rate control lib, it was fixed here:\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/2174738\n\ncan you add something similar? I think the code should build.",
+      "revId": "6caf1bfd88fe702c29be07bdb09f730d61f95cdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3bc0ee95_5c11a7c8",
+        "filename": "libs.mk",
+        "patchSetId": 5
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-16T02:36:49Z",
+      "side": 1,
+      "message": "break these long lines",
+      "revId": "6caf1bfd88fe702c29be07bdb09f730d61f95cdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "7a9f4c5b_8a828ee4",
+        "filename": "libs.mk",
+        "patchSetId": 5
+      },
+      "lineNbr": 461,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-16T02:36:49Z",
+      "side": 1,
+      "message": "I think realpath will do the same, it would mean we\u0027d require make 3.81; I don\u0027t know what OSX is shipping with.",
+      "revId": "6caf1bfd88fe702c29be07bdb09f730d61f95cdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "718726ad_85a8fd4c",
+        "filename": "libs.mk",
+        "patchSetId": 5
+      },
+      "lineNbr": 478,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-16T02:36:49Z",
+      "side": 1,
+      "message": "you should be able to break some of these long lines, though we already have a few from earlier.",
+      "revId": "6caf1bfd88fe702c29be07bdb09f730d61f95cdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
