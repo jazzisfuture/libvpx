@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "f84c38ae_bd7a6051",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-17T19:38:31Z",
+      "side": 1,
+      "message": "\u003e Okay, let me add this in a different CL.\n\nNot having it doesn\u0027t break the visual studio build so that should be ok.\n\n\u003e What should I set for --proj-guid?\n\nThe output of uuidgen should be fine.",
+      "parentUuid": "9434d75c_d12a25c6",
+      "revId": "6caf1bfd88fe702c29be07bdb09f730d61f95cdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3bc0ee95_5c11a7c8",
         "filename": "libs.mk",
         "patchSetId": 5
@@ -104,6 +122,24 @@
       "revId": "6caf1bfd88fe702c29be07bdb09f730d61f95cdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "60bd2cb4_3dd4befe",
+        "filename": "libs.mk",
+        "patchSetId": 5
+      },
+      "lineNbr": 461,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-17T19:38:31Z",
+      "side": 1,
+      "message": "\u003e For now this fix is okay.\n\u003e If this problem keep happening, we can consider change our Makefile to use realpath.\n\nI agree. Can you add a note that says realpath might be another option if the minimum make version required is made 3.81?",
+      "parentUuid": "65b0e1a7_f02f81ec",
+      "revId": "6caf1bfd88fe702c29be07bdb09f730d61f95cdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     },
     {
       "key": {

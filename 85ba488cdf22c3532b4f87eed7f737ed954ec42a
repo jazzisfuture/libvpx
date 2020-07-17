@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "1fbbc224_3626e9d6",
+        "filename": "libs.mk",
+        "patchSetId": 6
+      },
+      "lineNbr": 473,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-17T19:38:31Z",
+      "side": 1,
+      "message": "change these tabs to spaces",
+      "revId": "85ba488cdf22c3532b4f87eed7f737ed954ec42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "d1064679_ebdd9c33",
+        "filename": "libs.mk",
+        "patchSetId": 6
+      },
+      "lineNbr": 478,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-17T19:38:31Z",
+      "side": 1,
+      "message": "here too for tabs",
+      "revId": "85ba488cdf22c3532b4f87eed7f737ed954ec42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "72c0f8a1_38c5a45b",
+        "filename": "libs.mk",
+        "patchSetId": 6
+      },
+      "lineNbr": 483,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-17T19:38:31Z",
+      "side": 1,
+      "message": "and here",
+      "revId": "85ba488cdf22c3532b4f87eed7f737ed954ec42a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
