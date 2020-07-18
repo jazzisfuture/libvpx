@@ -1708,14 +1708,22 @@ void vp9_rc_compute_frame_size_bounds(const VP9_COMP *cpi, int frame_target,
 void vp9_rc_set_frame_target(VP9_COMP *cpi, int target) {
   const VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
+  const ENCODE_COMMAND *encode_command = &cpi->encode_command;
 
   rc->this_frame_target = target;
 
   // Modify frame size target when down-scaling.
   if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC &&
-      rc->frame_size_selector != UNSCALED)
+      rc->frame_size_selector != UNSCALED) {
     rc->this_frame_target = (int)(rc->this_frame_target *
                                   rate_thresh_mult[rc->frame_size_selector]);
+  }
+
+#if CONFIG_RATE_CTRL
+  if (encode_command->use_external_target_frame_bits) {
+    rc->this_frame_target = encode_command->target_frame_bits;
+  }
+#endif
 
   // Target rate per SB64 (including partial SB64s.
   rc->sb64_target_rate = (int)(((int64_t)rc->this_frame_target * 64 * 64) /
