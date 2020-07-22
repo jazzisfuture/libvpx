@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "73d26880_15c11627",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-22T02:47:48Z",
+      "side": 1,
+      "message": "GTEST_ALLOW_UNINSTANTIATED_PARAMETERIZED_TEST is another option. I think there are more fixes that will be needed: see cl/290273945, cl/313966523, cl/317373677 and b/159031848",
+      "revId": "6c6053c7da2533cf668fadafeed37a8c8f03d961",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
