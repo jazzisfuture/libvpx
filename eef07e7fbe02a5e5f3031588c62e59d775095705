@@ -16,6 +16,41 @@
       "revId": "eef07e7fbe02a5e5f3031588c62e59d775095705",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "ff6f2368_6b052ab1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-07-23T00:14:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c84ae436_5d3c5aa5",
+      "revId": "eef07e7fbe02a5e5f3031588c62e59d775095705",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "bd81cade_1358539e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-07-23T00:14:42Z",
+      "side": 1,
+      "message": "I rebased on your change.",
+      "revId": "eef07e7fbe02a5e5f3031588c62e59d775095705",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
