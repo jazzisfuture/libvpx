@@ -33,6 +33,24 @@
       "revId": "08504222ad983f475ac2210a724db2591420b5eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a2a7071_3761dbaf",
+        "filename": "test/active_map_refresh_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-07-24T22:57:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "42f59f13_4860ef0f",
+      "revId": "08504222ad983f475ac2210a724db2591420b5eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
