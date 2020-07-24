@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "437323c6_86bb1000",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-24T19:03:21Z",
+      "side": 1,
+      "message": "Thanks for following up on these, it\u0027ll be nice to clear this noise. The change looks good except for the *_TRUE -\u003e *_NE difference.",
+      "revId": "08504222ad983f475ac2210a724db2591420b5eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "42f59f13_4860ef0f",
+        "filename": "test/active_map_refresh_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-24T19:03:21Z",
+      "side": 1,
+      "message": "unfortunately it\u0027s a little more involved, these should be ASSERT_NE(previous, nullptr) now",
+      "revId": "08504222ad983f475ac2210a724db2591420b5eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
