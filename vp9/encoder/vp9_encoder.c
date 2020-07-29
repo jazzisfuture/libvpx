@@ -1024,6 +1024,7 @@ static void dealloc_compressor_data(VP9_COMP *cpi) {
 #if CONFIG_RATE_CTRL
   free_partition_info(cpi);
   free_motion_vector_info(cpi);
+  free_fp_motion_vector_info(cpi);
 #endif
 
   vp9_free_ref_frame_buffers(cm->buffer_pool);
@@ -2661,6 +2662,7 @@ VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
   encode_command_init(&cpi->encode_command);
   partition_info_init(cpi);
   motion_vector_info_init(cpi);
+  fp_motion_vector_info_init(cpi);
 #endif
 
   return cpi;
@@ -7339,7 +7341,7 @@ static void update_encode_frame_result(
 #if CONFIG_VP9_HIGHBITDEPTH
   vpx_calc_highbd_psnr(source_frame, coded_frame_buf->buf, &psnr, bit_depth,
                        input_bit_depth);
-#else   // CONFIG_VP9_HIGHBITDEPTH
+#else  // CONFIG_VP9_HIGHBITDEPTH
   (void)bit_depth;
   (void)input_bit_depth;
   vpx_calc_psnr(source_frame, &coded_frame_buf->buf, &psnr);
@@ -7375,7 +7377,7 @@ static void update_encode_frame_result(
     yv12_buffer_to_image_buffer(&coded_frame_buf->buf,
                                 &encode_frame_result->coded_frame);
   }
-#else   // CONFIG_RATE_CTRL
+#else  // CONFIG_RATE_CTRL
   (void)ref_frame_flags;
   (void)bit_depth;
   (void)input_bit_depth;
