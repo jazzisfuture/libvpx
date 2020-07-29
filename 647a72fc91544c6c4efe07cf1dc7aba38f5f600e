@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "4c8aa896_5c285600",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-29T23:31:32Z",
+      "side": 1,
+      "message": "...a separate library for rate control, ...?",
+      "range": {
+        "startLine": 2,
+        "startChar": 39,
+        "endLine": 2,
+        "endChar": 71
+      },
+      "revId": "647a72fc91544c6c4efe07cf1dc7aba38f5f600e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "3e442d44_c0aa4804",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-29T23:31:32Z",
+      "side": 1,
+      "message": "maybe \u0027simple_encode.cc\u0027 and mention the new library + configure option needed",
+      "range": {
+        "startLine": 10,
+        "startChar": 4,
+        "endLine": 10,
+        "endChar": 48
+      },
+      "revId": "647a72fc91544c6c4efe07cf1dc7aba38f5f600e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
