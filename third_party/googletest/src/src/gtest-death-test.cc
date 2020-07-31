@@ -1364,7 +1364,11 @@ static pid_t ExecDeathTestSpawnChild(char* const* argv, int close_fd) {
 
   if (!use_fork) {
     static const bool stack_grows_down = StackGrowsDown();
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
     const auto stack_size = static_cast<size_t>(getpagesize() * 2);
+=======
+    const auto stack_size = static_cast<size_t>(getpagesize());
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
     // MMAP_ANONYMOUS is not defined on Mac, so we use MAP_ANON instead.
     void* const stack = mmap(nullptr, stack_size, PROT_READ | PROT_WRITE,
                              MAP_ANON | MAP_PRIVATE, -1, 0);

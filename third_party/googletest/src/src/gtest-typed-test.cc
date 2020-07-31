@@ -58,10 +58,14 @@ static std::vector<std::string> SplitIntoTestNames(const char* src) {
 // registered_tests_; returns registered_tests if successful, or
 // aborts the program otherwise.
 const char* TypedTestSuitePState::VerifyRegisteredTestNames(
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
     const char* test_suite_name, const char* file, int line,
     const char* registered_tests) {
   RegisterTypeParameterizedTestSuite(test_suite_name, CodeLocation(file, line));
 
+=======
+    const char* file, int line, const char* registered_tests) {
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   typedef RegisteredTestsMap::const_iterator RegisteredTestIter;
   registered_ = true;
 

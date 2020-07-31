@@ -384,6 +384,7 @@ class GTEST_API_ Matcher<std::string>
   Matcher(const char* s);  // NOLINT
 };
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #if GTEST_INTERNAL_HAS_STRING_VIEW
 // The following two specializations allow the user to write str
 // instead of Eq(str) and "foo" instead of Eq("foo") when a absl::string_view
@@ -626,6 +627,250 @@ class MatchesRegexMatcher {
     return MatchAndExplain(std::string(s), listener);
   }
 #endif  // GTEST_INTERNAL_HAS_STRING_VIEW
+=======
+#if GTEST_HAS_ABSL
+// The following two specializations allow the user to write str
+// instead of Eq(str) and "foo" instead of Eq("foo") when a absl::string_view
+// matcher is expected.
+template <>
+class GTEST_API_ Matcher<const absl::string_view&>
+    : public internal::MatcherBase<const absl::string_view&> {
+ public:
+  Matcher() {}
+
+  explicit Matcher(const MatcherInterface<const absl::string_view&>* impl)
+      : internal::MatcherBase<const absl::string_view&>(impl) {}
+
+  // Allows the user to write str instead of Eq(str) sometimes, where
+  // str is a std::string object.
+  Matcher(const std::string& s);  // NOLINT
+
+  // Allows the user to write "foo" instead of Eq("foo") sometimes.
+  Matcher(const char* s);  // NOLINT
+
+  // Allows the user to pass absl::string_views directly.
+  Matcher(absl::string_view s);  // NOLINT
+};
+
+template <>
+class GTEST_API_ Matcher<absl::string_view>
+    : public internal::MatcherBase<absl::string_view> {
+ public:
+  Matcher() {}
+
+  explicit Matcher(const MatcherInterface<const absl::string_view&>* impl)
+      : internal::MatcherBase<absl::string_view>(impl) {}
+  explicit Matcher(const MatcherInterface<absl::string_view>* impl)
+      : internal::MatcherBase<absl::string_view>(impl) {}
+
+  // Allows the user to write str instead of Eq(str) sometimes, where
+  // str is a std::string object.
+  Matcher(const std::string& s);  // NOLINT
+
+  // Allows the user to write "foo" instead of Eq("foo") sometimes.
+  Matcher(const char* s);  // NOLINT
+
+  // Allows the user to pass absl::string_views directly.
+  Matcher(absl::string_view s);  // NOLINT
+};
+#endif  // GTEST_HAS_ABSL
+
+// Prints a matcher in a human-readable format.
+template <typename T>
+std::ostream& operator<<(std::ostream& os, const Matcher<T>& matcher) {
+  matcher.DescribeTo(&os);
+  return os;
+}
+
+// The PolymorphicMatcher class template makes it easy to implement a
+// polymorphic matcher (i.e. a matcher that can match values of more
+// than one type, e.g. Eq(n) and NotNull()).
+//
+// To define a polymorphic matcher, a user should provide an Impl
+// class that has a DescribeTo() method and a DescribeNegationTo()
+// method, and define a member function (or member function template)
+//
+//   bool MatchAndExplain(const Value& value,
+//                        MatchResultListener* listener) const;
+//
+// See the definition of NotNull() for a complete example.
+template <class Impl>
+class PolymorphicMatcher {
+ public:
+  explicit PolymorphicMatcher(const Impl& an_impl) : impl_(an_impl) {}
+
+  // Returns a mutable reference to the underlying matcher
+  // implementation object.
+  Impl& mutable_impl() { return impl_; }
+
+  // Returns an immutable reference to the underlying matcher
+  // implementation object.
+  const Impl& impl() const { return impl_; }
+
+  template <typename T>
+  operator Matcher<T>() const {
+    return Matcher<T>(new MonomorphicImpl<const T&>(impl_));
+  }
+
+ private:
+  template <typename T>
+  class MonomorphicImpl : public MatcherInterface<T> {
+   public:
+    explicit MonomorphicImpl(const Impl& impl) : impl_(impl) {}
+
+    virtual void DescribeTo(::std::ostream* os) const { impl_.DescribeTo(os); }
+
+    virtual void DescribeNegationTo(::std::ostream* os) const {
+      impl_.DescribeNegationTo(os);
+    }
+
+    virtual bool MatchAndExplain(T x, MatchResultListener* listener) const {
+      return impl_.MatchAndExplain(x, listener);
+    }
+
+   private:
+    const Impl impl_;
+  };
+
+  Impl impl_;
+};
+
+// Creates a matcher from its implementation.
+// DEPRECATED: Especially in the generic code, prefer:
+//   Matcher<T>(new MyMatcherImpl<const T&>(...));
+//
+// MakeMatcher may create a Matcher that accepts its argument by value, which
+// leads to unnecessary copies & lack of support for non-copyable types.
+template <typename T>
+inline Matcher<T> MakeMatcher(const MatcherInterface<T>* impl) {
+  return Matcher<T>(impl);
+}
+
+// Creates a polymorphic matcher from its implementation.  This is
+// easier to use than the PolymorphicMatcher<Impl> constructor as it
+// doesn't require you to explicitly write the template argument, e.g.
+//
+//   MakePolymorphicMatcher(foo);
+// vs
+//   PolymorphicMatcher<TypeOfFoo>(foo);
+template <class Impl>
+inline PolymorphicMatcher<Impl> MakePolymorphicMatcher(const Impl& impl) {
+  return PolymorphicMatcher<Impl>(impl);
+}
+
+namespace internal {
+// Implements a matcher that compares a given value with a
+// pre-supplied value using one of the ==, <=, <, etc, operators.  The
+// two values being compared don't have to have the same type.
+//
+// The matcher defined here is polymorphic (for example, Eq(5) can be
+// used to match an int, a short, a double, etc).  Therefore we use
+// a template type conversion operator in the implementation.
+//
+// The following template definition assumes that the Rhs parameter is
+// a "bare" type (i.e. neither 'const T' nor 'T&').
+template <typename D, typename Rhs, typename Op>
+class ComparisonBase {
+ public:
+  explicit ComparisonBase(const Rhs& rhs) : rhs_(rhs) {}
+  template <typename Lhs>
+  operator Matcher<Lhs>() const {
+    return Matcher<Lhs>(new Impl<const Lhs&>(rhs_));
+  }
+
+ private:
+  template <typename T>
+  static const T& Unwrap(const T& v) { return v; }
+  template <typename T>
+  static const T& Unwrap(std::reference_wrapper<T> v) { return v; }
+
+  template <typename Lhs, typename = Rhs>
+  class Impl : public MatcherInterface<Lhs> {
+   public:
+    explicit Impl(const Rhs& rhs) : rhs_(rhs) {}
+    bool MatchAndExplain(Lhs lhs,
+                         MatchResultListener* /* listener */) const override {
+      return Op()(lhs, Unwrap(rhs_));
+    }
+    void DescribeTo(::std::ostream* os) const override {
+      *os << D::Desc() << " ";
+      UniversalPrint(Unwrap(rhs_), os);
+    }
+    void DescribeNegationTo(::std::ostream* os) const override {
+      *os << D::NegatedDesc() <<  " ";
+      UniversalPrint(Unwrap(rhs_), os);
+    }
+
+   private:
+    Rhs rhs_;
+  };
+  Rhs rhs_;
+};
+
+template <typename Rhs>
+class EqMatcher : public ComparisonBase<EqMatcher<Rhs>, Rhs, AnyEq> {
+ public:
+  explicit EqMatcher(const Rhs& rhs)
+      : ComparisonBase<EqMatcher<Rhs>, Rhs, AnyEq>(rhs) { }
+  static const char* Desc() { return "is equal to"; }
+  static const char* NegatedDesc() { return "isn't equal to"; }
+};
+template <typename Rhs>
+class NeMatcher : public ComparisonBase<NeMatcher<Rhs>, Rhs, AnyNe> {
+ public:
+  explicit NeMatcher(const Rhs& rhs)
+      : ComparisonBase<NeMatcher<Rhs>, Rhs, AnyNe>(rhs) { }
+  static const char* Desc() { return "isn't equal to"; }
+  static const char* NegatedDesc() { return "is equal to"; }
+};
+template <typename Rhs>
+class LtMatcher : public ComparisonBase<LtMatcher<Rhs>, Rhs, AnyLt> {
+ public:
+  explicit LtMatcher(const Rhs& rhs)
+      : ComparisonBase<LtMatcher<Rhs>, Rhs, AnyLt>(rhs) { }
+  static const char* Desc() { return "is <"; }
+  static const char* NegatedDesc() { return "isn't <"; }
+};
+template <typename Rhs>
+class GtMatcher : public ComparisonBase<GtMatcher<Rhs>, Rhs, AnyGt> {
+ public:
+  explicit GtMatcher(const Rhs& rhs)
+      : ComparisonBase<GtMatcher<Rhs>, Rhs, AnyGt>(rhs) { }
+  static const char* Desc() { return "is >"; }
+  static const char* NegatedDesc() { return "isn't >"; }
+};
+template <typename Rhs>
+class LeMatcher : public ComparisonBase<LeMatcher<Rhs>, Rhs, AnyLe> {
+ public:
+  explicit LeMatcher(const Rhs& rhs)
+      : ComparisonBase<LeMatcher<Rhs>, Rhs, AnyLe>(rhs) { }
+  static const char* Desc() { return "is <="; }
+  static const char* NegatedDesc() { return "isn't <="; }
+};
+template <typename Rhs>
+class GeMatcher : public ComparisonBase<GeMatcher<Rhs>, Rhs, AnyGe> {
+ public:
+  explicit GeMatcher(const Rhs& rhs)
+      : ComparisonBase<GeMatcher<Rhs>, Rhs, AnyGe>(rhs) { }
+  static const char* Desc() { return "is >="; }
+  static const char* NegatedDesc() { return "isn't >="; }
+};
+
+// Implements polymorphic matchers MatchesRegex(regex) and
+// ContainsRegex(regex), which can be used as a Matcher<T> as long as
+// T can be converted to a string.
+class MatchesRegexMatcher {
+ public:
+  MatchesRegexMatcher(const RE* regex, bool full_match)
+      : regex_(regex), full_match_(full_match) {}
+
+#if GTEST_HAS_ABSL
+  bool MatchAndExplain(const absl::string_view& s,
+                       MatchResultListener* listener) const {
+    return MatchAndExplain(std::string(s), listener);
+  }
+#endif  // GTEST_HAS_ABSL
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
   // Accepts pointer types, particularly:
   //   const char*

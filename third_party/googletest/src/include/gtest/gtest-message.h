@@ -49,7 +49,10 @@
 
 #include <limits>
 #include <memory>
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #include <sstream>
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
 #include "gtest/internal/gtest-port.h"
 

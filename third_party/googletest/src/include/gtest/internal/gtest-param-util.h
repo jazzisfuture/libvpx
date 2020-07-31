@@ -42,7 +42,10 @@
 #include <memory>
 #include <set>
 #include <tuple>
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #include <type_traits>
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #include <utility>
 #include <vector>
 
@@ -476,6 +479,7 @@ class ParameterizedTestSuiteInfoBase {
 
 // INTERNAL IMPLEMENTATION - DO NOT USE IN USER CODE.
 //
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 // Report a the name of a test_suit as safe to ignore
 // as the side effect of construction of this type.
 struct MarkAsIgnored {
@@ -487,6 +491,8 @@ GTEST_API_ void InsertSyntheticTestCase(const std::string& name,
 
 // INTERNAL IMPLEMENTATION - DO NOT USE IN USER CODE.
 //
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 // ParameterizedTestSuiteInfo accumulates tests obtained from TEST_P
 // macro invocations for a particular test suite and generators
 // obtained from INSTANTIATE_TEST_SUITE_P macro invocations for that
@@ -535,6 +541,7 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
     return 0;  // Return value used only to run this method in namespace scope.
   }
   // UnitTest class invokes this method to register tests in this test suite
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   // right before running tests in RUN_ALL_TESTS macro.
   // This method should not be called more than once on any single
   // instance of a ParameterizedTestSuiteInfoBase derived class.
@@ -542,6 +549,13 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
   void RegisterTests() override {
     bool generated_instantiations = false;
 
+=======
+  // test suites right before running tests in RUN_ALL_TESTS macro.
+  // This method should not be called more than once on any single
+  // instance of a ParameterizedTestSuiteInfoBase derived class.
+  // UnitTest has a guard to prevent from calling this method more than once.
+  void RegisterTests() override {
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
     for (typename TestInfoContainer::iterator test_it = tests_.begin();
          test_it != tests_.end(); ++test_it) {
       std::shared_ptr<TestInfo> test_info = *test_it;
@@ -597,12 +611,15 @@ class ParameterizedTestSuiteInfo : public ParameterizedTestSuiteInfoBase {
         }  // for param_it
       }  // for gen_it
     }  // for test_it
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 
     if (!generated_instantiations) {
       // There are no generaotrs, or they all generate nothing ...
       InsertSyntheticTestCase(GetTestSuiteName(), code_location_,
                               !tests_.empty());
     }
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   }    // RegisterTests
 
  private:
@@ -740,6 +757,7 @@ class ParameterizedTestSuiteRegistry {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ParameterizedTestSuiteRegistry);
 };
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 // Keep track of what type-parameterized test suite are defined and
 // where as well as which are intatiated. This allows susequently
 // identifying suits that are defined but never used.
@@ -768,6 +786,8 @@ class TypeParameterizedTestSuiteRegistry {
   std::map<std::string, TypeParameterizedTestSuiteInfo> suites_;
 };
 
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 }  // namespace internal
 
 // Forward declarations of ValuesIn(), which is implemented in
