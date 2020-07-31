@@ -84,11 +84,16 @@
 # include <windows.h>  // NOLINT
 # undef min
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #ifdef _MSC_VER
 # include <crtdbg.h>  // NOLINT
 # include <debugapi.h>  // NOLINT
 #endif
 
+=======
+# include <crtdbg.h>  // NOLINT
+# include <debugapi.h>  // NOLINT
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 # include <io.h>  // NOLINT
 # include <sys/timeb.h>  // NOLINT
 # include <sys/types.h>  // NOLINT
@@ -407,6 +412,7 @@ void AssertHelper::operator=(const Message& message) const {
                       );  // NOLINT
 }
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 namespace {
 
 // When TEST_P is found without a matching INSTANTIATE_TEST_SUITE_P
@@ -563,6 +569,8 @@ void TypeParameterizedTestSuiteRegistry::CheckForInstantiations() {
   }
 }
 
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 // A copy of all command line arguments.  Set by InitGoogleTest().
 static ::std::vector<std::string> g_argvs;
 
@@ -1962,11 +1970,19 @@ inline bool IsUtf16SurrogatePair(wchar_t first, wchar_t second) {
 }
 
 // Creates a Unicode code point from UTF16 surrogate pair.
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 inline uint32_t CreateCodePointFromUtf16SurrogatePair(wchar_t first,
                                                       wchar_t second) {
   const auto first_u = static_cast<uint32_t>(first);
   const auto second_u = static_cast<uint32_t>(second);
   const uint32_t mask = (1 << 10) - 1;
+=======
+inline UInt32 CreateCodePointFromUtf16SurrogatePair(wchar_t first,
+                                                    wchar_t second) {
+  const auto first_u = static_cast<UInt32>(first);
+  const auto second_u = static_cast<UInt32>(second);
+  const UInt32 mask = (1 << 10) - 1;
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   return (sizeof(wchar_t) == 2)
              ? (((first_u & mask) << 10) | (second_u & mask)) + 0x10000
              :
@@ -2129,7 +2145,11 @@ std::string String::FormatIntWidth2(int value) {
 }
 
 // Formats an int value as "%X".
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 std::string String::FormatHexUInt32(uint32_t value) {
+=======
+std::string String::FormatHexUInt32(UInt32 value) {
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   std::stringstream ss;
   ss << std::hex << std::uppercase << value;
   return ss.str();
@@ -2137,7 +2157,11 @@ std::string String::FormatHexUInt32(uint32_t value) {
 
 // Formats an int value as "%X".
 std::string String::FormatHexInt(int value) {
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   return FormatHexUInt32(static_cast<uint32_t>(value));
+=======
+  return FormatHexUInt32(static_cast<UInt32>(value));
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 }
 
 // Formats a byte as "%02X".
@@ -3295,7 +3319,10 @@ class PrettyUnitTestResultPrinter : public TestEventListener {
 
  private:
   static void PrintFailedTests(const UnitTest& unit_test);
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   static void PrintFailedTestSuites(const UnitTest& unit_test);
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   static void PrintSkippedTests(const UnitTest& unit_test);
 };
 
@@ -3382,7 +3409,13 @@ void PrettyUnitTestResultPrinter::OnTestStart(const TestInfo& test_info) {
 void PrettyUnitTestResultPrinter::OnTestPartResult(
     const TestPartResult& result) {
   switch (result.type()) {
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
     // If the test part succeeded, we don't need to do anything.
+=======
+    // If the test part succeeded, or was skipped,
+    // we don't need to do anything.
+    case TestPartResult::kSkip:
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
     case TestPartResult::kSuccess:
       return;
     default:
@@ -3517,6 +3550,30 @@ void PrettyUnitTestResultPrinter::PrintSkippedTests(const UnitTest& unit_test) {
   }
 }
 
+// Internal helper for printing the list of skipped tests.
+void PrettyUnitTestResultPrinter::PrintSkippedTests(const UnitTest& unit_test) {
+  const int skipped_test_count = unit_test.skipped_test_count();
+  if (skipped_test_count == 0) {
+    return;
+  }
+
+  for (int i = 0; i < unit_test.total_test_suite_count(); ++i) {
+    const TestSuite& test_suite = *unit_test.GetTestSuite(i);
+    if (!test_suite.should_run() || (test_suite.skipped_test_count() == 0)) {
+      continue;
+    }
+    for (int j = 0; j < test_suite.total_test_count(); ++j) {
+      const TestInfo& test_info = *test_suite.GetTestInfo(j);
+      if (!test_info.should_run() || !test_info.result()->Skipped()) {
+        continue;
+      }
+      ColoredPrintf(COLOR_GREEN, "[  SKIPPED ] ");
+      printf("%s.%s", test_suite.name(), test_info.name());
+      printf("\n");
+    }
+  }
+}
+
 void PrettyUnitTestResultPrinter::OnTestIterationEnd(const UnitTest& unit_test,
                                                      int /*iteration*/) {
   ColoredPrintf(COLOR_GREEN,  "[==========] ");
@@ -3538,6 +3595,10 @@ void PrettyUnitTestResultPrinter::OnTestIterationEnd(const UnitTest& unit_test,
     PrintSkippedTests(unit_test);
   }
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
+=======
+  int num_failures = unit_test.failed_test_count();
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   if (!unit_test.Passed()) {
     PrintFailedTests(unit_test);
     PrintFailedTestSuites(unit_test);
@@ -5099,6 +5160,16 @@ int UnitTest::Run() {
       (void)_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
     }
 # endif
+
+    // In debug mode, the Windows CRT can crash with an assertion over invalid
+    // input (e.g. passing an invalid file descriptor).  The default handling
+    // for these assertions is to pop up a dialog and wait for user input.
+    // Instead ask the CRT to dump such assertions to stderr non-interactively.
+    if (!IsDebuggerPresent()) {
+      (void)_CrtSetReportMode(_CRT_ASSERT,
+                              _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+      (void)_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+    }
   }
 #endif  // GTEST_OS_WINDOWS
 
@@ -5479,7 +5550,11 @@ bool UnitTestImpl::RunAllTests() {
 
     // Shuffles test suites and tests if requested.
     if (has_tests_to_run && GTEST_FLAG(shuffle)) {
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
       random()->Reseed(static_cast<uint32_t>(random_seed_));
+=======
+      random()->Reseed(static_cast<UInt32>(random_seed_));
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
       // This should be done before calling OnTestIterationStart(),
       // such that a test event listener can see the actual test order
       // in the event.

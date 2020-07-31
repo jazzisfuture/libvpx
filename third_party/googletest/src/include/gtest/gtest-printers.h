@@ -238,9 +238,15 @@ template <typename Char, typename CharTraits, typename T>
                                      const T&, internal::BiggestInt>::value
                                      ? kConvertibleToInteger
                                      :
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #if GTEST_INTERNAL_HAS_STRING_VIEW
                                      std::is_convertible<
                                          const T&, internal::StringView>::value
+=======
+#if GTEST_HAS_ABSL
+                                     std::is_convertible<
+                                         const T&, absl::string_view>::value
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
                                          ? kConvertibleToStringView
                                          :
 #endif
