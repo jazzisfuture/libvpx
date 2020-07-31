@@ -48,9 +48,13 @@ std::string TestPartResult::ExtractSummary(const char* message) {
 
 // Prints a TestPartResult object.
 std::ostream& operator<<(std::ostream& os, const TestPartResult& result) {
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   return os << internal::FormatFileLocation(result.file_name(),
                                             result.line_number())
             << " "
+=======
+  return os << result.file_name() << ":" << result.line_number() << ": "
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
             << (result.type() == TestPartResult::kSuccess
                     ? "Success"
                     : result.type() == TestPartResult::kSkip

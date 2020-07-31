@@ -42,7 +42,10 @@
 #include <string.h>  // For memmove.
 
 #include <algorithm>
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #include <cstdint>
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #include <memory>
 #include <string>
 #include <vector>
@@ -324,7 +327,11 @@ void ShuffleRange(internal::Random* random, int begin, int end,
     const int last_in_range = begin + range_width - 1;
     const int selected =
         begin +
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
         static_cast<int>(random->Generate(static_cast<uint32_t>(range_width)));
+=======
+        static_cast<int>(random->Generate(static_cast<UInt32>(range_width)));
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
     std::swap((*v)[static_cast<size_t>(selected)],
               (*v)[static_cast<size_t>(last_in_range)]);
   }
@@ -698,6 +705,7 @@ class GTEST_API_ UnitTestImpl {
     return parameterized_test_registry_;
   }
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   std::set<std::string>* ignored_parameterized_test_suites() {
     return &ignored_parameterized_test_suites_;
   }
@@ -709,6 +717,8 @@ class GTEST_API_ UnitTestImpl {
     return type_parameterized_test_registry_;
   }
 
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   // Sets the TestSuite object for the test that's currently running.
   void set_current_test_suite(TestSuite* a_current_test_suite) {
     current_test_suite_ = a_current_test_suite;
@@ -885,12 +895,15 @@ class GTEST_API_ UnitTestImpl {
   // ParameterizedTestRegistry object used to register value-parameterized
   // tests.
   internal::ParameterizedTestSuiteRegistry parameterized_test_registry_;
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   internal::TypeParameterizedTestSuiteRegistry
       type_parameterized_test_registry_;
 
   // The set holding the name of parameterized
   // test suites that may go uninstantiated.
   std::set<std::string> ignored_parameterized_test_suites_;
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
   // Indicates whether RegisterParameterizedTests() has been called already.
   bool parameterized_tests_registered_;
