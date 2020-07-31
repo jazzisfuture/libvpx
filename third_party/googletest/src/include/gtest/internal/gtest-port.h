@@ -199,9 +199,12 @@
 //                                        suppressed (constant conditional).
 //   GTEST_INTENTIONAL_CONST_COND_POP_  - finish code section where MSVC C4127
 //                                        is suppressed.
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 //   GTEST_INTERNAL_HAS_STRING_VIEW - for enabling Matcher<std::string_view> or
 //                                    Matcher<absl::string_view>
 //                                    specializations.
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 //
 // Synchronization:
 //   Mutex, MutexLock, ThreadLocal, GetThreadCount()
@@ -252,8 +255,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #include <cstdint>
 #include <limits>
+=======
+#include <memory>
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #include <type_traits>
 
 #ifndef _WIN32_WCE
@@ -266,10 +273,19 @@
 # include <TargetConditionals.h>
 #endif
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #include <iostream>  // NOLINT
 #include <memory>
 #include <string>  // NOLINT
 #include <tuple>
+=======
+#include <algorithm>  // NOLINT
+#include <iostream>   // NOLINT
+#include <sstream>    // NOLINT
+#include <string>     // NOLINT
+#include <tuple>
+#include <utility>
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #include <vector>  // NOLINT
 
 #include "gtest/internal/custom/gtest-port.h"
@@ -444,6 +460,18 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 # endif  // defined(_MSC_VER) || defined(__BORLANDC__)
 #endif  // GTEST_HAS_EXCEPTIONS
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
+=======
+#if !defined(GTEST_HAS_STD_STRING)
+// Even though we don't use this macro any longer, we keep it in case
+// some clients still depend on it.
+# define GTEST_HAS_STD_STRING 1
+#elif !GTEST_HAS_STD_STRING
+// The user told us that ::std::string isn't available.
+# error "::std::string isn't available."
+#endif  // !defined(GTEST_HAS_STD_STRING)
+
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #ifndef GTEST_HAS_STD_WSTRING
 // The user didn't tell us whether ::std::wstring is available, so we need
 // to figure it out.
@@ -452,7 +480,11 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 // no support for it at least as recent as Froyo (2.2).
 #define GTEST_HAS_STD_WSTRING                                         \
   (!(GTEST_OS_LINUX_ANDROID || GTEST_OS_CYGWIN || GTEST_OS_SOLARIS || \
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
      GTEST_OS_HAIKU || GTEST_OS_ESP32 || GTEST_OS_ESP8266))
+=======
+     GTEST_OS_HAIKU))
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
 #endif  // GTEST_HAS_STD_WSTRING
 
@@ -576,8 +608,12 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 #ifndef GTEST_HAS_STREAM_REDIRECTION
 // By default, we assume that stream redirection is supported on all
 // platforms except known mobile ones.
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || \
     GTEST_OS_WINDOWS_RT || GTEST_OS_ESP8266
+=======
+# if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #  define GTEST_HAS_STREAM_REDIRECTION 0
 # else
 #  define GTEST_HAS_STREAM_REDIRECTION 1
@@ -674,7 +710,11 @@ typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
 // A macro to disallow copy operator=
 // This should be used in the private: declarations for a class.
 #define GTEST_DISALLOW_ASSIGN_(type) \
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   type& operator=(type const &) = delete
+=======
+  void operator=(type const &) = delete
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
 // A macro to disallow copy constructor and operator=
 // This should be used in the private: declarations for a class.
@@ -862,6 +902,12 @@ class Secret;
 // expression is false, compiler will issue an error containing this identifier.
 #define GTEST_COMPILE_ASSERT_(expr, msg) static_assert(expr, #msg)
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
+=======
+// Evaluates to the number of elements in 'array'.
+#define GTEST_ARRAY_SIZE_(array) (sizeof(array) / sizeof(array[0]))
+
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 // A helper for suppressing warnings on constant condition.  It just
 // returns 'condition'.
 GTEST_API_ bool IsTrue(bool condition);
@@ -1890,6 +1936,12 @@ class GTEST_API_ ThreadLocal {
 // we cannot detect it.
 GTEST_API_ size_t GetThreadCount();
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
+=======
+template <bool B>
+using bool_constant = std::integral_constant<bool, B>;
+
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #if GTEST_OS_WINDOWS
 # define GTEST_PATH_SEP_ "\\"
 # define GTEST_HAS_ALT_PATH_SEP_ 1
@@ -2191,7 +2243,11 @@ using TimeInMillis = int64_t;  // Represents time in milliseconds.
 // Parses 'str' for a 32-bit signed integer.  If successful, writes the result
 // to *value and returns true; otherwise leaves *value unchanged and returns
 // false.
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 bool ParseInt32(const Message& src_text, const char* str, int32_t* value);
+=======
+bool ParseInt32(const Message& src_text, const char* str, Int32* value);
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
 // Parses a bool/int32_t/string from the environment variable
 // corresponding to the given Google Test flag.
@@ -2223,6 +2279,7 @@ const char* StringFromGTestEnv(const char* flag, const char* default_val);
 
 #endif  // !defined(GTEST_INTERNAL_DEPRECATED)
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #if GTEST_HAS_ABSL
 // Always use absl::string_view for Matcher<> specializations if googletest
 // is built with absl support.
@@ -2251,4 +2308,6 @@ using StringView = ::std::string_view;
 # endif  // __has_include
 #endif  // GTEST_HAS_ABSL
 
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #endif  // GTEST_INCLUDE_GTEST_INTERNAL_GTEST_PORT_H_

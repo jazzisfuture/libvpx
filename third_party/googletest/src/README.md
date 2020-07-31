@@ -8,8 +8,13 @@ depends on which build system you use, and is usually straightforward.
 
 ### Build with CMake
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 Google Test comes with a CMake build script
 ([CMakeLists.txt](https://github.com/google/googletest/blob/master/CMakeLists.txt))
+=======
+Google Test comes with a CMake build script (
+[CMakeLists.txt](https://github.com/google/googletest/blob/master/CMakeLists.txt))
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 that can be used on a wide range of platforms ("C" stands for cross-platform.).
 If you don't have CMake installed already, you can download it for free from
 <http://www.cmake.org/>.

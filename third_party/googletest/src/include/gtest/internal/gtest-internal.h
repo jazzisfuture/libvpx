@@ -751,11 +751,14 @@ class TypeParameterizedTest<Fixture, TestSel, internal::None> {
   }
 };
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 GTEST_API_ void RegisterTypeParameterizedTestSuite(const char* test_suite_name,
                                                    CodeLocation code_location);
 GTEST_API_ void RegisterTypeParameterizedTestSuiteInstantiation(
     const char* case_name);
 
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 // TypeParameterizedTestSuite<Fixture, Tests, Types>::Register()
 // registers *all combinations* of 'Tests' and 'Types' with Google
 // Test.  The return value is insignificant - we just need to return
@@ -798,7 +801,11 @@ class TypeParameterizedTestSuite {
 
 // The base case for the compile time recursion.
 template <GTEST_TEMPLATE_ Fixture, typename Types>
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 class TypeParameterizedTestSuite<Fixture, internal::None, Types> {
+=======
+class TypeParameterizedTestSuite<Fixture, Templates0, Types> {
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
  public:
   static bool Register(const char* /*prefix*/, const CodeLocation&,
                        const TypedTestSuitePState* /*state*/,
@@ -882,7 +889,12 @@ class GTEST_API_ Random {
 // true if and only if T is type proto2::Message or a subclass of it.
 template <typename T>
 struct IsAProtocolMessage
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
     : public std::is_convertible<const T*, const ::proto2::Message*> {};
+=======
+    : public bool_constant<
+          std::is_convertible<const T*, const ::proto2::Message*>::value> {};
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
 // When the compiler sees expression IsContainerTest<C>(0), if C is an
 // STL-style container class, the first overload of IsContainerTest
@@ -1150,6 +1162,7 @@ struct MakeIndexSequence
 template <>
 struct MakeIndexSequence<0> : IndexSequence<> {};
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 template <size_t>
 struct Ignore {
   Ignore(...);  // NOLINT
@@ -1227,6 +1240,82 @@ class FlatTuple
 
   template <size_t I>
   typename ElemFromList<I, T...>::type& Get() {
+=======
+// FIXME: This implementation of ElemFromList is O(1) in instantiation depth,
+// but it is O(N^2) in total instantiations. Not sure if this is the best
+// tradeoff, as it will make it somewhat slow to compile.
+template <typename T, size_t, size_t>
+struct ElemFromListImpl {};
+
+template <typename T, size_t I>
+struct ElemFromListImpl<T, I, I> {
+  using type = T;
+};
+
+// Get the Nth element from T...
+// It uses O(1) instantiation depth.
+template <size_t N, typename I, typename... T>
+struct ElemFromList;
+
+template <size_t N, size_t... I, typename... T>
+struct ElemFromList<N, IndexSequence<I...>, T...>
+    : ElemFromListImpl<T, N, I>... {};
+
+template <typename... T>
+class FlatTuple;
+
+template <typename Derived, size_t I>
+struct FlatTupleElemBase;
+
+template <typename... T, size_t I>
+struct FlatTupleElemBase<FlatTuple<T...>, I> {
+  using value_type =
+      typename ElemFromList<I, typename MakeIndexSequence<sizeof...(T)>::type,
+                            T...>::type;
+  FlatTupleElemBase() = default;
+  explicit FlatTupleElemBase(value_type t) : value(std::move(t)) {}
+  value_type value;
+};
+
+template <typename Derived, typename Idx>
+struct FlatTupleBase;
+
+template <size_t... Idx, typename... T>
+struct FlatTupleBase<FlatTuple<T...>, IndexSequence<Idx...>>
+    : FlatTupleElemBase<FlatTuple<T...>, Idx>... {
+  using Indices = IndexSequence<Idx...>;
+  FlatTupleBase() = default;
+  explicit FlatTupleBase(T... t)
+      : FlatTupleElemBase<FlatTuple<T...>, Idx>(std::move(t))... {}
+};
+
+// Analog to std::tuple but with different tradeoffs.
+// This class minimizes the template instantiation depth, thus allowing more
+// elements that std::tuple would. std::tuple has been seen to require an
+// instantiation depth of more than 10x the number of elements in some
+// implementations.
+// FlatTuple and ElemFromList are not recursive and have a fixed depth
+// regardless of T...
+// MakeIndexSequence, on the other hand, it is recursive but with an
+// instantiation depth of O(ln(N)).
+template <typename... T>
+class FlatTuple
+    : private FlatTupleBase<FlatTuple<T...>,
+                            typename MakeIndexSequence<sizeof...(T)>::type> {
+  using Indices = typename FlatTuple::FlatTupleBase::Indices;
+
+ public:
+  FlatTuple() = default;
+  explicit FlatTuple(T... t) : FlatTuple::FlatTupleBase(std::move(t)...) {}
+
+  template <size_t I>
+  const typename ElemFromList<I, Indices, T...>::type& Get() const {
+    return static_cast<const FlatTupleElemBase<FlatTuple, I>*>(this)->value;
+  }
+
+  template <size_t I>
+  typename ElemFromList<I, Indices, T...>::type& Get() {
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
     return static_cast<FlatTupleElemBase<FlatTuple, I>*>(this)->value;
   }
 };
@@ -1405,6 +1494,7 @@ constexpr bool InstantiateTypedTestCase_P_IsDeprecated() { return true; }
       : public parent_class {                                                 \
    public:                                                                    \
     GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() {}                   \
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
     ~GTEST_TEST_CLASS_NAME_(test_suite_name, test_name)() override = default; \
     GTEST_DISALLOW_COPY_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
                                                            test_name));       \
@@ -1414,6 +1504,14 @@ constexpr bool InstantiateTypedTestCase_P_IsDeprecated() { return true; }
    private:                                                                   \
     void TestBody() override;                                                 \
     static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;     \
+=======
+                                                                              \
+   private:                                                                   \
+    virtual void TestBody();                                                  \
+    static ::testing::TestInfo* const test_info_ GTEST_ATTRIBUTE_UNUSED_;     \
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(GTEST_TEST_CLASS_NAME_(test_suite_name,   \
+                                                           test_name));       \
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   };                                                                          \
                                                                               \
   ::testing::TestInfo* const GTEST_TEST_CLASS_NAME_(test_suite_name,          \

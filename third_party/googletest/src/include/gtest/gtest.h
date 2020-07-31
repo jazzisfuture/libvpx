@@ -417,6 +417,11 @@ class GTEST_API_ Test {
   // test in test case Foo.  Hence a sub-class can define its own
   // SetUpTestSuite() method to shadow the one defined in the super
   // class.
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
+=======
+  // Failures that happen during SetUpTestSuite are logged but otherwise
+  // ignored.
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   static void SetUpTestSuite() {}
 
   // Tears down the stuff shared by all tests in this test suite.
@@ -425,6 +430,11 @@ class GTEST_API_ Test {
   // test in test case Foo.  Hence a sub-class can define its own
   // TearDownTestSuite() method to shadow the one defined in the super
   // class.
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
+=======
+  // Failures that happen during TearDownTestSuite are logged but otherwise
+  // ignored.
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   static void TearDownTestSuite() {}
 
   // Legacy API is deprecated but still available
@@ -890,9 +900,13 @@ class GTEST_API_ TestSuite {
   bool Passed() const { return !Failed(); }
 
   // Returns true if and only if the test suite failed.
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   bool Failed() const {
     return failed_test_count() > 0 || ad_hoc_test_result().Failed();
   }
+=======
+  bool Failed() const { return failed_test_count() > 0; }
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
   // Returns the elapsed time, in milliseconds.
   TimeInMillis elapsed_time() const { return elapsed_time_; }
@@ -1893,7 +1907,11 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 // Skips test in runtime.
 // Skipping test aborts current function.
 // Skipped tests are neither successful nor failed.
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #define GTEST_SKIP() GTEST_SKIP_("")
+=======
+#define GTEST_SKIP() GTEST_SKIP_("Skipped")
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
 // ADD_FAILURE unconditionally adds a failure to the current test.
 // SUCCEED generates a success - it doesn't automatically make the
@@ -2302,7 +2320,12 @@ class GTEST_API_ ScopedTrace {
 // to cause a compiler error.
 template <typename T1, typename T2>
 constexpr bool StaticAssertTypeEq() noexcept {
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   static_assert(std::is_same<T1, T2>::value, "T1 and T2 are not the same type");
+=======
+  static_assert(std::is_same<T1, T2>::value,
+                "type1 and type2 are not the same type");
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
   return true;
 }
 
@@ -2368,7 +2391,10 @@ constexpr bool StaticAssertTypeEq() noexcept {
 //   }
 //
 // GOOGLETEST_CM0011 DO NOT DELETE
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #if !GTEST_DONT_DEFINE_TEST
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 #define TEST_F(test_fixture, test_name)\
   GTEST_TEST_(test_fixture, test_name, test_fixture, \
               ::testing::internal::GetTypeId<test_fixture>())

@@ -822,9 +822,12 @@ TEST_P(VpxHBDSubpelVarianceTest, ExtremeRef) { ExtremeRefTest(); }
 TEST_P(VpxHBDSubpelAvgVarianceTest, Ref) { RefTest(); }
 
 /* TODO(debargha): This test does not support the highbd version
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 typedef MainTestClass<vpx_variance_fn_t> VpxHBDMseTest;
 TEST_P(VpxHBDMseTest, RefMse) { RefTestMse(); }
 TEST_P(VpxHBDMseTest, MaxMse) { MaxTestMse(); }
+=======
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 INSTANTIATE_TEST_SUITE_P(
     C, VpxHBDMseTest,
     ::testing::Values(MseParams(4, 4, &vpx_highbd_12_mse16x16_c),

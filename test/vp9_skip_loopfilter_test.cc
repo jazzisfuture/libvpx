@@ -38,8 +38,13 @@ class SkipLoopFilterTest {
     expected_md5_[0] = '\0';
     junk_[0] = '\0';
     video_ = new libvpx_test::WebMVideoSource(kVp9TestFile);
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
     if (video_ == nullptr) {
       EXPECT_NE(video_, nullptr);
+=======
+    if (video_ == NULL) {
+      EXPECT_TRUE(video_ != NULL);
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
       return false;
     }
     video_->Init();
@@ -48,8 +53,13 @@ class SkipLoopFilterTest {
     vpx_codec_dec_cfg_t cfg = vpx_codec_dec_cfg_t();
     if (num_threads > 0) cfg.threads = num_threads;
     decoder_ = new libvpx_test::VP9Decoder(cfg, 0);
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
     if (decoder_ == nullptr) {
       EXPECT_NE(decoder_, nullptr);
+=======
+    if (decoder_ == NULL) {
+      EXPECT_TRUE(decoder_ != NULL);
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
       return false;
     }
 

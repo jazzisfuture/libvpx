@@ -30,6 +30,7 @@
 #include <cstdio>
 #include "gtest/gtest.h"
 
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
 #if GTEST_OS_ESP8266 || GTEST_OS_ESP32
 #if GTEST_OS_ESP8266
 extern "C" {
@@ -43,6 +44,14 @@ void loop() { RUN_ALL_TESTS(); }
 #if GTEST_OS_ESP8266
 }
 #endif
+=======
+#ifdef ARDUINO
+void setup() {
+  testing::InitGoogleTest();
+}
+
+void loop() { RUN_ALL_TESTS(); }
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
 #else
 

@@ -153,7 +153,11 @@ class GTEST_API_ String {
   static std::string FormatHexInt(int value);
 
   // Formats an int value as "%X".
+<<<<<<< HEAD   (b358f9 NULL -> nullptr in CPP files)
   static std::string FormatHexUInt32(uint32_t value);
+=======
+  static std::string FormatHexUInt32(UInt32 value);
+>>>>>>> BRANCH (6516e9 Update CHANGELOG)
 
   // Formats a byte as "%02X".
   static std::string FormatByte(unsigned char value);
