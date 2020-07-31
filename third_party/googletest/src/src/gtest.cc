@@ -5099,6 +5099,16 @@ int UnitTest::Run() {
       (void)_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
     }
 # endif
+
+    // In debug mode, the Windows CRT can crash with an assertion over invalid
+    // input (e.g. passing an invalid file descriptor).  The default handling
+    // for these assertions is to pop up a dialog and wait for user input.
+    // Instead ask the CRT to dump such assertions to stderr non-interactively.
+    if (!IsDebuggerPresent()) {
+      (void)_CrtSetReportMode(_CRT_ASSERT,
+                              _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
+      (void)_CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+    }
   }
 #endif  // GTEST_OS_WINDOWS
 
