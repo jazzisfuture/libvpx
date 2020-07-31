@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d26749c5_e355f87e",
+        "filename": "third_party/googletest/src/include/gtest/internal/gtest-type-util.h.pump",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-07-31T23:43:17Z",
+      "side": 1,
+      "message": "this was deleted in https://chromium-review.googlesource.com/c/webm/libvpx/+/2314396",
+      "revId": "2a39e3db1eb2af17ff73a411eecc0b514e91cdda",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
