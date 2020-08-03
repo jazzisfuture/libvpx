@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "f035a625_2eb04332",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4240,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-08-03T22:09:07Z",
+      "side": 1,
+      "message": "According to the equation, it should be (target_bits - rq_model-\u003ebias)?",
+      "range": {
+        "startLine": 4240,
+        "startChar": 16,
+        "endLine": 4240,
+        "endChar": 44
+      },
+      "revId": "db23732fb1c578a02c270aab695ba37117e97ea6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "0768449d_b1db5eb6",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4241,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-08-03T22:09:07Z",
+      "side": 1,
+      "message": "Is this always 8 bit?\nIf later 10 bit will be used, it is better to change it. Or add a TODO.",
+      "range": {
+        "startLine": 4241,
+        "startChar": 41,
+        "endLine": 4241,
+        "endChar": 51
+      },
+      "revId": "db23732fb1c578a02c270aab695ba37117e97ea6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "740133fb_928091b5",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4249,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-08-03T22:09:07Z",
+      "side": 1,
+      "message": "This line should be \"q_index \u003d VPXMAX(q_index, 0)\" to prevent q_index to be negative.\nActually, it should be swapped with line 4252.",
+      "range": {
+        "startLine": 4249,
+        "startChar": 4,
+        "endLine": 4249,
+        "endChar": 35
+      },
+      "revId": "db23732fb1c578a02c270aab695ba37117e97ea6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "b7c91415_5df2b7ee",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4259,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-08-03T22:09:07Z",
+      "side": 1,
+      "message": "I assume percent diff should be computed against target_bits, like this:\ndouble diff \u003d abs(target_bits - actual_bits) / target_bits;\nWhat do you think?",
+      "range": {
+        "startLine": 4259,
+        "startChar": 6,
+        "endLine": 4259,
+        "endChar": 72
+      },
+      "revId": "db23732fb1c578a02c270aab695ba37117e97ea6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "2a039cdd_ececca19",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4269,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-08-03T22:09:07Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 4269,
+        "startChar": 4,
+        "endLine": 4269,
+        "endChar": 7
+      },
+      "revId": "db23732fb1c578a02c270aab695ba37117e97ea6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "6ba8152f_488e72d1",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4270,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-08-03T22:09:07Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 4270,
+        "startChar": 4,
+        "endLine": 4270,
+        "endChar": 7
+      },
+      "revId": "db23732fb1c578a02c270aab695ba37117e97ea6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "9112bfa0_471a953d",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4272,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-08-03T22:09:07Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 4272,
+        "startChar": 4,
+        "endLine": 4272,
+        "endChar": 10
+      },
+      "revId": "db23732fb1c578a02c270aab695ba37117e97ea6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
