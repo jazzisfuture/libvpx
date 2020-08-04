@@ -514,6 +514,8 @@ static void update_encode_frame_result(
                             &encode_frame_result->motion_vector_info[0]);
   update_frame_counts(&encode_frame_info->frame_counts,
                       &encode_frame_result->frame_counts);
+  encode_frame_result->recode_count =
+      encode_frame_info->rq_history.recode_count;
 }
 
 static void IncreaseGroupOfPictureIndex(GroupOfPicture *group_of_picture) {

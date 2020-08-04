@@ -162,6 +162,31 @@ TEST_F(SimpleEncodeTest, ObserveKeyFrameMap) {
   simple_encode.EndEncode();
 }
 
+TEST_F(SimpleEncodeTest, EncodeFrameWithTargetFrameBits) {
+  SimpleEncode simple_encode(width_, height_, frame_rate_num_, frame_rate_den_,
+                             target_bitrate_, num_frames_,
+                             in_file_path_str_.c_str());
+  simple_encode.ComputeFirstPassStats();
+  const int num_coding_frames = simple_encode.GetCodingFrameNum();
+  simple_encode.StartEncode();
+  for (int i = 0; i < num_coding_frames; ++i) {
+    EncodeFrameResult encode_frame_result;
+    int target_frame_bits = 20000;
+    if (i <= 1) {
+      target_frame_bits = 100000;
+    }
+    simple_encode.EncodeFrameWithTargetFrameBits(&encode_frame_result,
+                                                 target_frame_bits);
+    printf(
+        "coding_idx %d frame_type %d q %d target %d actual %ld recode_num %d\n",
+        encode_frame_result.coding_idx, encode_frame_result.frame_type,
+        encode_frame_result.quantize_index, target_frame_bits,
+        encode_frame_result.coding_data_bit_size,
+        encode_frame_result.recode_count);
+  }
+  simple_encode.EndEncode();
+}
+
 TEST_F(SimpleEncodeTest, EncodeFrameWithQuantizeIndex) {
   SimpleEncode simple_encode(width_, height_, frame_rate_num_, frame_rate_den_,
                              target_bitrate_, num_frames_,

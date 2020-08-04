@@ -256,6 +256,7 @@ struct EncodeFrameResult {
   // share the same motion vector information.
   std::vector<MotionVectorInfo> motion_vector_info;
   ImageBuffer coded_frame;
+  int recode_count;
 };
 
 struct GroupOfPicture {
