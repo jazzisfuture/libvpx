@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "0d16db09_48c5d52a",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 4240,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-08-04T02:50:47Z",
+      "side": 1,
+      "message": "Yes, I notice that there are several parts in this CL might have error of division by zero.\nI will submit a followup CL to fix those parts.",
+      "parentUuid": "48cbf7d6_70cfd7f0",
+      "range": {
+        "startLine": 4240,
+        "startChar": 48,
+        "endLine": 4240,
+        "endChar": 63
+      },
+      "revId": "566905e91ec746835ffc91b1a87ddd6d352aed08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d2a28b94_8caf6280",
         "filename": "vp9/encoder/vp9_encoder.c",
         "patchSetId": 5
@@ -36,6 +60,24 @@
       "writtenOn": "2020-08-04T02:17:45Z",
       "side": 1,
       "message": "you could just return this",
+      "revId": "566905e91ec746835ffc91b1a87ddd6d352aed08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7eb1a181_35db05a2",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 4260,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-08-04T02:50:47Z",
+      "side": 1,
+      "message": "I will submit a followup CL to fix this part.",
+      "parentUuid": "d2a28b94_8caf6280",
       "revId": "566905e91ec746835ffc91b1a87ddd6d352aed08",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
@@ -82,6 +124,30 @@
     },
     {
       "key": {
+        "uuid": "a0c7c20a_298e19c0",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 4519,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-08-04T02:50:47Z",
+      "side": 1,
+      "message": "Yes, this is just an intuitive setting.\nI will make it configurable in the next CL.\n(I am testing this feature on more videos, will see which setting is the best.)",
+      "parentUuid": "6928392b_a3acdc0b",
+      "range": {
+        "startLine": 4519,
+        "startChar": 26,
+        "endLine": 4519,
+        "endChar": 29
+      },
+      "revId": "566905e91ec746835ffc91b1a87ddd6d352aed08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "d87fcb89_92c68859",
         "filename": "vp9/encoder/vp9_encoder.h",
         "patchSetId": 5
@@ -93,6 +159,30 @@
       "writtenOn": "2020-08-04T02:17:45Z",
       "side": 1,
       "message": "\u0027predicts\u0027?",
+      "range": {
+        "startLine": 591,
+        "startChar": 18,
+        "endLine": 591,
+        "endChar": 25
+      },
+      "revId": "566905e91ec746835ffc91b1a87ddd6d352aed08",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "798c353c_1c55c9ca",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 591,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-08-04T02:50:47Z",
+      "side": 1,
+      "message": "I will submit a followup CL to fix this part.",
+      "parentUuid": "d87fcb89_92c68859",
       "range": {
         "startLine": 591,
         "startChar": 18,
