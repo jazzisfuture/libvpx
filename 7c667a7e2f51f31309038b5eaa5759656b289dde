@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e084f794_79f483b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-04T22:48:43Z",
+      "side": 1,
+      "message": "thanks for following up",
+      "revId": "7c667a7e2f51f31309038b5eaa5759656b289dde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c7c9cddf_9519361d",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4260,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-04T22:48:43Z",
+      "side": 1,
+      "message": "the assignment could be removed now",
+      "range": {
+        "startLine": 4260,
+        "startChar": 15,
+        "endLine": 4260,
+        "endChar": 16
+      },
+      "revId": "7c667a7e2f51f31309038b5eaa5759656b289dde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
