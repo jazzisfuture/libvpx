@@ -16,6 +16,23 @@
       "revId": "bb7a2ccc38475ce0e70be134b5bf862000a3fc82",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "0a305599_9608b241",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2020-08-07T23:15:56Z",
+      "side": 1,
+      "message": "Thanks for the fix. I wasn\u0027t able to run the ./test_simple_encode. Thanks for reminding me.",
+      "revId": "bb7a2ccc38475ce0e70be134b5bf862000a3fc82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
