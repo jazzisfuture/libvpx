@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "0efa4f45_b5098b83",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-08T02:03:12Z",
+      "side": 1,
+      "message": "just some cosmetic comments, feel free to ignore them for now",
+      "revId": "3ec043a795cdf4dfa4cf31a9a0c82cbeef52c866",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "f85381e6_0a94739c",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-08T02:03:12Z",
+      "side": 1,
+      "message": "no change necessary, but this could be a switch",
+      "revId": "3ec043a795cdf4dfa4cf31a9a0c82cbeef52c866",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "424c2fa5_b7f4e94f",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-08T02:03:12Z",
+      "side": 1,
+      "message": "could be const",
+      "revId": "3ec043a795cdf4dfa4cf31a9a0c82cbeef52c866",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
