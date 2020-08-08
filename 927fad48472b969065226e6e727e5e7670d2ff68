@@ -22,6 +22,23 @@
       "revId": "927fad48472b969065226e6e727e5e7670d2ff68",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "e2db60ee_4a2f8936",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2020-08-08T04:44:27Z",
+      "side": 1,
+      "message": "Any stats on the overall encoding time change?",
+      "revId": "927fad48472b969065226e6e727e5e7670d2ff68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
