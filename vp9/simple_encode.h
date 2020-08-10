@@ -443,6 +443,7 @@ class SimpleEncode {
 
   std::FILE *in_file_;
   std::FILE *out_file_;
+  std::string out_file_path_;
   std::unique_ptr<EncodeImpl> impl_ptr_;
 
   std::vector<int> key_frame_map_;
