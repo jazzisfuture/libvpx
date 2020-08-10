@@ -16,6 +16,24 @@
       "revId": "37a7de89188026037d45cd4585739f04e380d756",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "c6cfa83b_145cc7a8",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4253,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-08-10T21:55:31Z",
+      "side": 1,
+      "message": "Okay, I can remove the assert in a follow up CL.",
+      "parentUuid": "48243e1a_2f45eae3",
+      "revId": "37a7de89188026037d45cd4585739f04e380d756",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
