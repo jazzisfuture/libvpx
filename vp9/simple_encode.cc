@@ -9,6 +9,7 @@
  */
 
 #include <memory>
+#include <string>
 #include <vector>
 #include "./ivfenc.h"
 #include "vp9/common/vp9_entropymode.h"
@@ -732,10 +733,10 @@ SimpleEncode::SimpleEncode(int frame_width, int frame_height,
   assert(infile_path != nullptr);
   in_file_ = fopen(infile_path, "r");
   if (outfile_path != nullptr) {
-    out_file_ = fopen(outfile_path, "w");
-  } else {
-    out_file_ = nullptr;
+    const int size = strlen(outfile_path);
+    out_file_path_.assign(outfile_path, size);
   }
+  out_file_ = nullptr;
   impl_ptr_->cpi = nullptr;
   impl_ptr_->img_fmt = VPX_IMG_FMT_I420;
 
@@ -935,7 +936,8 @@ void SimpleEncode::StartEncode() {
                        &group_of_picture_);
   rewind(in_file_);
 
-  if (out_file_ != nullptr) {
+  if (out_file_path_.size() != 0) {
+    out_file_ = fopen(out_file_path_.c_str(), "w");
     const char *fourcc = "VP90";
     // In SimpleEncode, we use time_base = 1 / TICKS_PER_SEC.
     // Based on that, the ivf_timestamp for each image is set to
@@ -956,6 +958,10 @@ void SimpleEncode::EndEncode() {
   impl_ptr_->cpi = nullptr;
   vpx_img_free(&impl_ptr_->tmp_img);
   rewind(in_file_);
+  if (out_file_ != nullptr) {
+    fclose(out_file_);
+    out_file_ = nullptr;
+  }
 }
 
 void SimpleEncode::UpdateKeyFrameGroup(int key_frame_show_index) {
