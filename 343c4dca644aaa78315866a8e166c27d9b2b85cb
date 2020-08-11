@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "e1a0e285_195b6477",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 404,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-11T02:43:49Z",
+      "side": 1,
+      "message": "could be a \u0027:\u0027, but either works",
+      "range": {
+        "startLine": 404,
+        "startChar": 25,
+        "endLine": 404,
+        "endChar": 26
+      },
+      "revId": "343c4dca644aaa78315866a8e166c27d9b2b85cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
