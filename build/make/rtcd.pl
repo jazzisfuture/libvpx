@@ -315,14 +315,26 @@ EOF
 
 sub mips() {
   determine_indirection("c", @ALL_ARCHS);
+
+  # Assign the helper variable for each enabled extension
+  foreach my $opt (@ALL_ARCHS) {
+    my $opt_uc = uc $opt;
+    eval "\$have_${opt}=\"flags & HAS_${opt_uc}\"";
+  }
+
   common_top;
 
   print <<EOF;
 #include "vpx_config.h"
 
 #ifdef RTCD_C
+#include "vpx_ports/mips.h"
 static void setup_rtcd_internal(void)
 {
+    int flags = mips_cpu_caps();
+
+    (void)flags;
+
 EOF
 
   set_function_pointers("c", @ALL_ARCHS);
@@ -419,8 +431,23 @@ if ($opts{arch} eq 'x86') {
       last;
     }
     if (/HAVE_MSA=yes/) {
-      @ALL_ARCHS = filter("$opts{arch}", qw/msa/);
-      last;
+      my $have_mmi = 0;
+      open CONFIG_FILE_INNER, $opts{config} or
+        die "Error opening config file '$opts{config}': $!\n";
+      while (<CONFIG_FILE_INNER>) {
+        if (/HAVE_MMI=yes/) {
+          $have_mmi = 1;
+          last;
+        }
+      }
+      close CONFIG_FILE_INNER;
+      if ($have_mmi == 1) {
+        @ALL_ARCHS = filter(qw/mmi msa/);
+        last;
+      } else {
+        @ALL_ARCHS = filter("$opts{arch}", qw/msa/);
+        last;
+      }
     }
     if (/HAVE_MMI=yes/) {
       @ALL_ARCHS = filter("$opts{arch}", qw/mmi/);
