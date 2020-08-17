@@ -7339,7 +7339,7 @@ static void setup_tpl_stats(VP9_COMP *cpi) {
   const GF_GROUP *gf_group = &cpi->twopass.gf_group;
   int tpl_group_frames = 0;
   int frame_idx;
-  cpi->tpl_bsize = BLOCK_32X32;
+  cpi->tpl_bsize = BLOCK_16X16;
 
   init_gop_frames(cpi, gf_picture, gf_group, &tpl_group_frames);
 
