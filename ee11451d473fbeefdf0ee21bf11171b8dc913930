@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "73af19cc_daae3ad7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-17T22:20:06Z",
+      "side": 1,
+      "message": "feature",
+      "range": {
+        "startLine": 10,
+        "startChar": 41,
+        "endLine": 10,
+        "endChar": 48
+      },
+      "revId": "ee11451d473fbeefdf0ee21bf11171b8dc913930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
         "uuid": "759e6b55_849c649c",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 5
@@ -33,6 +56,40 @@
       "revId": "ee11451d473fbeefdf0ee21bf11171b8dc913930",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "37ccd227_04b4a10c",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 5
+      },
+      "lineNbr": 1199,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-17T22:20:06Z",
+      "side": 1,
+      "message": "can you break this long line? the following should work:\ncheck_cflags -march\u003dloongson3a \u0026\u0026 soft_enable mmi \\\n  || disable_feature mmi",
+      "revId": "ee11451d473fbeefdf0ee21bf11171b8dc913930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "642788ff_f5e89956",
+        "filename": "build/make/rtcd.pl",
+        "patchSetId": 5
+      },
+      "lineNbr": 437,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-17T22:20:06Z",
+      "side": 1,
+      "message": "rather than running through the file again, why not accumulate the information in the loop and apply the results afterward?",
+      "revId": "ee11451d473fbeefdf0ee21bf11171b8dc913930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
     }
   ]
 }
