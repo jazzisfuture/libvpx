@@ -33,6 +33,24 @@
       "revId": "c08324b42ce66844ff7a3910ca855103c7d7bd0a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "02a787e5_8c051827",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-19T20:04:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "29f6f09e_10322a5c",
+      "revId": "c08324b42ce66844ff7a3910ca855103c7d7bd0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
