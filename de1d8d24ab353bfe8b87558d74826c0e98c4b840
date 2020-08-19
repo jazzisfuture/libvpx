@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "cbb0b927_ca1f3fe7",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 267,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-19T18:54:32Z",
+      "side": 1,
+      "message": "Thanks for updating the patch. I\u0027ll restore this line to use sed since we try to avoid bashisms in configure. Though it\u0027s not well tested we\u0027ve had bug reports dealing with them in the past.",
+      "revId": "de1d8d24ab353bfe8b87558d74826c0e98c4b840",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
