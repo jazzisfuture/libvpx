@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "8a7e9c4f_819bcf6a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-19T02:53:20Z",
+      "side": 1,
+      "message": "Thanks for the patch, just one minor comment for documentation purposes.",
+      "revId": "c08324b42ce66844ff7a3910ca855103c7d7bd0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "29f6f09e_10322a5c",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-08-19T02:53:20Z",
+      "side": 1,
+      "message": "could you add a comment noting the intent of this to match the subject of the commit message?",
+      "revId": "c08324b42ce66844ff7a3910ca855103c7d7bd0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
