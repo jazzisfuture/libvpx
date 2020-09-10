@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a59c54cd_8b7182e6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1137754
+      },
+      "writtenOn": "2020-09-10T06:26:16Z",
+      "side": 1,
+      "message": "I removed the comments with references to the bug because the bug is internal and I didn\u0027t think we\u0027d want references to internal bugs in the public codebase. Let me know if I should restore the TODOs. Once I\u0027m sure I\u0027ve done this patch correctly, I\u0027ll follow up with the libaom version. ",
+      "revId": "cfde8e7d780f90a01002a0bd8170ef62ccf5fd4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
