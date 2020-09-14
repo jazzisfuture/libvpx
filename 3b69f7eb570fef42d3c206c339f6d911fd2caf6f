@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3737272f_1d7469e6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1113991
+      },
+      "writtenOn": "2020-09-14T16:15:12Z",
+      "side": 1,
+      "message": "Marco WDYT?\n\nNon-owner/committer +1 modulo the comment",
+      "revId": "3b69f7eb570fef42d3c206c339f6d911fd2caf6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "aebc7686_842fecb3",
+        "filename": "vp8/common/threading.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1113991
+      },
+      "writtenOn": "2020-09-14T16:15:12Z",
+      "side": 1,
+      "message": "I think we should limit this to ChromeOS or POSIX or something like\nthat, otherwise we might break other OSes?",
+      "range": {
+        "startLine": 180,
+        "startChar": 0,
+        "endLine": 180,
+        "endChar": 25
+      },
+      "revId": "3b69f7eb570fef42d3c206c339f6d911fd2caf6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
