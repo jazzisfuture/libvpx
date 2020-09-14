@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "892d8f9a_d61a0f06",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1245231
+      },
+      "writtenOn": "2020-09-14T20:49:19Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ba294d47_38de33d0",
+      "range": {
+        "startLine": 9,
+        "startChar": 59,
+        "endLine": 9,
+        "endChar": 61
+      },
+      "revId": "1460bc20dbf10d20eec2f0811e7bde3082a84e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "b420b1da_d322409e",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 10
@@ -70,6 +94,23 @@
       "writtenOn": "2020-09-14T20:10:48Z",
       "side": 1,
       "message": "Thanks for looking into this Joel.",
+      "revId": "1460bc20dbf10d20eec2f0811e7bde3082a84e5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7667f1ed_6d8134ed",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1245231
+      },
+      "writtenOn": "2020-09-14T20:49:19Z",
+      "side": 1,
+      "message": "thanks for the review, I don\u0027t have permission to submit. So could you do it? I\u0027ll make that once change to the commit message now.",
       "revId": "1460bc20dbf10d20eec2f0811e7bde3082a84e5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
