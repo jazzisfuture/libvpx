@@ -177,7 +177,7 @@ static inline int sem_destroy(sem_t *sem) {
 #else
 #include <unistd.h>
 #include <sched.h>
-#define thread_sleep(nms) sched_yield();
+#define thread_sleep(nms)
 /* {struct timespec ts;ts.tv_sec=0;
     ts.tv_nsec = 1000*nms;nanosleep(&ts, NULL);} */
 #endif
