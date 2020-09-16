@@ -7,16 +7,37 @@
  *  All contributing  project authors may be  found in the AUTHORS  file in
  *  the root of the source tree.
  */
-
+#include <string.h>
 #include "vp9/vp9_iface_common.h"
+
+static void convert_to_nv12(uint8_t *u_buffer, uint8_t *v_buffer, uint8_t *temp,
+                            int w, int h, uint64_t uvplane_size) {
+  int i, j;
+  for (i = 0; i < h; i++) {
+    for (j = 0; j < w; j++) {
+      *temp = u_buffer[i * h + j];
+      *(temp + 1) = v_buffer[i * h + j];
+      temp += 2;
+    }
+  }
+  memcpy(u_buffer, temp, uvplane_size);
+}
+
 void yuvconfig2image(vpx_image_t *img, const YV12_BUFFER_CONFIG *yv12,
-                     void *user_priv) {
+                     void *user_priv, uint8_t *nv12_buffer, int nv12,
+                     uint64_t uvplane_size) {
   /** vpx_img_wrap() doesn't allow specifying independent strides for
    * the Y, U, and V planes, nor other alignment adjustments that
    * might be representable by a YV12_BUFFER_CONFIG, so we just
    * initialize all the fields.*/
   int bps;
-  if (!yv12->subsampling_y) {
+  if (nv12) {
+    assert(yv12->subsampling_x && yv12->subsampling_y);
+    bps = 12;
+    img->fmt = VPX_IMG_FMT_NV12;
+    convert_to_nv12(yv12->u_buffer, yv12->v_buffer, nv12_buffer,
+                    yv12->uv_crop_width, yv12->uv_crop_height, uvplane_size);
+  } else if (!yv12->subsampling_y) {
     if (!yv12->subsampling_x) {
       img->fmt = VPX_IMG_FMT_I444;
       bps = 24;
