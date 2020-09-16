@@ -1396,7 +1396,7 @@ static vpx_codec_err_t ctrl_get_reference(vpx_codec_alg_priv_t *ctx,
     const int fb_idx = ctx->cpi->common.cur_show_frame_fb_idx;
     YV12_BUFFER_CONFIG *fb = get_buf_frame(&ctx->cpi->common, fb_idx);
     if (fb == NULL) return VPX_CODEC_ERROR;
-    yuvconfig2image(&frame->img, fb, NULL);
+    yuvconfig2image(&frame->img, fb, NULL, NULL, 0, 0);
     return VPX_CODEC_OK;
   }
   return VPX_CODEC_INVALID_PARAM;
@@ -1430,7 +1430,7 @@ static vpx_image_t *encoder_get_preview(vpx_codec_alg_priv_t *ctx) {
   }
 
   if (vp9_get_preview_raw_frame(ctx->cpi, &sd, &flags) == 0) {
-    yuvconfig2image(&ctx->preview_img, &sd, NULL);
+    yuvconfig2image(&ctx->preview_img, &sd, NULL, NULL, 0, 0);
     return &ctx->preview_img;
   }
   return NULL;
