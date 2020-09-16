@@ -2944,6 +2944,23 @@ BITSTREAM_PROFILE vp9_read_profile(struct vpx_read_bit_buffer *rb) {
   return (BITSTREAM_PROFILE)profile;
 }
 
+static void setup_nv12_buffer(VP9Decoder *pbi) {
+  VP9_COMMON *const cm = &pbi->common;
+  const int width = cm->width;
+  const int height = cm->height;
+  const int aligned_width = (width + 7) & ~7;
+  const int aligned_height = (height + 7) & ~7;
+  const int border = VP9_DEC_BORDER_IN_PIXELS;
+  const int y_stride = ((aligned_width + 2 * border) + 31) & ~31;
+  const int uv_height = aligned_height >> cm->subsampling_y;
+  const int uv_stride = y_stride >> cm->subsampling_x;
+  const int uv_border_h = border >> cm->subsampling_y;
+  const uint64_t uvplane_size =
+      (uv_height + 2 * uv_border_h) * (uint64_t)uv_stride + cm->byte_alignment;
+  pbi->nv12_temp_buffer = (uint8_t *)vpx_memalign(32, (size_t)uvplane_size);
+  pbi->nv12_buffer_size = uvplane_size;
+}
+
 void vp9_decode_frame(VP9Decoder *pbi, const uint8_t *data,
                       const uint8_t *data_end, const uint8_t **p_data_end) {
   VP9_COMMON *const cm = &pbi->common;
@@ -2962,6 +2979,9 @@ void vp9_decode_frame(VP9Decoder *pbi, const uint8_t *data,
 #if CONFIG_MISMATCH_DEBUG
   mismatch_move_frame_idx_r();
 #endif
+  if (pbi->nv12_output) {
+    setup_nv12_buffer(pbi);
+  }
   xd->cur_buf = new_fb;
 
   if (!first_partition_size) {

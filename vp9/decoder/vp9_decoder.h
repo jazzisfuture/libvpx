@@ -124,6 +124,9 @@ typedef struct VP9Decoder {
   int row_mt;
   int lpf_mt_opt;
   RowMTWorkerData *row_mt_worker_data;
+  int nv12_output;
+  int nv12_buffer_size;
+  uint8_t *nv12_temp_buffer;
 } VP9Decoder;
 
 int vp9_receive_compressed_data(struct VP9Decoder *pbi, size_t size,
