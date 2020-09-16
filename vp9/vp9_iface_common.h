@@ -21,7 +21,8 @@ extern "C" {
 #endif
 
 void yuvconfig2image(vpx_image_t *img, const YV12_BUFFER_CONFIG *yv12,
-                     void *user_priv);
+                     void *user_priv, uint8_t *nv12_buffer, int nv12,
+                     uint64_t uvplane_size);
 
 vpx_codec_err_t image2yuvconfig(const vpx_image_t *img,
                                 YV12_BUFFER_CONFIG *yv12);
