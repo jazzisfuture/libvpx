@@ -413,7 +413,9 @@ static vpx_image_t *decoder_get_frame(vpx_codec_alg_priv_t *ctx,
       RefCntBuffer *const frame_bufs = cm->buffer_pool->frame_bufs;
       ctx->last_show_frame = ctx->pbi->common.new_fb_idx;
       if (ctx->need_resync) return NULL;
-      yuvconfig2image(&ctx->img, &sd, ctx->user_priv);
+      yuvconfig2image(&ctx->img, &sd, ctx->user_priv,
+                      ctx->pbi->nv12_temp_buffer, ctx->pbi->nv12_output,
+                      ctx->pbi->nv12_buffer_size);
       ctx->img.fb_priv = frame_bufs[cm->new_fb_idx].raw_frame_buffer.priv;
       img = &ctx->img;
       return img;
@@ -478,7 +480,7 @@ static vpx_codec_err_t ctrl_get_reference(vpx_codec_alg_priv_t *ctx,
       const int fb_idx = ctx->pbi->common.cur_show_frame_fb_idx;
       YV12_BUFFER_CONFIG *fb = get_buf_frame(&ctx->pbi->common, fb_idx);
       if (fb == NULL) return VPX_CODEC_ERROR;
-      yuvconfig2image(&data->img, fb, NULL);
+      yuvconfig2image(&data->img, fb, NULL, NULL, 0, 0);
       return VPX_CODEC_OK;
     } else {
       return VPX_CODEC_ERROR;

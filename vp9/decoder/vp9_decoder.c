@@ -245,6 +245,7 @@ void vp9_decoder_remove(VP9Decoder *pbi) {
     vpx_free(pbi->row_mt_worker_data);
   }
 
+  vpx_free(pbi->nv12_temp_buffer);
   vp9_remove_common(&pbi->common);
   vpx_free(pbi);
 }
