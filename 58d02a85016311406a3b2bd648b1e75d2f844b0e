@@ -16,6 +16,24 @@
       "revId": "58d02a85016311406a3b2bd648b1e75d2f844b0e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "c8aec9dd_c3f399ca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-09-16T23:46:32Z",
+      "side": 1,
+      "message": "\u003e there is something similar in libaom too.\n\nThanks for pointing that out. It look likes that propagated to a bunch of places that still test !\u003d NULL. I\u0027ll take a closer look at them when I get a chance.",
+      "parentUuid": "1d0386be_7144e8d2",
+      "revId": "58d02a85016311406a3b2bd648b1e75d2f844b0e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
