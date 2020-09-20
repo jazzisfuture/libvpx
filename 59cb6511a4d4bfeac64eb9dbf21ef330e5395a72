@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "e6ed4be3_9fb21a54",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2020-09-20T22:25:29Z",
+      "side": 1,
+      "message": "I understand the code better now. I will write a correct fix tomorrow and request review when it\u0027s ready.",
+      "revId": "59cb6511a4d4bfeac64eb9dbf21ef330e5395a72",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a10a60f_2fcdeb84",
         "filename": "vpxenc.c",
         "patchSetId": 1
