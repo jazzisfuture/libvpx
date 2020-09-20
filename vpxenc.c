@@ -203,6 +203,17 @@ static const arg_def_t profile =
     ARG_DEF(NULL, "profile", 1, "Bitstream profile number to use");
 static const arg_def_t width = ARG_DEF("w", "width", 1, "Frame width");
 static const arg_def_t height = ARG_DEF("h", "height", 1, "Frame height");
+#if CONFIG_VP9_HIGHBITDEPTH
+static const struct arg_enum_list bitdepth_enum[] = {
+  { "8", VPX_BITS_8 }, { "10", VPX_BITS_10 }, { "12", VPX_BITS_12 }, { NULL, 0 }
+};
+static const arg_def_t bitdeptharg = ARG_DEF_ENUM(
+    "b", "bit-depth", 1,
+    "Bit depth for codec (8 for version <=1, 10 or 12 for version 2)",
+    bitdepth_enum);
+static const arg_def_t inbitdeptharg =
+    ARG_DEF(NULL, "input-bit-depth", 1, "Bit depth of input");
+#endif
 #if CONFIG_WEBM_IO
 static const struct arg_enum_list stereo_mode_enum[] = {
   { "mono", STEREO_FORMAT_MONO },
@@ -233,6 +244,10 @@ static const arg_def_t *global_args[] = { &use_nv12,
                                           &profile,
                                           &width,
                                           &height,
+#if CONFIG_VP9_HIGHBITDEPTH
+                                          &bitdeptharg,
+                                          &inbitdeptharg,
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #if CONFIG_WEBM_IO
                                           &stereo_mode,
 #endif
@@ -428,19 +443,6 @@ static const arg_def_t input_color_space =
     ARG_DEF_ENUM(NULL, "color-space", 1,
                  "The color space of input content:", color_space_enum);
 
-#if CONFIG_VP9_HIGHBITDEPTH
-static const struct arg_enum_list bitdepth_enum[] = {
-  { "8", VPX_BITS_8 }, { "10", VPX_BITS_10 }, { "12", VPX_BITS_12 }, { NULL, 0 }
-};
-
-static const arg_def_t bitdeptharg = ARG_DEF_ENUM(
-    "b", "bit-depth", 1,
-    "Bit depth for codec (8 for version <=1, 10 or 12 for version 2)",
-    bitdepth_enum);
-static const arg_def_t inbitdeptharg =
-    ARG_DEF(NULL, "input-bit-depth", 1, "Bit depth of input");
-#endif
-
 static const struct arg_enum_list tune_content_enum[] = {
   { "default", VP9E_CONTENT_DEFAULT },
   { "screen", VP9E_CONTENT_SCREEN },
@@ -495,10 +497,6 @@ static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &max_gf_interval,
                                        &target_level,
                                        &row_mt,
-#if CONFIG_VP9_HIGHBITDEPTH
-                                       &bitdeptharg,
-                                       &inbitdeptharg,
-#endif  // CONFIG_VP9_HIGHBITDEPTH
                                        NULL };
 static const int vp9_arg_ctrl_map[] = { VP8E_SET_CPUUSED,
                                         VP8E_SET_ENABLEAUTOALTREF,
