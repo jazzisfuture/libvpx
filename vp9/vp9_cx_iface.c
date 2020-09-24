@@ -1724,6 +1724,11 @@ static vpx_codec_err_t ctrl_set_disable_overshoot_maxq_cbr(
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t ctrl_set_external_rate_control(vpx_codec_alg_priv_t *ctx,
+                                                      va_list args) {
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP8_COPY_REFERENCE, ctrl_copy_reference },
 
@@ -1775,6 +1780,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP9E_SET_SVC_GF_TEMPORAL_REF, ctrl_set_svc_gf_temporal_ref },
   { VP9E_SET_SVC_SPATIAL_LAYER_SYNC, ctrl_set_svc_spatial_layer_sync },
   { VP9E_SET_DELTA_Q_UV, ctrl_set_delta_q_uv },
+  { VP9E_SET_EXTERNAL_RATE_CONTROL, ctrl_set_external_rate_control },
 
   // Getters
   { VP8E_GET_LAST_QUANTIZER, ctrl_get_quantizer },

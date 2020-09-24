@@ -685,6 +685,14 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_DELTA_Q_UV,
 
+  /*!\brief Codec control function to enable external rate control.
+   *
+   * 0: off (default), 1: Enabled.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_EXTERNAL_RATE_CONTROL,
+
   /*!\brief Codec control function to disable increase Q on overshoot in CBR.
    *
    * 0: On (default), 1: Disable.
