@@ -692,6 +692,17 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_SET_DISABLE_OVERSHOOT_MAXQ_CBR,
+
+  /*!\brief Codec control function to enable external rate control library.
+   *
+   * args[0]: path of the rate control library
+   *
+   * args[0]: private config of the rate control library
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_SET_EXTERNAL_RATE_CONTROL,
+
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -1044,6 +1055,10 @@ VPX_CTRL_USE_TYPE(VP9E_SET_DELTA_Q_UV, int)
 
 VPX_CTRL_USE_TYPE(VP9E_SET_DISABLE_OVERSHOOT_MAXQ_CBR, int)
 #define VPX_CTRL_VP9E_SET_DISABLE_OVERSHOOT_MAXQ_CBR
+
+VPX_CTRL_USE_TYPE(VP9E_SET_EXTERNAL_RATE_CONTROL, char **)
+#define VPX_CTRL_VP9E_SET_EXTERNAL_RATE_CONTROL
+
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */
 #ifdef __cplusplus
