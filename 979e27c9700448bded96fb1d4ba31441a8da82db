@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "bb081069_f711e1d6",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 921,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-09-25T20:25:55Z",
+      "side": 1,
+      "message": "I really wonder if this is necessary. I think we probably could get away with a arm64-mac-clang / arm64-iphone-clang and leave the min/max settings out, but we\u0027d need to work through deprecating this pattern.",
+      "revId": "979e27c9700448bded96fb1d4ba31441a8da82db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
