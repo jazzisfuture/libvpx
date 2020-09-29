@@ -16,6 +16,24 @@
       "revId": "956d3cac34711ce90e25593b65fcd3f9d0baa763",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "343b68fb_19e87a0f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-09-29T17:50:39Z",
+      "side": 1,
+      "message": "\u003e The iosbuild script works, I just need to test the native detection on the dtk\n\nthat\u0027s working too",
+      "parentUuid": "0396a33a_c473ddf5",
+      "revId": "956d3cac34711ce90e25593b65fcd3f9d0baa763",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
