@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "d38ab1c6_b201ca8d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-09-30T18:28:22Z",
+      "side": 1,
+      "message": "don\u0027t forget the sha1sums",
+      "revId": "149d52429a9d537a5a350adda5713b6f4ff7cbd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "26db8541_a4def5ee",
+        "filename": "test/ratectrl_rtc_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-09-30T18:28:22Z",
+      "side": 1,
+      "message": "this should be a static method, so it might be clearer to use the class name: ...::Create",
+      "range": {
+        "startLine": 82,
+        "startChar": 14,
+        "endLine": 82,
+        "endChar": 29
+      },
+      "revId": "149d52429a9d537a5a350adda5713b6f4ff7cbd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": true
+    }
+  ]
+}
