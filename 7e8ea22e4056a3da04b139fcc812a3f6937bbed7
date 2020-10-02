@@ -16,6 +16,24 @@
       "revId": "7e8ea22e4056a3da04b139fcc812a3f6937bbed7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "1e5d0028_1233a7c6",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 968,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-10-02T19:55:47Z",
+      "side": 1,
+      "message": "the whole cpi structure is initialized as 0",
+      "parentUuid": "768aa6ba_a4c64c47",
+      "revId": "7e8ea22e4056a3da04b139fcc812a3f6937bbed7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
