@@ -3316,6 +3316,12 @@ static void loopfilter_frame(VP9_COMP *cpi, VP9_COMMON *cm) {
     return;
   }
 
+  if (cpi->loopfilter == NO_LOOPFILTER ||
+      (!is_reference_frame && cpi->loopfilter == LOOPFILTER_REFERENCE)) {
+    lf->filter_level = 0;
+    return;
+  }
+
   if (xd->lossless) {
     lf->filter_level = 0;
     lf->last_filt_level = 0;
@@ -5388,7 +5394,7 @@ static void encode_frame_to_data_rate(
 #if !CONFIG_REALTIME_ONLY
 #if CONFIG_RATE_CTRL
     encode_with_recode_loop(cpi, size, dest, &encode_frame_result->rq_history);
-#else   // CONFIG_RATE_CTRL
+#else  // CONFIG_RATE_CTRL
     encode_with_recode_loop(cpi, size, dest);
 #endif  // CONFIG_RATE_CTRL
 #endif  // !CONFIG_REALTIME_ONLY
@@ -7520,7 +7526,7 @@ static void update_encode_frame_result(
 #if CONFIG_VP9_HIGHBITDEPTH
   vpx_calc_highbd_psnr(source_frame, coded_frame_buf->buf, &psnr, bit_depth,
                        input_bit_depth);
-#else   // CONFIG_VP9_HIGHBITDEPTH
+#else  // CONFIG_VP9_HIGHBITDEPTH
   (void)bit_depth;
   (void)input_bit_depth;
   vpx_calc_psnr(source_frame, &coded_frame_buf->buf, &psnr);
@@ -7556,7 +7562,7 @@ static void update_encode_frame_result(
     yv12_buffer_to_image_buffer(&coded_frame_buf->buf,
                                 &encode_frame_result->coded_frame);
   }
-#else   // CONFIG_RATE_CTRL
+#else  // CONFIG_RATE_CTRL
   (void)ref_frame_flags;
   (void)bit_depth;
   (void)input_bit_depth;
