@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "d15a3997_2a124fca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2020-10-02T22:39:39Z",
+      "side": 1,
+      "message": "Verified the new control works and is able to reproduce Marco\u0027s results.\n\nRe-apply +2.",
+      "revId": "7e8ea22e4056a3da04b139fcc812a3f6937bbed7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "768aa6ba_a4c64c47",
         "filename": "vp9/encoder/vp9_encoder.h",
         "patchSetId": 4
