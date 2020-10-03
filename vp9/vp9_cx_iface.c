@@ -1726,6 +1726,19 @@ static vpx_codec_err_t ctrl_set_disable_overshoot_maxq_cbr(
 
 static vpx_codec_err_t ctrl_set_external_rate_control(vpx_codec_alg_priv_t *ctx,
                                                       va_list args) {
+  EXT_RATECTRL *ext_ratectrl = &ctx->cpi->ext_ratectrl;
+  char **str_ptr = CAST(VP9E_SET_EXTERNAL_RATE_CONTROL, args);
+  const char *library_path = str_ptr[0];
+  const char *config = str_ptr[1];
+  if (strlen(library_path) >= MAX_EXT_RATECTRL_BUF_SIZE) {
+    return VPX_CODEC_ERROR;
+  }
+  if (strlen(config) >= MAX_EXT_RATECTRL_BUF_SIZE) {
+    return VPX_CODEC_ERROR;
+  }
+  snprintf(ext_ratectrl->library_path, MAX_EXT_RATECTRL_BUF_SIZE, "%s",
+           library_path);
+  snprintf(ext_ratectrl->config, MAX_EXT_RATECTRL_BUF_SIZE, "%s", config);
   return VPX_CODEC_OK;
 }
 
