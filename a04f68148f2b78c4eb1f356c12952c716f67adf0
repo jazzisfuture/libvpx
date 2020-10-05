@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "899106fd_9c07817d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-05T18:28:47Z",
+      "side": 1,
+      "message": "This seems likely it might be tailored to 1 particular library, there\u0027s nothing about how it will be loaded or what api is expected to be exposed. It might be simpler to add a rate control callback mechanism similar to what we do for external frame buffers.",
+      "revId": "a04f68148f2b78c4eb1f356c12952c716f67adf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
+    }
+  ]
+}
