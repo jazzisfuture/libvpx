@@ -16,6 +16,24 @@
       "revId": "a04f68148f2b78c4eb1f356c12952c716f67adf0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "2c3ea025_78b6991e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-10-05T20:55:36Z",
+      "side": 1,
+      "message": "Hi James,\nWe plan to define the rate control\u0027s interface as state in this document\nhttps://docs.google.com/document/d/1HAw5ktzg8MbtQYK4Qrs95MEYgtxx0XUXmqH7vh1jpAg/edit?userstoinvite\u003dyclin%40google.com\u0026ts\u003d5f5a9f12\u0026actionButton\u003d1\nLet me know if you have any suggestions.",
+      "parentUuid": "899106fd_9c07817d",
+      "revId": "a04f68148f2b78c4eb1f356c12952c716f67adf0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
+      "unresolved": false
     }
   ]
 }
