@@ -42,6 +42,8 @@ typedef struct vp9_extrc_config {
   int frame_height;
   int show_frame_count;
   int target_bitrate_kbps;
+  int frame_rate_num;
+  int frame_rate_den;
 } vp9_extrc_config_t;
 
 typedef vp9_exrc_status_t (*vp9_extrc_create_model_fn_t)(

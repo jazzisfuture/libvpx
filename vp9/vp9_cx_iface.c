@@ -1735,7 +1735,37 @@ static vpx_codec_err_t ctrl_set_disable_loopfilter(vpx_codec_alg_priv_t *ctx,
 
 static vpx_codec_err_t ctrl_set_external_rate_control(vpx_codec_alg_priv_t *ctx,
                                                       va_list args) {
-  ctx->cpi->ext_ratectrl.funcs = *va_arg(args, vp9_extrc_funcs_t *);
+  VP9_COMP *cpi = ctx->cpi;
+  vp9_extrc_info_t *ext_ratectrl = &cpi->ext_ratectrl;
+  const VP9EncoderConfig *oxcf = &cpi->oxcf;
+  const FRAME_INFO *frame_info = &cpi->frame_info;
+  vp9_extrc_config_t encode_config;
+  vp9_exrc_status_t status;
+  if (ext_ratectrl->ready == 1) {
+    status = ext_ratectrl->funcs.delete_model(ext_ratectrl->ratectrl_model);
+    if (status == vp9_exrc_status_error) {
+      return VPX_CODEC_ERROR;
+    }
+  }
+
+  ext_ratectrl->funcs = *va_arg(args, vp9_extrc_funcs_t *);
+  encode_config.frame_width = frame_info->frame_width;
+  encode_config.frame_height = frame_info->frame_height;
+  encode_config.show_frame_count = cpi->twopass.first_pass_info.num_frames;
+
+  // TODO(angiebird): Double check whether this is the proper way to set up
+  // target_bitrate and frame_rate.
+  encode_config.target_bitrate_kbps = oxcf->target_bandwidth / 1000;
+  encode_config.frame_rate_num = oxcf->g_timebase.den;
+  encode_config.frame_rate_den = oxcf->g_timebase.num;
+
+  status = ext_ratectrl->funcs.create_model(ext_ratectrl->funcs.model_config,
+                                            &encode_config,
+                                            ext_ratectrl->ratectrl_model);
+  if (status == vp9_exrc_status_error) {
+    return VPX_CODEC_ERROR;
+  }
+  ext_ratectrl->ready = 1;
   return VPX_CODEC_OK;
 }
 
