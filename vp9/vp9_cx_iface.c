@@ -26,6 +26,7 @@
 #include "vp9/vp9_cx_iface.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_lookahead.h"
+#include "vp9/encoder/vp9_ext_ratectrl.h"
 #include "vp9/vp9_cx_iface.h"
 #include "vp9/vp9_iface_common.h"
 
@@ -1734,19 +1735,7 @@ static vpx_codec_err_t ctrl_set_disable_loopfilter(vpx_codec_alg_priv_t *ctx,
 
 static vpx_codec_err_t ctrl_set_external_rate_control(vpx_codec_alg_priv_t *ctx,
                                                       va_list args) {
-  EXT_RATECTRL *ext_ratectrl = &ctx->cpi->ext_ratectrl;
-  char **str_ptr = CAST(VP9E_SET_EXTERNAL_RATE_CONTROL, args);
-  const char *library_path = str_ptr[0];
-  const char *config = str_ptr[1];
-  if (strlen(library_path) >= MAX_EXT_RATECTRL_BUF_SIZE) {
-    return VPX_CODEC_ERROR;
-  }
-  if (strlen(config) >= MAX_EXT_RATECTRL_BUF_SIZE) {
-    return VPX_CODEC_ERROR;
-  }
-  snprintf(ext_ratectrl->library_path, MAX_EXT_RATECTRL_BUF_SIZE, "%s",
-           library_path);
-  snprintf(ext_ratectrl->config, MAX_EXT_RATECTRL_BUF_SIZE, "%s", config);
+  ctx->cpi->ext_ratectrl.funcs = *va_arg(args, vp9_extrc_funcs_t *);
   return VPX_CODEC_OK;
 }
 

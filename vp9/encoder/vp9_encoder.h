@@ -50,6 +50,7 @@
 #include "vp9/encoder/vp9_speed_features.h"
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_tokenize.h"
+#include "vp9/encoder/vp9_ext_ratectrl.h"
 
 #if CONFIG_VP9_TEMPORAL_DENOISING
 #include "vp9/encoder/vp9_denoiser.h"
@@ -980,7 +981,7 @@ typedef struct VP9_COMP {
 
   RATE_QSTEP_MODEL rq_model[ENCODE_FRAME_TYPES];
 #endif
-  EXT_RATECTRL ext_ratectrl;
+  vp9_extrc_info_t ext_ratectrl;
 } VP9_COMP;
 
 #if CONFIG_RATE_CTRL
