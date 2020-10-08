@@ -45,10 +45,12 @@ typedef struct vpx_rc_config {
   int frame_height;
   int show_frame_count;
   int target_bitrate_kbps;
+  int frame_rate_num;
+  int frame_rate_den;
 } vpx_rc_config_t;
 
 typedef int (*vpx_rc_create_model_cb_fn_t)(void *priv,
-                                           const vpx_rc_config_t *encode_config,
+                                           vpx_rc_config_t encode_config,
                                            vpx_rc_model_t *rate_ctrl_model_pt);
 typedef int (*vpx_rc_send_firstpass_stats_cb_fn_t)(
     vpx_rc_model_t rate_ctrl_model, vpx_rc_firstpass_stats_t *first_pass_stats);

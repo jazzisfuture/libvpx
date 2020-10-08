@@ -3284,3 +3284,21 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
     return 0;
   }
 }
+
+void vp9_extrc_init(EXT_RATECTRL *ext_ratectrl) { vp9_zero(*ext_ratectrl); }
+
+void vp9_extrc_create(vpx_rc_funcs_t funcs, vpx_rc_config_t ratectrl_config,
+                      EXT_RATECTRL *ext_ratectrl) {
+  vp9_extrc_delete(ext_ratectrl);
+  ext_ratectrl->funcs = funcs;
+  ext_ratectrl->funcs.create_model(ext_ratectrl->funcs.priv, ratectrl_config,
+                                   ext_ratectrl->model);
+  ext_ratectrl->ready = 1;
+}
+
+void vp9_extrc_delete(EXT_RATECTRL *ext_ratectrl) {
+  if (ext_ratectrl->ready) {
+    ext_ratectrl->funcs.delete_model(ext_ratectrl->model);
+  }
+  vp9_extrc_init(ext_ratectrl);
+}

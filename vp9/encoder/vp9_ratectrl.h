@@ -13,6 +13,7 @@
 
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_integer.h"
+#include "vpx/vpx_ext_ratectrl.h"
 
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/encoder/vp9_lookahead.h"
@@ -335,6 +336,19 @@ void vp9_configure_buffer_updates(struct VP9_COMP *cpi, int gf_group_index);
 void vp9_estimate_qp_gop(struct VP9_COMP *cpi);
 
 void vp9_compute_frame_low_motion(struct VP9_COMP *const cpi);
+
+typedef struct EXT_RATECTRL {
+  int ready;
+  vpx_rc_model_t model;
+  vpx_rc_funcs_t funcs;
+} EXT_RATECTRL;
+
+void vp9_extrc_init(EXT_RATECTRL *ext_ratectrl);
+
+void vp9_extrc_create(vpx_rc_funcs_t funcs, vpx_rc_config_t ratectrl_config,
+                      EXT_RATECTRL *ext_ratectrl);
+
+void vp9_extrc_delete(EXT_RATECTRL *ext_ratectrl);
 
 #ifdef __cplusplus
 }  // extern "C"
