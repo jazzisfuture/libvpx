@@ -2664,6 +2664,7 @@ VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
   motion_vector_info_init(cpi);
   fp_motion_vector_info_init(cpi);
 #endif
+  vp9_extrc_init(&cpi->ext_ratectrl);
 
   return cpi;
 }
