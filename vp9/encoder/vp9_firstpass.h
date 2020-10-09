@@ -147,7 +147,7 @@ typedef struct {
   int group_noise_energy;
 } GF_GROUP;
 
-typedef struct {
+typedef struct FIRST_PASS_INFO {
   const FIRSTPASS_STATS *stats;
   int num_frames;
 } FIRST_PASS_INFO;
