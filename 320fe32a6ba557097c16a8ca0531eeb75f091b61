@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8442ab66_816e336f",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-09T02:32:44Z",
+      "side": 1,
+      "message": "some description of the layout of the array would be helpful here.",
+      "revId": "320fe32a6ba557097c16a8ca0531eeb75f091b61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9cee8a10_925935f9",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-09T02:32:44Z",
+      "side": 1,
+      "message": "Can you describe the parameters and return values?",
+      "revId": "320fe32a6ba557097c16a8ca0531eeb75f091b61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "264ea742_0a3eab89",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-09T02:32:44Z",
+      "side": 1,
+      "message": "a description / pseudo-code of how/when these will be called would be useful",
+      "revId": "320fe32a6ba557097c16a8ca0531eeb75f091b61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
