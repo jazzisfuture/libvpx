@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f04cfb18_d6f6c74a",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-10-09T23:05:42Z",
+      "side": 1,
+      "message": "I will change this to structure later.",
+      "parentUuid": "8442ab66_816e336f",
+      "revId": "320fe32a6ba557097c16a8ca0531eeb75f091b61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9cee8a10_925935f9",
         "filename": "vpx/vpx_ext_ratectrl.h",
         "patchSetId": 3
@@ -31,6 +49,24 @@
       "writtenOn": "2020-10-09T02:32:44Z",
       "side": 1,
       "message": "Can you describe the parameters and return values?",
+      "revId": "320fe32a6ba557097c16a8ca0531eeb75f091b61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ecfe1ed0_aae70401",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-10-09T23:05:42Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9cee8a10_925935f9",
       "revId": "320fe32a6ba557097c16a8ca0531eeb75f091b61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -48,6 +84,24 @@
       "writtenOn": "2020-10-09T02:32:44Z",
       "side": 1,
       "message": "a description / pseudo-code of how/when these will be called would be useful",
+      "revId": "320fe32a6ba557097c16a8ca0531eeb75f091b61",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6e324aae_e09a20fd",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-10-09T23:05:42Z",
+      "side": 1,
+      "message": "Yes, I will submit a example code using this API later.",
+      "parentUuid": "264ea742_0a3eab89",
       "revId": "320fe32a6ba557097c16a8ca0531eeb75f091b61",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
