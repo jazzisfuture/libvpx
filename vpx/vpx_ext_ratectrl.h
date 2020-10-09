@@ -36,7 +36,7 @@ typedef struct vpx_rc_encodeframe_result {
 } vpx_rc_encodeframe_result_t;
 
 typedef struct vpx_rc_firstpass_stats {
-  double (*frame_stats)[26];
+  double (*frame_stats)[25];
   int num_frames;
 } vpx_rc_firstpass_stats_t;
 
@@ -53,7 +53,8 @@ typedef int (*vpx_rc_create_model_cb_fn_t)(void *priv,
                                            vpx_rc_config_t encode_config,
                                            vpx_rc_model_t *rate_ctrl_model_pt);
 typedef int (*vpx_rc_send_firstpass_stats_cb_fn_t)(
-    vpx_rc_model_t rate_ctrl_model, vpx_rc_firstpass_stats_t *first_pass_stats);
+    vpx_rc_model_t rate_ctrl_model,
+    const vpx_rc_firstpass_stats_t *first_pass_stats);
 typedef int (*vpx_rc_get_encodeframe_decision_cb_fn_t)(
     vpx_rc_model_t rate_ctrl_model,
     const vpx_rc_encodeframe_info_t *encode_frame_info,
