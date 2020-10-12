@@ -22,6 +22,30 @@
       },
       "revId": "e6208a95073f12f035fb554c1bd3e6a32a92f877",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63fb07af_1de7ce10",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-10-12T22:01:06Z",
+      "side": 1,
+      "message": "I changed this to a structure in the following CL",
+      "parentUuid": "aa96a11b_92456698",
+      "range": {
+        "startLine": 39,
+        "startChar": 24,
+        "endLine": 39,
+        "endChar": 26
+      },
+      "revId": "e6208a95073f12f035fb554c1bd3e6a32a92f877",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
