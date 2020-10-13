@@ -134,7 +134,7 @@ typedef vpx_rc_status_t (*vpx_rc_get_encodeframe_decision_cb_fn_t)(
  */
 typedef vpx_rc_status_t (*vpx_rc_update_encodeframe_result_cb_fn_t)(
     vpx_rc_model_t rate_ctrl_model,
-    vpx_rc_encodeframe_result_t *encode_frame_result);
+    const vpx_rc_encodeframe_result_t *encode_frame_result);
 
 /*!\brief Delete the external rate control model callback prototype
  *
