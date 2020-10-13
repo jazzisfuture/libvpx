@@ -16,6 +16,24 @@
       "message": "There\u0027s an entry in .mailmap already, I\u0027m not sure if it was intentional, but you look to have a mix of user names set across your git configs.",
       "revId": "705bf9de8c96cfe5301451f1d7e5c90a41c64e5f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4997a77_352f6ce2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-10-13T01:06:06Z",
+      "side": 1,
+      "message": "Thanks. I just fixed my .gitconfig.",
+      "parentUuid": "f51b91d1_baea12f8",
+      "revId": "705bf9de8c96cfe5301451f1d7e5c90a41c64e5f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
