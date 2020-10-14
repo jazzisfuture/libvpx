@@ -34,6 +34,24 @@
       "parentUuid": "8ef9c49d_d77c3807",
       "revId": "9857515cd6deae3e981792c74613e0dac624db56",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "adc87669_ee13a6b1",
+        "filename": "vp9/encoder/vp9_ext_ratectrl.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-14T17:51:31Z",
+      "side": 1,
+      "message": "\u003e It\u0027s more intuitive to put ext_ratectrl at the beginning for vp9_extrc_### functions.\n\nI see what you mean, it\u0027s effectively the this pointer. I wasn\u0027t looking closely enough at the other functions.",
+      "parentUuid": "9a716b2a_6fd69c15",
+      "revId": "9857515cd6deae3e981792c74613e0dac624db56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
