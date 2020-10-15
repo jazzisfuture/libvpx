@@ -22,7 +22,7 @@ void vp9_extrc_create(vpx_rc_funcs_t funcs, vpx_rc_config_t ratectrl_config,
   ext_ratectrl->ratectrl_config = ratectrl_config;
   ext_ratectrl->funcs.create_model(ext_ratectrl->funcs.priv,
                                    &ext_ratectrl->ratectrl_config,
-                                   ext_ratectrl->model);
+                                   &ext_ratectrl->model);
   rc_firstpass_stats = &ext_ratectrl->rc_firstpass_stats;
   rc_firstpass_stats->num_frames = ratectrl_config.show_frame_count;
   rc_firstpass_stats->frame_stats =
