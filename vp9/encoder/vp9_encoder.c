@@ -2538,8 +2538,6 @@ VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
       num_frames = packets - 1;
       fps_init_first_pass_info(&cpi->twopass.first_pass_info,
                                oxcf->two_pass_stats_in.buf, num_frames);
-      vp9_extrc_send_firstpass_stats(&cpi->ext_ratectrl,
-                                     &cpi->twopass.first_pass_info);
 
       vp9_init_second_pass(cpi);
     }
@@ -5673,6 +5671,11 @@ static void Pass2Encode(VP9_COMP *cpi, size_t *size, uint8_t *dest,
                         unsigned int *frame_flags,
                         ENCODE_FRAME_RESULT *encode_frame_result) {
   cpi->allow_encode_breakout = ENCODE_BREAKOUT_ENABLED;
+
+  if (cpi->common.current_frame_coding_index == 0) {
+    vp9_extrc_send_firstpass_stats(&cpi->ext_ratectrl,
+                                   &cpi->twopass.first_pass_info);
+  }
 #if CONFIG_MISMATCH_DEBUG
   mismatch_move_frame_idx_w();
 #endif
