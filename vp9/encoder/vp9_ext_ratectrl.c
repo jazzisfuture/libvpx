@@ -22,7 +22,7 @@ void vp9_extrc_create(vpx_rc_funcs_t funcs, vpx_rc_config_t ratectrl_config,
   ext_ratectrl->ratectrl_config = ratectrl_config;
   ext_ratectrl->funcs.create_model(ext_ratectrl->funcs.priv,
                                    &ext_ratectrl->ratectrl_config,
-                                   ext_ratectrl->model);
+                                   &ext_ratectrl->model);
   rc_firstpass_stats = &ext_ratectrl->rc_firstpass_stats;
   rc_firstpass_stats->num_frames = ratectrl_config.show_frame_count;
   rc_firstpass_stats->frame_stats =
@@ -118,6 +118,7 @@ void vp9_extrc_update_encodeframe_result(EXT_RATECTRL *ext_ratectrl,
                                          int64_t bit_count,
                                          const YV12_BUFFER_CONFIG *source_frame,
                                          const YV12_BUFFER_CONFIG *coded_frame,
+                                         uint32_t bit_depth,
                                          uint32_t input_bit_depth) {
   if (ext_ratectrl->ready) {
     PSNR_STATS psnr;
@@ -127,9 +128,10 @@ void vp9_extrc_update_encodeframe_result(EXT_RATECTRL *ext_ratectrl,
         source_frame->y_width * source_frame->y_height +
         2 * source_frame->uv_width * source_frame->uv_height;
 #if CONFIG_VP9_HIGHBITDEPTH
-    vpx_calc_highbd_psnr(source_frame, coded_frame, &psnr,
-                         source_frame->bit_depth, input_bit_depth);
+    vpx_calc_highbd_psnr(source_frame, coded_frame, &psnr, bit_depth,
+                         input_bit_depth);
 #else
+    (void)bit_depth;
     (void)input_bit_depth;
     vpx_calc_psnr(source_frame, coded_frame, &psnr);
 #endif
