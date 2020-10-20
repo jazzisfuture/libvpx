@@ -1,0 +1,118 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a46a1c6_6c5fbd58",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-20T02:36:25Z",
+      "side": 1,
+      "message": "these can all be constexpr and named like constants (kModelMagic...)",
+      "revId": "655635994b6bb5ebbc83057206ad17eb1509c2a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53eaec93_c8f9f1bb",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-20T02:36:25Z",
+      "side": 1,
+      "message": "\u0027dummy\u0027 may trigger some warnings with tools that test for inclusive language, let\u0027s try to avoid new instances. Maybe just \u0027TestRateCtrl\u0027 in this case?",
+      "range": {
+        "startLine": 25,
+        "startChar": 7,
+        "endLine": 25,
+        "endChar": 12
+      },
+      "revId": "655635994b6bb5ebbc83057206ad17eb1509c2a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "84384af8_91ab8fce",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-20T02:36:25Z",
+      "side": 1,
+      "message": "make this new (std::nothrow) and check the result",
+      "revId": "655635994b6bb5ebbc83057206ad17eb1509c2a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d074a0e3_76a8f162",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-20T02:36:25Z",
+      "side": 1,
+      "message": "these can all be static_cast\u003c\u003e()",
+      "range": {
+        "startLine": 109,
+        "startChar": 35,
+        "endLine": 109,
+        "endChar": 53
+      },
+      "revId": "655635994b6bb5ebbc83057206ad17eb1509c2a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6952ddb4_ad6b17fc",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-20T02:36:25Z",
+      "side": 1,
+      "message": "this could be \u0027\u003d default\u0027",
+      "revId": "655635994b6bb5ebbc83057206ad17eb1509c2a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "90b2fc18_697cba3d",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-10-20T02:36:25Z",
+      "side": 1,
+      "message": "how about negative tests to cover error returns from each callback?",
+      "revId": "655635994b6bb5ebbc83057206ad17eb1509c2a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
