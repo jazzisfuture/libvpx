@@ -22,6 +22,30 @@
       },
       "revId": "9bfdf4a9d0c35706012fdcf7657d57c68bca0eb8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "32bc120e_0de27685",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 4217,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2020-10-21T21:26:19Z",
+      "side": 1,
+      "message": "This logic seems to belong to svc.",
+      "parentUuid": "58e9df74_4cfbad29",
+      "range": {
+        "startLine": 4217,
+        "startChar": 14,
+        "endLine": 4217,
+        "endChar": 39
+      },
+      "revId": "9bfdf4a9d0c35706012fdcf7657d57c68bca0eb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
