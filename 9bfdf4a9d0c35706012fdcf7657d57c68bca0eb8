@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "58e9df74_4cfbad29",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 4217,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2020-10-21T04:32:16Z",
+      "side": 1,
+      "message": "not quite related to this CL itself, but I have to say this is an interesting condition..",
+      "range": {
+        "startLine": 4217,
+        "startChar": 14,
+        "endLine": 4217,
+        "endChar": 39
+      },
+      "revId": "9bfdf4a9d0c35706012fdcf7657d57c68bca0eb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
