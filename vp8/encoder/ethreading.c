@@ -81,7 +81,9 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
         int recon_uv_stride = cm->yv12_fb[ref_fb_idx].uv_stride;
         int map_index = (mb_row * cm->mb_cols);
         const vpx_atomic_int *last_row_current_mb_col;
+        sem_t *last_row_current_mb_col_sem;
         vpx_atomic_int *current_mb_col = &cpi->mt_current_mb_col[mb_row];
+        sem_t *current_mb_col_sem = &cpi->mt_current_mb_col_sem[mb_row];
 
 #if (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
         vp8_writer *w = &cpi->bc[1 + (mb_row % num_part)];
@@ -91,6 +93,7 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
 #endif
 
         last_row_current_mb_col = &cpi->mt_current_mb_col[mb_row - 1];
+        last_row_current_mb_col_sem = &cpi->mt_current_mb_col_sem[mb_row - 1];
 
         /* reset above block coeffs */
         xd->above_context = cm->above_context;
@@ -109,9 +112,11 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
         for (mb_col = 0; mb_col < cm->mb_cols; ++mb_col) {
           if (((mb_col - 1) % nsync) == 0) {
             vpx_atomic_store_release(current_mb_col, mb_col - 1);
+            sem_post(current_mb_col_sem);
           }
 
           if (mb_row && !(mb_col & (nsync - 1))) {
+            sem_wait(last_row_current_mb_col_sem);
             vp8_atomic_spin_wait(mb_col, last_row_current_mb_col, nsync);
           }
 
@@ -285,6 +290,7 @@ static THREAD_FUNCTION thread_encoding_proc(void *p_data) {
                           xd->dst.u_buffer + 8, xd->dst.v_buffer + 8);
 
         vpx_atomic_store_release(current_mb_col, mb_col + nsync);
+        sem_post(current_mb_col_sem);
 
         /* this is to account for the border */
         xd->mode_info_context++;

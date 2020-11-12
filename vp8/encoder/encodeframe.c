@@ -343,10 +343,13 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
   const int nsync = cpi->mt_sync_range;
   vpx_atomic_int rightmost_col = VPX_ATOMIC_INIT(cm->mb_cols + nsync);
   const vpx_atomic_int *last_row_current_mb_col;
+  sem_t *last_row_current_mb_col_sem;
   vpx_atomic_int *current_mb_col = &cpi->mt_current_mb_col[mb_row];
+  sem_t *current_mb_col_sem = &cpi->mt_current_mb_col_sem[mb_row];;
 
   if (vpx_atomic_load_acquire(&cpi->b_multi_threaded) != 0 && mb_row != 0) {
     last_row_current_mb_col = &cpi->mt_current_mb_col[mb_row - 1];
+    last_row_current_mb_col_sem = &cpi->mt_current_mb_col_sem[mb_row - 1];
   } else {
     last_row_current_mb_col = &rightmost_col;
   }
@@ -418,9 +421,12 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
     if (vpx_atomic_load_acquire(&cpi->b_multi_threaded) != 0) {
       if (((mb_col - 1) % nsync) == 0) {
         vpx_atomic_store_release(current_mb_col, mb_col - 1);
+        sem_post(current_mb_col_sem);
       }
 
       if (mb_row && !(mb_col & (nsync - 1))) {
+        if (last_row_current_mb_col != &rightmost_col)
+          sem_wait(last_row_current_mb_col_sem);
         vp8_atomic_spin_wait(mb_col, last_row_current_mb_col, nsync);
       }
     }
@@ -564,6 +570,7 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
   if (vpx_atomic_load_acquire(&cpi->b_multi_threaded) != 0) {
     vpx_atomic_store_release(current_mb_col,
                              vpx_atomic_load_acquire(&rightmost_col));
+    sem_post(current_mb_col_sem);
   }
 #endif
 

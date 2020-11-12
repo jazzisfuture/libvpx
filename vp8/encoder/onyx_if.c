@@ -447,7 +447,9 @@ static void dealloc_compressor_data(VP8_COMP *cpi) {
 
 #if CONFIG_MULTITHREAD
   vpx_free(cpi->mt_current_mb_col);
+  vpx_free(cpi->mt_current_mb_col_sem);
   cpi->mt_current_mb_col = NULL;
+  cpi->mt_current_mb_col_sem = NULL;
 #endif
 }
 
@@ -1228,10 +1230,17 @@ void vp8_alloc_compressor_data(VP8_COMP *cpi) {
     int i;
 
     vpx_free(cpi->mt_current_mb_col);
+    vpx_free(cpi->mt_current_mb_col_sem);
+
     CHECK_MEM_ERROR(cpi->mt_current_mb_col,
                     vpx_malloc(sizeof(*cpi->mt_current_mb_col) * cm->mb_rows));
-    for (i = 0; i < cm->mb_rows; ++i)
+    CHECK_MEM_ERROR(cpi->mt_current_mb_col_sem,
+                    vpx_malloc(sizeof(*cpi->mt_current_mb_col_sem) * cm->mb_rows));
+
+    for (i = 0; i < cm->mb_rows; ++i) {
       vpx_atomic_init(&cpi->mt_current_mb_col[i], 0);
+      sem_init(&cpi->mt_current_mb_col_sem[i], 0, 0);
+    }
   }
 
 #endif
