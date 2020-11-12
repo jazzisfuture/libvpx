@@ -79,8 +79,10 @@ static void setup_decoding_thread_data(VP8D_COMP *pbi, MACROBLOCKD *xd,
     if (pc->full_pixel) mbd->fullpixel_mask = 0xfffffff8;
   }
 
-  for (i = 0; i < pc->mb_rows; ++i)
+  for (i = 0; i < pc->mb_rows; ++i) {
     vpx_atomic_store_release(&pbi->mt_current_mb_col[i], -1);
+    sem_post(&pbi->mt_current_mb_col_sem[i]);
+  }
 }
 
 static void mt_decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
@@ -249,7 +251,11 @@ static void mt_decode_macroblock(VP8D_COMP *pbi, MACROBLOCKD *xd,
 static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
                               int start_mb_row) {
   const vpx_atomic_int *last_row_current_mb_col;
+  sem_t *last_row_current_mb_col_sem;
+
   vpx_atomic_int *current_mb_col;
+  sem_t *current_mb_col_sem;
+
   int mb_row;
   VP8_COMMON *pc = &pbi->common;
   const int nsync = pbi->sync_range;
@@ -304,11 +310,13 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
 
     if (mb_row > 0) {
       last_row_current_mb_col = &pbi->mt_current_mb_col[mb_row - 1];
+      last_row_current_mb_col_sem = &pbi->mt_current_mb_col_sem[mb_row - 1];
     } else {
       last_row_current_mb_col = &first_row_no_sync_above;
     }
 
     current_mb_col = &pbi->mt_current_mb_col[mb_row];
+    current_mb_col_sem = &pbi->mt_current_mb_col_sem[mb_row];
 
     recon_yoffset = mb_row * recon_y_stride * 16;
     recon_uvoffset = mb_row * recon_uv_stride * 8;
@@ -359,9 +367,13 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
     for (mb_col = 0; mb_col < pc->mb_cols; ++mb_col) {
       if (((mb_col - 1) % nsync) == 0) {
         vpx_atomic_store_release(current_mb_col, mb_col - 1);
+        sem_post(current_mb_col_sem);
       }
 
       if (mb_row && !(mb_col & (nsync - 1))) {
+        if (last_row_current_mb_col != &first_row_no_sync_above) {
+          sem_wait(last_row_current_mb_col_sem);;
+        }
         vp8_atomic_spin_wait(mb_col, last_row_current_mb_col, nsync);
       }
 
@@ -410,6 +422,7 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
              mb_row += (pbi->decoding_thread_count + 1)) {
           current_mb_col = &pbi->mt_current_mb_col[mb_row];
           vpx_atomic_store_release(current_mb_col, pc->mb_cols + nsync);
+          sem_post(&pbi->mt_current_mb_col_sem[mb_row]);
         }
         vpx_internal_error(&xd->error_info, VPX_CODEC_CORRUPT_FRAME,
                            "Corrupted reference frame");
@@ -565,6 +578,7 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
 
     /* last MB of row is ready just after extension is done */
     vpx_atomic_store_release(current_mb_col, mb_col + nsync);
+    sem_post(current_mb_col_sem);
 
     ++xd->mode_info_context; /* skip prediction column */
     xd->up_available = 1;
@@ -672,6 +686,8 @@ void vp8mt_de_alloc_temp_buffers(VP8D_COMP *pbi, int mb_rows) {
 
   vpx_free(pbi->mt_current_mb_col);
   pbi->mt_current_mb_col = NULL;
+  vpx_free(pbi->mt_current_mb_col_sem);
+  pbi->mt_current_mb_col_sem = NULL;
 
   /* Free above_row buffers. */
   if (pbi->mt_yabove_row) {
@@ -756,8 +772,12 @@ void vp8mt_alloc_temp_buffers(VP8D_COMP *pbi, int width, int prev_mb_rows) {
     /* Allocate a vpx_atomic_int for each mb row. */
     CHECK_MEM_ERROR(pbi->mt_current_mb_col,
                     vpx_malloc(sizeof(*pbi->mt_current_mb_col) * pc->mb_rows));
-    for (i = 0; i < pc->mb_rows; ++i)
+    CHECK_MEM_ERROR(pbi->mt_current_mb_col_sem,
+                    vpx_malloc(sizeof(*pbi->mt_current_mb_col_sem) * pc->mb_rows));
+    for (i = 0; i < pc->mb_rows; ++i) {
       vpx_atomic_init(&pbi->mt_current_mb_col[i], 0);
+      sem_init(&pbi->mt_current_mb_col_sem[i], 0, 1);
+    }
 
     /* Allocate memory for above_row buffers. */
     CALLOC_ARRAY(pbi->mt_yabove_row, pc->mb_rows);
