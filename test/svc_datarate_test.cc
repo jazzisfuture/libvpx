@@ -78,6 +78,7 @@ class DatarateOnePassCbrSvc : public OnePassCbrSvc {
     use_post_encode_drop_ = 0;
     denoiser_off_on_ = false;
     denoiser_enable_layers_ = false;
+    disable_lf_svc_ = false;
     num_resize_down_ = 0;
     num_resize_up_ = 0;
     for (int i = 0; i < VPX_MAX_LAYERS; i++) {
@@ -971,6 +972,32 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc2SL1TL5x5MultipleRuns) {
   // encoder will avoid loopfilter on these frames.
   EXPECT_EQ(GetNonRefFrames(), GetMismatchFrames());
 #endif
+}
+
+// Run SVC encoder with 3 spatial, 3 temporal layers, where loopfilter is
+// disabled for all frames on base spatial layer, and for non-reference
+// frames on spatial layers > 0.
+TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL3TL_DisableLoopFilter) {
+  SetSvcConfig(3, 3);
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.g_threads = 1;
+  cfg_.rc_dropframe_thresh = 0;
+  cfg_.kf_max_dist = 100;
+  ::libvpx_test::I420VideoSource video("desktop_office1.1280_720-020.yuv", 1280,
+                                       720, 30, 1, 0, 300);
+  top_sl_width_ = 1280;
+  top_sl_height_ = 720;
+  cfg_.rc_target_bitrate = 1000;
+  ResetModel();
+  disable_lf_svc_ = true;
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  CheckLayerRateTargeting(number_spatial_layers_ , number_temporal_layers_,
+                          0.78, 1.15);
 }
 
 // Params: speed setting and index for bitrate array.

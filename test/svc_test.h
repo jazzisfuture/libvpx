@@ -61,6 +61,7 @@ class OnePassCbrSvc : public ::libvpx_test::EncoderTest {
   int temporal_layer_id_;
   int number_temporal_layers_;
   int number_spatial_layers_;
+  int disable_lf_svc_;
 };
 }  // namespace svc_test
 
