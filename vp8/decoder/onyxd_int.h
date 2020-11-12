@@ -80,6 +80,7 @@ typedef struct VP8D_COMP {
   int sync_range;
   /* Each row remembers its already decoded column. */
   vpx_atomic_int *mt_current_mb_col;
+  sem_t *mt_current_mb_col_sem;
 
   unsigned char **mt_yabove_row; /* mb_rows x width */
   unsigned char **mt_uabove_row;
