@@ -44,8 +44,12 @@ void OnePassCbrSvc::PreEncodeFrameHookSetup(::libvpx_test::VideoSource *video,
       svc_params_.min_quantizers[i] = 0;
     }
     svc_params_.speed_per_layer[0] = base_speed_setting_;
+    if (disable_lf_svc_) svc_params_.loopfilter_ctrl[0] = 2;
     for (int i = 1; i < VPX_SS_MAX_LAYERS; ++i) {
       svc_params_.speed_per_layer[i] = speed_setting_;
+      if (disable_lf_svc_) {
+        svc_params_.loopfilter_ctrl[i] = 1;
+      }
     }
 
     encoder->Control(VP9E_SET_SVC, 1);
