@@ -48,8 +48,12 @@ typedef struct vpx_rc_encodeframe_info {
    * 4: Golden frame
    */
   int frame_type;
-  int show_index;                  /**< display index, starts from zero*/
-  int coding_index;                /**< coding index, starts from zero*/
+  int show_index;   /**< display index, starts from zero*/
+  int coding_index; /**< coding index, starts from zero*/
+  /*!
+   * index in group of picture, starts from zero.
+   */
+  int gop_index;
   int ref_frame_coding_indexes[3]; /**< three reference frames' coding indices*/
   /*!
    * The validity of the three reference frames.
