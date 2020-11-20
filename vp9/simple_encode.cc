@@ -765,6 +765,11 @@ static void UpdateEncodeConfig(const EncodeConfig &config,
   SET_STRUCT_VALUE(config, oxcf, ret, encode_breakout);
   SET_STRUCT_VALUE(config, oxcf, ret, enable_tpl_model);
   SET_STRUCT_VALUE(config, oxcf, ret, enable_auto_arf);
+  if (strcmp(config.name, "rc_mode") == 0) {
+    oxcf->rc_mode = (enum vpx_rc_mode)atoi(config.value);
+    ret = 1;
+  }
+  SET_STRUCT_VALUE(config, oxcf, ret, cq_level);
   if (ret == 0) {
     fprintf(stderr, "Ignored unsupported encode_config %s\n", config.name);
   }
