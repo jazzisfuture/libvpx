@@ -39,6 +39,30 @@
       },
       "revId": "fb83d9888376f61cea610baae9a39e14d58aee75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed829ec3_7b286f76",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 922,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-12-11T18:19:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "48f1dcfe_2f06ff16",
+      "range": {
+        "startLine": 922,
+        "startChar": 52,
+        "endLine": 922,
+        "endChar": 57
+      },
+      "revId": "fb83d9888376f61cea610baae9a39e14d58aee75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
