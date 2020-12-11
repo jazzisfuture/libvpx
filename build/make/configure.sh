@@ -918,9 +918,13 @@ process_common_toolchain() {
       add_cflags  "-mmacosx-version-min=10.15"
       add_ldflags "-mmacosx-version-min=10.15"
       ;;
-    *-darwin20-*)
-      add_cflags  "-mmacosx-version-min=10.16"
-      add_ldflags "-mmacosx-version-min=10.16"
+    arm64-darwin20-*)
+      add_cflags  "-mmacosx-version-min=10.16 -arch arm64"
+      add_ldflags "-mmacosx-version-min=10.16 -arch arm64"
+      ;;
+    x86_64-darwin20-*)
+      add_cflags  "-mmacosx-version-min=10.16 -arch x86_64"
+      add_ldflags "-mmacosx-version-min=10.16 -arch x86_64"
       ;;
     *-iphonesimulator-*)
       add_cflags  "-miphoneos-version-min=${IOS_VERSION_MIN}"
