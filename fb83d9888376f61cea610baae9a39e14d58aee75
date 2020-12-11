@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6836cd2_8c9c7a98",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-12-11T18:15:58Z",
+      "side": 1,
+      "message": "Thanks for the patch. I just have one comment to minimize the diff. I\u0027ll post a new patchset with the change.",
+      "revId": "fb83d9888376f61cea610baae9a39e14d58aee75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48f1dcfe_2f06ff16",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 922,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2020-12-11T18:15:58Z",
+      "side": 1,
+      "message": "these branches could be merged if ${toolchain%%-*} is used to extract the arch",
+      "range": {
+        "startLine": 922,
+        "startChar": 52,
+        "endLine": 922,
+        "endChar": 57
+      },
+      "revId": "fb83d9888376f61cea610baae9a39e14d58aee75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
