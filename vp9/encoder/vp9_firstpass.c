@@ -39,9 +39,9 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vpx_dsp/variance.h"
 
-#define OUTPUT_FPF 0
-#define ARF_STATS_OUTPUT 0
-#define COMPLEXITY_STATS_OUTPUT 0
+#define OUTPUT_FPF 1
+#define ARF_STATS_OUTPUT 1
+#define COMPLEXITY_STATS_OUTPUT 1
 
 #define FIRST_PASS_Q 10.0
 #define NORMAL_BOOST 100
@@ -55,6 +55,58 @@
 #define NCOUNT_INTRA_FACTOR 3
 
 #define DOUBLE_DIVIDE_CHECK(x) ((x) < 0 ? (x)-0.000001 : (x) + 0.000001)
+
+#define SR_DIFF_PART 0.0015
+#define INTRA_PART 0.005
+#define DEFAULT_DECAY_LIMIT 0.75
+#define LOW_SR_DIFF_TRHESH 0.1
+#define SR_DIFF_MAX 128.0
+#define LOW_CODED_ERR_PER_MB 10.0
+#define NCOUNT_FRAME_II_THRESH 6.0
+#define BASELINE_ERR_PER_MB 12500.0
+#define GF_MAX_BOOST 96.0
+
+#ifdef AGGRESSIVE_VBR
+#define KF_MAX_FRAME_BOOST 80.0
+#define MAX_KF_TOT_BOOST 4800
+#else
+#define KF_MAX_FRAME_BOOST 96.0
+#define MAX_KF_TOT_BOOST 4800
+#endif
+
+#define ZM_POWER_FACTOR 0.75
+#define MINQ_ADJ_LIMIT 48
+#define MINQ_ADJ_LIMIT_CQ 20
+#define HIGH_UNDERSHOOT_RATIO 2
+#define AV_WQ_FACTOR 4.0
+#define DEF_EPMB_LOW 2000.0
+
+static int opt_min_active_gf_interval_rate = 200;
+static int opt_max_active_gf_interval_base = 11;
+static double sr_diff_part = SR_DIFF_PART; // 0.00868988716928333;
+static double intra_part = 0.005;
+static double default_decay_limit = DEFAULT_DECAY_LIMIT; // 0.33633414970713393;
+static double low_sr_diff_thresh = 0.1;
+static double sr_diff_max = 128.0;
+static double low_coded_err_per_mb = 10.0;
+static double ncount_frame_II_thres = 6.0;
+static double zm_power_factor = ZM_POWER_FACTOR; // 3.552278528517416;
+static double baseline_err_per_mb = BASELINE_ERR_PER_MB; //33718.98307662595;
+static double gf_max_boost = GF_MAX_BOOST; // 85.2868528581522;
+static double kf_err_per_mb_base = 250.0;
+static double kf_err_per_mb_low_res = DEF_EPMB_LOW; // 1513.4883914008383;
+static double kf_err_per_mb_hd = 500.0;
+static double avg_active_worst_quality_weight_factor = AV_WQ_FACTOR;
+static double last_alr_active_best_quality_adjustment_factor = 0.2;
+static int normal_boost = 100;
+static int min_arf_gf_boost = 250;
+static double min_decay_factor = 0.01;
+static int min_adj_limit_cq = 20;
+static int high_undershoot_ratio = 2;
+static int max_gf_boost = 5400;
+static int min_kf_tot_boost = 300;
+static double kf_max_frame_boost = KF_MAX_FRAME_BOOST; // 28;
+static int max_kf_tot_boost = 5400;
 
 #if ARF_STATS_OUTPUT
 unsigned int arf_count = 0;
@@ -96,7 +148,7 @@ static void output_stats(FIRSTPASS_STATS *stats) {
             "%12.0lf %12.4lf %12.2lf %12.2lf %12.2lf %12.0lf %12.4lf %12.4lf"
             "%12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.4lf"
             "%12.4lf %12.4lf %12.4lf %12.4lf %12.4lf %12.0lf %12.4lf %12.0lf"
-            "%12.4lf"
+            //"%12.4lf"
             "\n",
             stats->frame, stats->weight, stats->intra_error, stats->coded_error,
             stats->sr_coded_error, stats->frame_noise_energy, stats->pcnt_inter,
@@ -105,7 +157,7 @@ static void output_stats(FIRSTPASS_STATS *stats) {
             stats->intra_skip_pct, stats->intra_smooth_pct,
             stats->inactive_zone_rows, stats->inactive_zone_cols, stats->MVr,
             stats->mvr_abs, stats->MVc, stats->mvc_abs, stats->MVrv,
-            stats->MVcv, stats->mv_in_out_count, stats->count, stats->duration);
+            stats->MVcv, stats->mv_in_out_count, stats->count); //, stats->duration);
     fclose(fpfile);
   }
 #endif
@@ -1771,40 +1823,40 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
   twopass->arnr_strength_adjustment = 0;
 }
 
-#define SR_DIFF_PART 0.0015
-#define INTRA_PART 0.005
-#define DEFAULT_DECAY_LIMIT 0.75
-#define LOW_SR_DIFF_TRHESH 0.1
-#define SR_DIFF_MAX 128.0
-#define LOW_CODED_ERR_PER_MB 10.0
-#define NCOUNT_FRAME_II_THRESH 6.0
+// #define SR_DIFF_PART 0.0015
+// #define INTRA_PART 0.005
+// #define DEFAULT_DECAY_LIMIT 0.75
+// #define LOW_SR_DIFF_TRHESH 0.1
+// #define SR_DIFF_MAX 128.0
+// #define LOW_CODED_ERR_PER_MB 10.0
+// #define NCOUNT_FRAME_II_THRESH 6.0
 
 static double get_sr_decay_rate(const FRAME_INFO *frame_info,
-                                const FIRSTPASS_STATS *frame) {
+  const FIRSTPASS_STATS *frame) {
   double sr_diff = (frame->sr_coded_error - frame->coded_error);
   double sr_decay = 1.0;
   double modified_pct_inter;
   double modified_pcnt_intra;
   const double motion_amplitude_part =
-      frame->pcnt_motion *
-      ((frame->mvc_abs + frame->mvr_abs) /
-       (frame_info->frame_height + frame_info->frame_width));
+    frame->pcnt_motion *
+    ((frame->mvc_abs + frame->mvr_abs) /
+    (frame_info->frame_height + frame_info->frame_width));
 
   modified_pct_inter = frame->pcnt_inter;
-  if ((frame->coded_error > LOW_CODED_ERR_PER_MB) &&
-      ((frame->intra_error / DOUBLE_DIVIDE_CHECK(frame->coded_error)) <
-       (double)NCOUNT_FRAME_II_THRESH)) {
+  if ((frame->coded_error > low_coded_err_per_mb) &&
+    ((frame->intra_error / DOUBLE_DIVIDE_CHECK(frame->coded_error)) <
+    (double)ncount_frame_II_thres)) {
     modified_pct_inter =
-        frame->pcnt_inter + frame->pcnt_intra_low - frame->pcnt_neutral;
+      frame->pcnt_inter + frame->pcnt_intra_low - frame->pcnt_neutral;
   }
   modified_pcnt_intra = 100 * (1.0 - modified_pct_inter);
 
-  if ((sr_diff > LOW_SR_DIFF_TRHESH)) {
-    sr_diff = VPXMIN(sr_diff, SR_DIFF_MAX);
-    sr_decay = 1.0 - (SR_DIFF_PART * sr_diff) - motion_amplitude_part -
-               (INTRA_PART * modified_pcnt_intra);
+  if ((sr_diff > low_sr_diff_thresh)) {
+    sr_diff = VPXMIN(sr_diff, sr_diff_max);
+    sr_decay = 1.0 - (sr_diff_part * sr_diff) - motion_amplitude_part -
+      (intra_part * modified_pcnt_intra);
   }
-  return VPXMAX(sr_decay, DEFAULT_DECAY_LIMIT);
+  return VPXMAX(sr_decay, default_decay_limit);
 }
 
 // This function gives an estimate of how badly we believe the prediction
@@ -1817,17 +1869,17 @@ static double get_zero_motion_factor(const FRAME_INFO *frame_info,
   return VPXMIN(sr_decay, zero_motion_pct);
 }
 
-#define ZM_POWER_FACTOR 0.75
+// #define ZM_POWER_FACTOR 0.75
 
 static double get_prediction_decay_rate(const FRAME_INFO *frame_info,
-                                        const FIRSTPASS_STATS *frame_stats) {
+  const FIRSTPASS_STATS *frame_stats) {
   const double sr_decay_rate = get_sr_decay_rate(frame_info, frame_stats);
   const double zero_motion_factor =
-      (0.95 * pow((frame_stats->pcnt_inter - frame_stats->pcnt_motion),
-                  ZM_POWER_FACTOR));
+    (0.95 * pow((frame_stats->pcnt_inter - frame_stats->pcnt_motion),
+      zm_power_factor));
 
   return VPXMAX(zero_motion_factor,
-                (sr_decay_rate + ((1.0 - sr_decay_rate) * zero_motion_factor)));
+    (sr_decay_rate + ((1.0 - sr_decay_rate) * zero_motion_factor)));
 }
 
 static int get_show_idx(const TWO_PASS *twopass) {
@@ -1906,21 +1958,21 @@ static void accumulate_frame_motion_stats(const FIRSTPASS_STATS *stats,
   }
 }
 
-#define BASELINE_ERR_PER_MB 12500.0
-#define GF_MAX_BOOST 96.0
+// #define BASELINE_ERR_PER_MB 12500.0
+// #define GF_MAX_BOOST 96.0
 static double calc_frame_boost(const FRAME_INFO *frame_info,
-                               const FIRSTPASS_STATS *this_frame,
-                               int avg_frame_qindex,
-                               double this_frame_mv_in_out) {
+  const FIRSTPASS_STATS *this_frame,
+  int avg_frame_qindex,
+  double this_frame_mv_in_out) {
   double frame_boost;
   const double lq =
-      vp9_convert_qindex_to_q(avg_frame_qindex, frame_info->bit_depth);
+    vp9_convert_qindex_to_q(avg_frame_qindex, frame_info->bit_depth);
   const double boost_q_correction = VPXMIN((0.5 + (lq * 0.015)), 1.5);
   const double active_area = calculate_active_area(frame_info, this_frame);
 
   // Underlying boost factor is based on inter error ratio.
-  frame_boost = (BASELINE_ERR_PER_MB * active_area) /
-                DOUBLE_DIVIDE_CHECK(this_frame->coded_error);
+  frame_boost = (baseline_err_per_mb * active_area) /
+    DOUBLE_DIVIDE_CHECK(this_frame->coded_error);
 
   // Small adjustment for cases where there is a zoom out
   if (this_frame_mv_in_out > 0.0)
@@ -1929,7 +1981,7 @@ static double calc_frame_boost(const FRAME_INFO *frame_info,
   // Q correction and scalling
   frame_boost = frame_boost * boost_q_correction;
 
-  return VPXMIN(frame_boost, GF_MAX_BOOST * boost_q_correction);
+  return VPXMIN(frame_boost, gf_max_boost * boost_q_correction);
 }
 
 static double kf_err_per_mb(VP9_COMP *cpi) {
@@ -1939,11 +1991,47 @@ static double kf_err_per_mb(VP9_COMP *cpi) {
   // Use a different error per mb factor for calculating boost for
   //  different formats.
   if (screen_area < 1280 * 720) {
-    return 2000.0;
+    return kf_err_per_mb_low_res;
   } else if (screen_area < 1920 * 1080) {
-    return 500.0;
+    return kf_err_per_mb_hd;
   }
-  return 250.0;
+  return kf_err_per_mb_base;
+}
+
+
+static double old_calc_kf_frame_boost(VP9_COMP *cpi,
+  const FIRSTPASS_STATS *this_frame,
+  double *sr_accumulator,
+  double this_frame_mv_in_out,
+  double max_boost) {
+  double frame_boost;
+  const double lq = vp9_convert_qindex_to_q(
+    cpi->rc.avg_frame_qindex[INTER_FRAME], cpi->common.bit_depth);
+  const double boost_q_correction = VPXMIN((0.50 + (lq * 0.015)), 2.00);
+  const double active_area =
+    calculate_active_area(&cpi->frame_info, this_frame);
+
+  // Underlying boost factor is based on inter error ratio.
+  frame_boost = (kf_err_per_mb(cpi) * active_area) /
+    DOUBLE_DIVIDE_CHECK(this_frame->coded_error + *sr_accumulator);
+
+  // Update the accumulator for second ref error difference.
+  // This is intended to give an indication of how much the coded error is
+  // increasing over time.
+  *sr_accumulator += (this_frame->sr_coded_error - this_frame->coded_error);
+  *sr_accumulator = VPXMAX(0.0, *sr_accumulator);
+
+  // Small adjustment for cases where there is a zoom out
+  if (this_frame_mv_in_out > 0.0)
+    frame_boost += frame_boost * (this_frame_mv_in_out * 2.0);
+
+  // Q correction and scaling
+  // The 40.0 value here is an experimentally derived baseline minimum.
+  // This value is in line with the minimum per frame boost in the alt_ref
+  // boost calculation.
+  frame_boost = ((frame_boost + 40.0) * boost_q_correction);
+
+  return VPXMIN(frame_boost, max_boost * boost_q_correction);
 }
 
 static double calc_kf_frame_boost(VP9_COMP *cpi,
@@ -1965,8 +2053,14 @@ static double calc_kf_frame_boost(VP9_COMP *cpi,
   // Update the accumulator for second ref error difference.
   // This is intended to give an indication of how much the coded error is
   // increasing over time.
-  *sr_accumulator += (this_frame->sr_coded_error - this_frame->coded_error);
-  *sr_accumulator = VPXMAX(0.0, *sr_accumulator);
+  if (this_frame->intra_error > 0) {
+    *sr_accumulator -= (this_frame->sr_coded_error - this_frame->coded_error) /
+                       this_frame->intra_error;
+    *sr_accumulator = VPXMAX(0.0, *sr_accumulator);
+  }
+
+  // Adjust boost based on accumulated second reference decay.
+  frame_boost *= *sr_accumulator;
 
   // Small adjustment for cases where there is a zoom out
   if (this_frame_mv_in_out > 0.0)
@@ -2016,9 +2110,9 @@ static int compute_arf_boost(const FRAME_INFO *frame_info,
     // Accumulate the effect of prediction quality decay.
     if (!flash_detected) {
       decay_accumulator *= get_prediction_decay_rate(frame_info, this_frame);
-      decay_accumulator = decay_accumulator < MIN_DECAY_FACTOR
-                              ? MIN_DECAY_FACTOR
-                              : decay_accumulator;
+      decay_accumulator = decay_accumulator < min_decay_factor
+        ? min_decay_factor
+        : decay_accumulator;
     }
     boost_score += decay_accumulator * calc_frame_boost(frame_info, this_frame,
                                                         avg_frame_qindex,
@@ -2056,9 +2150,9 @@ static int compute_arf_boost(const FRAME_INFO *frame_info,
     // Cumulative effect of prediction quality decay.
     if (!flash_detected) {
       decay_accumulator *= get_prediction_decay_rate(frame_info, this_frame);
-      decay_accumulator = decay_accumulator < MIN_DECAY_FACTOR
-                              ? MIN_DECAY_FACTOR
-                              : decay_accumulator;
+      decay_accumulator = decay_accumulator < min_decay_factor
+        ? min_decay_factor
+        : decay_accumulator;
     }
     boost_score += decay_accumulator * calc_frame_boost(frame_info, this_frame,
                                                         avg_frame_qindex,
@@ -2068,7 +2162,7 @@ static int compute_arf_boost(const FRAME_INFO *frame_info,
 
   if (arf_boost < ((b_frames + f_frames) * 40))
     arf_boost = ((b_frames + f_frames) * 40);
-  arf_boost = VPXMAX(arf_boost, MIN_ARF_GF_BOOST);
+  arf_boost = VPXMAX(arf_boost, min_arf_gf_boost);
 
   return arf_boost;
 }
@@ -2155,7 +2249,7 @@ static int calculate_boost_bits(int frame_count, int boost,
   // return 0 for invalid inputs (could arise e.g. through rounding errors)
   if (!boost || (total_group_bits <= 0) || (frame_count < 0)) return 0;
 
-  allocation_chunks = (frame_count * NORMAL_BOOST) + boost;
+  allocation_chunks = (frame_count * normal_boost) + boost;
 
   // Prevent overflow.
   if (boost > 1023) {
@@ -2210,7 +2304,7 @@ static void find_arf_order(VP9_COMP *cpi, GF_GROUP *gf_group,
       gf_group->frame_gop_index[*index_counter] = idx;
       gf_group->rf_level[*index_counter] = INTER_NORMAL;
       gf_group->layer_depth[*index_counter] = depth;
-      gf_group->gfu_boost[*index_counter] = NORMAL_BOOST;
+      gf_group->gfu_boost[*index_counter] = normal_boost;
       ++(*index_counter);
     }
     gf_group->max_layer_depth = VPXMAX(gf_group->max_layer_depth, depth);
@@ -2230,7 +2324,7 @@ static void find_arf_order(VP9_COMP *cpi, GF_GROUP *gf_group,
     if (EOF == input_stats(twopass, &fpf_frame)) break;
 
   gf_group->gfu_boost[*index_counter] =
-      VPXMAX(MIN_ARF_GF_BOOST,
+      VPXMAX(min_arf_gf_boost,
              calc_arf_boost(cpi, end - mid + 1, mid - start) >> depth);
 
   reset_fpf_position(twopass, start_pos);
@@ -2256,7 +2350,7 @@ static INLINE void set_gf_overlay_frame_type(GF_GROUP *gf_group,
     gf_group->update_type[frame_index] = OVERLAY_UPDATE;
     gf_group->rf_level[frame_index] = INTER_NORMAL;
     gf_group->layer_depth[frame_index] = MAX_ARF_LAYERS - 1;
-    gf_group->gfu_boost[frame_index] = NORMAL_BOOST;
+    gf_group->gfu_boost[frame_index] = normal_boost;
   } else {
     gf_group->update_type[frame_index] = GF_UPDATE;
     gf_group->rf_level[frame_index] = GF_ARF_STD;
@@ -2646,16 +2740,23 @@ static RANGE get_active_gf_inverval_range(
                    : (int)(vp9_convert_qindex_to_q(last_boosted_qindex,
                                                    frame_info->bit_depth) /
                            6);
+  // active_gf_interval.min =
+  //     rc->min_gf_interval + arf_active_or_kf + VPXMIN(2, int_max_q / 200);
+  // active_gf_interval.min =
+  //     VPXMIN(active_gf_interval.min, rc->max_gf_interval + arf_active_or_kf);
   active_gf_interval.min =
-      rc->min_gf_interval + arf_active_or_kf + VPXMIN(2, int_max_q / 200);
+    rc->min_gf_interval + arf_active_or_kf +
+    VPXMIN(2, int_max_q / opt_min_active_gf_interval_rate);
   active_gf_interval.min =
-      VPXMIN(active_gf_interval.min, rc->max_gf_interval + arf_active_or_kf);
+    VPXMIN(active_gf_interval.min, rc->max_gf_interval + arf_active_or_kf);
 
   // The value chosen depends on the active Q range. At low Q we have
   // bits to spare and are better with a smaller interval and smaller boost.
   // At high Q when there are few bits to spare we are better with a longer
   // interval to spread the cost of the GF.
-  active_gf_interval.max = 11 + arf_active_or_kf + VPXMIN(5, q_term);
+  // active_gf_interval.max = 11 + arf_active_or_kf + VPXMIN(5, q_term);
+  active_gf_interval.max =
+    opt_max_active_gf_interval_base + arf_active_or_kf + VPXMIN(5, q_term);
 
   // Force max GF interval to be odd.
   active_gf_interval.max = active_gf_interval.max | 0x01;
@@ -2681,7 +2782,7 @@ static RANGE get_active_gf_inverval_range(
 }
 
 static int get_arf_layers(int multi_layer_arf, int max_layers,
-                          int coding_frame_num) {
+  int coding_frame_num) {
   assert(max_layers <= MAX_ARF_LAYERS);
   if (multi_layer_arf) {
     int layers = 0;
@@ -2800,7 +2901,7 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
     const int arf_boost =
         compute_arf_boost(frame_info, first_pass_info, gld_show_idx, f_frames,
                           b_frames, avg_inter_frame_qindex);
-    rc->gfu_boost = VPXMIN(MAX_GF_BOOST, arf_boost);
+    rc->gfu_boost = VPXMIN(max_gf_boost, arf_boost);
     rc->source_alt_ref_pending = 0;
   }
 
@@ -2813,8 +2914,8 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
       // Increase the active best quality in the second half of key frame
       // interval.
       rc->arf_active_best_quality_adjustment_factor =
-          LAST_ALR_ACTIVE_BEST_QUALITY_ADJUSTMENT_FACTOR +
-          (1.0 - LAST_ALR_ACTIVE_BEST_QUALITY_ADJUSTMENT_FACTOR) *
+        last_alr_active_best_quality_adjustment_factor +
+          (1.0 - last_alr_active_best_quality_adjustment_factor) *
               (rc->frames_to_key - gop_coding_frames) /
               (VPXMAX(1, ((rc->frames_to_key + rc->frames_since_key) / 2 -
                           gop_coding_frames)));
@@ -2822,8 +2923,8 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
     } else if ((rc->frames_to_key - gop_coding_frames) > 0) {
       // Reduce the active best quality in the first half of key frame interval.
       rc->arf_active_best_quality_adjustment_factor =
-          LAST_ALR_ACTIVE_BEST_QUALITY_ADJUSTMENT_FACTOR +
-          (1.0 - LAST_ALR_ACTIVE_BEST_QUALITY_ADJUSTMENT_FACTOR) *
+        last_alr_active_best_quality_adjustment_factor +
+          (1.0 - last_alr_active_best_quality_adjustment_factor) *
               (rc->frames_since_key + gop_coding_frames) /
               (VPXMAX(1, (rc->frames_to_key + rc->frames_since_key) / 2 +
                              gop_coding_frames));
@@ -2843,7 +2944,7 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
   // make consistent quality across consecutive frames. It will hurt objective
   // quality.
   if (oxcf->aq_mode == PERCEPTUAL_AQ)
-    rc->gfu_boost = VPXMIN(rc->gfu_boost, MIN_ARF_GF_BOOST);
+    rc->gfu_boost = VPXMIN(rc->gfu_boost, min_arf_gf_boost);
 
   rc->baseline_gf_interval = gop_coding_frames - rc->source_alt_ref_pending;
 
@@ -2904,6 +3005,9 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
         group_av_noise, vbr_group_bits_per_frame);
     twopass->active_worst_quality =
         (tmp_q + (twopass->active_worst_quality * 3)) >> 2;
+        /* (int)((tmp_q + (twopass->active_worst_quality *
+          (avg_active_worst_quality_weight_factor - 1))) /
+          avg_active_worst_quality_weight_factor); */
 
 #if CONFIG_ALWAYS_ADJUST_BPM
     // Reset rolling actual and target bits counters for ARF groups.
@@ -3123,13 +3227,13 @@ static int test_candidate_kf(const FIRST_PASS_INFO *first_pass_info,
 #define MIN_SCAN_FRAMES_FOR_KF_BOOST 32
 #define KF_ABS_ZOOM_THRESH 6.0
 
-#ifdef AGGRESSIVE_VBR
+/* #ifdef AGGRESSIVE_VBR
 #define KF_MAX_FRAME_BOOST 80.0
 #define MAX_KF_TOT_BOOST 4800
 #else
 #define KF_MAX_FRAME_BOOST 96.0
 #define MAX_KF_TOT_BOOST 5400
-#endif
+#endif */
 
 int vp9_get_frames_to_next_key(const VP9EncoderConfig *oxcf,
                                const FRAME_INFO *frame_info,
@@ -3216,6 +3320,7 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
   double kf_mod_err = 0.0;
   double kf_raw_err = 0.0;
   double kf_group_err = 0.0;
+  // double sr_accumulator = 0.0;
   double sr_accumulator = 0.0;
   double abs_mv_in_out_accumulator = 0.0;
   const double av_err = get_distribution_av_err(cpi, twopass);
@@ -3343,9 +3448,10 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
       // a key frame because either the lag has not built up (in the case of
       // the first key frame or it points to a refernce before the new key
       // frame.
-      if (i < 2) sr_accumulator = 0.0;
+      // if (i < 2) sr_accumulator = 0.0;
+      if (i < 2) sr_accumulator = 1.0;
       frame_boost = calc_kf_frame_boost(cpi, &next_frame, &sr_accumulator, 0,
-                                        KF_MAX_FRAME_BOOST * zm_factor);
+                                        kf_max_frame_boost * zm_factor);
 
       boost_score += frame_boost;
 
@@ -3355,7 +3461,9 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
 
       if ((frame_boost < 25.00) ||
           (abs_mv_in_out_accumulator > KF_ABS_ZOOM_THRESH) ||
-          (sr_accumulator > (kf_raw_err * 1.50)))
+          sr_accumulator < 0.25)
+        //(abs_mv_in_out_accumulator > KF_ABS_ZOOM_THRESH) ||
+        //(sr_accumulator > (kf_raw_err * 1.50)))
         break;
     } else {
       break;
@@ -3374,12 +3482,12 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
   // Special case for static / slide show content but dont apply
   // if the kf group is very short.
   if ((zero_motion_accumulator > 0.99) && (rc->frames_to_key > 8)) {
-    rc->kf_boost = MAX_KF_TOT_BOOST;
+    rc->kf_boost = max_kf_tot_boost;
   } else {
     // Apply various clamps for min and max boost
     rc->kf_boost = VPXMAX((int)boost_score, (rc->frames_to_key * 3));
-    rc->kf_boost = VPXMAX(rc->kf_boost, MIN_KF_TOT_BOOST);
-    rc->kf_boost = VPXMIN(rc->kf_boost, MAX_KF_TOT_BOOST);
+    rc->kf_boost = VPXMAX(rc->kf_boost, min_kf_tot_boost);
+    rc->kf_boost = VPXMIN(rc->kf_boost, max_kf_tot_boost);
   }
 
   // Work out how many bits to allocate for the key frame itself.
@@ -3434,6 +3542,96 @@ static int is_skippable_frame(const VP9_COMP *cpi) {
           twopass->stats_in->pcnt_inter - twopass->stats_in->pcnt_motion == 1);
 }
 
+// Configure screen area specific vizier parameters.
+static void configure_vizier_params(int screen_area)
+{
+  if (screen_area <= 176 * 144) {
+    avg_active_worst_quality_weight_factor = 46.0;
+    baseline_err_per_mb = 37597.399760969536;
+    default_decay_limit	= 0.3905639800962774;
+    gf_max_boost = 87.27362648627846;
+    kf_err_per_mb_low_res = 1854.8255436877148;
+    kf_max_frame_boost = 25.5;
+    sr_diff_part = 0.009599023654146284;
+    zm_power_factor = 2.93715229184991;
+  }  else if (screen_area <= 320 * 240) {
+    avg_active_worst_quality_weight_factor = 55.0;
+    baseline_err_per_mb	= 34525.33177195309;
+    default_decay_limit	= 0.23901360046804604;
+    gf_max_boost = 127.34978204980285;
+    kf_err_per_mb_low_res = 723.8337508755031;
+    kf_max_frame_boost = 185.0;
+    sr_diff_part = 0.008581014394766773;
+    zm_power_factor = 3.5299221493593413;
+  }  else if (screen_area <= 640 * 360) {
+    avg_active_worst_quality_weight_factor = 12.5;
+    baseline_err_per_mb	= 18823.978018028298;
+    default_decay_limit	= 0.6043527690301296;
+    gf_max_boost = 75.17672317013668;
+    kf_err_per_mb_low_res = 422.2871502380377;
+    kf_max_frame_boost = 224.5;
+    sr_diff_part = 0.00343296783885544;
+    zm_power_factor = 2.265742666649307;
+  } else if (screen_area <= 854 * 480) {
+    avg_active_worst_quality_weight_factor = 51.5;
+    baseline_err_per_mb	= 33718.98307662595;
+    default_decay_limit	= 0.33633414970713393;
+    gf_max_boost = 85.2868528581522;
+    kf_err_per_mb_low_res = 1513.4883914008383;
+    kf_max_frame_boost = 28.0;
+    sr_diff_part = 0.00868988716928333;
+    zm_power_factor = 3.552278528517416;
+    /*
+    avg_active_worst_quality_weight_factor = AV_WQ_FACTOR;
+    baseline_err_per_mb	= BASELINE_ERR_PER_MB;
+    default_decay_limit	= DEFAULT_DECAY_LIMIT;
+    gf_max_boost = GF_MAX_BOOST;
+    kf_err_per_mb_low_res = DEF_EPMB_LOW;
+    kf_max_frame_boost = KF_MAX_FRAME_BOOST;
+    sr_diff_part = SR_DIFF_PART;
+    zm_power_factor = ZM_POWER_FACTOR;
+    */
+  } else if (screen_area <= 1280 * 720)  {
+    avg_active_worst_quality_weight_factor = 41.5;
+    baseline_err_per_mb	= 29527.46375825401;
+    default_decay_limit	= 0.5009117586299728;
+    gf_max_boost = 81.00472969483079;
+    kf_err_per_mb_low_res = 998.6342911785146;
+    kf_max_frame_boost = 53.0;
+    sr_diff_part = 0.005007364627260114;
+    zm_power_factor = 2.568627575572356;
+  } else if (screen_area <= 1920 * 1080) {
+    avg_active_worst_quality_weight_factor = 31.0;
+    baseline_err_per_mb	= 34474.723463367416;
+    default_decay_limit = 0.23346886902707745;
+    gf_max_boost = 213.29402303604797;
+    kf_err_per_mb_hd = 35931.25734431429;
+    kf_max_frame_boost = 419.5;
+    sr_diff_part = 0.011431716637966029;
+    zm_power_factor = 5.5776463538431935;
+  } else {
+    // Default parameters
+    avg_active_worst_quality_weight_factor = AV_WQ_FACTOR; // 51.5;
+    baseline_err_per_mb	= BASELINE_ERR_PER_MB; // 33718.98307662595;
+    default_decay_limit	= DEFAULT_DECAY_LIMIT; // 0.33633414970713393;
+    gf_max_boost = GF_MAX_BOOST; // 85.2868528581522;
+    kf_err_per_mb_low_res = DEF_EPMB_LOW; // 1513.4883914008383;
+    kf_max_frame_boost = KF_MAX_FRAME_BOOST; // 28.0;
+    sr_diff_part = SR_DIFF_PART; // 0.00868988716928333;
+    zm_power_factor = ZM_POWER_FACTOR; // 3.552278528517416;
+  }
+
+  // Forced deafults
+  avg_active_worst_quality_weight_factor = AV_WQ_FACTOR; // 51.5
+  baseline_err_per_mb	= BASELINE_ERR_PER_MB; // 33718.98307662595;
+  default_decay_limit	= DEFAULT_DECAY_LIMIT; // 0.33633414970713393;
+  gf_max_boost = GF_MAX_BOOST; // 85.2868528581522;
+  kf_err_per_mb_low_res = DEF_EPMB_LOW; // 1513.4883914008383;
+  kf_max_frame_boost = 96; // 28.0;
+  sr_diff_part = SR_DIFF_PART; // 0.00868988716928333;
+  zm_power_factor = ZM_POWER_FACTOR; // 3.552278528517416;
+}
+
 void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -3443,6 +3641,13 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   const int show_idx = cm->current_video_frame;
 
   if (!twopass->stats_in) return;
+
+  // Configure image size specific vizier parameters
+  if (cm->current_video_frame == 0) {
+    unsigned int screen_area = (cm->width * cm->height);
+
+    configure_vizier_params(screen_area);
+  }
 
   // If this is an arf frame then we dont want to read the stats file or
   // advance the input pointer as we already have what we need.
@@ -3569,9 +3774,9 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
   subtract_stats(&twopass->total_left_stats, &this_frame);
 }
 
-#define MINQ_ADJ_LIMIT 48
-#define MINQ_ADJ_LIMIT_CQ 20
-#define HIGH_UNDERSHOOT_RATIO 2
+// #define MINQ_ADJ_LIMIT 48
+// #define MINQ_ADJ_LIMIT_CQ 20
+// #define HIGH_UNDERSHOOT_RATIO 2
 void vp9_twopass_postencode_update(VP9_COMP *cpi) {
   TWO_PASS *const twopass = &cpi->twopass;
   RATE_CONTROL *const rc = &cpi->rc;
@@ -3613,7 +3818,7 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
     const int maxq_adj_limit =
         rc->worst_quality - twopass->active_worst_quality;
     const int minq_adj_limit =
-        (cpi->oxcf.rc_mode == VPX_CQ ? MINQ_ADJ_LIMIT_CQ : MINQ_ADJ_LIMIT);
+        (cpi->oxcf.rc_mode == VPX_CQ ? min_adj_limit_cq : minq_adj_limit);
     int aq_extend_min = 0;
     int aq_extend_max = 0;
 
@@ -3665,7 +3870,7 @@ void vp9_twopass_postencode_update(VP9_COMP *cpi) {
     // frame is unexpectedly almost perfectly predicted by the ARF or GF
     // but not very well predcited by the previous frame.
     if (!frame_is_kf_gf_arf(cpi) && !cpi->rc.is_src_frame_alt_ref) {
-      int fast_extra_thresh = rc->base_frame_target / HIGH_UNDERSHOOT_RATIO;
+      int fast_extra_thresh = rc->base_frame_target / high_undershoot_ratio;
       if (rc->projected_frame_size < fast_extra_thresh) {
         rc->vbr_bits_off_target_fast +=
             fast_extra_thresh - rc->projected_frame_size;
