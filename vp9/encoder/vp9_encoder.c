@@ -7855,7 +7855,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 
   // Find a free buffer for the new frame, releasing the reference previously
   // held.
-  if (cm->new_fb_idx != INVALID_IDX) {
+  if (!(cpi->use_svc && cpi->svc.use_base_mv &&
+        cpi->svc.number_spatial_layers > 1 &&
+        cpi->svc.spatial_layer_id != cpi->svc.number_spatial_layers - 1) &&
+      cm->new_fb_idx != INVALID_IDX) {
     --pool->frame_bufs[cm->new_fb_idx].ref_count;
   }
   cm->new_fb_idx = get_free_fb(cm);
