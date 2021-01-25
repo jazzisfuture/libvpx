@@ -19,6 +19,7 @@
 #endif
 
 #include "vp9/decoder/vp9_detokenize.h"
+#include "vpx_util/endian_inl.h"
 
 #define EOB_CONTEXT_NODE 0
 #define ZERO_CONTEXT_NODE 1
@@ -285,6 +286,10 @@ int vp9_decode_block_tokens(TileWorkerData *twd, int plane,
   int ctx_shift_a = 0;
   int ctx_shift_l = 0;
 
+  uint16_t va16 = 0, vl16 = 0;
+  uint32_t va32 = 0, vl32 = 0;
+  uint64_t va64 = 0, vl64 = 0;
+
   switch (tx_size) {
     case TX_4X4:
       ctx = a[0] != 0;
@@ -299,8 +304,10 @@ int vp9_decode_block_tokens(TileWorkerData *twd, int plane,
       ctx += !!*(const uint16_t *)l;
       eob = decode_coefs(xd, get_plane_type(plane), pd->dqcoeff, tx_size,
                          dequant, ctx, sc->scan, sc->neighbors, r);
-      *(uint16_t *)a = ((eob > 0) * 0x0101) >> ctx_shift_a;
-      *(uint16_t *)l = ((eob > 0) * 0x0101) >> ctx_shift_l;
+      va16 = HToLE16(((eob > 0) * 0x0101) >> ctx_shift_a);
+      vl16 = HToLE16(((eob > 0) * 0x0101) >> ctx_shift_l);
+      memcpy(a, &va16, sizeof(uint16_t));
+      memcpy(l, &vl16, sizeof(uint16_t));
       break;
     case TX_16X16:
       get_ctx_shift(xd, &ctx_shift_a, &ctx_shift_l, x, y, 1 << TX_16X16);
@@ -308,8 +315,10 @@ int vp9_decode_block_tokens(TileWorkerData *twd, int plane,
       ctx += !!*(const uint32_t *)l;
       eob = decode_coefs(xd, get_plane_type(plane), pd->dqcoeff, tx_size,
                          dequant, ctx, sc->scan, sc->neighbors, r);
-      *(uint32_t *)a = ((eob > 0) * 0x01010101) >> ctx_shift_a;
-      *(uint32_t *)l = ((eob > 0) * 0x01010101) >> ctx_shift_l;
+      va32 = HToLE32(((eob > 0) * 0x01010101) >> ctx_shift_a);
+      vl32 = HToLE32(((eob > 0) * 0x01010101) >> ctx_shift_l);
+      memcpy(a, &va32, sizeof(uint32_t));
+      memcpy(l, &vl32, sizeof(uint32_t));
       break;
     case TX_32X32:
       get_ctx_shift(xd, &ctx_shift_a, &ctx_shift_l, x, y, 1 << TX_32X32);
@@ -320,8 +329,10 @@ int vp9_decode_block_tokens(TileWorkerData *twd, int plane,
       ctx += !!*(const uint64_t *)l;
       eob = decode_coefs(xd, get_plane_type(plane), pd->dqcoeff, tx_size,
                          dequant, ctx, sc->scan, sc->neighbors, r);
-      *(uint64_t *)a = ((eob > 0) * 0x0101010101010101ULL) >> ctx_shift_a;
-      *(uint64_t *)l = ((eob > 0) * 0x0101010101010101ULL) >> ctx_shift_l;
+      va64 = HToLE64(((eob > 0) * 0x0101010101010101ULL) >> ctx_shift_a);
+      vl64 = HToLE64(((eob > 0) * 0x0101010101010101ULL) >> ctx_shift_l);
+      memcpy(a, &va64, sizeof(uint64_t));
+      memcpy(l, &vl64, sizeof(uint64_t));
       break;
     default:
       assert(0 && "Invalid transform size.");

@@ -37,15 +37,19 @@
 #endif
 
 #if defined(WORDS_BIGENDIAN)
+#define HToLE64 BSwap64
 #define HToLE32 BSwap32
 #define HToLE16 BSwap16
 #define HToBE64(x) (x)
 #define HToBE32(x) (x)
+#define HToBE16(x) (x)
 #else
+#define HToLE64(x) (x)
 #define HToLE32(x) (x)
 #define HToLE16(x) (x)
 #define HToBE64(X) BSwap64(X)
 #define HToBE32(X) BSwap32(X)
+#define HToBE16(x) BSwap16(x)
 #endif
 
 #if LOCAL_GCC_PREREQ(4, 8) || __has_builtin(__builtin_bswap16)
