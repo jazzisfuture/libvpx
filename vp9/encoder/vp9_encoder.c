@@ -2317,6 +2317,7 @@ VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
   cpi->frame_info = vp9_get_frame_info(oxcf);
 
   vp9_rc_init(&cpi->oxcf, oxcf->pass, &cpi->rc);
+  vp9_init_rd_parameters(cpi);
 
   init_frame_indexes(cm);
   cpi->partition_search_skippable_frame = 0;
@@ -7220,7 +7221,9 @@ static void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   xd->cur_buf = this_frame;
 
   // Get rd multiplier set up.
+  vpx_clear_system_state();
   rdmult = vp9_compute_rd_mult_based_on_qindex(cpi, tpl_frame->base_qindex);
+  vpx_clear_system_state();
   set_error_per_bit(&cpi->td.mb, rdmult);
   vp9_initialize_me_consts(cpi, &cpi->td.mb, tpl_frame->base_qindex);
 
