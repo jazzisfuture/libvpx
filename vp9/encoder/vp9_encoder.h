@@ -978,6 +978,16 @@ typedef struct VP9_COMP {
   RATE_QSTEP_MODEL rq_model[ENCODE_FRAME_TYPES];
 #endif
   EXT_RATECTRL ext_ratectrl;
+
+  // Vizier project experimental RD parameters.
+  // TODO(paulwilkins): These may ultimately need to be in a different location.
+  double rd_mult_q_sq_inter_low_qp;
+  double rd_mult_q_sq_inter_mid_qp;
+  double rd_mult_q_sq_inter_high_qp;
+  double rd_mult_q_sq_key_ultralow_qp;
+  double rd_mult_q_sq_key_low_qp;
+  double rd_mult_q_sq_key_mid_qp;
+  double rd_mult_q_sq_key_high_qp;
 } VP9_COMP;
 
 #if CONFIG_RATE_CTRL
