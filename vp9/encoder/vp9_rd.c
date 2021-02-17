@@ -197,27 +197,92 @@ static const int rd_boost_factor[16] = { 64, 32, 32, 32, 24, 16, 12, 12,
 static const int rd_frame_type_factor[FRAME_UPDATE_TYPES] = { 128, 144, 128,
                                                               128, 144, 144 };
 
-int vp9_compute_rd_mult_based_on_qindex(const VP9_COMP *cpi, int qindex) {
-  // largest dc_quant is 21387, therefore rdmult should always fit in int32_t
+// Configure Vizier RD parameters.
+// Later this function will use passed in command line values.
+static void set_rd_parameters(VP9_COMP *cpi) {
+  RATE_CONTROL *const rc = &cpi->rc;
+  unsigned int screen_area = (cpi->common.width * cpi->common.height);
+
+  if (1) {
+    // Non/pre-Vizer defaults
+    rc->rd_mult_q_sq_inter_low_qp = 4.0;
+    rc->rd_mult_q_sq_inter_mid_qp = 4.5;
+    rc->rd_mult_q_sq_inter_high_qp = 3.0;
+    rc->rd_mult_q_sq_key_ultralow_qp = 4.0;
+    rc->rd_mult_q_sq_key_low_qp = 3.5;
+    rc->rd_mult_q_sq_key_mid_qp = 4.5;
+    rc->rd_mult_q_sq_key_high_qp = 7.5;
+  } else if (screen_area <= 176 * 144) {
+    rc->rd_mult_q_sq_inter_high_qp = 4.295745965132044;
+    rc->rd_mult_q_sq_inter_low_qp = 4.0718581295922025;
+    rc->rd_mult_q_sq_inter_mid_qp = 4.031435609256739;
+    rc->rd_mult_q_sq_key_low_qp = 5.7037775720838155;
+    rc->rd_mult_q_sq_key_mid_qp = 4.72424015517201;
+    rc->rd_mult_q_sq_key_ultralow_qp = 4.290774097327333;
+  } else if (screen_area <= 320 * 240) {
+    rc->rd_mult_q_sq_inter_high_qp = 4.388244213131458;
+    rc->rd_mult_q_sq_inter_low_qp = 4.506676356706102;
+    rc->rd_mult_q_sq_inter_mid_qp = 4.489349899621181;
+    rc->rd_mult_q_sq_key_low_qp = 4.497000582319771;
+    rc->rd_mult_q_sq_key_mid_qp = 4.2825894884789735;
+    rc->rd_mult_q_sq_key_ultralow_qp = 4.217074424696166;
+  } else if (screen_area <= 640 * 360) {
+    rc->rd_mult_q_sq_inter_high_qp = 4.3702861603380025;
+    rc->rd_mult_q_sq_inter_low_qp = 4.730644123689013;
+    rc->rd_mult_q_sq_inter_mid_qp = 4.314589509578551;
+    rc->rd_mult_q_sq_key_low_qp = 6.068652999601526;
+    rc->rd_mult_q_sq_key_mid_qp = 4.817707474077241;
+    rc->rd_mult_q_sq_key_ultralow_qp = 4.576902541873747;
+  } else if (screen_area <= 854 * 480) {
+    rc->rd_mult_q_sq_inter_high_qp = 3.969083125219539;
+    rc->rd_mult_q_sq_inter_low_qp = 4.811470143416073;
+    rc->rd_mult_q_sq_inter_mid_qp = 4.621618127750201;
+    rc->rd_mult_q_sq_key_low_qp = 5.073157238799473;
+    rc->rd_mult_q_sq_key_mid_qp = 5.7587672849242635;
+    rc->rd_mult_q_sq_key_ultralow_qp = 4.9854544277222566;
+  } else if (screen_area <= 1280 * 720) {
+    rc->rd_mult_q_sq_inter_high_qp = 4.410712348825541;
+    rc->rd_mult_q_sq_inter_low_qp = 5.119381136011107;
+    rc->rd_mult_q_sq_inter_mid_qp = 4.518613675766538;
+    rc->rd_mult_q_sq_key_low_qp = 5.848703119971484;
+    rc->rd_mult_q_sq_key_mid_qp = 5.368947246228739;
+    rc->rd_mult_q_sq_key_ultralow_qp = 3.9468491666607326;
+  } else if (screen_area <= 1920 * 1080) {
+    rc->rd_mult_q_sq_inter_high_qp = 3.2141187537667797;
+    rc->rd_mult_q_sq_inter_low_qp = 6.00569815296199;
+    rc->rd_mult_q_sq_inter_mid_qp = 3.932565684947023;
+    rc->rd_mult_q_sq_key_low_qp = 10.582906599488298;
+    rc->rd_mult_q_sq_key_mid_qp = 6.274162346360692;
+    rc->rd_mult_q_sq_key_ultralow_qp = 4.399795006320089;
+  }
+}
+
+int vp9_compute_rd_mult_based_on_qindex(VP9_COMP *cpi, int qindex) {
+  const RATE_CONTROL *const rc = &cpi->rc;
   const int q = vp9_dc_quant(qindex, 0, cpi->common.bit_depth);
-  uint32_t rdmult = q * q;
+  // largest dc_quant is 21387, therefore rdmult should fit in int32_t
+  int rdmult = q * q;
+
+  set_rd_parameters(cpi);
 
   if (cpi->common.frame_type != KEY_FRAME) {
-    if (qindex < 128)
-      rdmult = rdmult * 4;
-    else if (qindex < 190)
-      rdmult = rdmult * 4 + rdmult / 2;
-    else
-      rdmult = rdmult * 3;
+    if (qindex < 128) {
+      rdmult = (int)(rdmult * rc->rd_mult_q_sq_inter_low_qp);
+    } else if (qindex < 190) {
+      rdmult = (int)(rdmult * rc->rd_mult_q_sq_inter_mid_qp);
+    } else {
+      rdmult = (int)(rdmult * rc->rd_mult_q_sq_inter_high_qp);
+    }
   } else {
-    if (qindex < 64)
-      rdmult = rdmult * 4;
-    else if (qindex <= 128)
-      rdmult = rdmult * 3 + rdmult / 2;
-    else if (qindex < 190)
-      rdmult = rdmult * 4 + rdmult / 2;
-    else
-      rdmult = rdmult * 7 + rdmult / 2;
+    if (qindex < 64) {
+      rdmult = (int)(rdmult * rc->rd_mult_q_sq_key_ultralow_qp);
+    } else if (qindex <= 128) {
+      rdmult = (int)(rdmult * rc->rd_mult_q_sq_key_low_qp);
+    } else if (qindex < 190) {
+      rdmult = (int)(rdmult * rc->rd_mult_q_sq_key_mid_qp);
+    } else {
+      rdmult = (int)(rdmult * rc->rd_mult_q_sq_key_high_qp);
+    }
   }
 #if CONFIG_VP9_HIGHBITDEPTH
   switch (cpi->common.bit_depth) {
@@ -245,12 +310,12 @@ static int modulate_rdmult(const VP9_COMP *cpi, int rdmult) {
   return (int)rdmult_64;
 }
 
-int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
+int vp9_compute_rd_mult(VP9_COMP *cpi, int qindex) {
   int rdmult = vp9_compute_rd_mult_based_on_qindex(cpi, qindex);
   return modulate_rdmult(cpi, rdmult);
 }
 
-int vp9_get_adaptive_rdmult(const VP9_COMP *cpi, double beta) {
+int vp9_get_adaptive_rdmult(VP9_COMP *cpi, double beta) {
   int rdmult =
       vp9_compute_rd_mult_based_on_qindex(cpi, cpi->common.base_qindex);
   rdmult = (int)((double)rdmult / beta);
