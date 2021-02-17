@@ -204,6 +204,28 @@ typedef struct {
   int preserve_arf_as_gld;
   int preserve_next_arf_as_gld;
   int show_arf_as_gld;
+
+  // Vizeir project experimental rate control parameters.
+  double active_wq_factor;
+  double base_err_per_mb;
+  double sr_default_decay_limit;
+  double sr_diff_part;
+  double kf_frame_max_boost_first;  // Max for first kf in a chunk.
+  double kf_frame_max_boost_subs;   // Max for subsequent mid chunk kfs.
+  double kf_max_total_boost;
+  double kf_err_per_mb;
+  double gf_frame_max_boost;
+  double gf_max_total_boost;
+  double zm_power_factor;
+
+  // Vizier project RD related parameters.
+  double rd_mult_q_sq_inter_low_qp;
+  double rd_mult_q_sq_inter_mid_qp;
+  double rd_mult_q_sq_inter_high_qp;
+  double rd_mult_q_sq_key_ultralow_qp;
+  double rd_mult_q_sq_key_low_qp;
+  double rd_mult_q_sq_key_mid_qp;
+  double rd_mult_q_sq_key_high_qp;
 } RATE_CONTROL;
 
 struct VP9_COMP;
