@@ -144,11 +144,11 @@ struct TileDataEnc;
 struct VP9_COMP;
 struct macroblock;
 
-int vp9_compute_rd_mult_based_on_qindex(const struct VP9_COMP *cpi, int qindex);
+int vp9_compute_rd_mult_based_on_qindex(struct VP9_COMP *cpi, int qindex);
 
-int vp9_compute_rd_mult(const struct VP9_COMP *cpi, int qindex);
+int vp9_compute_rd_mult(struct VP9_COMP *cpi, int qindex);
 
-int vp9_get_adaptive_rdmult(const struct VP9_COMP *cpi, double beta);
+int vp9_get_adaptive_rdmult(struct VP9_COMP *cpi, double beta);
 
 void vp9_initialize_rd_consts(struct VP9_COMP *cpi);
 
