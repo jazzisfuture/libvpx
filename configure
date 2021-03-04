@@ -755,9 +755,9 @@ int z;
 EOF
         ;;
         *)
-            enabled pthread_h && check_add_cxxflags -std=c++11 \
+            enabled pthread_h && check_add_cxxflags -std=gnu++11 \
               && soft_enable unit_tests
-            check_add_cxxflags -std=c++11 && soft_enable webm_io
+            check_add_cxxflags -std=gnu++11 && soft_enable webm_io
             check_cxx "$@" <<EOF && soft_enable libyuv
 int z;
 EOF
