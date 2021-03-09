@@ -250,7 +250,7 @@ void vp9_init_rd_parameters(VP9_COMP *cpi) {
     rdc->rd_mult_q_sq_key_low_qp = 5.848703119971484;
     rdc->rd_mult_q_sq_key_mid_qp = 5.368947246228739;
     rdc->rd_mult_q_sq_key_ultralow_qp = 3.9468491666607326;
-  } else if (screen_area <= 1920 * 1080) {
+  } else {
     rdc->rd_mult_q_sq_inter_high_qp = 3.2141187537667797;
     rdc->rd_mult_q_sq_inter_low_qp = 6.00569815296199;
     rdc->rd_mult_q_sq_inter_mid_qp = 3.932565684947023;
