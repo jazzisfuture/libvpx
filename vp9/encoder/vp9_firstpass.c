@@ -1833,6 +1833,15 @@ void vp9_init_second_pass(VP9_COMP *cpi) {
   twopass->arnr_strength_adjustment = 0;
 }
 
+/* This function considers how the quality of prediction may be deteriorating
+ * with distance. It comapres the coded error for the last frame and the
+ * second reference frame (usually two frames old) and also applies a factor
+ * based on the extent of INTRA coding.
+ *
+ * The decay factor is then used to reduce the contribution of frames further
+ * from the alt-ref or golden frame, to the bitframe boost calculation for that
+ * alt-ref or golden frame.
+ */
 static double get_sr_decay_rate(const FRAME_INFO *frame_info,
                                 const TWO_PASS *const twopass,
                                 const FIRSTPASS_STATS *frame) {
@@ -1840,24 +1849,22 @@ static double get_sr_decay_rate(const FRAME_INFO *frame_info,
   double sr_decay = 1.0;
   double modified_pct_inter;
   double modified_pcnt_intra;
-  const double motion_amplitude_part =
-      frame->pcnt_motion *
-      ((frame->mvc_abs + frame->mvr_abs) /
-       (frame_info->frame_height + frame_info->frame_width));
 
   modified_pct_inter = frame->pcnt_inter;
   if ((frame->coded_error > LOW_CODED_ERR_PER_MB) &&
       ((frame->intra_error / DOUBLE_DIVIDE_CHECK(frame->coded_error)) <
-       (double)NCOUNT_FRAME_II_THRESH)) {
+      (double)NCOUNT_FRAME_II_THRESH)) {
     modified_pct_inter =
-        frame->pcnt_inter + frame->pcnt_intra_low - frame->pcnt_neutral;
+      frame->pcnt_inter + frame->pcnt_intra_low - frame->pcnt_neutral;
   }
   modified_pcnt_intra = 100 * (1.0 - modified_pct_inter);
 
   if ((sr_diff > LOW_SR_DIFF_TRHESH)) {
+    double sr_diff_part =
+        twopass->sr_diff_factor * ((sr_diff * 0.25) / frame->intra_error);
+
     sr_diff = VPXMIN(sr_diff, SR_DIFF_MAX);
-    sr_decay = 1.0 - (twopass->sr_diff_part * sr_diff) - motion_amplitude_part -
-               (INTRA_PART * modified_pcnt_intra);
+    sr_decay = 1.0 - sr_diff_part - (INTRA_PART * modified_pcnt_intra);
   }
   return VPXMAX(sr_decay, twopass->sr_default_decay_limit);
 }
@@ -3493,7 +3500,7 @@ static void init_vizier_params(TWO_PASS *const twopass, int screen_area) {
     twopass->active_wq_factor = AV_WQ_FACTOR;
     twopass->base_err_per_mb = BASELINE_ERR_PER_MB;
     twopass->sr_default_decay_limit = DEFAULT_DECAY_LIMIT;
-    twopass->sr_diff_part = SR_DIFF_PART;
+    twopass->sr_diff_factor = 1.0;
     twopass->gf_frame_max_boost = GF_MAX_FRAME_BOOST;
     twopass->gf_max_total_boost = MAX_GF_BOOST;
     if (screen_area < 1280 * 720) {
@@ -3515,7 +3522,7 @@ static void init_vizier_params(TWO_PASS *const twopass, int screen_area) {
       twopass->active_wq_factor = 46.0;
       twopass->base_err_per_mb = 37597.399760969536;
       twopass->sr_default_decay_limit = 0.3905639800962774;
-      twopass->sr_diff_part = 0.009599023654146284;
+      twopass->sr_diff_factor = 6.4;
       twopass->gf_frame_max_boost = 87.27362648627846;
       twopass->gf_max_total_boost = MAX_GF_BOOST;
       twopass->kf_err_per_mb = 1854.8255436877148;
@@ -3528,7 +3535,7 @@ static void init_vizier_params(TWO_PASS *const twopass, int screen_area) {
       twopass->active_wq_factor = 55.0;
       twopass->base_err_per_mb = 34525.33177195309;
       twopass->sr_default_decay_limit = 0.23901360046804604;
-      twopass->sr_diff_part = 0.008581014394766773;
+      twopass->sr_diff_factor = 5.73;
       twopass->gf_frame_max_boost = 127.34978204980285;
       twopass->gf_max_total_boost = MAX_GF_BOOST;
       twopass->kf_err_per_mb = 723.8337508755031;
@@ -3541,7 +3548,7 @@ static void init_vizier_params(TWO_PASS *const twopass, int screen_area) {
       twopass->active_wq_factor = 12.5;
       twopass->base_err_per_mb = 18823.978018028298;
       twopass->sr_default_decay_limit = 0.6043527690301296;
-      twopass->sr_diff_part = 0.00343296783885544;
+      twopass->sr_diff_factor = 2.28;
       twopass->gf_frame_max_boost = 75.17672317013668;
       twopass->gf_max_total_boost = MAX_GF_BOOST;
       twopass->kf_err_per_mb = 422.2871502380377;
@@ -3554,7 +3561,7 @@ static void init_vizier_params(TWO_PASS *const twopass, int screen_area) {
       twopass->active_wq_factor = 51.5;
       twopass->base_err_per_mb = 33718.98307662595;
       twopass->sr_default_decay_limit = 0.33633414970713393;
-      twopass->sr_diff_part = 0.00868988716928333;
+      twopass->sr_diff_factor = 5.8;
       twopass->gf_frame_max_boost = 85.2868528581522;
       twopass->gf_max_total_boost = MAX_GF_BOOST;
       twopass->kf_err_per_mb = 1513.4883914008383;
@@ -3567,7 +3574,7 @@ static void init_vizier_params(TWO_PASS *const twopass, int screen_area) {
       twopass->active_wq_factor = 41.5;
       twopass->base_err_per_mb = 29527.46375825401;
       twopass->sr_default_decay_limit = 0.5009117586299728;
-      twopass->sr_diff_part = 0.005007364627260114;
+      twopass->sr_diff_factor = 3.33;
       twopass->gf_frame_max_boost = 81.00472969483079;
       twopass->gf_max_total_boost = MAX_GF_BOOST;
       twopass->kf_err_per_mb = 998.6342911785146;
@@ -3580,7 +3587,7 @@ static void init_vizier_params(TWO_PASS *const twopass, int screen_area) {
       twopass->active_wq_factor = 31.0;
       twopass->base_err_per_mb = 34474.723463367416;
       twopass->sr_default_decay_limit = 0.23346886902707745;
-      twopass->sr_diff_part = 0.011431716637966029;
+      twopass->sr_diff_factor = 7.6;
       twopass->gf_frame_max_boost = 213.2940230360479;
       twopass->gf_max_total_boost = MAX_GF_BOOST;
       twopass->kf_err_per_mb = 35931.25734431429;
