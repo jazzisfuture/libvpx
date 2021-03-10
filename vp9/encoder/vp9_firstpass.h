@@ -226,7 +226,7 @@ typedef struct {
   double active_wq_factor;
   double base_err_per_mb;
   double sr_default_decay_limit;
-  double sr_diff_part;
+  double sr_diff_factor;
   double kf_err_per_mb;
   double kf_frame_min_boost;
   double kf_frame_max_boost_first;  // Max for first kf in a chunk.
