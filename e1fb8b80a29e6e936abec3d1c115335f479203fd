@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca13a10d_6f127d7a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-03-17T20:15:30Z",
+      "side": 1,
+      "message": "With gerrit we use git commit --amend to keep the change list in one place using the same change id. I\u0027ll update the earlier one.",
+      "revId": "e1fb8b80a29e6e936abec3d1c115335f479203fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
