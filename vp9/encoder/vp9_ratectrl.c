@@ -2282,6 +2282,10 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
           (svc->spatial_layer_id == 0 && cm->current_video_frame > 0)
               ? 0
               : svc->layer_context[svc->temporal_layer_id].is_key_frame;
+      // For key picture, non SL0 frames should be marked as delta frame.
+      if (cm->current_video_frame < svc->number_spatial_layers &&
+	  svc->spatial_layer_id > 0)
+        lc->is_key_frame = 0;
       target = vp9_calc_pframe_target_size_one_pass_cbr(cpi);
     }
   }
