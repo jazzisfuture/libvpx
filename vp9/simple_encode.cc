@@ -926,15 +926,11 @@ void SimpleEncode::ComputeFirstPassStats() {
   impl_ptr_->first_pass_stats.push_back(
       vp9_get_total_stats(&impl_ptr_->cpi->twopass));
   vp9_end_first_pass(impl_ptr_->cpi);
-  fps_init_first_pass_info(&cpi->twopass.first_pass_info,
-                           GetVectorData(impl_ptr_->first_pass_stats),
-                           num_frames_);
 
   // Generate key_frame_map based on impl_ptr_->first_pass_stats.
   key_frame_map_ = ComputeKeyFrameMap();
 
   free_encoder(impl_ptr_->cpi);
-  impl_ptr_->cpi = nullptr;
   rewind(in_file_);
   vpx_img_free(&img);
 }
@@ -1089,7 +1085,9 @@ void SimpleEncode::EndEncode() {
 }
 
 void SimpleEncode::UpdateKeyFrameGroup(int key_frame_show_index) {
-  const VP9_COMP *cpi = impl_ptr_->cpi;
+  VP9_COMP *cpi = impl_ptr_->cpi;
+  unsigned int screen_area = (cpi->common.width * cpi->common.height);
+  vp9_init_vizier_params(&cpi->twopass, screen_area);
   key_frame_group_index_ = 0;
   key_frame_group_size_ = vp9_get_frames_to_next_key(
       &cpi->oxcf, &cpi->twopass, key_frame_show_index, cpi->rc.min_gf_interval);
@@ -1274,7 +1272,8 @@ int SimpleEncode::GetCodingFrameNum() const {
 }
 
 std::vector<int> SimpleEncode::ComputeKeyFrameMap() const {
-  const VP9_COMP *cpi = impl_ptr_->cpi;
+  VP9_COMP *cpi = impl_ptr_->cpi;
+  assert(cpi != nullptr);
   // The last entry of first_pass_stats is the overall stats.
   assert(impl_ptr_->first_pass_stats.size() == num_frames_ + 1);
   vpx_rational_t frame_rate =
@@ -1282,6 +1281,9 @@ std::vector<int> SimpleEncode::ComputeKeyFrameMap() const {
   const VP9EncoderConfig oxcf = GetEncodeConfig(
       frame_width_, frame_height_, frame_rate, target_bitrate_, encode_speed_,
       VPX_RC_LAST_PASS, impl_ptr_->encode_config_list);
+  fps_init_first_pass_info(&cpi->twopass.first_pass_info,
+                           GetVectorData(impl_ptr_->first_pass_stats),
+                           num_frames_);
   std::vector<int> key_frame_map(num_frames_, 0);
   vp9_get_key_frame_map(&oxcf, &cpi->twopass, GetVectorData(key_frame_map));
   return key_frame_map;
