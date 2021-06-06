@@ -90,6 +90,14 @@ static int img_read(vpx_image_t *img, FILE *file) {
   return 1;
 }
 
+template <typename T>
+static T *GetVectorData(const std::vector<T> &v) {
+  if (v.empty()) {
+    return nullptr;
+  }
+  return const_cast<T *>(v.data());
+}
+
 // Assume every config in VP9EncoderConfig is less than 100 characters.
 #define ENCODE_CONFIG_BUF_SIZE 100
 struct EncodeConfig {
@@ -926,7 +934,7 @@ void SimpleEncode::ComputeFirstPassStats() {
   impl_ptr_->first_pass_stats.push_back(
       vp9_get_total_stats(&impl_ptr_->cpi->twopass));
   vp9_end_first_pass(impl_ptr_->cpi);
-  fps_init_first_pass_info(&cpi->twopass.first_pass_info,
+  fps_init_first_pass_info(&impl_ptr_->cpi->twopass.first_pass_info,
                            GetVectorData(impl_ptr_->first_pass_stats),
                            num_frames_);
 
@@ -999,14 +1007,6 @@ void SimpleEncode::SetExternalGroupOfPicturesMap(int *gop_map,
 
 std::vector<int> SimpleEncode::ObserveExternalGroupOfPicturesMap() {
   return gop_map_;
-}
-
-template <typename T>
-T *GetVectorData(const std::vector<T> &v) {
-  if (v.empty()) {
-    return nullptr;
-  }
-  return const_cast<T *>(v.data());
 }
 
 static GOP_COMMAND GetGopCommand(const std::vector<int> &gop_map,
