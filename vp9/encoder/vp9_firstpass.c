@@ -39,8 +39,8 @@
 #include "vp9/encoder/vp9_rd.h"
 #include "vpx_dsp/variance.h"
 
-#define OUTPUT_FPF 0
-#define ARF_STATS_OUTPUT 0
+#define OUTPUT_FPF 1
+#define ARF_STATS_OUTPUT 1
 #define COMPLEXITY_STATS_OUTPUT 0
 
 #define FIRST_PASS_Q 10.0
@@ -582,7 +582,7 @@ static int get_ul_intra_threshold(VP9_COMMON *cm) {
   return ret_val;
 }
 
-#define SMOOTH_INTRA_THRESH 4000
+#define SMOOTH_INTRA_THRESH 12000
 static int get_smooth_intra_threshold(VP9_COMMON *cm) {
   int ret_val = SMOOTH_INTRA_THRESH;
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -789,8 +789,6 @@ static void first_pass_stat_calc(VP9_COMP *cpi, FIRSTPASS_STATS *fps,
   fps->intra_error =
       ((double)(fp_acc_data->intra_error >> 8) + min_err) / num_mbs;
 
-  fps->frame_noise_energy =
-      (double)(fp_acc_data->frame_noise_energy) / (double)num_mbs;
   fps->count = 1.0;
   fps->pcnt_inter = (double)(fp_acc_data->intercount) / num_mbs;
   fps->pcnt_second_ref = (double)(fp_acc_data->second_ref_count) / num_mbs;
@@ -802,6 +800,13 @@ static void first_pass_stat_calc(VP9_COMP *cpi, FIRSTPASS_STATS *fps,
   fps->inactive_zone_rows = (double)(fp_acc_data->image_data_start_row);
   // Currently set to 0 as most issues relate to letter boxing.
   fps->inactive_zone_cols = (double)0;
+
+ if ( fps->intra_smooth_pct >= 0.05) {
+      fps->frame_noise_energy = (double)(fp_acc_data->frame_noise_energy) /
+                                (double)fp_acc_data->intra_smooth_count;
+  } else {
+    fps->frame_noise_energy = SECTION_NOISE_DEF;
+  }
 
   if (fp_acc_data->mvcount > 0) {
     fps->MVr = (double)(fp_acc_data->sum_mvr) / fp_acc_data->mvcount;
@@ -1019,18 +1024,25 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
     // Blocks that are mainly smooth in the intra domain.
     // Some special accounting for CQ but also these are better for testing
     // noise levels.
-    if (this_error < get_smooth_intra_threshold(cm)) {
+    //if (this_error < get_smooth_intra_threshold(cm)) {
+    if (this_intra_error < get_smooth_intra_threshold(cm)) {
       ++(fp_acc_data->intra_smooth_count);
+      fp_acc_data->frame_noise_energy += fp_estimate_block_noise(x, bsize);
+      /*if (this_intra_error < scaled_low_intra_thresh) {
+      //fp_acc_data->frame_noise_energy += fp_estimate_block_noise(x, bsize);
+      } else {
+        fp_acc_data->frame_noise_energy += (int64_t)SECTION_NOISE_DEF;
+      }*/
     }
 
     // Special case noise measurement for first frame.
-    if (cm->current_video_frame == 0) {
-      if (this_intra_error < scale_sse_threshold(cm, LOW_I_THRESH)) {
+    // if (cm->current_video_frame == 0) {
+    /* if (this_intra_error < scale_sse_threshold(cm, LOW_I_THRESH)) {
         fp_acc_data->frame_noise_energy += fp_estimate_block_noise(x, bsize);
       } else {
         fp_acc_data->frame_noise_energy += (int64_t)SECTION_NOISE_DEF;
-      }
-    }
+      }*/
+    // }
 
 #if CONFIG_VP9_HIGHBITDEPTH
     if (cm->use_highbitdepth) {
@@ -1362,21 +1374,21 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
               --(fp_acc_data->sum_in_vectors);
           }
         }
-        if (this_intra_error < scaled_low_intra_thresh) {
+        /*if (this_intra_error < scaled_low_intra_thresh) {
           fp_acc_data->frame_noise_energy += fp_estimate_block_noise(x, bsize);
         } else {
           fp_acc_data->frame_noise_energy += (int64_t)SECTION_NOISE_DEF;
-        }
+        }*/
       } else {  // Intra < inter error
         if (this_intra_error < scaled_low_intra_thresh) {
-          fp_acc_data->frame_noise_energy += fp_estimate_block_noise(x, bsize);
+          // fp_acc_data->frame_noise_energy += fp_estimate_block_noise(x, bsize);
           if (this_motion_error < scaled_low_intra_thresh) {
             fp_acc_data->intra_count_low += 1.0;
           } else {
             fp_acc_data->intra_count_high += 1.0;
           }
         } else {
-          fp_acc_data->frame_noise_energy += (int64_t)SECTION_NOISE_DEF;
+          // fp_acc_data->frame_noise_energy += (int64_t)SECTION_NOISE_DEF;
           fp_acc_data->intra_count_high += 1.0;
         }
       }
@@ -1615,11 +1627,11 @@ static double wq_err_divisor(VP9_COMP *cpi) {
   return 200.0;
 }
 
-#define NOISE_FACTOR_MIN 0.9
-#define NOISE_FACTOR_MAX 1.1
+#define NOISE_FACTOR_MIN 1.0
+#define NOISE_FACTOR_MAX 1.2
 static int get_twopass_worst_quality(VP9_COMP *cpi, const double section_err,
-                                     double inactive_zone, double section_noise,
-                                     int section_target_bandwidth) {
+  double inactive_zone, double section_noise,
+  int section_target_bandwidth) {
   const RATE_CONTROL *const rc = &cpi->rc;
   const VP9EncoderConfig *const oxcf = &cpi->oxcf;
   TWO_PASS *const twopass = &cpi->twopass;
@@ -1627,9 +1639,19 @@ static int get_twopass_worst_quality(VP9_COMP *cpi, const double section_err,
 
   // Clamp the target rate to VBR min / max limts.
   const int target_rate =
-      vp9_rc_clamp_pframe_target_size(cpi, section_target_bandwidth);
-  double noise_factor = pow((section_noise / SECTION_NOISE_DEF), 0.5);
+    vp9_rc_clamp_pframe_target_size(cpi, section_target_bandwidth);
+  double noise_factor = NOISE_FACTOR_MIN + (section_noise * 0.0005);
   noise_factor = fclamp(noise_factor, NOISE_FACTOR_MIN, NOISE_FACTOR_MAX);
+
+#if 1
+  {
+    FILE *nf;
+    nf = fopen("noise_factor.stt", "a");
+    fprintf(nf, "%10.3lf\n", noise_factor);
+    fclose(nf);
+  }
+#endif
+
   inactive_zone = fclamp(inactive_zone, 0.0, 1.0);
 
 // TODO(jimbankoski): remove #if here or below when this has been
@@ -2000,6 +2022,7 @@ static double calc_kf_frame_boost(VP9_COMP *cpi,
   const double lq = vp9_convert_qindex_to_q(
       cpi->rc.avg_frame_qindex[INTER_FRAME], cpi->common.bit_depth);
   const double boost_q_correction = VPXMIN((0.50 + (lq * 0.015)), 2.00);
+  //const double boost_q_correction = VPXMIN((0.75 + (lq * 0.0075)), 2.00);
   const double active_area =
       calculate_active_area(&cpi->frame_info, this_frame);
   double max_boost;
@@ -2030,6 +2053,20 @@ static double calc_kf_frame_boost(VP9_COMP *cpi,
   max_boost = (cpi->common.current_video_frame == 0)
                   ? twopass->kf_frame_max_boost_first
                   : twopass->kf_frame_max_boost_subs;
+
+  // Additional adjustments
+  // Adjustment related to measured noise level
+  if (1) {
+    double kf_noise =  VPXMIN(500.0, this_frame->frame_noise_energy);
+    if (kf_noise > SECTION_NOISE_DEF) {
+      double boost_range = VPXMAX(max_boost - twopass->kf_frame_min_boost, 0.0);
+      double boost_adjustment =
+        ((kf_noise - SECTION_NOISE_DEF) / SECTION_NOISE_DEF) * boost_range;
+
+      max_boost -= boost_adjustment;
+    }
+  }
+
   max_boost *= zm_factor * boost_q_correction;
 
   return VPXMIN(frame_boost, max_boost);
@@ -2526,7 +2563,7 @@ static void adjust_group_arnr_filter(VP9_COMP *cpi, double section_noise,
   if (section_noise < 150) {
     twopass->arnr_strength_adjustment -= 1;
     if (section_noise < 75) twopass->arnr_strength_adjustment -= 1;
-  } else if (section_noise > 250)
+  } else if (section_noise >= 250)
     twopass->arnr_strength_adjustment += 1;
 
   if (section_zeromv > 0.50) twopass->arnr_strength_adjustment += 1;
@@ -3543,6 +3580,25 @@ static void init_vizier_params(TWO_PASS *const twopass, int screen_area) {
       twopass->kf_err_per_mb = 500.0;
     } else {
       twopass->kf_err_per_mb = 250.0;
+    }
+  }
+
+  // Additional adjustments
+  // Adjustment related to measured noise level
+  if (0) {
+    const double section_noise =
+      //VPXMIN(SECTION_NOISE_DEF, twopass->total_left_stats.frame_noise_energy /
+      VPXMIN(512, twopass->total_left_stats.frame_noise_energy /
+        twopass->total_left_stats.count);
+    if (section_noise > SECTION_NOISE_DEF) {
+      double boost_range = VPXMAX(twopass->kf_frame_max_boost_first -
+          twopass->kf_frame_min_boost, 0.0);
+      // double boost_adjustment = (section_noise / SECTION_NOISE_DEF) * boost_range;
+      double boost_adjustment =
+          ((section_noise - SECTION_NOISE_DEF) / SECTION_NOISE_DEF) * boost_range;
+
+      twopass->kf_frame_max_boost_first -= boost_adjustment;
+      twopass->kf_frame_max_boost_subs -= boost_adjustment;
     }
   }
 }
