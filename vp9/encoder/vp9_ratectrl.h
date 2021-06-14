@@ -183,6 +183,7 @@ typedef struct {
   int hybrid_intra_scene_change;
   int re_encode_maxq_scene_change;
   int avg_frame_low_motion;
+  int use_motion_one_pass_vbr_gf_update;
   int af_ratio_onepass_vbr;
   int force_qpmin;
   int reset_high_source_sad;
@@ -255,6 +256,9 @@ void vp9_rc_get_one_pass_vbr_params(struct VP9_COMP *cpi);
 void vp9_rc_get_one_pass_cbr_params(struct VP9_COMP *cpi);
 int vp9_calc_pframe_target_size_one_pass_cbr(const struct VP9_COMP *cpi);
 int vp9_calc_iframe_target_size_one_pass_cbr(const struct VP9_COMP *cpi);
+int vp9_calc_pframe_target_size_one_pass_vbr(const struct VP9_COMP *cpi);
+int vp9_calc_iframe_target_size_one_pass_vbr(const struct VP9_COMP *cpi);
+void vp9_set_gf_update_one_pass_vbr(struct VP9_COMP *const cpi);
 void vp9_update_buffer_level_preencode(struct VP9_COMP *cpi);
 void vp9_rc_get_svc_params(struct VP9_COMP *cpi);
 
