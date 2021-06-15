@@ -32,6 +32,14 @@ struct FrameInfo {
         info.bytes_used;
     return is;
   }
+
+  friend std::ostream &operator<<(std::ostream &os, FrameInfo &info) {
+    os << info.frame_id << " " << info.spatial_id << " " << info.temporal_id
+       << " " << info.base_q << " " << info.target_bandwidth << " "
+       << info.buffer_level << " " << info.filter_level_ << " "
+       << info.bytes_used;
+    return os;
+  }
   int frame_id;
   int spatial_id;
   int temporal_id;
@@ -77,8 +85,8 @@ class RcInterfaceTest : public ::testing::Test {
   virtual ~RcInterfaceTest() {}
 
  protected:
-  void RunOneLayer() {
-    SetConfigOneLayer();
+  void RunOneLayerCBR() {
+    SetConfigOneLayerCBR();
     rc_api_ = libvpx::VP9RateControlRTC::Create(rc_cfg_);
     FrameInfo frame_info;
     libvpx::VP9FrameParamsQpRTC frame_params;
@@ -144,8 +152,32 @@ class RcInterfaceTest : public ::testing::Test {
     }
   }
 
+  void RunOneLayerVBR() {
+    SetConfigOneLayerVBR();
+    rc_api_ = libvpx::VP9RateControlRTC::Create(rc_cfg_);
+    FrameInfo frame_info;
+    libvpx::VP9FrameParamsQpRTC frame_params;
+    frame_params.frame_type = KEY_FRAME;
+    frame_params.spatial_layer_id = 0;
+    frame_params.temporal_layer_id = 0;
+    std::ifstream one_layer_file;
+    one_layer_file.open(libvpx_test::GetDataPath() +
+                        "/rc_interface_test_one_layer_vbr");
+    ASSERT_TRUE(one_layer_file.good());
+    for (size_t i = 0; i < kNumFrame; i++) {
+      one_layer_file >> frame_info;
+      if (frame_info.frame_id > 0) frame_params.frame_type = INTER_FRAME;
+      ASSERT_EQ(frame_info.spatial_id, 0);
+      ASSERT_EQ(frame_info.temporal_id, 0);
+      rc_api_->ComputeQP(frame_params);
+      ASSERT_EQ(rc_api_->GetQP(), frame_info.base_q);
+      ASSERT_EQ(rc_api_->GetLoopfilterLevel(), frame_info.filter_level_);
+      rc_api_->PostEncodeUpdate(frame_info.bytes_used);
+    }
+  }
+
  private:
-  void SetConfigOneLayer() {
+  void SetConfig() {
     rc_cfg_.width = 1280;
     rc_cfg_.height = 720;
     rc_cfg_.max_quantizer = 52;
@@ -167,6 +199,16 @@ class RcInterfaceTest : public ::testing::Test {
     rc_cfg_.min_quantizers[0] = 2;
   }
 
+  void SetConfigOneLayerCBR() {
+    SetConfig();
+    rc_cfg_.rc_mode = VPX_CBR;
+  }
+
+  void SetConfigOneLayerVBR() {
+    SetConfig();
+    rc_cfg_.rc_mode = VPX_VBR;
+  }
+
   void SetConfigSVC() {
     rc_cfg_.width = 1280;
     rc_cfg_.height = 720;
@@ -182,6 +224,7 @@ class RcInterfaceTest : public ::testing::Test {
     rc_cfg_.framerate = 30.0;
     rc_cfg_.ss_number_layers = 3;
     rc_cfg_.ts_number_layers = 3;
+    rc_cfg_.rc_mode = VPX_CBR;
 
     rc_cfg_.scaling_factor_num[0] = 1;
     rc_cfg_.scaling_factor_den[0] = 4;
@@ -217,7 +260,9 @@ class RcInterfaceTest : public ::testing::Test {
   libvpx::VP9RateControlRtcConfig rc_cfg_;
 };
 
-TEST_F(RcInterfaceTest, OneLayer) { RunOneLayer(); }
+TEST_F(RcInterfaceTest, OneLayerCBR) { RunOneLayerCBR(); }
+
+TEST_F(RcInterfaceTest, OneLayerVBR) { RunOneLayerVBR(); }
 
 TEST_F(RcInterfaceTest, SVC) { RunSVC(); }
 }  // namespace

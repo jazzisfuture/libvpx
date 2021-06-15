@@ -1845,7 +1845,6 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   const GF_GROUP *gf_group = &cpi->twopass.gf_group;
   const int gf_group_index = cpi->twopass.gf_group.index;
   const int layer_depth = gf_group->layer_depth[gf_group_index];
-
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
