@@ -166,6 +166,7 @@ class RcInterfaceTest : public ::testing::Test {
     rc_cfg_.layer_target_bitrate[0] = 1000;
     rc_cfg_.max_quantizers[0] = 52;
     rc_cfg_.min_quantizers[0] = 2;
+    rc_cfg_.rc_mode = VPX_CBR;
   }
 
   void SetConfigSVC() {
@@ -183,6 +184,7 @@ class RcInterfaceTest : public ::testing::Test {
     rc_cfg_.framerate = 30.0;
     rc_cfg_.ss_number_layers = 3;
     rc_cfg_.ts_number_layers = 3;
+    rc_cfg_.rc_mode = VPX_CBR;
 
     rc_cfg_.scaling_factor_num[0] = 1;
     rc_cfg_.scaling_factor_den[0] = 4;
