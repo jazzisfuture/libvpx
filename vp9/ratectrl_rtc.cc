@@ -38,7 +38,7 @@ void VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
   cm->profile = PROFILE_0;
   cm->bit_depth = VPX_BITS_8;
   cm->show_frame = 1;
-  oxcf->rc_mode = VPX_CBR;
+  oxcf->rc_mode = rc_cfg.rc_mode;
   oxcf->pass = 0;
   oxcf->aq_mode = NO_AQ;
   oxcf->content = VP9E_CONTENT_DEFAULT;
@@ -138,11 +138,19 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
   cpi_->sf.use_nonrd_pick_mode = 1;
   if (cpi_->svc.number_spatial_layers == 1 &&
       cpi_->svc.number_temporal_layers == 1) {
-    int target;
-    if (frame_is_intra_only(cm))
-      target = vp9_calc_iframe_target_size_one_pass_cbr(cpi_);
-    else
-      target = vp9_calc_pframe_target_size_one_pass_cbr(cpi_);
+    int target = 0;
+    if (cpi_->oxcf.rc_mode == VPX_CBR) {
+      if (frame_is_intra_only(cm))
+        target = vp9_calc_iframe_target_size_one_pass_cbr(cpi_);
+      else
+        target = vp9_calc_pframe_target_size_one_pass_cbr(cpi_);
+    } else if (cpi_->oxcf.rc_mode == VPX_VBR) {
+      vp9_set_gf_update_one_pass_vbr(cpi_);
+      if (frame_is_intra_only(cm))
+        target = vp9_calc_iframe_target_size_one_pass_vbr(cpi_);
+      else
+        target = vp9_calc_pframe_target_size_one_pass_vbr(cpi_);
+    }
     vp9_rc_set_frame_target(cpi_, target);
     vp9_update_buffer_level_preencode(cpi_);
   } else {
