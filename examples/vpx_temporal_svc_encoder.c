@@ -741,7 +741,7 @@ int main(int argc, char **argv) {
 
   // Real time parameters.
   cfg.rc_dropframe_thresh = (unsigned int)strtoul(argv[9], NULL, 0);
-  cfg.rc_end_usage = VPX_CBR;
+  cfg.rc_end_usage = VPX_VBR;
   cfg.rc_min_quantizer = 2;
   cfg.rc_max_quantizer = 56;
   if (strncmp(encoder->name, "vp9", 3) == 0) cfg.rc_max_quantizer = 52;
@@ -834,7 +834,7 @@ int main(int argc, char **argv) {
     vpx_codec_control(&codec, VP9E_SET_POSTENCODE_DROP, 0);
     vpx_codec_control(&codec, VP9E_SET_DISABLE_OVERSHOOT_MAXQ_CBR, 0);
     vpx_codec_control(&codec, VP8E_SET_CPUUSED, speed);
-    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 3);
+    vpx_codec_control(&codec, VP9E_SET_AQ_MODE, 0);
     vpx_codec_control(&codec, VP9E_SET_GF_CBR_BOOST_PCT, 0);
     vpx_codec_control(&codec, VP9E_SET_FRAME_PARALLEL_DECODING, 0);
     vpx_codec_control(&codec, VP9E_SET_FRAME_PERIODIC_BOOST, 0);
