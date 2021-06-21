@@ -217,6 +217,7 @@ enable_feature spatial_resampling
 enable_feature multithread
 enable_feature os_support
 enable_feature temporal_denoising
+enable_feature rate_ctrl
 
 CODECS="
     vp8_encoder
@@ -277,7 +278,6 @@ EXPERIMENT_LIST="
     fp_mb_stats
     emulate_hardware
     non_greedy_mv
-    rate_ctrl
 "
 CONFIG_LIST="
     dependency_tracking
@@ -336,6 +336,7 @@ CONFIG_LIST="
     always_adjust_bpm
     bitstream_debug
     mismatch_debug
+    rate_ctrl
     ${EXPERIMENT_LIST}
 "
 CMDLINE_SELECT="
@@ -399,6 +400,7 @@ CMDLINE_SELECT="
     always_adjust_bpm
     bitstream_debug
     mismatch_debug
+    rate_ctrl
 "
 
 process_cmdline() {
