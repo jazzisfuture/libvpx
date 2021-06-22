@@ -192,8 +192,7 @@ class RcInterfaceTest : public ::testing::Test {
     for (size_t i = 0; i < kNumFrame; i++) {
       one_layer_file >> frame_info;
       if (frame_info.frame_id > 0) frame_params.frame_type = INTER_FRAME;
-      if (frame_info.frame_id % rc_cfg_.key_freq == 0)
-        frame_params.frame_type = KEY_FRAME;
+      if (frame_info.frame_id % 300 == 0) frame_params.frame_type = KEY_FRAME;
       ASSERT_EQ(frame_info.spatial_id, 0);
       ASSERT_EQ(frame_info.temporal_id, 0);
       rc_api_->ComputeQP(frame_params);
@@ -229,19 +228,16 @@ class RcInterfaceTest : public ::testing::Test {
   void SetConfigOneLayerCBR() {
     SetConfig();
     rc_cfg_.rc_mode = VPX_CBR;
-    rc_cfg_.key_freq = 3000;
   }
 
   void SetConfigOneLayerVBR() {
     SetConfig();
     rc_cfg_.rc_mode = VPX_VBR;
-    rc_cfg_.key_freq = 3000;
   }
 
   void SetConfigOneLayerVBRPeriodicKey() {
     SetConfig();
     rc_cfg_.rc_mode = VPX_VBR;
-    rc_cfg_.key_freq = 300;
   }
 
   void SetConfigSVC() {

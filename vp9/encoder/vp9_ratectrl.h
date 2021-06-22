@@ -207,6 +207,9 @@ typedef struct {
   int preserve_arf_as_gld;
   int preserve_next_arf_as_gld;
   int show_arf_as_gld;
+
+  // Flag to constrain golden frame interval on key frame frequency.
+  int constrain_gf_key_freq_onepass_vbr;
 } RATE_CONTROL;
 
 struct VP9_COMP;
