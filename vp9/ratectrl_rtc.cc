@@ -152,8 +152,7 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
         target = vp9_calc_pframe_target_size_one_pass_cbr(cpi_);
     } else if (cpi_->oxcf.rc_mode == VPX_VBR) {
       if (cm->frame_type == KEY_FRAME) {
-        cpi_->rc.this_key_frame_forced =
-            cm->current_video_frame != 0 && cpi_->rc.frames_to_key == 0;
+        cpi_->rc.this_key_frame_forced = cm->current_video_frame != 0;
         cpi_->rc.frames_to_key = cpi_->oxcf.key_freq;
       }
       vp9_set_gf_update_one_pass_vbr(cpi_);
