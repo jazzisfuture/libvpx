@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d785fd96_94962e0a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2021-06-22T13:43:43Z",
+      "side": 1,
+      "message": "DNS experiments",
+      "revId": "2675a30fba7dec94d5bbd5b0bbc92a6787dfcf32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
