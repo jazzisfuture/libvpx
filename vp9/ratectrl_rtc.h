@@ -26,6 +26,22 @@
 namespace libvpx {
 
 struct VP9RateControlRtcConfig {
+ public:
+  VP9RateControlRtcConfig() {
+    width = height = 0;
+    max_quantizer = 63;
+    min_quantizer = 0;
+    target_bandwidth = 0;
+    buf_initial_sz = 0;
+    buf_optimal_sz = 0;
+    buf_sz = 0;
+    undershoot_pct = overshoot_pct = 0;
+    max_intra_bitrate_pct = max_inter_bitrate_pct = 0;
+    framerate = 0.0;
+    ss_number_layers = ts_number_layers = 0;
+    rc_mode = VPX_CBR;
+  };
+
   int width;
   int height;
   // 0-63
@@ -38,6 +54,7 @@ struct VP9RateControlRtcConfig {
   int undershoot_pct;
   int overshoot_pct;
   int max_intra_bitrate_pct;
+  int max_inter_bitrate_pct;
   double framerate;
   // Number of spatial layers
   int ss_number_layers;
