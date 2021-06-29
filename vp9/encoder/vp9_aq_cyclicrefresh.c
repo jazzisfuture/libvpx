@@ -271,7 +271,6 @@ void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
   cr->actual_num_seg2_blocks = 0;
   for (mi_row = 0; mi_row < cm->mi_rows; mi_row++) {
     for (mi_col = 0; mi_col < cm->mi_cols; mi_col++) {
-      MV mv = mi[0]->mv[0].as_mv;
       int map_index = mi_row * cm->mi_cols + mi_col;
       if (cyclic_refresh_segment_id(seg_map[map_index]) == CR_SEGMENT_ID_BOOST1)
         cr->actual_num_seg1_blocks++;
@@ -279,8 +278,11 @@ void vp9_cyclic_refresh_postencode(VP9_COMP *const cpi) {
                CR_SEGMENT_ID_BOOST2)
         cr->actual_num_seg2_blocks++;
       // Accumulate low_content_frame.
-      if (is_inter_block(mi[0]) && abs(mv.row) < 16 && abs(mv.col) < 16)
-        low_content_frame++;
+      if (cr->content_mode) {
+        MV mv = mi[0]->mv[0].as_mv;
+        if (is_inter_block(mi[0]) && abs(mv.row) < 16 && abs(mv.col) < 16)
+          low_content_frame++;
+      }
       mi++;
     }
     mi += 8;
@@ -516,7 +518,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
     cr->rate_ratio_qdelta = 3.0;
   } else {
     cr->rate_ratio_qdelta = 2.0;
-    if (cpi->noise_estimate.enabled && cpi->noise_estimate.level >= kMedium) {
+    if (cr->content_mode && cpi->noise_estimate.enabled &&
+        cpi->noise_estimate.level >= kMedium) {
       // Reduce the delta-qp if the estimated source noise is above threshold.
       cr->rate_ratio_qdelta = 1.7;
       cr->rate_boost_fac = 13;
