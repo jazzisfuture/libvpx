@@ -11,6 +11,7 @@
 
 #include <new>
 
+#include "vp9/common/vp9_common.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_picklpf.h"
 #include "vpx/vp8cx.h"
@@ -28,6 +29,11 @@ std::unique_ptr<VP9RateControlRTC> VP9RateControlRTC::Create(
     return nullptr;
   }
   rc_api->InitRateControl(cfg);
+  if (cfg.aq_mode) {
+    CHECK_MEM_ERROR(&rc_api->cpi_->common, rc_api->cpi_->cyclic_refresh,
+                    vp9_cyclic_refresh_alloc(rc_api->cpi_->common.mi_rows,
+                                             rc_api->cpi_->common.mi_cols));
+  }
   return rc_api;
 }
 
@@ -42,12 +48,13 @@ void VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
   oxcf->bit_depth = cm->bit_depth;
   oxcf->rc_mode = rc_cfg.rc_mode;
   oxcf->pass = 0;
-  oxcf->aq_mode = NO_AQ;
+  oxcf->aq_mode = rc_cfg.aq_mode ? CYCLIC_REFRESH_AQ : NO_AQ;
   oxcf->content = VP9E_CONTENT_DEFAULT;
   oxcf->drop_frames_water_mark = 0;
   cm->current_video_frame = 0;
   rc->kf_boost = DEFAULT_KF_BOOST;
 
+  vp9_set_mb_mi(cm, cm->width, cm->height);
   UpdateRateControl(rc_cfg);
 
   cpi_->use_svc = (cpi_->svc.number_spatial_layers > 1 ||
@@ -171,6 +178,8 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
   int bottom_index, top_index;
   cpi_->common.base_qindex =
       vp9_rc_pick_q_and_bounds(cpi_, &bottom_index, &top_index);
+
+  if (cpi_->oxcf.aq_mode == CYCLIC_REFRESH_AQ) vp9_cyclic_refresh_setup(cpi_);
 }
 
 int VP9RateControlRTC::GetQP() const { return cpi_->common.base_qindex; }
@@ -181,11 +190,19 @@ int VP9RateControlRTC::GetLoopfilterLevel() const {
   return lf->filter_level;
 }
 
+signed char *VP9RateControlRTC::GetCyclicRefreshMap() const {
+  return cpi_->cyclic_refresh->map;
+}
+
 void VP9RateControlRTC::PostEncodeUpdate(uint64_t encoded_frame_size) {
   vp9_rc_postencode_update(cpi_, encoded_frame_size);
   if (cpi_->svc.number_spatial_layers > 1 ||
       cpi_->svc.number_temporal_layers > 1)
     vp9_save_layer_context(cpi_);
+  // Update some stats from cyclic refresh, and check for golden frame update.
+  if (cpi_->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi_->common.seg.enabled &&
+      !frame_is_intra_only(&cpi_->common))
+    vp9_cyclic_refresh_postencode(cpi_);
   cpi_->common.current_video_frame++;
 }
 
