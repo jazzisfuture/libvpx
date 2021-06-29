@@ -42,6 +42,7 @@ struct VP9RateControlRtcConfig {
     framerate = 30.0;
     ss_number_layers = ts_number_layers = 1;
     rc_mode = VPX_CBR;
+    aq_mode = 0;
     vp9_zero(max_quantizers);
     vp9_zero(min_quantizers);
     vp9_zero(scaling_factor_den);
@@ -82,6 +83,7 @@ struct VP9RateControlRtcConfig {
   int ts_rate_decimator[VPX_TS_MAX_LAYERS];
   // vbr, cbr
   enum vpx_rc_mode rc_mode;
+  int aq_mode;
 };
 
 struct VP9FrameParamsQpRTC {
@@ -126,6 +128,7 @@ class VP9RateControlRTC {
           vpx_free(lc->consec_zero_mv);
         }
       }
+      vpx_free(cpi_->cyclic_refresh);
       vpx_free(cpi_);
     }
   }
@@ -134,6 +137,7 @@ class VP9RateControlRTC {
   // GetQP() needs to be called after ComputeQP() to get the latest QP
   int GetQP() const;
   int GetLoopfilterLevel() const;
+  signed char *GetCyclicRefreshMap() const;
   void ComputeQP(const VP9FrameParamsQpRTC &frame_params);
   // Feedback to rate control with the size of current encoded frame
   void PostEncodeUpdate(uint64_t encoded_frame_size);
