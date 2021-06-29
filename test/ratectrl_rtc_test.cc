@@ -10,6 +10,7 @@
 #include "vp9/ratectrl_rtc.h"
 
 #include <fstream>  // NOLINT
+#include <iostream>
 #include <string>
 
 #include "./vpx_config.h"
@@ -46,6 +47,7 @@ class RcInterfaceTest
 
   virtual void PreEncodeFrameHook(libvpx_test::VideoSource *video,
                                   libvpx_test::Encoder *encoder) {
+    std::cout << video->frame() << std::endl;
     if (video->frame() == 0) {
       encoder->Control(VP8E_SET_CPUUSED, 7);
       encoder->Control(VP9E_SET_AQ_MODE, aq_mode_);
@@ -127,6 +129,7 @@ class RcInterfaceTest
     rc_cfg_.max_quantizers[0] = 52;
     rc_cfg_.min_quantizers[0] = 2;
     rc_cfg_.rc_mode = rc_mode;
+    rc_cfg_.aq_mode = aq_mode_;
 
     // Encoder settings for ground truth.
     cfg_.g_w = 1280;
@@ -364,7 +367,7 @@ TEST_P(RcInterfaceTest, OneLayerVBRPeriodicKey) { RunOneLayerVBRPeriodicKey(); }
 
 TEST_P(RcInterfaceSvcTest, Svc) { RunSvc(); }
 
-VP9_INSTANTIATE_TEST_SUITE(RcInterfaceTest, ::testing::Values(0),
+VP9_INSTANTIATE_TEST_SUITE(RcInterfaceTest, ::testing::Values(0, 3),
                            ::testing::Values(VPX_CBR, VPX_VBR));
 VP9_INSTANTIATE_TEST_SUITE(RcInterfaceSvcTest, ::testing::Values(0));
 }  // namespace
