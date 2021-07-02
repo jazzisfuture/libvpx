@@ -907,6 +907,9 @@ int main(int argc, char **argv) {
     if (layering_mode != 7) {
       layer_flags[0] &= ~VPX_EFLAG_FORCE_KF;
     }
+    int loopfilter = 0;
+    vpx_codec_control(&codec, VP9E_GET_LOOPFILTER_LEVEL, &loopfilter);
+    printf("loopfilter level api %d\n", loopfilter);
     got_data = 0;
     while ((pkt = vpx_codec_get_cx_data(&codec, &iter))) {
       got_data = 1;

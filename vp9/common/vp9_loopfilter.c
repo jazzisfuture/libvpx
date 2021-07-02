@@ -1475,6 +1475,7 @@ void vp9_loop_filter_frame(YV12_BUFFER_CONFIG *frame, VP9_COMMON *cm,
   if (!frame_filter_level) return;
   start_mi_row = 0;
   mi_rows_to_filter = cm->mi_rows;
+  printf("lpf level %d\n", frame_filter_level);
   if (partial_frame && cm->mi_rows > 8) {
     start_mi_row = cm->mi_rows >> 1;
     start_mi_row &= 0xfffffff8;
