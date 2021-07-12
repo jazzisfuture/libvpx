@@ -10,6 +10,7 @@
 #include "vp9/ratectrl_rtc.h"
 
 #include <new>
+#include <iostream>
 
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_picklpf.h"
