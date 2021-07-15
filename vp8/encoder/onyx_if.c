@@ -301,9 +301,9 @@ static void init_temporal_layer_context(VP8_COMP *cpi, VP8_CONFIG *oxcf,
   /* Work out the average size of a frame within this layer */
   if (layer > 0) {
     lc->avg_frame_size_for_layer =
-        (int)((cpi->oxcf.target_bitrate[layer] -
-               cpi->oxcf.target_bitrate[layer - 1]) *
-              1000 / (lc->framerate - prev_layer_framerate));
+        (int)round((cpi->oxcf.target_bitrate[layer] -
+                    cpi->oxcf.target_bitrate[layer - 1]) *
+                   1000 / (lc->framerate - prev_layer_framerate));
   }
 
   lc->active_worst_quality = cpi->oxcf.worst_allowed_q;
@@ -4213,11 +4213,10 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
       }
 
       /* Clamp cpi->zbin_over_quant */
-      cpi->mb.zbin_over_quant = (cpi->mb.zbin_over_quant < zbin_oq_low)
-                                    ? zbin_oq_low
-                                    : (cpi->mb.zbin_over_quant > zbin_oq_high)
-                                          ? zbin_oq_high
-                                          : cpi->mb.zbin_over_quant;
+      cpi->mb.zbin_over_quant =
+          (cpi->mb.zbin_over_quant < zbin_oq_low)    ? zbin_oq_low
+          : (cpi->mb.zbin_over_quant > zbin_oq_high) ? zbin_oq_high
+                                                     : cpi->mb.zbin_over_quant;
 
       Loop = Q != last_q;
     } else {
