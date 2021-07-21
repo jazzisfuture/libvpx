@@ -211,6 +211,15 @@ enum vp8e_enc_control_id {
    */
   VP8E_GET_LAST_QUANTIZER_64,
 
+  /*!\brief Codec control to get last quantizers for all spatial layers.
+   *
+   * Return value uses an array of internal quantizers scale defined by the
+   * codec, for all spatial layers.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_GET_LAST_QUANTIZER_SVC_LAYERS,
+
   /*!\brief Codec control function to set the max no of frames to create arf.
    *
    * Supported in codecs: VP8, VP9
@@ -989,6 +998,9 @@ VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER, int *)
 #define VPX_CTRL_VP8E_GET_LAST_QUANTIZER
 VPX_CTRL_USE_TYPE(VP8E_GET_LAST_QUANTIZER_64, int *)
 #define VPX_CTRL_VP8E_GET_LAST_QUANTIZER_64
+VPX_CTRL_USE_TYPE(VP9E_GET_LAST_QUANTIZER_SVC_LAYERS, int *)
+#define VPX_CTRL_VP9E_GET_LAST_QUANTIZER_SVC_LAYERS
+
 VPX_CTRL_USE_TYPE(VP9E_GET_SVC_LAYER_ID, vpx_svc_layer_id_t *)
 #define VPX_CTRL_VP9E_GET_SVC_LAYER_ID
 
