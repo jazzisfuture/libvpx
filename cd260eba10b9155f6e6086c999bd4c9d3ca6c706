@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a50de86_d601fdc6",
+        "filename": "test/ratectrl_rtc_test.cc",
+        "patchSetId": 16
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-07-21T18:11:36Z",
+      "side": 1,
+      "message": "are we testing, 0, 1, 2? we only need to test 0 and 1 (1 maps internally to AQ_CYCLIC_REFRESH)",
+      "revId": "cd260eba10b9155f6e6086c999bd4c9d3ca6c706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
