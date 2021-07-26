@@ -16,6 +16,23 @@
       "message": "Thanks, Peter. The build looks like a flake. I retriggered it and will merge this afterward. Some of this may carryover to libaom.",
       "revId": "b45087fb0047dc13b091fcf79c008d786cbcc146",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbf0009e_2899f92e",
+        "filename": "vpx_ports/x86.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-07-26T20:36:38Z",
+      "side": 1,
+      "message": "I\u0027ll add a comment here and below to prevent these from getting removed. It\u0027s mentioned in the global comment, but that\u0027s at some distance from the code.",
+      "revId": "b45087fb0047dc13b091fcf79c008d786cbcc146",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
