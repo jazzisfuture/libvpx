@@ -33,6 +33,23 @@
       "message": "Thanks for the patch!",
       "revId": "f685d508da549b0eccfc455c04e2b6fbc3eeb251",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2a2788e_d8a97061",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2021-07-29T17:49:24Z",
+      "side": 1,
+      "message": "Thanks for quick review. Looks like I don\u0027t have a permission to submit to CQ.\nCan you submit?\n\nThanks in advance.",
+      "revId": "f685d508da549b0eccfc455c04e2b6fbc3eeb251",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
