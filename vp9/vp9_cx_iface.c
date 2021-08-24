@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -324,7 +325,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
       stats =
           (const FIRSTPASS_STATS *)cfg->rc_twopass_stats_in.buf + n_packets - 1;
 
-      if ((int)(stats->count + 0.5) != n_packets - 1)
+      if ((int)round(stats->count + 0.5) != n_packets - 1)
         ERROR("rc_twopass_stats_in missing EOS stats packet");
     }
   }
@@ -445,8 +446,8 @@ static void config_target_level(VP9EncoderConfig *oxcf) {
 
   // Adjust max over-shoot percentage.
   max_over_shoot_pct =
-      (int)((max_average_bitrate * 1.10 - (double)oxcf->target_bandwidth) *
-            100 / (double)(oxcf->target_bandwidth));
+      (int)round((max_average_bitrate * 1.10 - (double)oxcf->target_bandwidth) *
+                 100 / (double)(oxcf->target_bandwidth));
   if (oxcf->over_shoot_pct > max_over_shoot_pct)
     oxcf->over_shoot_pct = max_over_shoot_pct;
 

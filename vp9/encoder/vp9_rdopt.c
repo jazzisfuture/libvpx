@@ -3245,9 +3245,9 @@ int vp9_active_h_edge(VP9_COMP *cpi, int mi_row, int mi_step) {
 
     // The inactive region is specified in MBs not mi units.
     // The image edge is in the following MB row.
-    top_edge += (int)(twopass->this_frame_stats.inactive_zone_rows * 2);
+    top_edge += (int)round(twopass->this_frame_stats.inactive_zone_rows * 2);
 
-    bottom_edge -= (int)(twopass->this_frame_stats.inactive_zone_rows * 2);
+    bottom_edge -= (int)round(twopass->this_frame_stats.inactive_zone_rows * 2);
     bottom_edge = VPXMAX(top_edge, bottom_edge);
   }
 
@@ -3272,9 +3272,9 @@ int vp9_active_v_edge(VP9_COMP *cpi, int mi_col, int mi_step) {
 
     // The inactive region is specified in MBs not mi units.
     // The image edge is in the following MB row.
-    left_edge += (int)(twopass->this_frame_stats.inactive_zone_cols * 2);
+    left_edge += (int)round(twopass->this_frame_stats.inactive_zone_cols * 2);
 
-    right_edge -= (int)(twopass->this_frame_stats.inactive_zone_cols * 2);
+    right_edge -= (int)round(twopass->this_frame_stats.inactive_zone_cols * 2);
     right_edge = VPXMAX(left_edge, right_edge);
   }
 
