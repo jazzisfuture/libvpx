@@ -517,7 +517,7 @@ static void cyclic_background_refresh(VP8_COMP *cpi, int Q, int lf_adjustment) {
       cpi->cyclic_refresh_mode_max_mbs_perframe =
           (cpi->common.mb_rows * cpi->common.mb_cols) / 10;
     } else if (cpi->frames_since_key > 250 && Q < 20 &&
-               cpi->mb.skip_true_count > (int)(0.95 * mbs_in_frame)) {
+               cpi->mb.skip_true_count > (int)round(0.95 * mbs_in_frame)) {
       cpi->cyclic_refresh_mode_max_mbs_perframe = 0;
     } else {
       cpi->cyclic_refresh_mode_max_mbs_perframe =
@@ -1280,7 +1280,7 @@ void vp8_new_framerate(VP8_COMP *cpi, double framerate) {
                                    cpi->oxcf.two_pass_vbrmin_section / 100);
 
   /* Set Maximum gf/arf interval */
-  cpi->max_gf_interval = ((int)(cpi->output_framerate / 2.0) + 2);
+  cpi->max_gf_interval = ((int)round(cpi->output_framerate / 2.0) + 2);
 
   if (cpi->max_gf_interval < 12) cpi->max_gf_interval = 12;
 
@@ -1417,8 +1417,8 @@ static void update_layer_contexts(VP8_COMP *cpi) {
       /* Work out the average size of a frame within this layer */
       if (i > 0) {
         lc->avg_frame_size_for_layer =
-            (int)((oxcf->target_bitrate[i] - oxcf->target_bitrate[i - 1]) *
-                  1000 / (lc->framerate - prev_layer_framerate));
+            (int)round((oxcf->target_bitrate[i] - oxcf->target_bitrate[i - 1]) *
+                       1000 / (lc->framerate - prev_layer_framerate));
       }
 
       prev_layer_framerate = lc->framerate;
@@ -1954,7 +1954,7 @@ struct VP8_COMP *vp8_create_compressor(VP8_CONFIG *oxcf) {
   cpi->twopass.est_max_qcorrection_factor = 1.0;
 
   for (i = 0; i < KEY_FRAME_CONTEXT; ++i) {
-    cpi->prior_key_frame_distance[i] = (int)cpi->output_framerate;
+    cpi->prior_key_frame_distance[i] = (int)round(cpi->output_framerate);
   }
 
 #ifdef OUTPUT_YUV_SRC
@@ -3254,13 +3254,13 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
         cpi->per_frame_bandwidth = cpi->twopass.gf_bits;
         /* per second target bitrate */
         cpi->target_bandwidth =
-            (int)(cpi->twopass.gf_bits * cpi->output_framerate);
+            (int)round(cpi->twopass.gf_bits * cpi->output_framerate);
       }
       break;
 #endif  // !CONFIG_REALTIME_ONLY
     default:
       cpi->per_frame_bandwidth =
-          (int)(cpi->target_bandwidth / cpi->output_framerate);
+          (int)round(cpi->target_bandwidth / cpi->output_framerate);
       break;
   }
 
@@ -3530,7 +3530,8 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
          */
         for (i = cpi->current_layer + 1; i < cpi->oxcf.number_of_layers; ++i) {
           LAYER_CONTEXT *lc = &cpi->layer_context[i];
-          lc->bits_off_target += (int)(lc->target_bandwidth / lc->framerate);
+          lc->bits_off_target +=
+              (int)round(lc->target_bandwidth / lc->framerate);
           if (lc->bits_off_target > lc->maximum_buffer_size) {
             lc->bits_off_target = lc->maximum_buffer_size;
           }
@@ -4030,7 +4031,7 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
              (over_size_percent > 0)) {
         cpi->active_worst_quality++;
         /* Assume 1 qstep = about 4% on frame size. */
-        over_size_percent = (int)(over_size_percent * 0.96);
+        over_size_percent = (int)round(over_size_percent * 0.96);
       }
 #if !CONFIG_REALTIME_ONLY
       top_index = cpi->active_worst_quality;
@@ -4552,8 +4553,8 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 
     for (i = cpi->current_layer + 1; i < cpi->oxcf.number_of_layers; ++i) {
       LAYER_CONTEXT *lc = &cpi->layer_context[i];
-      int bits_off_for_this_layer = (int)(lc->target_bandwidth / lc->framerate -
-                                          cpi->projected_frame_size);
+      int bits_off_for_this_layer = (int)round(
+          lc->target_bandwidth / lc->framerate - cpi->projected_frame_size);
 
       lc->bits_off_target += bits_off_for_this_layer;
 

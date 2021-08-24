@@ -170,8 +170,8 @@ static void init_me_luts_bd(int *bit16lut, int *bit4lut, int range,
   // to the quantizer tables.
   for (i = 0; i < range; i++) {
     const double q = vp9_convert_qindex_to_q(i, bit_depth);
-    bit16lut[i] = (int)(0.0418 * q + 2.4107);
-    bit4lut[i] = (int)(0.063 * q + 2.742);
+    bit16lut[i] = (int)round(0.0418 * q + 2.4107);
+    bit4lut[i] = (int)round(0.063 * q + 2.742);
   }
 }
 
@@ -249,14 +249,17 @@ int vp9_compute_rd_mult_based_on_qindex(const VP9_COMP *cpi, int qindex) {
 
   if (cpi->common.frame_type == KEY_FRAME) {
     double def_rd_q_mult = def_kf_rd_multiplier(qindex);
-    rdmult = (int)((double)rdmult * def_rd_q_mult * rdc->rd_mult_key_qp_fac);
+    rdmult =
+        (int)round((double)rdmult * def_rd_q_mult * rdc->rd_mult_key_qp_fac);
   } else if (!cpi->rc.is_src_frame_alt_ref &&
              (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)) {
     double def_rd_q_mult = def_arf_rd_multiplier(qindex);
-    rdmult = (int)((double)rdmult * def_rd_q_mult * rdc->rd_mult_arf_qp_fac);
+    rdmult =
+        (int)round((double)rdmult * def_rd_q_mult * rdc->rd_mult_arf_qp_fac);
   } else {
     double def_rd_q_mult = def_inter_rd_multiplier(qindex);
-    rdmult = (int)((double)rdmult * def_rd_q_mult * rdc->rd_mult_inter_qp_fac);
+    rdmult =
+        (int)round((double)rdmult * def_rd_q_mult * rdc->rd_mult_inter_qp_fac);
   }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -293,7 +296,7 @@ int vp9_compute_rd_mult(const VP9_COMP *cpi, int qindex) {
 int vp9_get_adaptive_rdmult(const VP9_COMP *cpi, double beta) {
   int rdmult =
       vp9_compute_rd_mult_based_on_qindex(cpi, cpi->common.base_qindex);
-  rdmult = (int)((double)rdmult / beta);
+  rdmult = (int)round((double)rdmult / beta);
   rdmult = rdmult > 0 ? rdmult : 1;
   return modulate_rdmult(cpi, rdmult);
 }
@@ -314,7 +317,7 @@ static int compute_rd_thresh_factor(int qindex, vpx_bit_depth_t bit_depth) {
   q = vp9_dc_quant(qindex, 0, VPX_BITS_8) / 4.0;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   // TODO(debargha): Adjust the function below.
-  return VPXMAX((int)(pow(q, RD_THRESH_POW) * 5.12), 8);
+  return VPXMAX((int)round(pow(q, RD_THRESH_POW) * 5.12), 8);
 }
 
 void vp9_initialize_me_consts(VP9_COMP *cpi, MACROBLOCK *x, int qindex) {

@@ -329,8 +329,8 @@ static int frame_max_bits(VP8_COMP *cpi) {
     /* For CBR base this on the target average bits per frame plus the
      * maximum sedction rate passed in by the user
      */
-    max_bits = (int)(cpi->av_per_frame_bandwidth *
-                     ((double)cpi->oxcf.two_pass_vbrmax_section / 100.0));
+    max_bits = (int)round(cpi->av_per_frame_bandwidth *
+                          ((double)cpi->oxcf.two_pass_vbrmax_section / 100.0));
 
     /* If our buffer is below the optimum level */
     if (buffer_fullness_ratio < 1.0) {
@@ -352,10 +352,10 @@ static int frame_max_bits(VP8_COMP *cpi) {
     /* For VBR base this on the bits and frames left plus the
      * two_pass_vbrmax_section rate passed in by the user
      */
-    max_bits = (int)(((double)cpi->twopass.bits_left /
-                      (cpi->twopass.total_stats.count -
-                       (double)cpi->common.current_video_frame)) *
-                     ((double)cpi->oxcf.two_pass_vbrmax_section / 100.0));
+    max_bits = (int)round(((double)cpi->twopass.bits_left /
+                           (cpi->twopass.total_stats.count -
+                            (double)cpi->common.current_video_frame)) *
+                          ((double)cpi->oxcf.two_pass_vbrmax_section / 100.0));
   }
 
   /* Trap case where we are out of bits */
@@ -872,7 +872,7 @@ static int64_t estimate_modemvcost(VP8_COMP *cpi, FIRSTPASS_STATS *fpstats) {
   /* Estimate of extra bits per mv overhead for mbs
    * << 9 is the normalization to the (bits * 512) used in vp8_bits_per_mb
    */
-  mv_cost = ((int)(fpstats->new_mv_count / fpstats->count) * 8) << 9;
+  mv_cost = ((int)round(fpstats->new_mv_count / fpstats->count) * 8) << 9;
 
   /* Crude estimate of overhead cost from modes
    * << 9 is the normalization to (bits * 512) used in vp8_bits_per_mb
@@ -968,8 +968,8 @@ static int estimate_max_q(VP8_COMP *cpi, FIRSTPASS_STATS *fpstats,
   /* Estimate of overhead bits per mb */
   /* Correction to overhead bits for min allowed Q. */
   overhead_bits_per_mb = overhead_bits / num_mbs;
-  overhead_bits_per_mb = (int)(overhead_bits_per_mb *
-                               pow(0.98, (double)cpi->twopass.maxq_min_limit));
+  overhead_bits_per_mb = (int)round(
+      overhead_bits_per_mb * pow(0.98, (double)cpi->twopass.maxq_min_limit));
 
   /* Try and pick a max Q that will be high enough to encode the
    * content at the given rate.
@@ -985,16 +985,16 @@ static int estimate_max_q(VP8_COMP *cpi, FIRSTPASS_STATS *fpstats,
         vp8_bits_per_mb[INTER_FRAME][Q] + overhead_bits_per_mb;
 
     bits_per_mb_at_this_q =
-        (int)(.5 + err_correction_factor * speed_correction *
-                       cpi->twopass.est_max_qcorrection_factor *
-                       cpi->twopass.section_max_qfactor *
-                       (double)bits_per_mb_at_this_q);
+        (int)round(.5 + err_correction_factor * speed_correction *
+                            cpi->twopass.est_max_qcorrection_factor *
+                            cpi->twopass.section_max_qfactor *
+                            (double)bits_per_mb_at_this_q);
 
     /* Mode and motion overhead */
     /* As Q rises in real encode loop rd code will force overhead down
      * We make a crude adjustment for this here as *.98 per Q step.
      */
-    overhead_bits_per_mb = (int)((double)overhead_bits_per_mb * 0.98);
+    overhead_bits_per_mb = (int)round((double)overhead_bits_per_mb * 0.98);
 
     if (bits_per_mb_at_this_q <= target_norm_bits_per_mb) break;
   }
@@ -1081,14 +1081,14 @@ static int estimate_cq(VP8_COMP *cpi, FIRSTPASS_STATS *fpstats,
         vp8_bits_per_mb[INTER_FRAME][Q] + overhead_bits_per_mb;
 
     bits_per_mb_at_this_q =
-        (int)(.5 + err_correction_factor * speed_correction * clip_iifactor *
-                       (double)bits_per_mb_at_this_q);
+        (int)round(.5 + err_correction_factor * speed_correction *
+                            clip_iifactor * (double)bits_per_mb_at_this_q);
 
     /* Mode and motion overhead */
     /* As Q rises in real encode loop rd code will force overhead down
      * We make a crude adjustment for this here as *.98 per Q step.
      */
-    overhead_bits_per_mb = (int)((double)overhead_bits_per_mb * 0.98);
+    overhead_bits_per_mb = (int)round((double)overhead_bits_per_mb * 0.98);
 
     if (bits_per_mb_at_this_q <= target_norm_bits_per_mb) break;
   }
@@ -1135,9 +1135,9 @@ static int estimate_q(VP8_COMP *cpi, double section_err,
         calc_correction_factor(err_per_mb, 150.0, 0.40, 0.90, Q);
 
     bits_per_mb_at_this_q =
-        (int)(.5 + (err_correction_factor * speed_correction *
-                    cpi->twopass.est_max_qcorrection_factor *
-                    (double)vp8_bits_per_mb[INTER_FRAME][Q] / 1.0));
+        (int)round(.5 + (err_correction_factor * speed_correction *
+                         cpi->twopass.est_max_qcorrection_factor *
+                         (double)vp8_bits_per_mb[INTER_FRAME][Q] / 1.0));
 
     if (bits_per_mb_at_this_q <= target_norm_bits_per_mb) break;
   }
@@ -1217,8 +1217,8 @@ static int estimate_kf_group_q(VP8_COMP *cpi, double section_err,
         calc_correction_factor(err_per_mb, 150.0, pow_lowq, pow_highq, Q);
 
     bits_per_mb_at_this_q =
-        (int)(.5 + (err_correction_factor * combined_correction_factor *
-                    (double)vp8_bits_per_mb[INTER_FRAME][Q]));
+        (int)round(.5 + (err_correction_factor * combined_correction_factor *
+                         (double)vp8_bits_per_mb[INTER_FRAME][Q]));
 
     if (bits_per_mb_at_this_q <= target_norm_bits_per_mb) break;
   }
@@ -1228,7 +1228,7 @@ static int estimate_kf_group_q(VP8_COMP *cpi, double section_err,
    */
   while ((bits_per_mb_at_this_q > target_norm_bits_per_mb) &&
          (Q < (MAXQ * 2))) {
-    bits_per_mb_at_this_q = (int)(0.96 * bits_per_mb_at_this_q);
+    bits_per_mb_at_this_q = (int)round(0.96 * bits_per_mb_at_this_q);
     Q++;
   }
 
@@ -1561,7 +1561,7 @@ static int calc_arf_boost(VP8_COMP *cpi, int offset, int f_frames, int b_frames,
     }
   }
 
-  *f_boost = (int)(boost_score * 100.0) >> 4;
+  *f_boost = (int)round(boost_score * 100.0) >> 4;
 
   /* Reset for backward looking loop */
   boost_score = 0.0;
@@ -1605,7 +1605,7 @@ static int calc_arf_boost(VP8_COMP *cpi, int offset, int f_frames, int b_frames,
       break;
     }
   }
-  *b_boost = (int)(boost_score * 100.0) >> 4;
+  *b_boost = (int)round(boost_score * 100.0) >> 4;
 
   return (*f_boost + *b_boost);
 }
@@ -1743,7 +1743,7 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   }
 
   cpi->twopass.gf_decay_rate =
-      (i > 0) ? (int)(100.0 * (1.0 - decay_accumulator)) / i : 0;
+      (i > 0) ? (int)round(100.0 * (1.0 - decay_accumulator)) / i : 0;
 
   /* When using CBR apply additional buffer related upper limits */
   if (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
@@ -1785,7 +1785,7 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     }
   }
 
-  cpi->gfu_boost = (int)(boost_score * 100.0) >> 4;
+  cpi->gfu_boost = (int)round(boost_score * 100.0) >> 4;
 
 #if NEW_BOOST
   /* Alterrnative boost calculation for alt ref */
@@ -1826,8 +1826,8 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     if ((cpi->twopass.kf_group_bits > 0) &&
         (cpi->twopass.kf_group_error_left > 0)) {
       group_bits =
-          (int)((double)cpi->twopass.kf_group_bits *
-                (gf_group_err / (double)cpi->twopass.kf_group_error_left));
+          (int)round((double)cpi->twopass.kf_group_bits *
+                     (gf_group_err / (double)cpi->twopass.kf_group_error_left));
     } else {
       group_bits = 0;
     }
@@ -1859,7 +1859,7 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
      * boost number
      */
     arf_frame_bits =
-        (int)((double)Boost * (group_bits / (double)allocation_chunks));
+        (int)round((double)Boost * (group_bits / (double)allocation_chunks));
 
     /* Estimate if there are enough bits available to make worthwhile use
      * of an arf.
@@ -1906,7 +1906,7 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
        */
       half_gf_int = cpi->baseline_gf_interval >> 1;
       frames_after_arf =
-          (int)(cpi->twopass.total_stats.count - this_frame->frame - 1);
+          (int)round(cpi->twopass.total_stats.count - this_frame->frame - 1);
 
       switch (cpi->oxcf.arnr_type) {
         case 1: /* Backward filter */
@@ -1956,7 +1956,8 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
    * key frame.
    */
   if (cpi->twopass.frames_to_key >=
-      (int)(cpi->twopass.total_stats.count - cpi->common.current_video_frame)) {
+      (int)round(cpi->twopass.total_stats.count -
+                 cpi->common.current_video_frame)) {
     cpi->twopass.kf_group_bits =
         (cpi->twopass.bits_left > 0) ? cpi->twopass.bits_left : 0;
   }
@@ -2044,8 +2045,8 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     /* Calculate the number of bits to be spent on the gf or arf based on
      * the boost number
      */
-    gf_bits = (int)((double)Boost *
-                    (cpi->twopass.gf_group_bits / (double)allocation_chunks));
+    gf_bits = (int)round((double)Boost * (cpi->twopass.gf_group_bits /
+                                          (double)allocation_chunks));
 
     /* If the frame that is to be boosted is simpler than the average for
      * the gf/arf group then use an alternative calculation
@@ -2060,8 +2061,8 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
           (mod_frame_err * (double)cpi->baseline_gf_interval) /
           DOUBLE_DIVIDE_CHECK((double)cpi->twopass.kf_group_error_left);
 
-      alt_gf_bits =
-          (int)((double)Boost * (alt_gf_grp_bits / (double)allocation_chunks));
+      alt_gf_bits = (int)round((double)Boost *
+                               (alt_gf_grp_bits / (double)allocation_chunks));
 
       if (gf_bits > alt_gf_bits) {
         gf_bits = alt_gf_bits;
@@ -2074,8 +2075,8 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     else {
       // Avoid division by 0 by clamping cpi->twopass.kf_group_error_left to 1
       int alt_gf_bits =
-          (int)((double)cpi->twopass.kf_group_bits * mod_frame_err /
-                (double)VPXMAX(cpi->twopass.kf_group_error_left, 1));
+          (int)round((double)cpi->twopass.kf_group_bits * mod_frame_err /
+                     (double)VPXMAX(cpi->twopass.kf_group_error_left, 1));
 
       if (alt_gf_bits > gf_bits) {
         gf_bits = alt_gf_bits;
@@ -2119,9 +2120,9 @@ static void define_gf_group(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
      */
     if (!cpi->source_alt_ref_pending && cpi->common.frame_type != KEY_FRAME) {
       cpi->twopass.gf_group_error_left =
-          (int)(gf_group_err - gf_first_frame_err);
+          (int)round(gf_group_err - gf_first_frame_err);
     } else {
-      cpi->twopass.gf_group_error_left = (int)gf_group_err;
+      cpi->twopass.gf_group_error_left = (int)round(gf_group_err);
     }
 
     cpi->twopass.gf_group_bits -=
@@ -2209,7 +2210,8 @@ static void assign_std_frame_bits(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   }
 
   /* How many of those bits available for allocation should we give it? */
-  target_frame_size = (int)((double)cpi->twopass.gf_group_bits * err_fraction);
+  target_frame_size =
+      (int)round((double)cpi->twopass.gf_group_bits * err_fraction);
 
   /* Clip to target size to 0 - max_bits (or cpi->twopass.gf_group_bits)
    * at the top end.
@@ -2225,7 +2227,7 @@ static void assign_std_frame_bits(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   }
 
   /* Adjust error and bits remaining */
-  cpi->twopass.gf_group_error_left -= (int)modified_err;
+  cpi->twopass.gf_group_error_left -= (int)round(modified_err);
   cpi->twopass.gf_group_bits -= target_frame_size;
 
   if (cpi->twopass.gf_group_bits < 0) cpi->twopass.gf_group_bits = 0;
@@ -2245,8 +2247,8 @@ static void assign_std_frame_bits(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
 void vp8_second_pass(VP8_COMP *cpi) {
   int tmp_q;
-  int frames_left =
-      (int)(cpi->twopass.total_stats.count - cpi->common.current_video_frame);
+  int frames_left = (int)round(cpi->twopass.total_stats.count -
+                               cpi->common.current_video_frame);
 
   FIRSTPASS_STATS this_frame;
   FIRSTPASS_STATS this_frame_copy;
@@ -2354,7 +2356,7 @@ void vp8_second_pass(VP8_COMP *cpi) {
 
   /* Set nominal per second bandwidth for this frame */
   cpi->target_bandwidth =
-      (int)(cpi->per_frame_bandwidth * cpi->output_framerate);
+      (int)round(cpi->per_frame_bandwidth * cpi->output_framerate);
   if (cpi->target_bandwidth < 0) cpi->target_bandwidth = 0;
 
   /* Account for mv, mode and other overheads. */
@@ -2844,7 +2846,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
   /* Work out how many bits to allocate for the key frame itself */
   if (1) {
-    int kf_boost = (int)boost_score;
+    int kf_boost = (int)round(boost_score);
     int allocation_chunks;
     int Counter = cpi->twopass.frames_to_key;
     int alt_kf_bits;
@@ -2876,7 +2878,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     }
 
     /* Min KF boost */
-    kf_boost = (int)((double)kf_boost * 100.0) >> 4; /* Scale 16 to 100 */
+    kf_boost = (int)round((double)kf_boost * 100.0) >> 4; /* Scale 16 to 100 */
     if (kf_boost < 250) kf_boost = 250;
 
     /*
@@ -2910,8 +2912,8 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
 
     /* Calculate the number of bits to be spent on the key frame */
     cpi->twopass.kf_bits =
-        (int)((double)kf_boost *
-              ((double)cpi->twopass.kf_group_bits / (double)allocation_chunks));
+        (int)round((double)kf_boost * ((double)cpi->twopass.kf_group_bits /
+                                       (double)allocation_chunks));
 
     /* Apply an additional limit for CBR */
     if (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER) {
@@ -2931,8 +2933,8 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
            (kf_mod_err * (double)cpi->twopass.frames_to_key) /
            DOUBLE_DIVIDE_CHECK(cpi->twopass.modified_error_left));
 
-      alt_kf_bits = (int)((double)kf_boost *
-                          (alt_kf_grp_bits / (double)allocation_chunks));
+      alt_kf_bits = (int)round((double)kf_boost *
+                               (alt_kf_grp_bits / (double)allocation_chunks));
 
       if (cpi->twopass.kf_bits > alt_kf_bits) {
         cpi->twopass.kf_bits = alt_kf_bits;
@@ -2943,9 +2945,9 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
      * error score
      */
     else {
-      alt_kf_bits = (int)((double)cpi->twopass.bits_left *
-                          (kf_mod_err / DOUBLE_DIVIDE_CHECK(
-                                            cpi->twopass.modified_error_left)));
+      alt_kf_bits = (int)round(
+          (double)cpi->twopass.bits_left *
+          (kf_mod_err / DOUBLE_DIVIDE_CHECK(cpi->twopass.modified_error_left)));
 
       if (alt_kf_bits > cpi->twopass.kf_bits) {
         cpi->twopass.kf_bits = alt_kf_bits;
@@ -2964,7 +2966,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
   }
 
   /* Note the total error score of the kf group minus the key frame itself */
-  cpi->twopass.kf_group_error_left = (int)(kf_group_err - kf_mod_err);
+  cpi->twopass.kf_group_error_left = (int)round(kf_group_err - kf_mod_err);
 
   /* Adjust the count of total modified error left. The count of bits left
    * is adjusted elsewhere based on real coded frame sizes
@@ -3034,7 +3036,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     }
 
     /* Work out if spatial resampling is necessary */
-    kf_q = estimate_kf_group_q(cpi, err_per_frame, (int)bits_per_frame,
+    kf_q = estimate_kf_group_q(cpi, err_per_frame, (int)round(bits_per_frame),
                                group_iiratio);
 
     /* If we project a required Q higher than the maximum allowed Q then
@@ -3051,8 +3053,8 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
     /* Guess at buffer level at the end of the section */
     projected_buffer_level =
         (int)(cpi->buffer_level -
-              (int)((projected_bits_perframe - av_bits_per_frame) *
-                    cpi->twopass.frames_to_key));
+              (int)round((projected_bits_perframe - av_bits_per_frame) *
+                         cpi->twopass.frames_to_key));
 
     if (0) {
       FILE *f = fopen("Subsamle.stt", "a");
@@ -3126,7 +3128,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
          * image size
          */
         kf_q = estimate_kf_group_q(cpi, err_per_frame * effective_size_ratio,
-                                   (int)bits_per_frame, group_iiratio);
+                                   (int)round(bits_per_frame), group_iiratio);
 
         if (0) {
           FILE *f = fopen("Subsamle.stt", "a");

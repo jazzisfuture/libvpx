@@ -267,7 +267,7 @@ static void set_ssim_rdmult(VP9_COMP *const cpi, MACROBLOCK *const x,
   }
   geom_mean_of_scale = exp(geom_mean_of_scale / num_of_mi);
 
-  *rdmult = (int)((double)(*rdmult) * geom_mean_of_scale);
+  *rdmult = (int)round((double)(*rdmult) * geom_mean_of_scale);
   *rdmult = VPXMAX(*rdmult, 0);
   set_error_per_bit(x, *rdmult);
   vpx_clear_system_state();
@@ -3382,7 +3382,7 @@ static void ml_prune_rect_partition(VP9_COMP *const cpi, MACROBLOCK *const x,
     int horz = 0, vert = 0;
     int int_score[LABELS];
     for (i = 0; i < LABELS; ++i) {
-      int_score[i] = (int)(100 * score[i]);
+      int_score[i] = (int)round(100 * score[i]);
       max_score = VPXMAX(int_score[i], max_score);
     }
     thresh = max_score - thresh;

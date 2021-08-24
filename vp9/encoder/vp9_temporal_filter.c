@@ -1062,11 +1062,11 @@ static void adjust_arnr_filter(VP9_COMP *cpi, int distance, int group_boost,
 
   // Adjust the strength based on active max q.
   if (cpi->common.current_video_frame > 1)
-    q = ((int)vp9_convert_qindex_to_q(cpi->rc.avg_frame_qindex[INTER_FRAME],
-                                      cpi->common.bit_depth));
+    q = ((int)round(vp9_convert_qindex_to_q(
+        cpi->rc.avg_frame_qindex[INTER_FRAME], cpi->common.bit_depth)));
   else
-    q = ((int)vp9_convert_qindex_to_q(cpi->rc.avg_frame_qindex[KEY_FRAME],
-                                      cpi->common.bit_depth));
+    q = ((int)round(vp9_convert_qindex_to_q(cpi->rc.avg_frame_qindex[KEY_FRAME],
+                                            cpi->common.bit_depth)));
   if (q > 16) {
     strength = base_strength;
   } else {

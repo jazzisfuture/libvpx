@@ -447,8 +447,8 @@ void vp9_get_smooth_motion_field(const MV *search_mf,
   }
   // copy smoothed results to output
   for (idx = 0; idx < rows * cols; ++idx) {
-    smooth_mf[idx].row = (int)(input[idx].row * bh);
-    smooth_mf[idx].col = (int)(input[idx].col * bw);
+    smooth_mf[idx].row = (int)round(input[idx].row * bh);
+    smooth_mf[idx].col = (int)round(input[idx].col * bw);
   }
   free(input);
   free(output);
