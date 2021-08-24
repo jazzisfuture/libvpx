@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <math.h>
+
 #include "vp9/common/vp9_mv.h"
 #include "vp9/encoder/vp9_non_greedy_mv.h"
 // TODO(angiebird): move non_greedy_mv related functions to this file
@@ -447,8 +449,8 @@ void vp9_get_smooth_motion_field(const MV *search_mf,
   }
   // copy smoothed results to output
   for (idx = 0; idx < rows * cols; ++idx) {
-    smooth_mf[idx].row = (int)(input[idx].row * bh);
-    smooth_mf[idx].col = (int)(input[idx].col * bw);
+    smooth_mf[idx].row = (int)round(input[idx].row * bh);
+    smooth_mf[idx].col = (int)round(input[idx].col * bw);
   }
   free(input);
   free(output);

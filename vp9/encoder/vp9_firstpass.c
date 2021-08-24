@@ -1576,7 +1576,7 @@ static int get_twopass_worst_quality(VP9_COMP *cpi, const double section_err,
                             ? cpi->initial_mbs
                             : cpi->common.MBs;
     const double active_pct = VPXMAX(0.01, 1.0 - inactive_zone);
-    const int active_mbs = (int)VPXMAX(1, (double)num_mbs * active_pct);
+    const int active_mbs = (int)VPXMAX(1, round((double)num_mbs * active_pct));
     const double av_err_per_mb = section_err / active_pct;
     const double speed_term = 1.0 + 0.04 * oxcf->speed;
     const int target_norm_bits_per_mb =
@@ -2004,7 +2004,7 @@ static int compute_arf_boost(const FRAME_INFO *frame_info,
                                     avg_frame_qindex, this_frame_mv_in_out);
   }
 
-  arf_boost = (int)boost_score;
+  arf_boost = (int)round(boost_score);
 
   // Reset for backward looking loop.
   boost_score = 0.0;
@@ -2043,7 +2043,7 @@ static int compute_arf_boost(const FRAME_INFO *frame_info,
                    calc_frame_boost(frame_info, this_frame, twopass,
                                     avg_frame_qindex, this_frame_mv_in_out);
   }
-  arf_boost += (int)boost_score;
+  arf_boost += (int)round(boost_score);
 
   if (arf_boost < ((b_frames + f_frames) * 40))
     arf_boost = ((b_frames + f_frames) * 40);
@@ -2077,7 +2077,7 @@ static int calculate_section_intra_ratio(const FIRSTPASS_STATS *begin,
     ++i;
   }
 
-  return (int)(intra_error / DOUBLE_DIVIDE_CHECK(coded_error));
+  return (int)round(intra_error / DOUBLE_DIVIDE_CHECK(coded_error));
 }
 
 // Calculate the total bits to allocate in this GF/ARF group.
@@ -2413,8 +2413,8 @@ static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
     if (oxcf->vbr_corpus_complexity) {
       this_frame_score = calculate_norm_frame_score(cpi, twopass, oxcf,
                                                     &frame_stats, av_score);
-      normal_frame_bits = (int)((double)total_group_bits *
-                                (this_frame_score / tot_norm_frame_score));
+      normal_frame_bits = (int)round((double)total_group_bits *
+                                     (this_frame_score / tot_norm_frame_score));
     }
 
     target_frame_size = normal_frame_bits;
@@ -2782,7 +2782,7 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
     const int arf_boost =
         compute_arf_boost(frame_info, twopass, gld_show_idx, f_frames, b_frames,
                           avg_inter_frame_qindex);
-    rc->gfu_boost = VPXMIN((int)twopass->gf_max_total_boost, arf_boost);
+    rc->gfu_boost = VPXMIN((int)round(twopass->gf_max_total_boost), arf_boost);
     rc->source_alt_ref_pending = 0;
   }
 
@@ -2885,9 +2885,9 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
         cpi, group_av_err, (group_av_skip_pct + group_av_inactive_zone),
         group_av_noise, vbr_group_bits_per_frame);
     twopass->active_worst_quality =
-        (int)((tmp_q + (twopass->active_worst_quality *
-                        (twopass->active_wq_factor - 1))) /
-              twopass->active_wq_factor);
+        (int)round((tmp_q + (twopass->active_worst_quality *
+                             (twopass->active_wq_factor - 1))) /
+                   twopass->active_wq_factor);
 
 #if CONFIG_ALWAYS_ADJUST_BPM
     // Reset rolling actual and target bits counters for ARF groups.
@@ -3341,7 +3341,7 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
   reset_fpf_position(twopass, start_position);
 
   // Store the zero motion percentage
-  twopass->kf_zeromotion_pct = (int)(zero_motion_accumulator * 100.0);
+  twopass->kf_zeromotion_pct = (int)round(zero_motion_accumulator * 100.0);
 
   // Calculate a section intra ratio used in setting max loop filter.
   twopass->key_frame_section_intra_rating = calculate_section_intra_ratio(
@@ -3350,20 +3350,21 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
   // Special case for static / slide show content but dont apply
   // if the kf group is very short.
   if ((zero_motion_accumulator > 0.99) && (rc->frames_to_key > 8)) {
-    rc->kf_boost = (int)(twopass->kf_max_total_boost);
+    rc->kf_boost = (int)round(twopass->kf_max_total_boost);
   } else {
     // Apply various clamps for min and max oost
-    rc->kf_boost = VPXMAX((int)boost_score, (rc->frames_to_key * 3));
+    rc->kf_boost = VPXMAX((int)round(boost_score), (rc->frames_to_key * 3));
     rc->kf_boost = VPXMAX(rc->kf_boost, MIN_KF_TOT_BOOST);
-    rc->kf_boost = VPXMIN(rc->kf_boost, (int)(twopass->kf_max_total_boost));
+    rc->kf_boost =
+        VPXMIN(rc->kf_boost, (int)round(twopass->kf_max_total_boost));
   }
 
   // Work out how many bits to allocate for the key frame itself.
   kf_bits = calculate_boost_bits((rc->frames_to_key - 1), rc->kf_boost,
                                  twopass->kf_group_bits);
   // Based on the spatial complexity, increase the bits allocated to key frame.
-  kf_bits +=
-      (int)((twopass->kf_group_bits - kf_bits) * (kf_mod_err / kf_group_err));
+  kf_bits += (int)round((twopass->kf_group_bits - kf_bits) *
+                        (kf_mod_err / kf_group_err));
   max_kf_bits =
       twopass->kf_group_bits - (rc->frames_to_key - 1) * FRAME_OVERHEAD_BITS;
   max_kf_bits = lclamp(max_kf_bits, 0, INT_MAX);
@@ -3502,7 +3503,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     twopass->active_worst_quality = cpi->oxcf.cq_level;
   } else if (cm->current_video_frame == 0) {
     const int frames_left =
-        (int)(twopass->total_stats.count - cm->current_video_frame);
+        (int)round(twopass->total_stats.count - cm->current_video_frame);
     // Special case code for first frame.
     const int section_target_bandwidth =
         (int)(twopass->bits_left / frames_left);

@@ -193,7 +193,7 @@ static void deblock_and_de_macro_block(VP9_COMMON *cm,
 #if CONFIG_VP9_HIGHBITDEPTH
   if (source->flags & YV12_FLAG_HIGHBITDEPTH) {
     double level = 6.0e-05 * q * q * q - .0067 * q * q + .306 * q + .0065;
-    int ppl = (int)(level + .5);
+    int ppl = (int)round(level + .5);
     vp9_highbd_post_proc_down_and_across(
         CONVERT_TO_SHORTPTR(source->y_buffer),
         CONVERT_TO_SHORTPTR(post->y_buffer), source->y_stride, post->y_stride,
@@ -229,8 +229,8 @@ static void deblock_and_de_macro_block(VP9_COMMON *cm,
 
 void vp9_deblock(struct VP9Common *cm, const YV12_BUFFER_CONFIG *src,
                  YV12_BUFFER_CONFIG *dst, int q, uint8_t *limits) {
-  const int ppl =
-      (int)(6.0e-05 * q * q * q - 0.0067 * q * q + 0.306 * q + 0.0065 + 0.5);
+  const int ppl = (int)round(6.0e-05 * q * q * q - 0.0067 * q * q + 0.306 * q +
+                             0.0065 + 0.5);
 #if CONFIG_VP9_HIGHBITDEPTH
   if (src->flags & YV12_FLAG_HIGHBITDEPTH) {
     int i;

@@ -171,7 +171,7 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, MACROBLOCK *x, int Qvalue) {
   /* Further tests required to see if optimum is different
    * for key frames, golden frames and arf frames.
    */
-  cpi->RDMULT = (int)(rdconst * (capped_q * capped_q));
+  cpi->RDMULT = (int)round(rdconst * (capped_q * capped_q));
 
   /* Extend rate multiplier along side quantizer zbin increases */
   if (cpi->mb.zbin_over_quant > 0) {
@@ -182,8 +182,8 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, MACROBLOCK *x, int Qvalue) {
      * The units of cpi->mb.zbin_over_quant are 1/128 of Q bin size
      */
     oq_factor = 1.0 + ((double)0.0015625 * cpi->mb.zbin_over_quant);
-    modq = (int)((double)capped_q * oq_factor);
-    cpi->RDMULT = (int)(rdconst * (modq * modq));
+    modq = (int)round((double)capped_q * oq_factor);
+    cpi->RDMULT = (int)round(rdconst * (modq * modq));
   }
 
   if (cpi->pass == 2 && (cpi->common.frame_type != KEY_FRAME)) {
@@ -204,7 +204,7 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, MACROBLOCK *x, int Qvalue) {
     x->mode_test_hit_counts[i] = 0;
   }
 
-  q = (int)pow(Qvalue, 1.25);
+  q = (int)round(pow(Qvalue, 1.25));
 
   if (q < 8) q = 8;
 
@@ -259,7 +259,7 @@ void vp8_initialize_rd_consts(VP8_COMP *cpi, MACROBLOCK *x, int Qvalue) {
 }
 
 void vp8_auto_select_speed(VP8_COMP *cpi) {
-  int milliseconds_for_compress = (int)(1000000 / cpi->framerate);
+  int milliseconds_for_compress = (int)round(1000000 / cpi->framerate);
 
   milliseconds_for_compress =
       milliseconds_for_compress * (16 - cpi->oxcf.cpu_used) / 16;

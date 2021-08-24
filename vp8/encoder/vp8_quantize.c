@@ -464,7 +464,7 @@ void vp8_set_quantizer(struct VP8_COMP *cpi, int Q) {
   // Q, and set to 0 below some threshold. May want to condition this in
   // future on the variance/energy in UV channel.
   if (cpi->oxcf.screen_content_mode && Q > 40) {
-    new_uv_delta_q = -(int)(0.15 * Q);
+    new_uv_delta_q = -(int)round(0.15 * Q);
     // Check range: magnitude of delta is 4 bits.
     if (new_uv_delta_q < -15) {
       new_uv_delta_q = -15;

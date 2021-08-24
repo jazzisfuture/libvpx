@@ -3090,8 +3090,8 @@ static int scale_down(VP9_COMP *cpi, int q) {
   if (rc->frame_size_selector == UNSCALED &&
       q >= rc->rf_level_maxq[gf_group->rf_level[gf_group->index]]) {
     const int max_size_thresh =
-        (int)(rate_thresh_mult[SCALE_STEP1] *
-              VPXMAX(rc->this_frame_target, rc->avg_frame_bandwidth));
+        (int)round(rate_thresh_mult[SCALE_STEP1] *
+                   VPXMAX(rc->this_frame_target, rc->avg_frame_bandwidth));
     scale = rc->projected_frame_size > max_size_thresh ? 1 : 0;
   }
   return scale;
@@ -5981,13 +5981,13 @@ static void level_rc_framerate(VP9_COMP *cpi, int arf_src_index) {
   rc->max_frame_bandwidth = VPXMIN(rc->max_frame_bandwidth, ls->max_frame_size);
   if (frame_is_intra_only(cm)) {
     rc->max_frame_bandwidth =
-        VPXMIN(rc->max_frame_bandwidth, (int)(max_cpb_size * 0.5));
+        VPXMIN(rc->max_frame_bandwidth, (int)round(max_cpb_size * 0.5));
   } else if (arf_src_index > 0) {
     rc->max_frame_bandwidth =
-        VPXMIN(rc->max_frame_bandwidth, (int)(max_cpb_size * 0.4));
+        VPXMIN(rc->max_frame_bandwidth, (int)round(max_cpb_size * 0.4));
   } else {
     rc->max_frame_bandwidth =
-        VPXMIN(rc->max_frame_bandwidth, (int)(max_cpb_size * 0.2));
+        VPXMIN(rc->max_frame_bandwidth, (int)round(max_cpb_size * 0.2));
   }
 }
 
@@ -6192,9 +6192,8 @@ static void update_level_info(VP9_COMP *cpi, size_t *size, int arf_src_index) {
       cpb_data_size += level_stats->frame_window_buffer.buf[idx].size;
     }
     cpb_data_size = cpb_data_size / 125.0;
-    level_constraint->max_frame_size =
-        (int)((vp9_level_defs[level_index].max_cpb_size - cpb_data_size) *
-              1000.0);
+    level_constraint->max_frame_size = (int)round(
+        (vp9_level_defs[level_index].max_cpb_size - cpb_data_size) * 1000.0);
     if (level_stats->frame_window_buffer.len < CPB_WINDOW_SIZE - 1)
       level_constraint->max_frame_size >>= 1;
   }

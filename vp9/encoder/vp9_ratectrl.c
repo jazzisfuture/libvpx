@@ -191,8 +191,8 @@ int vp9_rc_bits_per_mb(FRAME_TYPE frame_type, int qindex,
          correction_factor >= MIN_BPB_FACTOR);
 
   // q based adjustment to baseline enumerator
-  enumerator += (int)(enumerator * q) >> 12;
-  return (int)(enumerator * correction_factor / q);
+  enumerator += (int)round(enumerator * q) >> 12;
+  return (int)round(enumerator * correction_factor / q);
 }
 
 int vp9_estimate_bits_at_q(FRAME_TYPE frame_type, int q, int mbs,
@@ -337,13 +337,13 @@ int vp9_rc_get_default_min_gf_interval(int width, int height,
   static const double factor_safe = 3840 * 2160 * 20.0;
   const double factor = width * height * framerate;
   const int default_interval =
-      clamp((int)(framerate * 0.125), MIN_GF_INTERVAL, MAX_GF_INTERVAL);
+      clamp((int)round(framerate * 0.125), MIN_GF_INTERVAL, MAX_GF_INTERVAL);
 
   if (factor <= factor_safe)
     return default_interval;
   else
     return VPXMAX(default_interval,
-                  (int)(MIN_GF_INTERVAL * factor / factor_safe + 0.5));
+                  (int)round(MIN_GF_INTERVAL * factor / factor_safe + 0.5));
   // Note this logic makes:
   // 4K24: 5
   // 4K30: 6
@@ -351,7 +351,7 @@ int vp9_rc_get_default_min_gf_interval(int width, int height,
 }
 
 int vp9_rc_get_default_max_gf_interval(double framerate, int min_gf_interval) {
-  int interval = VPXMIN(MAX_GF_INTERVAL, (int)(framerate * 0.75));
+  int interval = VPXMIN(MAX_GF_INTERVAL, (int)round(framerate * 0.75));
   interval += (interval & 0x01);  // Round to even value
   return VPXMAX(interval, min_gf_interval);
 }
@@ -795,7 +795,7 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi) {
   if (correction_factor > 102) {
     // We are not already at the worst allowable quality
     correction_factor =
-        (int)(100 + ((correction_factor - 100) * adjustment_limit));
+        (int)round(100 + ((correction_factor - 100) * adjustment_limit));
     rate_correction_factor = (rate_correction_factor * correction_factor) / 100;
     // Keep rate_correction_factor within limits
     if (rate_correction_factor > MAX_BPB_FACTOR)
@@ -803,7 +803,7 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi) {
   } else if (correction_factor < 99) {
     // We are not already at the best allowable quality
     correction_factor =
-        (int)(100 - ((100 - correction_factor) * adjustment_limit));
+        (int)round(100 - ((100 - correction_factor) * adjustment_limit));
     rate_correction_factor = (rate_correction_factor * correction_factor) / 100;
 
     // Keep rate_correction_factor within limits
@@ -1104,7 +1104,7 @@ static int get_active_cq_level_one_pass(const RATE_CONTROL *rc,
   if (oxcf->rc_mode == VPX_CQ && rc->total_target_bits > 0) {
     const double x = (double)rc->total_actual_bits / rc->total_target_bits;
     if (x < cq_adjust_threshold) {
-      active_cq_level = (int)(active_cq_level * x / cq_adjust_threshold);
+      active_cq_level = (int)round(active_cq_level * x / cq_adjust_threshold);
     }
   }
   return active_cq_level;
@@ -1119,14 +1119,14 @@ static int get_active_cq_level_two_pass(const TWO_PASS *twopass,
   int active_cq_level = oxcf->cq_level;
   if (oxcf->rc_mode == VPX_CQ) {
     if (twopass->mb_smooth_pct > SMOOTH_PCT_MIN) {
-      active_cq_level -=
-          (int)((twopass->mb_smooth_pct - SMOOTH_PCT_MIN) / SMOOTH_PCT_DIV);
+      active_cq_level -= (int)round((twopass->mb_smooth_pct - SMOOTH_PCT_MIN) /
+                                    SMOOTH_PCT_DIV);
       active_cq_level = VPXMAX(active_cq_level, 0);
     }
     if (rc->total_target_bits > 0) {
       const double x = (double)rc->total_actual_bits / rc->total_target_bits;
       if (x < cq_adjust_threshold) {
-        active_cq_level = (int)(active_cq_level * x / cq_adjust_threshold);
+        active_cq_level = (int)round(active_cq_level * x / cq_adjust_threshold);
       }
     }
   }
@@ -1467,10 +1467,10 @@ static int rc_pick_q_and_bounds_two_pass(const VP9_COMP *cpi, int *bottom_index,
       arf_active_best_quality_hl = arfgf_low_motion_minq[q];
     }
     active_best_quality =
-        (int)((double)active_best_quality *
-                  rc->arf_active_best_quality_adjustment_factor +
-              (double)arf_active_best_quality_hl *
-                  (1.0 - rc->arf_active_best_quality_adjustment_factor));
+        (int)round((double)active_best_quality *
+                       rc->arf_active_best_quality_adjustment_factor +
+                   (double)arf_active_best_quality_hl *
+                       (1.0 - rc->arf_active_best_quality_adjustment_factor));
 
     // Modify best quality for second level arfs. For mode VPX_Q this
     // becomes the baseline frame q.
@@ -1713,8 +1713,8 @@ void vp9_rc_set_frame_target(VP9_COMP *cpi, int target) {
   // Modify frame size target when down-scaling.
   if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC &&
       rc->frame_size_selector != UNSCALED) {
-    rc->this_frame_target = (int)(rc->this_frame_target *
-                                  rate_thresh_mult[rc->frame_size_selector]);
+    rc->this_frame_target = (int)round(
+        rc->this_frame_target * rate_thresh_mult[rc->frame_size_selector]);
   }
 
 #if CONFIG_RATE_CTRL
@@ -2194,9 +2194,9 @@ int vp9_calc_iframe_target_size_one_pass_cbr(const VP9_COMP *cpi) {
       const LAYER_CONTEXT *lc = &svc->layer_context[layer];
       framerate = lc->framerate;
     }
-    kf_boost = VPXMAX(kf_boost, (int)(2 * framerate - 16));
+    kf_boost = VPXMAX(kf_boost, (int)round(2 * framerate - 16));
     if (rc->frames_since_key < framerate / 2) {
-      kf_boost = (int)(kf_boost * rc->frames_since_key / (framerate / 2));
+      kf_boost = (int)round(kf_boost * rc->frames_since_key / (framerate / 2));
     }
     target = ((16 + kf_boost) * rc->avg_frame_bandwidth) >> 4;
   }
@@ -2514,7 +2514,8 @@ int vp9_compute_qdelta_by_rate(const RATE_CONTROL *rc, FRAME_TYPE frame_type,
       vp9_rc_bits_per_mb(frame_type, qindex, 1.0, bit_depth);
 
   // Find the target bits per mb based on the base value and given ratio.
-  const int target_bits_per_mb = (int)(rate_target_ratio * base_bits_per_mb);
+  const int target_bits_per_mb =
+      (int)round(rate_target_ratio * base_bits_per_mb);
 
   // Convert the q target to an index
   for (i = rc->best_quality; i < rc->worst_quality; ++i) {
@@ -2594,7 +2595,7 @@ void vp9_rc_update_framerate(VP9_COMP *cpi) {
   RATE_CONTROL *const rc = &cpi->rc;
   int vbr_max_bits;
 
-  rc->avg_frame_bandwidth = (int)(oxcf->target_bandwidth / cpi->framerate);
+  rc->avg_frame_bandwidth = (int)round(oxcf->target_bandwidth / cpi->framerate);
   rc->min_frame_bandwidth =
       (int)(rc->avg_frame_bandwidth * oxcf->two_pass_vbrmin_section / 100);
 
@@ -2623,7 +2624,7 @@ static void vbr_rate_correction(VP9_COMP *cpi, int *this_frame_target) {
   RATE_CONTROL *const rc = &cpi->rc;
   int64_t vbr_bits_off_target = rc->vbr_bits_off_target;
   int max_delta;
-  int frame_window = VPXMIN(16, ((int)cpi->twopass.total_stats.count -
+  int frame_window = VPXMIN(16, ((int)round(cpi->twopass.total_stats.count) -
                                  cpi->common.current_video_frame));
 
   // Calcluate the adjustment to rate for this frame.
@@ -2736,7 +2737,7 @@ int vp9_resize_one_pass_cbr(VP9_COMP *cpi) {
   // Resize based on average buffer underflow and QP over some window.
   // Ignore samples close to key frame, since QP is usually high after key.
   if (!force_downsize_rate && cpi->rc.frames_since_key > cpi->framerate) {
-    const int window = VPXMIN(30, (int)(2 * cpi->framerate));
+    const int window = VPXMIN(30, (int)round(2 * cpi->framerate));
     cpi->resize_avg_qp += rc->last_q[INTER_FRAME];
     if (cpi->rc.buffer_level < (int)(30 * rc->optimal_buffer_level / 100))
       ++cpi->resize_buffer_underflow;
@@ -3256,7 +3257,7 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
     // This comes from the inverse computation of vp9_rc_bits_per_mb().
     q2 = vp9_convert_qindex_to_q(*q, cm->bit_depth);
     enumerator = 1800000;  // Factor for inter frame.
-    enumerator += (int)(enumerator * q2) >> 12;
+    enumerator += (int)round(enumerator * q2) >> 12;
     new_correction_factor = (double)target_bits_per_mb * q2 / enumerator;
     if (new_correction_factor > rate_correction_factor) {
       rate_correction_factor =
