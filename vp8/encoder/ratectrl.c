@@ -605,7 +605,6 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
          * the key frame.
          */
         cpi->this_frame_target = cpi->per_frame_bandwidth - Adjustment;
-
         if (cpi->this_frame_target < min_frame_target) {
           cpi->this_frame_target = min_frame_target;
         }
