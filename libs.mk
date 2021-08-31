@@ -100,8 +100,12 @@ ifeq ($(CONFIG_VP9_ENCODER),yes)
   RC_RTC_SRCS += vpx/vpx_ext_ratectrl.h
   RC_RTC_SRCS += $(VP9_PREFIX)ratectrl_rtc.cc
   RC_RTC_SRCS += $(VP9_PREFIX)ratectrl_rtc.h
+  RC_RTC_SRCS += $(VP8_PREFIX)vp8_ratectrl_rtc.cc
+  RC_RTC_SRCS += $(VP8_PREFIX)vp8_ratectrl_rtc.h
   INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(VP9_PREFIX)ratectrl_rtc.cc
   INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(VP9_PREFIX)ratectrl_rtc.h
+  INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(VP8_PREFIX)vp8_ratectrl_rtc.cc
+  INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(VP8_PREFIX)vp8_ratectrl_rtc.h
 endif
 
 ifeq ($(CONFIG_VP9_DECODER),yes)
