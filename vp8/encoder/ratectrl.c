@@ -605,7 +605,6 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
          * the key frame.
          */
         cpi->this_frame_target = cpi->per_frame_bandwidth - Adjustment;
-
         if (cpi->this_frame_target < min_frame_target) {
           cpi->this_frame_target = min_frame_target;
         }
@@ -1139,7 +1138,8 @@ static int limit_q_cbr_inter(int last_q, int current_q) {
 
 int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
   int Q = cpi->active_worst_quality;
-
+  printf("best worst target %d %d %d\n", cpi->active_best_quality,
+         cpi->active_worst_quality, cpi->this_frame_target);
   if (cpi->force_maxqp == 1) {
     cpi->active_worst_quality = cpi->worst_quality;
     return cpi->worst_quality;
