@@ -277,6 +277,9 @@ int vp8_set_internal_size(struct VP8_COMP *cpi, VPX_SCALING horiz_mode,
                           VPX_SCALING vert_mode);
 int vp8_get_quantizer(struct VP8_COMP *cpi);
 
+void vp8_update_alt_ref_frame_stats(struct VP8_COMP *cpi);
+void vp8_update_golden_frame_stats(struct VP8_COMP *cpi);
+
 #ifdef __cplusplus
 }
 #endif
