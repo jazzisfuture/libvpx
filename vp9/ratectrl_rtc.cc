@@ -97,8 +97,10 @@ void VP9RateControlRTC::UpdateRateControl(
   oxcf->over_shoot_pct = rc_cfg.overshoot_pct;
   oxcf->ss_number_layers = rc_cfg.ss_number_layers;
   oxcf->ts_number_layers = rc_cfg.ts_number_layers;
-  oxcf->temporal_layering_mode = (VP9E_TEMPORAL_LAYERING_MODE)(
-      (rc_cfg.ts_number_layers > 1) ? rc_cfg.ts_number_layers : 0);
+  oxcf->temporal_layering_mode =
+      (VP9E_TEMPORAL_LAYERING_MODE)((rc_cfg.ts_number_layers > 1)
+                                        ? rc_cfg.ts_number_layers
+                                        : 0);
 
   cpi_->oxcf.rc_max_intra_bitrate_pct = rc_cfg.max_intra_bitrate_pct;
   cpi_->oxcf.rc_max_inter_bitrate_pct = rc_cfg.max_inter_bitrate_pct;

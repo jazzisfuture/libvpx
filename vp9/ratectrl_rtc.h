@@ -156,7 +156,6 @@ class VP9RateControlRTC {
   void InitRateControl(const VP9RateControlRtcConfig &cfg);
   VP9_COMP *cpi_;
 };
-
 }  // namespace libvpx
 
 #endif  // VPX_VP9_RATECTRL_RTC_H_
