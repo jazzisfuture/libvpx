@@ -1847,10 +1847,10 @@ struct VP8_COMP *vp8_create_compressor(VP8_CONFIG *oxcf) {
    * Currently there is no external control for this.
    * Enable it for error_resilient_mode, or for 1 pass CBR mode.
    */
-  cpi->cyclic_refresh_mode_enabled =
-      (cpi->oxcf.error_resilient_mode ||
-       (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
-        cpi->oxcf.Mode <= 2));
+  cpi->cyclic_refresh_mode_enabled = 0;
+  // (cpi->oxcf.error_resilient_mode ||
+  //  (cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
+  //   cpi->oxcf.Mode <= 2));
   cpi->cyclic_refresh_mode_max_mbs_perframe =
       (cpi->common.mb_rows * cpi->common.mb_cols) / 7;
   if (cpi->oxcf.number_of_layers == 1) {
@@ -2549,7 +2549,7 @@ static int resize_key_frame(VP8_COMP *cpi) {
   return 0;
 }
 
-static void update_alt_ref_frame_stats(VP8_COMP *cpi) {
+void vp8_update_alt_ref_frame_stats(VP8_COMP *cpi) {
   VP8_COMMON *cm = &cpi->common;
 
   /* Select an interval before next GF or altref */
@@ -2582,7 +2582,7 @@ static void update_alt_ref_frame_stats(VP8_COMP *cpi) {
   /* Set the alternate reference frame active flag */
   cpi->source_alt_ref_active = 1;
 }
-static void update_golden_frame_stats(VP8_COMP *cpi) {
+void vp8_update_golden_frame_stats(VP8_COMP *cpi) {
   VP8_COMMON *cm = &cpi->common;
 
   /* Update the Golden frame usage counts. */
@@ -4712,10 +4712,10 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
     if (cpi->oxcf.play_alternate && cm->refresh_alt_ref_frame &&
         (cm->frame_type != KEY_FRAME)) {
       /* Update the alternate reference frame stats as appropriate. */
-      update_alt_ref_frame_stats(cpi);
+      vp8_update_alt_ref_frame_stats(cpi);
     } else {
       /* Update the Golden frame stats as appropriate. */
-      update_golden_frame_stats(cpi);
+      vp8_update_golden_frame_stats(cpi);
     }
   }
 
