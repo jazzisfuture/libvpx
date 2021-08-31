@@ -94,14 +94,27 @@ ifeq ($(CONFIG_VP9_ENCODER),yes)
   INSTALL_MAPS += include/vpx/% $(SRC_PATH_BARE)/$(VP9_PREFIX)/%
   CODEC_DOC_SRCS += vpx/vp8.h vpx/vp8cx.h vpx/vpx_ext_ratectrl.h
   CODEC_DOC_SECTIONS += vp9 vp9_encoder
+endif
 
-  RC_RTC_SRCS := $(addprefix $(VP9_PREFIX),$(call enabled,VP9_CX_SRCS))
-  RC_RTC_SRCS += $(VP9_PREFIX)vp9cx.mk vpx/vp8.h vpx/vp8cx.h
-  RC_RTC_SRCS += vpx/vpx_ext_ratectrl.h
+RC_RTC_SRCS := vpx/vp8.h vpx/vp8cx.h
+RC_RTC_SRCS += vpx/vpx_ext_ratectrl.h
+RC_RTC_SRCS += vpx/internal/vpx_ratectrl_rtc.h
+ifeq ($(CONFIG_VP9_ENCODER),yes)
+  VP9_PREFIX=vp9/
+  RC_RTC_SRCS += $(addprefix $(VP9_PREFIX),$(call enabled,VP9_CX_SRCS))
+  RC_RTC_SRCS += $(VP9_PREFIX)vp9cx.mk
   RC_RTC_SRCS += $(VP9_PREFIX)ratectrl_rtc.cc
   RC_RTC_SRCS += $(VP9_PREFIX)ratectrl_rtc.h
   INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(VP9_PREFIX)ratectrl_rtc.cc
   INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(VP9_PREFIX)ratectrl_rtc.h
+endif
+ifeq ($(CONFIG_VP8_ENCODER),yes)
+  VP8_PREFIX=vp8/
+  RC_RTC_SRCS += $(addprefix $(VP8_PREFIX),$(call enabled,VP8_CX_SRCS))
+  RC_RTC_SRCS += $(VP8_PREFIX)vp8_ratectrl_rtc.cc
+  RC_RTC_SRCS += $(VP8_PREFIX)vp8_ratectrl_rtc.h
+  INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(VP8_PREFIX)vp8_ratectrl_rtc.cc
+  INSTALL-SRCS-$(CONFIG_CODEC_SRCS) += $(VP8_PREFIX)vp8_ratectrl_rtc.h
 endif
 
 ifeq ($(CONFIG_VP9_DECODER),yes)
@@ -398,8 +411,7 @@ INSTALL-LIBS-yes += $(LIBSUBDIR)/pkgconfig/vpx.pc
 INSTALL_MAPS += $(LIBSUBDIR)/pkgconfig/%.pc %.pc
 CLEAN-OBJS += vpx.pc
 
-ifeq ($(CONFIG_VP9_ENCODER),yes)
-  RC_RTC_OBJS=$(call objs,$(RC_RTC_SRCS))
+ifeq ($(CONFIG_ENCODERS),yes)
   RC_RTC_OBJS=$(call objs,$(RC_RTC_SRCS))
   OBJS-yes += $(RC_RTC_OBJS)
   LIBS-yes += $(BUILD_PFX)libvp9rc.a $(BUILD_PFX)libvp9rc_g.a
@@ -493,7 +505,7 @@ TEST_INTRA_PRED_SPEED_SRCS=$(call addprefix_clean,test/,\
                            $(call enabled,TEST_INTRA_PRED_SPEED_SRCS))
 TEST_INTRA_PRED_SPEED_OBJS := $(sort $(call objs,$(TEST_INTRA_PRED_SPEED_SRCS)))
 
-ifeq ($(CONFIG_VP9_ENCODER),yes)
+ifeq ($(CONFIG_ENCODERS),yes)
 RC_INTERFACE_TEST_BIN=./test_rc_interface$(EXE_SFX)
 RC_INTERFACE_TEST_SRCS=$(call addprefix_clean,test/,\
                        $(call enabled,RC_INTERFACE_TEST_SRCS))
@@ -599,7 +611,7 @@ test_intra_pred_speed.$(VCPROJ_SFX): $(TEST_INTRA_PRED_SPEED_SRCS) vpx.$(VCPROJ_
             -L. -l$(CODEC_LIB) -l$(GTEST_LIB) $^
 endif  # TEST_INTRA_PRED_SPEED
 
-ifeq ($(CONFIG_VP9_ENCODER),yes)
+ifeq ($(CONFIG_ENCODERS),yes)
 ifneq ($(strip $(RC_INTERFACE_TEST_OBJS)),)
 PROJECTS-$(CONFIG_MSVS) += test_rc_interface.$(VCPROJ_SFX)
 test_rc_interface.$(VCPROJ_SFX): $(RC_INTERFACE_TEST_SRCS) vpx.$(VCPROJ_SFX) \
@@ -661,7 +673,7 @@ $(eval $(call linkerxx_template,$(TEST_INTRA_PRED_SPEED_BIN), \
               -L. -lvpx -lgtest $(extralibs) -lm))
 endif  # TEST_INTRA_PRED_SPEED
 
-ifeq ($(CONFIG_VP9_ENCODER),yes)
+ifeq ($(CONFIG_ENCODERS),yes)
 ifneq ($(strip $(RC_INTERFACE_TEST_OBJS)),)
 $(RC_INTERFACE_TEST_OBJS) $(RC_INTERFACE_TEST_OBJS:.o=.d): \
   CXXFLAGS += $(GTEST_INCLUDES)
@@ -673,7 +685,7 @@ $(eval $(call linkerxx_template,$(RC_INTERFACE_TEST_BIN), \
               $(RC_INTERFACE_TEST_OBJS) \
               -L. -lvpx -lgtest -lvp9rc $(extralibs) -lm))
 endif  # RC_INTERFACE_TEST
-endif  # CONFIG_VP9_ENCODER
+endif  # CONFIG_ENCODERS
 
 ifneq ($(strip $(SIMPLE_ENCODE_TEST_OBJS)),)
 $(SIMPLE_ENCODE_TEST_OBJS) $(SIMPLE_ENCODE_TEST_OBJS:.o=.d): \
