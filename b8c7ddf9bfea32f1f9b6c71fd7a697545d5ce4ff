@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d50ef2e4_1fcdd868",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1113991
+      },
+      "writtenOn": "2021-09-03T21:30:37Z",
+      "side": 1,
+      "message": "QQ: could we add here \n  Bug: b/188853141 \n  \n?",
+      "revId": "b8c7ddf9bfea32f1f9b6c71fd7a697545d5ce4ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "285ff95e_514dc852",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1113991
+      },
+      "writtenOn": "2021-09-03T21:30:37Z",
+      "side": 1,
+      "message": "Took a look and have some two small questions otherwise non-owner LGTM!",
+      "revId": "b8c7ddf9bfea32f1f9b6c71fd7a697545d5ce4ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48d2609c_49b27faf",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1113991
+      },
+      "writtenOn": "2021-09-03T21:30:37Z",
+      "side": 1,
+      "message": "This looks like a strict subset of VP9RateControlRtcConfig [1],\nwould it make sense to move the common parts to a common\nlocation?\n\n[1] https://source.chromium.org/chromium/chromium/src/+/main:third_party/libvpx/source/libvpx/vp9/ratectrl_rtc.h;l\u003d29-59?q\u003dvp9ratecontrolrtc",
+      "range": {
+        "startLine": 29,
+        "startChar": 7,
+        "endLine": 29,
+        "endChar": 30
+      },
+      "revId": "b8c7ddf9bfea32f1f9b6c71fd7a697545d5ce4ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
