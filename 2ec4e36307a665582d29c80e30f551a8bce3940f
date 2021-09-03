@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca22c31c_ae5da194",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2021-09-03T22:16:28Z",
+      "side": 1,
+      "message": "There will be follow-ups to make the code cleaner. VP8 rate control code could be extracted into functions to avoid duplication in the vp8_ratectrl_rtc.cc.",
+      "revId": "2ec4e36307a665582d29c80e30f551a8bce3940f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
