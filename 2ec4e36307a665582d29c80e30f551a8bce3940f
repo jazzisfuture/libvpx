@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "3fbab49c_bd1f2f09",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 11
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-03T22:24:41Z",
+      "side": 1,
+      "message": "say this is for 1 layer CBR\n\ntemporal layer support to come later",
+      "revId": "2ec4e36307a665582d29c80e30f551a8bce3940f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "ca22c31c_ae5da194",
@@ -14,6 +31,57 @@
       "writtenOn": "2021-09-03T22:16:28Z",
       "side": 1,
       "message": "There will be follow-ups to make the code cleaner. VP8 rate control code could be extracted into functions to avoid duplication in the vp8_ratectrl_rtc.cc.",
+      "revId": "2ec4e36307a665582d29c80e30f551a8bce3940f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d29c56b0_11e85b0c",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 11
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-03T22:24:41Z",
+      "side": 1,
+      "message": "this mean CBR mode, so you remove this",
+      "revId": "2ec4e36307a665582d29c80e30f551a8bce3940f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "242e26af_b24d27e9",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 11
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-03T22:24:41Z",
+      "side": 1,
+      "message": "remove this",
+      "revId": "2ec4e36307a665582d29c80e30f551a8bce3940f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "44dd33b3_ff3b58de",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 11
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-03T22:24:41Z",
+      "side": 1,
+      "message": "remove this",
       "revId": "2ec4e36307a665582d29c80e30f551a8bce3940f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
