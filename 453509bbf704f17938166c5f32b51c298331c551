@@ -16,6 +16,24 @@
       "message": "It seems some jenkins jobs didn\u0027t pick up the new file\nvpx/internal/vpx_ratectrl_rtc.h",
       "revId": "453509bbf704f17938166c5f32b51c298331c551",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e3adcd6_2835ee06",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-09-04T04:56:12Z",
+      "side": 1,
+      "message": "\u003e It seems some jenkins jobs didn\u0027t pick up the new file\n\u003e vpx/internal/vpx_ratectrl_rtc.h\n\nThe issue is with the dist target. You need to add the file to the sources list in libs.mk",
+      "parentUuid": "10014a83_8a483d43",
+      "revId": "453509bbf704f17938166c5f32b51c298331c551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
