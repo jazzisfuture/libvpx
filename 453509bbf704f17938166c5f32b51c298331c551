@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6f84796_1acc067b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2021-09-08T17:06:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e3adcd6_2835ee06",
+      "revId": "453509bbf704f17938166c5f32b51c298331c551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "525e97c3_c6a019bf",
@@ -97,6 +115,30 @@
       "side": 1,
       "message": "\u003e Yes it\u0027s used by VP8RateControlRTC::UpdateRateControl to convert into internal QP.\n\nSo this is not used by a caller? Then should this be moved to .cc?",
       "parentUuid": "e3b770cb_865a1fc0",
+      "range": {
+        "startLine": 23,
+        "startChar": 17,
+        "endLine": 23,
+        "endChar": 24
+      },
+      "revId": "453509bbf704f17938166c5f32b51c298331c551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9b7f24c2_c12973d1",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 13
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2021-09-08T17:06:03Z",
+      "side": 1,
+      "message": "Oh that\u0027s right. Sorry I misunderstood.",
+      "parentUuid": "5e831a2a_b91cffb9",
       "range": {
         "startLine": 23,
         "startChar": 17,
