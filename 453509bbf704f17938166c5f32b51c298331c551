@@ -83,6 +83,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e831a2a_b91cffb9",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 13
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2021-09-08T05:15:23Z",
+      "side": 1,
+      "message": "\u003e Yes it\u0027s used by VP8RateControlRTC::UpdateRateControl to convert into internal QP.\n\nSo this is not used by a caller? Then should this be moved to .cc?",
+      "parentUuid": "e3b770cb_865a1fc0",
+      "range": {
+        "startLine": 23,
+        "startChar": 17,
+        "endLine": 23,
+        "endChar": 24
+      },
+      "revId": "453509bbf704f17938166c5f32b51c298331c551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4ccb3f3_accc4058",
@@ -114,6 +138,24 @@
       "side": 1,
       "message": "This CL doesn\u0027t support VP8 temporal layers yet... I plan to add that in the next one.",
       "parentUuid": "c4ccb3f3_accc4058",
+      "revId": "453509bbf704f17938166c5f32b51c298331c551",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "812b6766_be82909a",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 13
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2021-09-08T05:15:23Z",
+      "side": 1,
+      "message": "Ack. Thanks.",
+      "parentUuid": "3a04c7e2_1c24bad0",
       "revId": "453509bbf704f17938166c5f32b51c298331c551",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
