@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bce2cb80_d14d6325",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4021,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-09T05:01:52Z",
+      "side": 1,
+      "message": "you can add if !cpi-\u003ert_always_update_correction_factor here, then this force sactive_worst_qchanged \u003d 0 and you don\u0027t need add condition below",
+      "revId": "ca40ca9bed87687eb0b534bf3974c95182dd29a1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
