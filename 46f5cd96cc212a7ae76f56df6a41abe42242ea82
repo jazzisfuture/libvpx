@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a00a1816_917fca5f",
+        "filename": "test/vp8_ratectrl_rtc_test.cc",
+        "patchSetId": 22
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-10T03:47:01Z",
+      "side": 1,
+      "message": "try larger number of frames (~1500), to better test the RC, since the test clip is long and has some high motion sections in the middle/end",
+      "revId": "46f5cd96cc212a7ae76f56df6a41abe42242ea82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7deaf7fc_a1627fa4",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 22
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-10T03:47:01Z",
+      "side": 1,
+      "message": "i think we can remove this table",
+      "revId": "46f5cd96cc212a7ae76f56df6a41abe42242ea82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4f53e87_96db00e9",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 22
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-10T03:47:01Z",
+      "side": 1,
+      "message": "don\u0027t think this code (line 205 - 2169)is needed",
+      "revId": "46f5cd96cc212a7ae76f56df6a41abe42242ea82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9aee52c_3c58e17a",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 22
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-09-10T03:47:01Z",
+      "side": 1,
+      "message": "this condition can be replaced with if (cm-\u003eframe_type !\u003d KEY_FRAME) {\n\nand update comment",
+      "revId": "46f5cd96cc212a7ae76f56df6a41abe42242ea82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
