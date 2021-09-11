@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "33d13fcb_82d17dce",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 25
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2021-09-11T12:49:41Z",
+      "side": 1,
+      "message": "Hi Jerome: MSVC warns about this line:\n\nwarning C4244: \u0027\u003d\u0027: conversion from \u0027int64_t\u0027 to \u0027unsigned int\u0027, possible loss of data\n\nNote: This multiplication by 1000 seems to be a conversion from kilobits per second to bits per second. If so, we should add a comment to the declaration of the rc_cfg.target_bandwidth field that it is in kilobits per second. Ideally the unit should be encoded in the field\u0027s name, such as \"target_bandwidth_kbps\".",
+      "revId": "65a1751e5b98bf7f1d21bcbfdef352af34fb205d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
