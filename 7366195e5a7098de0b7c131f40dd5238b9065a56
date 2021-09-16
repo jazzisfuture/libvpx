@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2db46991_b59165c0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-09-16T19:13:47Z",
+      "side": 1,
+      "message": "looks like we don\u0027t have a good way to report an error if the bitrate is too high, but we might set a reasonable max somewhere.",
+      "revId": "7366195e5a7098de0b7c131f40dd5238b9065a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "21cb92a0_fea70974",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-09-16T19:13:47Z",
+      "side": 1,
+      "message": "you might want to cap this if the result will be truncated.",
+      "revId": "7366195e5a7098de0b7c131f40dd5238b9065a56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
