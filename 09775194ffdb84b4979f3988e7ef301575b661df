@@ -16,6 +16,24 @@
       "message": "it would be good if a unit test could be added for this condition",
       "revId": "09775194ffdb84b4979f3988e7ef301575b661df",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbe14c1d_082434ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2021-09-22T17:27:22Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "456e9e42_6a3b294b",
+      "revId": "09775194ffdb84b4979f3988e7ef301575b661df",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
