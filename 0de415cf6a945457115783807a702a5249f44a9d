@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b54dbab0_346c09a1",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-09-24T00:18:44Z",
+      "side": 1,
+      "message": "in general this should be happening at the end of calls to ensure the floating point state is correctly set outside of the api calls",
+      "revId": "0de415cf6a945457115783807a702a5249f44a9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
