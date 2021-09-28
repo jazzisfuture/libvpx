@@ -805,6 +805,7 @@ typedef struct vpx_roi_map {
   /*! An id between 0-3 (0-7 for vp9) for each 16x16 (8x8 for VP9)
    * region within a frame. */
   unsigned char *roi_map;
+  unsigned char *original_roi_map;
   unsigned int rows; /**< Number of rows. */
   unsigned int cols; /**< Number of columns. */
   /*! VP8 only uses the first 4 segments. VP9 uses 8 segments. */

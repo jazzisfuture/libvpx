@@ -618,7 +618,6 @@ static void apply_roi_map(VP9_COMP *cpi) {
     }
     if (skip[i] != 0) {
       vp9_enable_segfeature(seg, i, SEG_LVL_SKIP);
-      vp9_set_segdata(seg, i, SEG_LVL_SKIP, skip[i]);
     }
     if (ref_frame[i] >= 0) {
       int valid_ref = 1;
@@ -732,9 +731,11 @@ int vp9_set_roi_map(VP9_COMP *cpi, unsigned char *map, unsigned int rows,
     roi->roi_map = NULL;
   }
   CHECK_MEM_ERROR(cm, roi->roi_map, vpx_malloc(rows * cols));
+  CHECK_MEM_ERROR(cm, roi->original_roi_map, vpx_malloc(rows * cols));
 
   // Copy to ROI structure in the compressor.
   memcpy(roi->roi_map, map, rows * cols);
+  memcpy(roi->original_roi_map, map, rows * cols);
   memcpy(&roi->delta_q, delta_q, MAX_SEGMENTS * sizeof(delta_q[0]));
   memcpy(&roi->delta_lf, delta_lf, MAX_SEGMENTS * sizeof(delta_lf[0]));
   memcpy(&roi->skip, skip, MAX_SEGMENTS * sizeof(skip[0]));
@@ -3895,7 +3896,7 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     if (is_psnr_calc_enabled(cpi)) set_raw_source_frame(cpi);
     return 1;
   }
-
+  // printf("current frame %d\n", cm->current_video_frame);
   svc->time_stamp_prev[svc->spatial_layer_id] = svc->time_stamp_superframe;
 
   // Flag to check if its valid to compute the source sad (used for
@@ -4137,11 +4138,18 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     vp9_alt_ref_aq_setup_map(cpi->alt_ref_aq, cpi);
   } else {
 #endif
-    if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
+    if (cpi->roi.enabled && !frame_is_intra_only(cm)) {
+      if (cpi->roi.skip[3]) {
+        if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
+          vp9_cyclic_refresh_setup(cpi);
+        if (cpi->rc.frames_since_key > 20 && cpi->common.current_video_frame % 10 != 0) apply_roi_map(cpi);
+      } else {
+        apply_roi_map(cpi);
+      }
+    } else if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ) {
       vp9_cyclic_refresh_setup(cpi);
-    } else if (cpi->roi.enabled && !frame_is_intra_only(cm)) {
-      apply_roi_map(cpi);
     }
+
 #if !CONFIG_REALTIME_ONLY
   }
 #endif
