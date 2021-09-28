@@ -1337,6 +1337,25 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                               content_state == kLowSadHighSumdiff)
                                  ? 1
                                  : 0;
+
+    // For ROI with skip, force segment = 0 (no skip) over whole superblock
+    // to avoid artifacts if temporal change in source_sad is not 0.
+    if (1 && cpi->roi.enabled && cpi->roi.skip[3] &&
+        cpi->rc.frames_since_key > 20 && !x->zero_temp_sad_source) {
+      int x, y;
+      const int bw = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+      const int bh = num_8x8_blocks_high_lookup[BLOCK_64X64];
+      const int xmis = VPXMIN(cm->mi_cols - mi_col, bw);
+      const int ymis = VPXMIN(cm->mi_rows - mi_row, bh);
+      const int block_index = mi_row * cm->mi_cols + mi_col;
+      xd->mi[0]->segment_id = 0;
+      for (y = 0; y < ymis; y++)
+        for (x = 0; x < xmis; x++) {
+          int map_offset = block_index + y * cm->mi_cols + x;
+          cpi->segmentation_map[map_offset] = 0;
+        }
+    }
+
     x->lowvar_highsumdiff = (content_state == kLowVarHighSumdiff) ? 1 : 0;
     if (cpi->content_state_sb_fd != NULL)
       x->last_sb_high_content = cpi->content_state_sb_fd[sb_offset2];
@@ -5512,26 +5531,37 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     x->sb_pickmode_part = 0;
     x->arf_frame_usage = 0;
     x->lastgolden_frame_usage = 0;
-
-    if (seg->enabled) {
-      const uint8_t *const map =
-          seg->update_map ? cpi->segmentation_map : cm->last_frame_seg_map;
-      int segment_id = get_segment_id(cm, map, BLOCK_64X64, mi_row, mi_col);
-      seg_skip = segfeature_active(seg, segment_id, SEG_LVL_SKIP);
-      if (seg_skip) {
-        partition_search_type = FIXED_PARTITION;
-      }
-    }
+    int64_t source_sad = 0;
 
     if (cpi->compute_source_sad_onepass && cpi->sf.use_source_sad) {
       int shift = cpi->Source->y_stride * (mi_row << 3) + (mi_col << 3);
       int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
-      int64_t source_sad = avg_source_sad(cpi, x, shift, sb_offset2);
+      source_sad = avg_source_sad(cpi, x, shift, sb_offset2);
+      // if (cm->current_video_frame == 919) {
+      //   printf("%d %d %ld %d\n", mi_col, mi_row, source_sad, sf->adapt_partition_thresh);
+      // }
       if (sf->adapt_partition_source_sad &&
           (cpi->oxcf.rc_mode == VPX_VBR && !cpi->rc.is_src_frame_alt_ref &&
            source_sad > sf->adapt_partition_thresh &&
            (cpi->refresh_golden_frame || cpi->refresh_alt_ref_frame)))
         partition_search_type = REFERENCE_PARTITION;
+    }
+
+    // if (cm->current_video_frame >= 690 && cm->current_video_frame <= 710) {
+    //   printf("frame %d col %d row %d sad %ld content %d\n", cm->current_video_frame, mi_col, mi_row, source_sad, x->content_state_sb);
+    // }
+
+    if (seg->enabled) {
+      const uint8_t *const map =
+          seg->update_map ? cpi->segmentation_map : cm->last_frame_seg_map;
+      int segment_id = get_segment_id(cm, map, BLOCK_64X64, mi_row, mi_col);
+      const uint8_t *const original_map = cpi->roi.original_roi_map;
+      seg_skip = segfeature_active(seg, segment_id, SEG_LVL_SKIP);
+      // if (source_sad > 10000) seg_skip = 0;
+      if (x->content_state_sb > 1) seg_skip = 0;
+      if (seg_skip) {
+        partition_search_type = FIXED_PARTITION;
+      }
     }
 
     // Set the partition type of the 64X64 block
@@ -5541,6 +5571,8 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
         // support both intra and inter sub8x8 block coding for RTC mode.
         // Tune the thresholds accordingly to use sub8x8 block coding for
         // coding performance improvement.
+        // if (cm->current_video_frame > 20)
+        //   printf("var partition mi_row %d mi_col %d\n", mi_row, mi_col);
         choose_partitioning(cpi, tile_info, x, mi_row, mi_col);
         nonrd_use_partition(cpi, td, tile_data, mi, tp, mi_row, mi_col,
                             BLOCK_64X64, 1, &dummy_rdc, td->pc_root);

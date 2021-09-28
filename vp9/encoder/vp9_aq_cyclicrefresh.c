@@ -497,7 +497,8 @@ void vp9_cyclic_refresh_update_parameters(VP9_COMP *const cpi) {
        rc->avg_frame_low_motion < thresh_low_motion &&
        rc->frames_since_key > 40) ||
       (!cpi->use_svc && rc->avg_frame_qindex[INTER_FRAME] > qp_max_thresh &&
-       rc->frames_since_key > 20)) {
+       rc->frames_since_key > 20) ||
+      (cpi->roi.enabled && cpi->roi.skip[3] && rc->frames_since_key > 20)) {
     cr->apply_cyclic_refresh = 0;
     return;
   }

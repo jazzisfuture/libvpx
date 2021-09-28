@@ -28,12 +28,22 @@ static INLINE int get_segment_id(const VP9_COMMON *cm,
   const int xmis = VPXMIN(cm->mi_cols - mi_col, bw);
   const int ymis = VPXMIN(cm->mi_rows - mi_row, bh);
   int x, y, segment_id = MAX_SEGMENTS;
+  // int split_seg = 0;
 
   for (y = 0; y < ymis; ++y)
     for (x = 0; x < xmis; ++x)
       segment_id =
           VPXMIN(segment_id, segment_ids[mi_offset + y * cm->mi_cols + x]);
 
+  // for (y = 0; y < ymis; ++y)
+  //   for (x = 0; x < xmis; ++x) {
+  //     if (segment_id != segment_ids[mi_offset + y * cm->mi_cols + x])
+  //       split_seg = 1;
+  //   }
+
+  // if (split_seg)
+  //   printf("split seg frame %d %d %d seg %d\n", cm->current_video_frame, mi_row,
+  //          mi_col, segment_id);
   assert(segment_id >= 0 && segment_id < MAX_SEGMENTS);
   return segment_id;
 }
