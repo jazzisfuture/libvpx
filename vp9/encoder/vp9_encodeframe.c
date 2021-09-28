@@ -1337,6 +1337,25 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
                               content_state == kLowSadHighSumdiff)
                                  ? 1
                                  : 0;
+
+    // For ROI with skip, force segment = 0 (no skip) over whole superblock
+    // to avoid artifacts if temporal change in source_sad is not 0.
+    if (1 && cpi->roi.enabled && cpi->roi.skip[3] &&
+        cpi->rc.frames_since_key > 20 && !x->zero_temp_sad_source) {
+      int x, y;
+      const int bw = num_8x8_blocks_wide_lookup[BLOCK_64X64];
+      const int bh = num_8x8_blocks_high_lookup[BLOCK_64X64];
+      const int xmis = VPXMIN(cm->mi_cols - mi_col, bw);
+      const int ymis = VPXMIN(cm->mi_rows - mi_row, bh);
+      const int block_index = mi_row * cm->mi_cols + mi_col;
+      xd->mi[0]->segment_id = 0;
+      for (y = 0; y < ymis; y++)
+        for (x = 0; x < xmis; x++) {
+          int map_offset = block_index + y * cm->mi_cols + x;
+          cpi->segmentation_map[map_offset] = 0;
+        }
+    }
+
     x->lowvar_highsumdiff = (content_state == kLowVarHighSumdiff) ? 1 : 0;
     if (cpi->content_state_sb_fd != NULL)
       x->last_sb_high_content = cpi->content_state_sb_fd[sb_offset2];
