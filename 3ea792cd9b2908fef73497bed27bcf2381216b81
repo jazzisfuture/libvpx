@@ -16,6 +16,24 @@
       "message": "jianj@, is the build failure due to this infra failure? https://build.webmproject.org/jenkins/job/libvpx__patch_check/42785/console.",
       "revId": "3ea792cd9b2908fef73497bed27bcf2381216b81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1c2e2b1_64fd35c4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2021-10-04T18:56:26Z",
+      "side": 1,
+      "message": "From the log:\n\n\nThe commit subject: \u0027ratectrl: Move aq_mode to VP9RateControlRtcConfig from VpxRateControlRtcConfig\u0027 is too long! (78 characters)\nTry to keep this to 50 or less.\nhttps://www.git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project#_commit_guidelines",
+      "parentUuid": "fad45209_bec453d9",
+      "revId": "3ea792cd9b2908fef73497bed27bcf2381216b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
