@@ -31,7 +31,6 @@ struct VpxRateControlRtcConfig {
     framerate = 30.0;
     ts_number_layers = 1;
     rc_mode = VPX_CBR;
-    aq_mode = 0;
     layer_target_bitrate[0] = static_cast<int>(target_bandwidth);
     ts_rate_decimator[0] = 1;
   }
@@ -56,7 +55,6 @@ struct VpxRateControlRtcConfig {
   int ts_rate_decimator[VPX_TS_MAX_LAYERS];
   // vbr, cbr
   enum vpx_rc_mode rc_mode;
-  int aq_mode;
 };
 }  // namespace libvpx
 #endif

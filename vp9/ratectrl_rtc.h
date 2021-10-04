@@ -40,6 +40,7 @@ struct VP9RateControlRtcConfig : public VpxRateControlRtcConfig {
     scaling_factor_den[0] = 1;
     max_quantizers[0] = max_quantizer;
     min_quantizers[0] = min_quantizer;
+    aq_mode = 0;
   }
 
   // Number of spatial layers
@@ -50,6 +51,8 @@ struct VP9RateControlRtcConfig : public VpxRateControlRtcConfig {
   int min_quantizers[VPX_MAX_LAYERS];
   int scaling_factor_num[VPX_SS_MAX_LAYERS];
   int scaling_factor_den[VPX_SS_MAX_LAYERS];
+
+  int aq_mode;
 };
 
 struct VP9FrameParamsQpRTC {
