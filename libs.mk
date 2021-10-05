@@ -300,7 +300,7 @@ $(BUILD_PFX)libvpx_g.a: $(LIBVPX_OBJS)
 # SO_VERSION_* then follow the rules in the link to detemine the new version
 # (c1, a1, r1) and set MAJOR to [c1-a1], MINOR to a1 and PATCH to r1
 SO_VERSION_MAJOR := 6
-SO_VERSION_MINOR := 4
+SO_VERSION_MINOR := 5
 SO_VERSION_PATCH := 0
 ifeq ($(filter darwin%,$(TGT_OS)),$(TGT_OS))
 LIBVPX_SO               := libvpx.$(SO_VERSION_MAJOR).dylib
