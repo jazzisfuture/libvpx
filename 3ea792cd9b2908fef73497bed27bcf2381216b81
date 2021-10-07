@@ -51,6 +51,42 @@
       "message": "By the way, aq mode (cyclic refresh) can be added to vp8 if it\u0027s needed.",
       "revId": "3ea792cd9b2908fef73497bed27bcf2381216b81",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c8497ab3_7ec98a3b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2021-10-07T06:35:02Z",
+      "side": 1,
+      "message": "Hm, so I feel like keeping aq_mode in VpxRateControlRtcConfig for the time when we will support in vp8.\n\nWhat do you think?",
+      "parentUuid": "3a5a6bc3_7c32dfd4",
+      "revId": "3ea792cd9b2908fef73497bed27bcf2381216b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6fc449f_d02ec461",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2021-10-07T06:35:02Z",
+      "side": 1,
+      "message": "Ah, I thought it was just a warning.",
+      "parentUuid": "d1c2e2b1_64fd35c4",
+      "revId": "3ea792cd9b2908fef73497bed27bcf2381216b81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
