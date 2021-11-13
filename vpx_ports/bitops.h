@@ -33,12 +33,24 @@ extern "C" {
 // use GNU builtins where available.
 #if defined(__GNUC__) && \
     ((__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || __GNUC__ >= 4)
+static INLINE int get_lsb(unsigned int n) {
+  assert(n != 0);
+  return __builtin_ctz(n);
+}
+
 static INLINE int get_msb(unsigned int n) {
   assert(n != 0);
   return 31 ^ __builtin_clz(n);
 }
 #elif defined(USE_MSC_INTRINSICS)
+#pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
+
+static INLINE int get_lsb(unsigned int n) {
+  unsigned long first_set_bit;  // NOLINT(runtime/int)
+  _BitScanForward(&first_set_bit, n);
+  return first_set_bit;
+}
 
 static INLINE int get_msb(unsigned int n) {
   unsigned long first_set_bit;
@@ -48,6 +60,13 @@ static INLINE int get_msb(unsigned int n) {
 }
 #undef USE_MSC_INTRINSICS
 #else
+static INLINE int get_lsb(unsigned int n) {
+  int i;
+  assert(n != 0);
+  for (i = 0; i < 32 && !(n & 1); ++i) n >>= 1;
+  return i;
+}
+
 // Returns (int)floor(log2(n)). n must be > 0.
 static INLINE int get_msb(unsigned int n) {
   int log = 0;
