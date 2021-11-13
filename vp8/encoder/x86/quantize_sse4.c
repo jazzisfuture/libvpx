@@ -14,24 +14,40 @@
 #include "vp8/common/entropy.h" /* vp8_default_inv_zig_zag */
 #include "vp8/encoder/block.h"
 
-#define SELECT_EOB(i, z, x, y, q)                         \
-  do {                                                    \
-    short boost = *zbin_boost_ptr;                        \
-    /* Technically _mm_extract_epi16() returns an int: */ \
-    /* https://bugs.llvm.org/show_bug.cgi?id=41657 */     \
-    short x_z = (short)_mm_extract_epi16(x, z);           \
-    short y_z = (short)_mm_extract_epi16(y, z);           \
-    int cmp = (x_z < boost) | (y_z == 0);                 \
-    zbin_boost_ptr++;                                     \
-    if (cmp) break;                                       \
-    q = _mm_insert_epi16(q, y_z, z);                      \
-    eob = i;                                              \
-    zbin_boost_ptr = b->zrun_zbin_boost;                  \
-  } while (0)
+// use GNU builtins where available.
+#if defined(__GNUC__) && \
+    ((__GNUC__ == 3 && __GNUC_MINOR__ >= 4) || __GNUC__ >= 4)
+static INLINE int get_lsb(int n) { return __builtin_ctz(n); }
+#elif defined(_MSC_VER)
+#include <intrin.h>
+#pragma intrinsic(_BitScanForward)
+static INLINE int get_lsb(int n) {
+  unsigned long first_set_bit;  // NOLINT(runtime/int)
+  _BitScanForward(&first_set_bit, n);
+  return first_set_bit;
+}
+#else
+static INLINE int get_lsb(int n) {
+  int i;
+  for (i = 0; i < 32 && !(n & 1); ++i) n >>= 1;
+  return i;
+}
+#endif
 
 void vp8_regular_quantize_b_sse4_1(BLOCK *b, BLOCKD *d) {
-  char eob = 0;
-  short *zbin_boost_ptr = b->zrun_zbin_boost;
+  int eob = -1;
+  char *zbin_boost_ptr = (char *)b->zrun_zbin_boost;
+  __m128i zbin_boost0 = _mm_load_si128((__m128i *)zbin_boost_ptr);
+  __m128i zbin_boost1 = _mm_load_si128((__m128i *)zbin_boost_ptr + 1);
+  const __m128i idx0 =
+      _mm_setr_epi8(0, 1, 2, 3, 8, 9, 14, 15, 10, 11, 4, 5, 6, 7, 12, 13);
+  const __m128i idx1 =
+      _mm_setr_epi8(0, 1, 6, 7, 8, 9, 2, 3, 14, 15, 4, 5, 10, 11, 12, 13);
+  DECLARE_ALIGNED(16, static const uint8_t,
+                  zig_zag_mask[16]) = { 0, 1,  4,  8,  5, 2,  3,  6,
+                                        9, 12, 13, 10, 7, 11, 14, 15 };
+  DECLARE_ALIGNED(16, int16_t, qcoeff[16]) = { 0 };
+  uint32_t mask, mask2;
 
   __m128i x0, x1, y0, y1, x_minus_zbin0, x_minus_zbin1, dqcoeff0, dqcoeff1;
   __m128i quant_shift0 = _mm_load_si128((__m128i *)(b->quant_shift));
@@ -47,8 +63,7 @@ void vp8_regular_quantize_b_sse4_1(BLOCK *b, BLOCKD *d) {
   __m128i quant1 = _mm_load_si128((__m128i *)(b->quant + 8));
   __m128i dequant0 = _mm_load_si128((__m128i *)(d->dequant));
   __m128i dequant1 = _mm_load_si128((__m128i *)(d->dequant + 8));
-  __m128i qcoeff0 = _mm_setzero_si128();
-  __m128i qcoeff1 = _mm_setzero_si128();
+  __m128i qcoeff0, qcoeff1, t0, t1, x_shuf0, x_shuf1;
 
   /* Duplicate to all lanes. */
   zbin_extra = _mm_shufflelo_epi16(zbin_extra, 0);
@@ -88,23 +103,37 @@ void vp8_regular_quantize_b_sse4_1(BLOCK *b, BLOCKD *d) {
   y0 = _mm_sign_epi16(y0, z0);
   y1 = _mm_sign_epi16(y1, z1);
 
-  /* The loop gets unrolled anyway. Avoid the vp8_default_zig_zag1d lookup. */
-  SELECT_EOB(1, 0, x_minus_zbin0, y0, qcoeff0);
-  SELECT_EOB(2, 1, x_minus_zbin0, y0, qcoeff0);
-  SELECT_EOB(3, 4, x_minus_zbin0, y0, qcoeff0);
-  SELECT_EOB(4, 0, x_minus_zbin1, y1, qcoeff1);
-  SELECT_EOB(5, 5, x_minus_zbin0, y0, qcoeff0);
-  SELECT_EOB(6, 2, x_minus_zbin0, y0, qcoeff0);
-  SELECT_EOB(7, 3, x_minus_zbin0, y0, qcoeff0);
-  SELECT_EOB(8, 6, x_minus_zbin0, y0, qcoeff0);
-  SELECT_EOB(9, 1, x_minus_zbin1, y1, qcoeff1);
-  SELECT_EOB(10, 4, x_minus_zbin1, y1, qcoeff1);
-  SELECT_EOB(11, 5, x_minus_zbin1, y1, qcoeff1);
-  SELECT_EOB(12, 2, x_minus_zbin1, y1, qcoeff1);
-  SELECT_EOB(13, 7, x_minus_zbin0, y0, qcoeff0);
-  SELECT_EOB(14, 3, x_minus_zbin1, y1, qcoeff1);
-  SELECT_EOB(15, 6, x_minus_zbin1, y1, qcoeff1);
-  SELECT_EOB(16, 7, x_minus_zbin1, y1, qcoeff1);
+  t1 = _mm_alignr_epi8(x_minus_zbin1, x_minus_zbin1, 2);
+  t0 = _mm_blend_epi16(x_minus_zbin0, t1, 0x80);
+  t1 = _mm_blend_epi16(t1, x_minus_zbin0, 0x80);
+  x_shuf0 = _mm_shuffle_epi8(t0, idx0);
+  x_shuf1 = _mm_shuffle_epi8(t1, idx1);
+
+  t0 = _mm_packs_epi16(y0, y1);
+  t0 = _mm_cmpeq_epi8(t0, _mm_setzero_si128());
+  t0 = _mm_shuffle_epi8(t0, _mm_load_si128((const __m128i *)zig_zag_mask));
+  mask2 = _mm_movemask_epi8(t0) ^ 0xffff;
+
+  for (;;) {
+    t0 = _mm_cmpgt_epi16(zbin_boost0, x_shuf0);
+    t1 = _mm_cmpgt_epi16(zbin_boost1, x_shuf1);
+    t0 = _mm_packs_epi16(t0, t1);
+    mask = _mm_movemask_epi8(t0);
+    mask = ~mask & mask2;
+    if (!mask) break;
+    eob = get_lsb(mask);
+    mask2 &= ~1U << eob;
+    /* It's safe to read ahead of this buffer if struct VP8_COMP has at
+     * least 32 bytes before the zrun_zbin_boost_* fields (it has 384). */
+    zbin_boost0 = _mm_loadu_si128((__m128i *)&zbin_boost_ptr[-eob * 2 - 2]);
+    zbin_boost1 = _mm_loadu_si128((__m128i *)&zbin_boost_ptr[-eob * 2 + 14]);
+    qcoeff[zig_zag_mask[eob]] = -1;
+  }
+
+  qcoeff0 = _mm_load_si128((__m128i *)(qcoeff));
+  qcoeff1 = _mm_load_si128((__m128i *)(qcoeff + 8));
+  qcoeff0 = _mm_and_si128(qcoeff0, y0);
+  qcoeff1 = _mm_and_si128(qcoeff1, y1);
 
   _mm_store_si128((__m128i *)(d->qcoeff), qcoeff0);
   _mm_store_si128((__m128i *)(d->qcoeff + 8), qcoeff1);
@@ -115,5 +144,5 @@ void vp8_regular_quantize_b_sse4_1(BLOCK *b, BLOCKD *d) {
   _mm_store_si128((__m128i *)(d->dqcoeff), dqcoeff0);
   _mm_store_si128((__m128i *)(d->dqcoeff + 8), dqcoeff1);
 
-  *d->eob = eob;
+  *d->eob = eob + 1;
 }
