@@ -16,6 +16,24 @@
       "message": "That\u0027s insane! The existing code in this project will not pass this check either!\nLook at the code in vp8_quantize_ssse3.c where I copied this style from: \n\n#pragma intrinsic(_BitScanReverse)\nstatic int bsr(int mask) {\n  unsigned long eob;\n  _BitScanReverse(\u0026eob, mask);\n  eob++;\n  if (mask \u003d\u003d 0) eob \u003d 0;\n  return eob;\n}",
       "revId": "05e955b65eaf371a30b0f0a8e02fa3d5b96d3497",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b88462f0_67d84ecb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-14T04:54:27Z",
+      "side": 1,
+      "message": "And I guess it\u0027s important to use the \"long\" type here, as it follows the size of the machine register.",
+      "parentUuid": "8c7ecef2_3f363928",
+      "revId": "05e955b65eaf371a30b0f0a8e02fa3d5b96d3497",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
