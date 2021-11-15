@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22c867b7_0b472068",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-15T21:14:52Z",
+      "side": 1,
+      "message": "let\u0027s move this to vpx_ports/bitops.h to go along with get_msb()",
+      "revId": "b4966b6d87c28b795ab96564cff537287977d67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "362d8dd1_d121e3ff",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-15T21:14:52Z",
+      "side": 1,
+      "message": "using the correct type is ok for this, you can define it as:\nunsigned long first_set_bit;  // NOLINT(runtime/int)",
+      "revId": "b4966b6d87c28b795ab96564cff537287977d67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e15afab_37586cdc",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-15T21:14:52Z",
+      "side": 1,
+      "message": "when this is moved to bitops.h you can use the same gcc version checks to make sure the builtin is available",
+      "revId": "b4966b6d87c28b795ab96564cff537287977d67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "36654bde_06eb53e4",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-15T21:14:52Z",
+      "side": 1,
+      "message": "use INLINE.",
+      "range": {
+        "startLine": 30,
+        "startChar": 7,
+        "endLine": 30,
+        "endChar": 13
+      },
+      "revId": "b4966b6d87c28b795ab96564cff537287977d67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9747b51c_0d2dd865",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-15T21:14:52Z",
+      "side": 1,
+      "message": "move this final semi-colon to the calls below to match other macros and make them look a little more like functions",
+      "range": {
+        "startLine": 110,
+        "startChar": 43,
+        "endLine": 110,
+        "endChar": 44
+      },
+      "revId": "b4966b6d87c28b795ab96564cff537287977d67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
