@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6085ce64_9665eaa8",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-15T21:43:22Z",
+      "side": 1,
+      "message": "I suspect this calculation will have the same issue. Let\u0027s fix them together.",
+      "revId": "9a386b63f05b1cbef914597a23230601ac78791b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "beb4a3a5_46ad2d84",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-15T21:43:22Z",
+      "side": 1,
+      "message": "you\u0027ll want to cap this at INT_MAX",
+      "range": {
+        "startLine": 239,
+        "startChar": 28,
+        "endLine": 239,
+        "endChar": 36
+      },
+      "revId": "9a386b63f05b1cbef914597a23230601ac78791b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
