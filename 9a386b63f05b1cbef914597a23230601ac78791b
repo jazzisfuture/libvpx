@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "98367f24_588d7f8c",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1527862
+      },
+      "writtenOn": "2021-11-16T06:04:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6085ce64_9665eaa8",
+      "revId": "9a386b63f05b1cbef914597a23230601ac78791b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "beb4a3a5_46ad2d84",
@@ -31,6 +49,30 @@
       "writtenOn": "2021-11-15T21:43:22Z",
       "side": 1,
       "message": "you\u0027ll want to cap this at INT_MAX",
+      "range": {
+        "startLine": 239,
+        "startChar": 28,
+        "endLine": 239,
+        "endChar": 36
+      },
+      "revId": "9a386b63f05b1cbef914597a23230601ac78791b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "79a90ff2_5e284252",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1527862
+      },
+      "writtenOn": "2021-11-16T06:04:14Z",
+      "side": 1,
+      "message": "Added explicit int conversion to result. I think that comparison in VPXMIN promotes target implicitly to 64bit, but since target is originally of type int, the result value of VPXMIN cannot be larger than int.",
+      "parentUuid": "beb4a3a5_46ad2d84",
       "range": {
         "startLine": 239,
         "startChar": 28,
