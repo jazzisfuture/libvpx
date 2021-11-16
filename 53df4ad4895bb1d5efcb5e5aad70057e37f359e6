@@ -154,6 +154,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5d44f4b_79cbdb93",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-16T21:33:25Z",
+      "side": 1,
+      "message": "Ah yes, it just changes one instruction:\n-     160:      42 0f b6 04 09  movzbl  (%rcx,%r9), %eax\n+     160:      49 0f bf 04 49  movswq  (%r9,%rcx,2), %rax\n\nI think there is another operation I\u0027m thinking of. Thanks for checking!",
+      "parentUuid": "319ccafa_cfbd4bf2",
+      "range": {
+        "startLine": 111,
+        "startChar": 11,
+        "endLine": 111,
+        "endChar": 23
+      },
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2c9e607c_425ff60c",
