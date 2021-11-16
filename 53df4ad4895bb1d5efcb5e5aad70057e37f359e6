@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8da058f9_09e3dff6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-16T13:27:42Z",
+      "side": 1,
+      "message": "Still trying to wrap my head around the main block. If you could add some comments it would be greatly appreciated!\n\nIf performance is better on some clips then it should be better on all. From a high level I think this does a much better job of keeping values in the xmm registers. The previous iteration extracted every value! This just extracts the mask.",
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c836f3f4_43702604",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-16T13:27:42Z",
+      "side": 1,
+      "message": "This could go into a block:\n/* Shuffle x and y into zig zag order */\n{\n  const __m128i zig_zag_i16_0 \u003d\n      _mm_setr_epi8(0, 1, 2, 3, 8, 9, 14, 15, 10, 11, 4, 5, 6, 7, 12, 13);\n  const __m128i zig_zag1 \u003d\n      _mm_setr_epi8(0, 1, 6, 7, 8, 9, 2, 3, 14, 15, 4, 5, 10, 11, 12, 13);\n  /* The first part of the zig zag needs a value from x_minus_zbin1 and vice versa */\n  __m128i t1 \u003d _mm_alignr_epi8(x_minus_zbin1, x_minus_zbin1, 2);\n  __m128i t0 \u003d _mm_blend_epi16(x_minus_zbin0, t1, 0x80);\n  t1 \u003d _mm_blend_epi16(t1, x_minus_zbin0, 0x80);\n  x_shuf0 \u003d _mm_shuffle_epi8(t0, idx0);\n  x_shuf1 \u003d _mm_shuffle_epi8(t1, idx1);\n\n  If you use vp8_default_zig_zag1d below, this can become:\n  const __m128i zig_zag_i8 \u003d\n      _mm_setr_epi8(0, 1, 2, 3, 8, 9, 14, 15, 10, 11, 4, 5, 6, 7, 12, 13);\n  \n  /* Check if y is nonzero and put it in zig zag order */\n  t0 \u003d _mm_packs_epi16(y0, y1);\n  t0 \u003d _mm_cmpeq_epi8(t0, _mm_setzero_si128());\n  t0 \u003d _mm_shuffle_epi8(t0, zig_zag_i8));\n  ymask \u003d _mm_movemask_epi8(t0) ^ 0xffff;\n}",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 92,
+        "endChar": 0
+      },
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e542b67f_18363f9f",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-16T13:27:42Z",
+      "side": 1,
+      "message": "Does it work any better or worse if you use vp8_default_zig_zag1d here? The int lookups may be faster than uint8_t",
+      "range": {
+        "startLine": 111,
+        "startChar": 11,
+        "endLine": 111,
+        "endChar": 23
+      },
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c9e607c_425ff60c",
+        "filename": "vpx_ports/bitops.h",
+        "patchSetId": 13
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-16T13:27:42Z",
+      "side": 1,
+      "message": "and get_lsb()",
+      "range": {
+        "startLine": 29,
+        "startChar": 21,
+        "endLine": 29,
+        "endChar": 28
+      },
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
