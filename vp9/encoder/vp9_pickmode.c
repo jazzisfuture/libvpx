@@ -305,7 +305,8 @@ static void block_variance(const uint8_t *src, int src_stride,
 #endif
       *sse += sse8x8[k];
       *sum += sum8x8[k];
-      var8x8[k] = sse8x8[k] - (uint32_t)(((int64_t)sum8x8[k] * sum8x8[k]) >> 6);
+      uint32_t k_sqr = (uint32_t)(((int64_t)sum8x8[k] * sum8x8[k]) >> 6);
+      var8x8[k] = sse8x8[k] > k_sqr ? sse8x8[k] - k_sqr : k_sqr - sse8x8[k];
       k++;
     }
   }
@@ -326,9 +327,10 @@ static void calculate_variance(int bw, int bh, TX_SIZE tx_size,
                  sse_i[(i + 1) * nw + j] + sse_i[(i + 1) * nw + j + 1];
       sum_o[k] = sum_i[i * nw + j] + sum_i[i * nw + j + 1] +
                  sum_i[(i + 1) * nw + j] + sum_i[(i + 1) * nw + j + 1];
-      var_o[k] = sse_o[k] - (uint32_t)(((int64_t)sum_o[k] * sum_o[k]) >>
-                                       (b_width_log2_lookup[unit_size] +
-                                        b_height_log2_lookup[unit_size] + 6));
+      uint32_t k_sqr = (uint32_t)(((int64_t)sum_o[k] * sum_o[k]) >>
+                                  (b_width_log2_lookup[unit_size] +
+                                   b_height_log2_lookup[unit_size] + 6));
+      var_o[k] = sse_o[k] > k_sqr ? sse_o[k] - k_sqr : k_sqr - sse_o[k];
       k++;
     }
   }
@@ -463,7 +465,8 @@ static void model_rd_for_sb_y_large(VP9_COMP *cpi, BLOCK_SIZE bsize,
                  cpi->common.use_highbitdepth, bd,
 #endif
                  sse8x8, sum8x8, var8x8);
-  var = sse - (unsigned int)(((int64_t)sum * sum) >> (bw + bh + 4));
+  uint32_t sum_sqr = (uint32_t)((int64_t)sum * sum) >> (bw + bh + 4);
+  var = sse > sum_sqr ? sse - sum_sqr : sum_sqr - sse;
 
   *var_y = var;
   *sse_y = sse;
