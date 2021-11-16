@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "89a7d479_9f0fc423",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-16T02:49:44Z",
+      "side": 1,
+      "message": "Used _mm_packs_epi16 instead of combining masks with OR and SHL. Fewer instructions are used before the loop.",
+      "revId": "505331e09467476fb1fac0179019e4d851fa942a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
