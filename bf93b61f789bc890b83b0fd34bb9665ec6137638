@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "016327d4_585b930f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-16T21:40:45Z",
+      "side": 1,
+      "message": "The extra branch at the block level isn\u0027t great and I think in this case the operation is defined and may be working as intended depending on how the variance is used.",
+      "revId": "bf93b61f789bc890b83b0fd34bb9665ec6137638",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
