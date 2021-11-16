@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5e26099_6e093739",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 13
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-16T14:39:10Z",
+      "side": 1,
+      "message": "Maybe you know the average density of the EOB values found in the qcoeff[16] block? How does this change from encoder settings or input data?",
+      "parentUuid": "8da058f9_09e3dff6",
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c836f3f4_43702604",
@@ -65,6 +83,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "51250a1d_3b2f5e67",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-16T14:39:10Z",
+      "side": 1,
+      "message": "Put it in the block. You want temps to be declared both in a block and in a loop?",
+      "parentUuid": "db44d0c6_480e08a5",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 92,
+        "endChar": 0
+      },
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e542b67f_18363f9f",
@@ -88,6 +130,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "319ccafa_cfbd4bf2",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-16T14:39:10Z",
+      "side": 1,
+      "message": "I can\u0027t see any difference on my computer.",
+      "parentUuid": "e542b67f_18363f9f",
+      "range": {
+        "startLine": 111,
+        "startChar": 11,
+        "endLine": 111,
+        "endChar": 23
+      },
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2c9e607c_425ff60c",
@@ -101,6 +167,30 @@
       "writtenOn": "2021-11-16T13:27:42Z",
       "side": 1,
       "message": "and get_lsb()",
+      "range": {
+        "startLine": 29,
+        "startChar": 21,
+        "endLine": 29,
+        "endChar": 28
+      },
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09564164_b12c2a21",
+        "filename": "vpx_ports/bitops.h",
+        "patchSetId": 13
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-16T14:39:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2c9e607c_425ff60c",
       "range": {
         "startLine": 29,
         "startChar": 21,
