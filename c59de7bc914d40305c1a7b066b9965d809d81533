@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9676d42a_86e62dd6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-11-16T21:25:54Z",
+      "side": 1,
+      "message": "I had the same feeling when I added darwin20. I really don\u0027t think the distinction matters for the lib, so really we could just go to bare targets.",
+      "revId": "c59de7bc914d40305c1a7b066b9965d809d81533",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
