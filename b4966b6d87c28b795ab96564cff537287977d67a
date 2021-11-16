@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "01aefb8f_ce095e41",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-16T04:03:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "22c867b7_0b472068",
+      "revId": "b4966b6d87c28b795ab96564cff537287977d67a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "362d8dd1_d121e3ff",
