@@ -43,6 +43,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "db44d0c6_480e08a5",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 92,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-16T13:34:56Z",
+      "side": 1,
+      "message": "The reason for putting this in a block is to separate out the steps in the logic and allow scoping the temporary variables.\n\nRenaming idx to something zig-zag related would be helpful. It took me a bit to figure out that idx0 is: 0, 1, 4, *8*, 5, 2, 3, 6, where 8 has been shuffled to the end of the register and idx1 is equiv to 9, 12, 13, 10, *7*, 11, 14, 15, where again the out-of-range 7 has been shuffled over.",
+      "parentUuid": "c836f3f4_43702604",
+      "range": {
+        "startLine": 87,
+        "startChar": 2,
+        "endLine": 92,
+        "endChar": 0
+      },
+      "revId": "53df4ad4895bb1d5efcb5e5aad70057e37f359e6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e542b67f_18363f9f",
         "filename": "vp8/encoder/x86/quantize_sse4.c",
         "patchSetId": 13
