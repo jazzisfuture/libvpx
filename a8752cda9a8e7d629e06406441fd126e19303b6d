@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd23b077_db420e14",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-17T04:08:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a693232d_d26c19a8",
+      "range": {
+        "startLine": 14,
+        "startChar": 35,
+        "endLine": 14,
+        "endChar": 58
+      },
+      "revId": "a8752cda9a8e7d629e06406441fd126e19303b6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "11cfb9e3_e636edd9",
@@ -54,6 +78,30 @@
       "writtenOn": "2021-11-16T21:33:25Z",
       "side": 1,
       "message": "For referring to variables please use pipes:\n|eob|",
+      "range": {
+        "startLine": 110,
+        "startChar": 8,
+        "endLine": 110,
+        "endChar": 11
+      },
+      "revId": "a8752cda9a8e7d629e06406441fd126e19303b6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0385f5d1_3c2085e2",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 110,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-17T04:08:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "11cfb9e3_e636edd9",
       "range": {
         "startLine": 110,
         "startChar": 8,
