@@ -82,12 +82,7 @@ TEST_P(RealtimeTest, RealtimeFirstPassProducesFrames) {
 }
 
 TEST_P(RealtimeTest, IntegerOverflow) {
-  if (IsVP9()) {
-    // TODO(https://crbug.com/webm/1749): This should match VP8.
-    TestIntegerOverflow(800, 480);
-  } else {
     TestIntegerOverflow(2048, 2048);
-  }
 }
 
 TEST_P(RealtimeTest, IntegerOverflowLarge) {
