@@ -524,7 +524,8 @@ static vpx_codec_err_t set_encoder_config(
       (unsigned int)((int64_t)oxcf->width * oxcf->height * oxcf->bit_depth * 3 *
                      oxcf->init_framerate / 1000);
   // Cap target bitrate to raw rate
-  cfg->rc_target_bitrate = VPXMIN(raw_target_rate, cfg->rc_target_bitrate);
+  cfg->rc_target_bitrate =
+      VPXMIN(VPXMIN(raw_target_rate, cfg->rc_target_bitrate), 1000000);
 
   // Convert target bandwidth from Kbit/s to Bit/s
   oxcf->target_bandwidth = 1000 * (int64_t)cfg->rc_target_bitrate;
