@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "557f28a9_6f38096c",
+        "filename": "vp8/encoder/x86/vp8_quantize_ssse3.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-17T22:59:36Z",
+      "side": 1,
+      "message": "Would you add a comment for the *2+1 please?\n\nThe +1 is to convert the array index to the position, but what is the *2 for? And how does it handle the all zero condition?",
+      "range": {
+        "startLine": 87,
+        "startChar": 22,
+        "endLine": 87,
+        "endChar": 29
+      },
+      "revId": "77c898c5cafdca76946b58b69abac750ae06fe7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a0b3d18_a8106ff6",
+        "filename": "vp8/encoder/x86/vp8_quantize_ssse3.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-17T22:59:36Z",
+      "side": 1,
+      "message": "I\u0027m a little surprised this doesn\u0027t warn for conversion, but you are correct that d-\u003eeob is char and doesn\u0027t need the mask.",
+      "range": {
+        "startLine": 89,
+        "startChar": 12,
+        "endLine": 89,
+        "endChar": 15
+      },
+      "revId": "77c898c5cafdca76946b58b69abac750ae06fe7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
