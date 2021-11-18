@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "53a96906_9e5c066a",
+        "filename": "vp8/encoder/x86/vp8_quantize_ssse3.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-18T03:33:08Z",
+      "side": 1,
+      "message": "If you shift any number to the left by one bit (*2) and set the least significant bit (+1), which is cleared by this shift, then it cannot be zero. The range of results returned by _mm_movemask_epi8 is 0..0xffff, so if shifted left by 1 it will use 17 bits, which fits to 32-bit int type.",
+      "parentUuid": "557f28a9_6f38096c",
+      "range": {
+        "startLine": 87,
+        "startChar": 22,
+        "endLine": 87,
+        "endChar": 29
+      },
+      "revId": "77c898c5cafdca76946b58b69abac750ae06fe7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1a0b3d18_a8106ff6",
         "filename": "vp8/encoder/x86/vp8_quantize_ssse3.c",
         "patchSetId": 1
