@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe5b9254_bb8ee786",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-18T07:13:03Z",
+      "side": 1,
+      "message": "It certainly does clean it up a lot. Ensuring mask was not zero was a big hassle:\nbsr    %ecx,%eax\nlea    0x1(%rax),%edx\ntest   %ecx,%ecx\nmov    $0x0,%eax\ncmovne %edx,%eax\nmov    0x28(%rsi),%rdx\nmov    %al,(%rdx)\nret    \n\nnew code:\n\nlea    0x1(%rax,%rax,1),%eax\nbsr    %eax,%eax\nmov    %al,(%rdx)\nret    \n",
+      "revId": "87ce2bc3e3266e670e0da71d7915c3c40e948c15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

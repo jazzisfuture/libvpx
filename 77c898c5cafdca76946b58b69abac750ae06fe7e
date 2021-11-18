@@ -50,6 +50,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "71801587_978c6554",
+        "filename": "vp8/encoder/x86/vp8_quantize_ssse3.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2021-11-18T07:13:03Z",
+      "side": 1,
+      "message": "Ah now I get it! I was reading the code wrong, for some reason I thought it was get_msb(mask) * 2 + 1.\n\nRight, so get_msb(0 * 2 + 1) \u003d 0\nand get_msb(0x08 * 2 + 1 \u003d\u003d 0x11) \u003d 4\n\nNifty!",
+      "parentUuid": "53a96906_9e5c066a",
+      "range": {
+        "startLine": 87,
+        "startChar": 22,
+        "endLine": 87,
+        "endChar": 29
+      },
+      "revId": "77c898c5cafdca76946b58b69abac750ae06fe7e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1a0b3d18_a8106ff6",
         "filename": "vp8/encoder/x86/vp8_quantize_ssse3.c",
         "patchSetId": 1
