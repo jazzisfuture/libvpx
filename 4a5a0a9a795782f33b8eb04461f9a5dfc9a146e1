@@ -33,6 +33,24 @@
       "message": "Do you have permission to submit this or do you need someone else to trigger it for you?",
       "revId": "4a5a0a9a795782f33b8eb04461f9a5dfc9a146e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c909fb00_a4b2f2f9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 16
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1471133
+      },
+      "writtenOn": "2021-11-18T03:13:19Z",
+      "side": 1,
+      "message": "The \"Submit\" button is grayed and says that I don\u0027t have permission.",
+      "parentUuid": "5d87028c_d02017c6",
+      "revId": "4a5a0a9a795782f33b8eb04461f9a5dfc9a146e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
