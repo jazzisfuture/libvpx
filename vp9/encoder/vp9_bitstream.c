@@ -1241,12 +1241,16 @@ static void write_uncompressed_header(VP9_COMP *cpi,
       vpx_wb_write_literal(wb, vp9_get_refresh_mask(cpi), REF_FRAMES);
       write_frame_size(cm, wb);
     } else {
+      static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
+                                        VP9_ALT_FLAG };
       MV_REFERENCE_FRAME ref_frame;
       vpx_wb_write_literal(wb, vp9_get_refresh_mask(cpi), REF_FRAMES);
       for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ++ref_frame) {
-        assert(get_ref_frame_map_idx(cpi, ref_frame) != INVALID_IDX);
-        vpx_wb_write_literal(wb, get_ref_frame_map_idx(cpi, ref_frame),
-                             REF_FRAMES_LOG2);
+        const int referenced = cpi->ref_frame_flags & flag_list[ref_frame];
+        const int map_idx = get_ref_frame_map_idx(cpi, referenced ? ref_frame
+                                                                  : LAST_FRAME);
+        assert(map_idx != INVALID_IDX);
+        vpx_wb_write_literal(wb, map_idx, REF_FRAMES_LOG2);
         vpx_wb_write_bit(wb, cm->ref_frame_sign_bias[ref_frame]);
       }
 
