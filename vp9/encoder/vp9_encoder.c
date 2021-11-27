@@ -1460,11 +1460,11 @@ static void init_buffer_indices(VP9_COMP *cpi) {
   int ref_frame;
 
   for (ref_frame = 0; ref_frame < REF_FRAMES; ++ref_frame)
-    cpi->ref_fb_idx[ref_frame] = ref_frame;
+    cpi->ref_fb_idx[ref_frame] = INVALID_IDX;
 
-  cpi->lst_fb_idx = cpi->ref_fb_idx[LAST_FRAME - 1];
-  cpi->gld_fb_idx = cpi->ref_fb_idx[GOLDEN_FRAME - 1];
-  cpi->alt_fb_idx = cpi->ref_fb_idx[ALTREF_FRAME - 1];
+  cpi->lst_fb_idx = INVALID_IDX;
+  cpi->gld_fb_idx = INVALID_IDX;
+  cpi->alt_fb_idx = INVALID_IDX;
 }
 
 static void init_level_constraint(LevelConstraint *lc) {
