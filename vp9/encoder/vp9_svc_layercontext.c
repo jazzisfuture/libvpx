@@ -462,32 +462,21 @@ static void reset_fb_idx_unused(VP9_COMP *const cpi) {
   // fb_idx for that reference to the first one used/referenced.
   // This is to avoid setting fb_idx for a reference to a slot that is not
   // used/needed (i.e., since that reference is not referenced or refreshed).
-  static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
-                                    VP9_ALT_FLAG };
-  MV_REFERENCE_FRAME ref_frame;
-  MV_REFERENCE_FRAME first_ref = 0;
-  int first_fb_idx = 0;
-  int fb_idx[3] = { cpi->lst_fb_idx, cpi->gld_fb_idx, cpi->alt_fb_idx };
-  for (ref_frame = LAST_FRAME; ref_frame <= ALTREF_FRAME; ref_frame++) {
-    if (cpi->ref_frame_flags & flag_list[ref_frame]) {
-      first_ref = ref_frame;
-      first_fb_idx = fb_idx[ref_frame - 1];
-      break;
+  const MV_REFERENCE_FRAME first_ref = get_first_ref_frame(cpi);
+  const int map_idx = get_ref_frame_map_idx(cpi, first_ref);
+  if (map_idx != INVALID_IDX) {
+    if (!(cpi->ref_frame_flags & VP9_LAST_FLAG) &&
+        !cpi->ext_refresh_last_frame) {
+      cpi->lst_fb_idx = map_idx;
     }
-  }
-  if (first_ref > 0) {
-    if (first_ref != LAST_FRAME &&
-        !(cpi->ref_frame_flags & flag_list[LAST_FRAME]) &&
-        !cpi->ext_refresh_last_frame)
-      cpi->lst_fb_idx = first_fb_idx;
-    else if (first_ref != GOLDEN_FRAME &&
-             !(cpi->ref_frame_flags & flag_list[GOLDEN_FRAME]) &&
-             !cpi->ext_refresh_golden_frame)
-      cpi->gld_fb_idx = first_fb_idx;
-    else if (first_ref != ALTREF_FRAME &&
-             !(cpi->ref_frame_flags & flag_list[ALTREF_FRAME]) &&
-             !cpi->ext_refresh_alt_ref_frame)
-      cpi->alt_fb_idx = first_fb_idx;
+    if (!(cpi->ref_frame_flags & VP9_GOLD_FLAG) &&
+        !cpi->ext_refresh_golden_frame) {
+      cpi->gld_fb_idx = map_idx;
+    }
+    if (!(cpi->ref_frame_flags & VP9_ALT_FLAG) &&
+        !cpi->ext_refresh_alt_ref_frame) {
+      cpi->alt_fb_idx = map_idx;
+    }
   }
 }
 
