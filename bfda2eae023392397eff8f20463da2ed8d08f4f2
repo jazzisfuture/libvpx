@@ -33,6 +33,23 @@
       "message": "Finished more test before review.",
       "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5322ac82_aa4fe9fa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-06T08:19:52Z",
+      "side": 1,
+      "message": "Ping reviewers.",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
