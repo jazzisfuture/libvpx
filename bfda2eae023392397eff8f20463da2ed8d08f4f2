@@ -161,6 +161,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "dd505128_b8af9352",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-12-07T06:39:11Z",
+      "side": 1,
+      "message": "They should be setting the lst/gld/alt_fb_idx fields in the wrapper code when svc_ref_frame_config is used.",
+      "parentUuid": "94189d25_848b6848",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "11aca65d_8d01ead0",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 2
