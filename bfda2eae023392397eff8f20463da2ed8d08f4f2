@@ -197,6 +197,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ef8e63e4_f9d94d24",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-07T06:45:12Z",
+      "side": 1,
+      "message": "Let me have a quick try in webrtc wrapper code and back to you.\nBut libvpx should also respect `reference_golden` and `reference_alt` flags. If the flags are false, encoder should not use GOLDEN/ALTREF.",
+      "parentUuid": "ba1ba8c8_f4aefbb1",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "11aca65d_8d01ead0",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 2
