@@ -71,6 +71,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "554ec708_d030d720",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-07T06:05:39Z",
+      "side": 1,
+      "message": "Thank for patient review.\n\nThis CL does not change any user preference. Actually the issue was initially reported in WebRTC usage. webrtc-vp9 encoder set ref_frame_config only reference on LAST, no reference on GOLDEN/ALTREF. But uncompressed header in produced bitstream set both GOLDEN/ALTREF to key frame. This CL respects user reference configuration through `ctrl_set_svc_ref_frame_config`.\n\nFurther more, We can trust `cpi-\u003eref_frame_flags` to get which frames are actually used as references.",
+      "parentUuid": "b8ad1397_157f7976",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "11aca65d_8d01ead0",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 2
