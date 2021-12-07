@@ -67,6 +67,24 @@
       "message": "should replace \"reference ?\" with \"reference or is_refreshed ?\", as in reset_fb_idx_unused()",
       "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd970411_4a23eff5",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1256,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-07T05:04:52Z",
+      "side": 1,
+      "message": "If I understand correct, we need not to check `is_refreshed`. It tells decoder which previous decoded frames are used as current reference.\n\nThe `refresh_frame_flags` is controlled by below:\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/libvpx/source/libvpx/vp9/encoder/vp9_bitstream.c;drc\u003d2d9e4d3c7a07aa50dc5e12c59d190f28b9e1bcb7;l\u003d1245",
+      "parentUuid": "11aca65d_8d01ead0",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
