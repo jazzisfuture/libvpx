@@ -54,6 +54,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b8ad1397_157f7976",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-12-07T05:45:34Z",
+      "side": 1,
+      "message": "We only added reset_fb_idx for the fixed SVC mode. But for the flexible/bypass SVC mode, where the fb_idx is set by user via vpx_svc_ref_frame_config_t, preference was not to change the map_idx internally from what user may set. I agree to make this change as is for fixed SVC and non-svc mode. Should it be excluded for flexible SVC mode?",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "11aca65d_8d01ead0",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 2
@@ -83,6 +100,24 @@
       "side": 1,
       "message": "If I understand correct, we need not to check `is_refreshed`. It tells decoder which previous decoded frames are used as current reference.\n\nThe `refresh_frame_flags` is controlled by below:\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/libvpx/source/libvpx/vp9/encoder/vp9_bitstream.c;drc\u003d2d9e4d3c7a07aa50dc5e12c59d190f28b9e1bcb7;l\u003d1245",
       "parentUuid": "11aca65d_8d01ead0",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcb1688f_8b00a64b",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1256,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-12-07T05:45:34Z",
+      "side": 1,
+      "message": "Ok, acknowledged",
+      "parentUuid": "dd970411_4a23eff5",
       "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
