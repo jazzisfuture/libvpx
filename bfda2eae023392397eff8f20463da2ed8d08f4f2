@@ -107,6 +107,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4a4a9c37_22e0b19a",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-07T06:26:10Z",
+      "side": 1,
+      "message": "reference_golden/reference_altref are set to 0, it means not use them as reference.\n```\ncpi-\u003esvc.reference_golden[sl] \u003d data-\u003ereference_golden[sl];\ncpi-\u003esvc.reference_altref[sl] \u003d data-\u003ereference_altref[sl];\n```\n\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/webrtc/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc;l\u003d154;drc\u003d58b0f88e7fedf85501d3fd605e69928965571387;bpv\u003d1;bpt\u003d1",
+      "parentUuid": "b7e45e69_584017ac",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "11aca65d_8d01ead0",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 2
