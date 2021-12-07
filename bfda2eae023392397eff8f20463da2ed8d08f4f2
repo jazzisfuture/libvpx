@@ -89,6 +89,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b7e45e69_584017ac",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2021-12-07T06:13:39Z",
+      "side": 1,
+      "message": "But in the set_ref_frame_config the user should also set the fb_idx for each reference. What did they (webrtc) set the fb_idx for the golden/altref references?",
+      "parentUuid": "554ec708_d030d720",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "11aca65d_8d01ead0",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 2
