@@ -233,6 +233,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e7ee3971_b802eeb5",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-08T08:25:34Z",
+      "side": 1,
+      "message": "In the wrapper layer, all 3 ref frames MUST be set even some of them are not actually used. (e.g. set GOLDEN/ALTREF the same w/ LAST). In this way, the issue can be fixed.\n\nIMHO, if `reference_golden` and `reference_alt` are false, encoder should skip them, and set the golden/alt map_idx to first ref. Instead of explicitly set all 3 ref frames by user.\n\nUpdate in patch set 3:\n- Use MACRO `INVALID_IDX`\n- Initial all idx to `INVALID_IDX`, in order to early detect unset buf slot.\n- Skip golden/alt if `reference_golden` and `reference_alt` are not set.",
+      "parentUuid": "50db30f9_5eaa6955",
+      "revId": "bfda2eae023392397eff8f20463da2ed8d08f4f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "11aca65d_8d01ead0",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 2
