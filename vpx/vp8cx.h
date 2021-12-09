@@ -900,9 +900,12 @@ typedef struct vpx_svc_ref_frame_config {
   int update_last[VPX_SS_MAX_LAYERS];       /**< Update last. */
   int update_golden[VPX_SS_MAX_LAYERS];     /**< Update golden. */
   int update_alt_ref[VPX_SS_MAX_LAYERS];    /**< Update altref. */
-  int reference_last[VPX_SS_MAX_LAYERS];    /**< Last as reference. */
-  int reference_golden[VPX_SS_MAX_LAYERS];  /**< Golden as reference. */
-  int reference_alt_ref[VPX_SS_MAX_LAYERS]; /**< Altref as reference. */
+  int reference_last[VPX_SS_MAX_LAYERS];
+  /**< Last as reference. Use first referenced index if FALSE. */
+  int reference_golden[VPX_SS_MAX_LAYERS];
+  /**< Golden as reference. Use first referenced index if FALSE. */
+  int reference_alt_ref[VPX_SS_MAX_LAYERS];
+  /**< Altref as reference. Use first referenced index if FALSE. */
   int64_t duration[VPX_SS_MAX_LAYERS];      /**< Duration per spatial layer. */
 } vpx_svc_ref_frame_config_t;
 
