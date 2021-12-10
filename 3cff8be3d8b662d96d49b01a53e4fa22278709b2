@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "12fa4ac7_270179de",
+        "filename": "vp9/encoder/x86/vp9_diamond_search_sad_avx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-10T18:31:05Z",
+      "side": 1,
+      "message": "\u003e Is it possible this loads uninitialized data?\n\nLooking at it quickly it may be possible this could read off the end into other struct members, but we haven\u0027t seen anything under valgrind. There\u0027s no msan coverage for libvpx because of the assembly.\n\nIn this case it\u0027s a compiler heuristic not a runtime issue. Setting either or both vectors to _mm_setzero_si128() doesn\u0027t clear it, so I think it may be confused about the local_best_idx value. It is a little weird to work on the vector directly like this.",
+      "parentUuid": "0172fea8_80fcb680",
+      "range": {
+        "startLine": 148,
+        "startChar": 6,
+        "endLine": 148,
+        "endChar": 76
+      },
+      "revId": "3cff8be3d8b662d96d49b01a53e4fa22278709b2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "07af228c_9e024b6f",
