@@ -33,6 +33,46 @@
       "message": "Can you add comment to the set_ref_frame_config api, something like: \n\"For reference \"i\" which is not used (set to 0/false), buffer slot index for that reference will set/forced to first one used/referenced, in write_compressed_header().\n\nSee aomcx.h, line ~1534:\n/*!brief Parameters for setting ref frame config */\ntypedef struct aom_svc_ref_frame_config {.\n.\n",
       "revId": "5ba42c8777baae5f8707a8e9f2bea165d8c2c856",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "52e12875_4b9425d3",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1249,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2021-12-10T15:33:03Z",
+      "side": 1,
+      "message": "extra empty line",
+      "revId": "5ba42c8777baae5f8707a8e9f2bea165d8c2c856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c614537_bbe3c345",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2021-12-10T15:33:03Z",
+      "side": 1,
+      "message": "while you\u0027re here can you change this !.. \u0026\u0026 !.. to .. || .. which is easier to read",
+      "range": {
+        "startLine": 468,
+        "startChar": 8,
+        "endLine": 469,
+        "endChar": 36
+      },
+      "revId": "5ba42c8777baae5f8707a8e9f2bea165d8c2c856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
