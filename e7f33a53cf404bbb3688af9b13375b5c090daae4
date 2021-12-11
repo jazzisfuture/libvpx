@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7401a47b_b4d04223",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-11T11:50:40Z",
+      "side": 1,
+      "message": "Thank for commentary.\nUpdate new patch set to add API comment.",
+      "revId": "e7f33a53cf404bbb3688af9b13375b5c090daae4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

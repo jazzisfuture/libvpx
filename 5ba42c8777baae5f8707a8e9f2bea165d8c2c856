@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f52583d8_d82056bd",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1249,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-11T11:50:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "52e12875_4b9425d3",
+      "revId": "5ba42c8777baae5f8707a8e9f2bea165d8c2c856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7c614537_bbe3c345",
@@ -65,6 +83,30 @@
       "writtenOn": "2021-12-10T15:33:03Z",
       "side": 1,
       "message": "while you\u0027re here can you change this !.. \u0026\u0026 !.. to .. || .. which is easier to read",
+      "range": {
+        "startLine": 468,
+        "startChar": 8,
+        "endLine": 469,
+        "endChar": 36
+      },
+      "revId": "5ba42c8777baae5f8707a8e9f2bea165d8c2c856",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c3c3deb_26f3f369",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-11T11:50:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7c614537_bbe3c345",
       "range": {
         "startLine": 468,
         "startChar": 8,
