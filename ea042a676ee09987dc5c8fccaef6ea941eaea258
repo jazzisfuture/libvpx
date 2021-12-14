@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "798385b6_6697f364",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2021-12-14T21:51:02Z",
+      "side": 1,
+      "message": "LGTM, pass it to James for further comments if any.",
+      "revId": "ea042a676ee09987dc5c8fccaef6ea941eaea258",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
