@@ -22,6 +22,30 @@
       },
       "revId": "b786715ab3b7d9899e656933e1a853920e6df9cb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff43830b_d77a26b2",
+        "filename": "vp9/encoder/vp9_subexp.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2021-12-21T21:34:07Z",
+      "side": 1,
+      "message": "\u003e Nit: It would be more informative to use the vp9_prob typedef in these casts.\n\u003e \n\nyou\u0027re right, that was a mistake when I was checking that typedef. Sorry for the churn here.\n\n\u003e Also, we could declare a vp9_prob local variable immediately after the range check at line 164 to make it clear that the casts are safe.\n\nit would require additional scope in this project, without that we\u0027ll have a split declaration and assignment with a cast",
+      "parentUuid": "0abbac69_3436d983",
+      "range": {
+        "startLine": 166,
+        "startChar": 51,
+        "endLine": 166,
+        "endChar": 58
+      },
+      "revId": "b786715ab3b7d9899e656933e1a853920e6df9cb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
