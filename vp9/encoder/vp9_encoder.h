@@ -1196,12 +1196,27 @@ static INLINE int frame_is_kf_gf_arf(const VP9_COMP *cpi) {
          (cpi->refresh_golden_frame && !cpi->rc.is_src_frame_alt_ref);
 }
 
+static const int kVp9RefFlagList[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
+                                        VP9_ALT_FLAG };
+
+static INLINE int is_referenced(int ref_frame_flags, int8_t ref_frame) {
+  assert(ref_frame >= VP9_LAST_FLAG && ref_frame <= VP9_ALT_FLAG);
+  return (ref_frame_flags & kVp9RefFlagList[ref_frame]);
+}
+
+static INLINE void set_ref_flags(int *ref_frame_flags, int8_t ref_frame,
+                                 int referenced) {
+  assert(ref_frame >= VP9_LAST_FLAG && ref_frame <= VP9_ALT_FLAG);
+  if (referenced)
+    *ref_frame_flags &= kVp9RefFlagList[ref_frame];
+  else
+    *ref_frame_flags &= ~kVp9RefFlagList[ref_frame];
+}
+
 static INLINE MV_REFERENCE_FRAME get_first_ref_frame(VP9_COMP *const cpi) {
-  static const int flag_list[4] = { 0, VP9_LAST_FLAG, VP9_GOLD_FLAG,
-                                    VP9_ALT_FLAG };
   MV_REFERENCE_FRAME ref_frame = LAST_FRAME;
   while (ref_frame < MAX_REF_FRAMES) {
-    if (cpi->ref_frame_flags & flag_list[ref_frame]) break;
+    if (is_referenced(cpi->ref_frame_flags, ref_frame)) break;
     ref_frame++;
   }
   return ref_frame;
