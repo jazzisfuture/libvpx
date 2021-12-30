@@ -22,6 +22,30 @@
       },
       "revId": "2311cdb0a35a15fa4032b57af314ffcdd5c813e4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7f13b2e9_3047dacd",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1207,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2021-12-30T02:03:43Z",
+      "side": 1,
+      "message": "There are quite a lot `flag_list` across the source. \n\nThis function is used to set \u0027ref_frame_flags\u0027 from `ref frame` to avoid `flag_list` mapping by caller. If not add it, we need keep the only `flag_list` as below.\n\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/libvpx/source/libvpx/vp9/encoder/vp9_svc_layercontext.c;l\u003d1091;drc\u003d37dd1d773b01348301684f27a6159a3a3c0c4612\n\nSome other directly manipulate \u0027ref_frame_flags\u0027, they all can use these wrapper functions(easy to trace who set \u0027ref_frame_flags\u0027). But this may be a too significant change. I am not sure if we really want it. \n\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/libvpx/source/libvpx/vp9/encoder/vp9_svc_layercontext.c;l\u003d528;drc\u003d1f996e51b95348aecf84a2568e059d49b0943986",
+      "parentUuid": "4f19111f_558b82f1",
+      "range": {
+        "startLine": 1207,
+        "startChar": 19,
+        "endLine": 1207,
+        "endChar": 32
+      },
+      "revId": "2311cdb0a35a15fa4032b57af314ffcdd5c813e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
