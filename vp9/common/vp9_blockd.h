@@ -31,12 +31,6 @@ extern "C" {
 
 #define MAX_MB_PLANE 3
 
-typedef enum {
-  KEY_FRAME = 0,
-  INTER_FRAME = 1,
-  FRAME_TYPES,
-} FRAME_TYPE;
-
 static INLINE int is_inter_mode(PREDICTION_MODE mode) {
   return mode >= NEARESTMV && mode <= NEWMV;
 }
