@@ -16,6 +16,41 @@
       "message": "Hi Chunbo, I don\u0027t quite get the problem.\nCould you share compile error log with us?\n\nThanks in advance.",
       "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc5409f3_1bf29c61",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1253028
+      },
+      "writtenOn": "2022-01-05T06:24:51Z",
+      "side": 1,
+      "message": "Generally, there are bunch of potential redefinitions between libvpx and Chromium media, like media/base, media/filter and e.t.c. Also it is good practice to keep the public interfaces/headers in libvpx clean and clear for usage.\nYou can also check CQ failure from https://chromium-review.googlesource.com/c/chromium/src/+/2991863/. Thanks.",
+      "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "16dd713d_e9a14dc3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1253028
+      },
+      "writtenOn": "2022-01-05T06:24:51Z",
+      "side": 1,
+      "message": "Sure. See the following snippets:\nIn file included from ../../media/gpu/vp9_encode_params.cc:7:\nIn file included from ../..\\media/gpu/vp9_svc_layers.h:12:\n../..\\media/filters/vp9_parser.h(53,3): error: expected identifier\n  EIGHTTAP \u003d 0,\n  ^\n../../third_party/libvpx/source/libvpx\\vp9/common/vp9_filter.h(23,18): note: expanded from macro \u0027EIGHTTAP\u0027\n#define EIGHTTAP 0\n                 ^\nIn file included from ../../media/gpu/vp9_encode_params.cc:7:\nIn file included from ../..\\media/gpu/vp9_svc_layers.h:12:\n../..\\media/filters/vp9_parser.h(54,3): error: expected identifier\n  EIGHTTAP_SMOOTH \u003d 1,\n  ^\n../../third_party/libvpx/source/libvpx\\vp9/common/vp9_filter.h(24,25): note: expanded from macro \u0027EIGHTTAP_SMOOTH\u0027\n#define EIGHTTAP_SMOOTH 1\n                        ^\nIn file included from ../../media/gpu/vp9_encode_params.cc:7:\nIn file included from ../..\\media/gpu/vp9_svc_layers.h:12:\n../..\\media/filters/vp9_parser.h(55,3): error: expected identifier\n  EIGHTTAP_SHARP \u003d 2,\n  ^\n../../third_party/libvpx/source/libvpx\\vp9/common/vp9_filter.h(25,24): note: expanded from macro \u0027EIGHTTAP_SHARP\u0027\n#define EIGHTTAP_SHARP 2\n                       ^",
+      "parentUuid": "ad873d2a_ae0bcbd9",
+      "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
