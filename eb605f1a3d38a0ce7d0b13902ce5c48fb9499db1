@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad873d2a_ae0bcbd9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-01-05T03:22:24Z",
+      "side": 1,
+      "message": "Hi Chunbo, I don\u0027t quite get the problem.\nCould you share compile error log with us?\n\nThanks in advance.",
+      "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
