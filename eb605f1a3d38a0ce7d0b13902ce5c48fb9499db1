@@ -51,6 +51,23 @@
       "parentUuid": "ad873d2a_ae0bcbd9",
       "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "06173c0d_ca873136",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-01-05T07:40:26Z",
+      "side": 1,
+      "message": "Hi Chunbo, I got the problem. I think vp9/ratectrl_rtc.h change makes sense.\nHowever, vp9_blockd.h and vp9_common.h seems to be adhoc workaround.\n\nSince libvpx is written in C, there is no good way to avoid this problem.\nOn the other hand, vp9_parser.h is Chromium and written in C++, so I think the best solution uses enum class in vp9_parser.h.\n\nAlso, I am curious if this compile error still happens after my comments in crrev.com/c/2991863 are addressed.",
+      "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
