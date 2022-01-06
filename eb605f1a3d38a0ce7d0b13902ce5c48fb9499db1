@@ -103,6 +103,24 @@
       "message": "Thank you Hiro for taking care of this. I\u0027ll take a look once Chunbo updates.",
       "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67e5252b_20bf86dc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1253028
+      },
+      "writtenOn": "2022-01-06T08:49:01Z",
+      "side": 1,
+      "message": "Yes, FRAME_TYPE move is an adhoc fix. Otherwise, the other constants in vp9_blockd.h will have conflicts with chromium media.\nI just rebased the crrev.com/c/2991863, but still the same changes in libvpx are required. Can you elaborate more if any better suggestions? Thanks!",
+      "parentUuid": "fa807800_4c4a36f2",
+      "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
