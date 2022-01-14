@@ -139,6 +139,24 @@
       "parentUuid": "67e5252b_20bf86dc",
       "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5dc2301b_c0a3d264",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-01-14T07:39:49Z",
+      "side": 1,
+      "message": "Sorry for late responce.\nChanges in vp9/common.h is not reasonable.\nCan you rather change \\enum to enum class in vp9_parser.h that are required to compile without error?\n\nThanks.",
+      "parentUuid": "bf590254_8af91f3b",
+      "revId": "eb605f1a3d38a0ce7d0b13902ce5c48fb9499db1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
