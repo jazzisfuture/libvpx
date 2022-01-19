@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e6260a3_7e3698a1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1440326
+      },
+      "writtenOn": "2022-01-19T04:35:21Z",
+      "side": 1,
+      "message": "Reland the code clean up patch. It does not impact WebRTC UnitTests.\nThe WebRTC UnitTests failure will be traced by a separate Issue/CL.",
+      "revId": "82014b6675ef9acf20cb2bb42c83f95d9e33906b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
