@@ -16,6 +16,24 @@
       "message": "this project (and all of codecs/, webm/) don\u0027t use CQ for submit. libwebm might be closest to enabling that, but for the others more works needs to be done on the LUCI side. If this is otherwise a noop given the label setup, it should be fine.",
       "revId": "42e3fc04f787712891a00f3f12daa751ba900a49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb3c9d3b_04ee04fc",
+        "filename": "project.config",
+        "patchSetId": 1
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1383098
+      },
+      "writtenOn": "2022-01-19T10:07:56Z",
+      "side": 1,
+      "message": "Hi James, thanks for the note. Yes this is a noop: the\n  \u003e applicableIf \u003d is:false\n  \nactually disables this submit requirement for the project such that it does not appear in the UI. We are doing such that if CQ is defined in a parent project (e.g. All-Projects) it doesn\u0027t affect this project, since submit requirements are inherited from parent projects.",
+      "parentUuid": "96c57d64_b613a0d9",
+      "revId": "42e3fc04f787712891a00f3f12daa751ba900a49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
