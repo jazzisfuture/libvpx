@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bfa356c7_f45efca4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-24T16:19:05Z",
+      "side": 1,
+      "message": "you should add comments here on the usage, and how it works (based on source_sad and temp_mask_map in sample encoder)?\n\nalso can we have unittest, with some example/fixed mask, to check encoder/decoder mismatch for roi-skip feature?",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6806d5c3_db189e04",
+        "filename": "examples/vpx_temporal_svc_encoder.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-24T16:19:05Z",
+      "side": 1,
+      "message": "good to put some comments to explain what temp_mask_map is doing",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e3955479_f735a489",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-24T16:19:05Z",
+      "side": 1,
+      "message": "again the [3] and #20 appear here too (as in encoder and encodeframe), maybe we should add some name/define for it? maybe add define/macro for it too?",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1abae4c9_ec039c55",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1343,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-24T16:19:05Z",
+      "side": 1,
+      "message": "remove the \"1\", and the [3] and 20 appear here again",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "92c0c568_c3c08417",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 5551,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-24T16:19:05Z",
+      "side": 1,
+      "message": "1) this behavior here (forcing seg_skip \u003d 0 based on content_state) is only for special case of roi-\u003eskip[3], right? that should be added then.\n\n2) should use if (x-\u003econtent_state_sb \u003e kLowSadLowSumdiff)..\n\n3) can we move the block of code from 1343 here (to reset segment, add new function to make it nice) since x-\u003ezero_temp_sad_source \u003d 0 if content_state_sb \u003e 1)\n\nsomething like:\nif (cpi-\u003eroi_enabled \u0026\u0026 cpi-\u003eroi.skip[3] \u0026\u0026\n    segment_id \u0026\u0026 x-\u003econtent_state_sb \u003e 1) {\n   reset segment_id\n   seg_skip \u003d0 \n}",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c5cac6f7_553b4c0d",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 4140,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-24T16:19:05Z",
+      "side": 1,
+      "message": "if skip-roi feature is used and seg3 is set for that skip, then some special processing is done. We should add comments on this here or/and in the apply_roi_map?",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
