@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "43cc3903_ca372486",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-01-24T22:12:16Z",
+      "side": 1,
+      "message": "\u003e you should add comments here on the usage, and how it works (based on source_sad and temp_mask_map in sample encoder)?\n\u003e \n\u003e also can we have unittest, with some example/fixed mask, to check encoder/decoder mismatch for roi-skip feature?\n\nPending unit test.",
+      "parentUuid": "bfa356c7_f45efca4",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "6806d5c3_db189e04",
         "filename": "examples/vpx_temporal_svc_encoder.c",
         "patchSetId": 7
@@ -31,6 +49,24 @@
       "writtenOn": "2022-01-24T16:19:05Z",
       "side": 1,
       "message": "good to put some comments to explain what temp_mask_map is doing",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b3e1daa_4088fb13",
+        "filename": "examples/vpx_temporal_svc_encoder.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-01-24T22:12:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6806d5c3_db189e04",
       "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -52,6 +88,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "61349205_0755e269",
+        "filename": "vp9/encoder/vp9_aq_cyclicrefresh.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 501,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-01-24T22:12:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e3955479_f735a489",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1abae4c9_ec039c55",
@@ -65,6 +119,24 @@
       "writtenOn": "2022-01-24T16:19:05Z",
       "side": 1,
       "message": "remove the \"1\", and the [3] and 20 appear here again",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0778fef7_b13d42e7",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1343,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-01-24T22:12:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1abae4c9_ec039c55",
       "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -86,6 +158,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "26090280_393b659b",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 5551,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-01-24T22:12:16Z",
+      "side": 1,
+      "message": "3) seems a bit difficult since from here to choose_partitioning there\u0027re a few conditions to be met:\nVAR_BASED_PARTITION or REFERENCE_PARTITION and some conditions related to REFERENCE_PARTITION.\nx-\u003ezero_temp_sad_source \u003d 0  when content_state_sb \u003e 2 but seg_skip is set to 0 when content_state_sb \u003e 1",
+      "parentUuid": "92c0c568_c3c08417",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5cac6f7_553b4c0d",
@@ -99,6 +189,24 @@
       "writtenOn": "2022-01-24T16:19:05Z",
       "side": 1,
       "message": "if skip-roi feature is used and seg3 is set for that skip, then some special processing is done. We should add comments on this here or/and in the apply_roi_map?",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a74d8d04_b3d39d4f",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 4140,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-01-24T22:12:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5cac6f7_553b4c0d",
       "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
