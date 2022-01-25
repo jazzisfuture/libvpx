@@ -1,0 +1,141 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "332b0fe7_ae9de7d6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-25T20:08:24Z",
+      "side": 1,
+      "message": "Thanks for the patches. You should be able to upload these with a loongson email address. If it fails then that will need to be added to the Corporate CLA. The name on this chyhc made this look like spam.",
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "69276fca_c1469787",
+        "filename": "build/make/Makefile",
+        "patchSetId": 4
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-25T20:08:24Z",
+      "side": 1,
+      "message": "add a space after the \u0027#\u0027 to match the other comments",
+      "range": {
+        "startLine": 154,
+        "startChar": 0,
+        "endLine": 154,
+        "endChar": 1
+      },
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57c8fbb3_4dc8edec",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 452,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-25T20:08:24Z",
+      "side": 1,
+      "message": "add a space before the \u0027{\u0027",
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c0d71b9_130ae1d7",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-25T20:08:24Z",
+      "side": 1,
+      "message": "indent should be 2 spaces",
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d2f509bd_2079b028",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-25T20:08:24Z",
+      "side": 1,
+      "message": "add a space before the \u0027{\u0027 for consistency",
+      "range": {
+        "startLine": 459,
+        "startChar": 14,
+        "endLine": 459,
+        "endChar": 15
+      },
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bea2e29c_67477e4f",
+        "filename": "configure",
+        "patchSetId": 4
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-25T20:08:24Z",
+      "side": 1,
+      "message": "let\u0027s put these before the mips target; this section is mostly sorted aside from \u0027generic-gnu\u0027",
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30e2bc07_9a27aa0b",
+        "filename": "vpx_ports/loongarch.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-25T20:08:24Z",
+      "side": 1,
+      "message": "this should be VPX_VPX_PORTS_LOONGARCH_H_",
+      "range": {
+        "startLine": 13,
+        "startChar": 8,
+        "endLine": 13,
+        "endChar": 30
+      },
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
