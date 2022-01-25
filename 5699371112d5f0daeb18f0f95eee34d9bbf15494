@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f99afc0c_e527e530",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 1340,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-25T21:14:30Z",
+      "side": 1,
+      "message": "remove extra line",
+      "revId": "5699371112d5f0daeb18f0f95eee34d9bbf15494",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b00c1d08_6f533d7d",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 5543,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-25T21:14:30Z",
+      "side": 1,
+      "message": "this condition (5543) should have segment_id \u003e 0 (or seg \u003d BACKGROUND_SEG..)\n\nwhy do you need to check is_key_frame if frames_since_key \u003e FRAMES_NO_SKIPPP....\n\nalso isn\u0027t zero_temp_sad_source \u003d\u003d 0. here since content_state_sb \u003e 1?",
+      "revId": "5699371112d5f0daeb18f0f95eee34d9bbf15494",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
