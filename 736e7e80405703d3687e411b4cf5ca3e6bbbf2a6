@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d93288e2_9cfafd3f",
+        "filename": "examples/vpx_temporal_svc_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 263,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-01-25T20:25:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "470003af_69bb6845",
+      "revId": "736e7e80405703d3687e411b4cf5ca3e6bbbf2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7d39cd34_4505e001",
@@ -31,6 +49,24 @@
       "writtenOn": "2022-01-25T06:34:30Z",
       "side": 1,
       "message": "cpi-\u003erc.frames_since_key \u003e FRAMES_NO_SKIPPING_AFTER_KEY ?",
+      "revId": "736e7e80405703d3687e411b4cf5ca3e6bbbf2a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed4afcfe_795f2fd1",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 5552,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-01-25T20:25:37Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d39cd34_4505e001",
       "revId": "736e7e80405703d3687e411b4cf5ca3e6bbbf2a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
