@@ -176,6 +176,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c3ce11e_7a0e20f8",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 5551,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-25T01:46:43Z",
+      "side": 1,
+      "message": "isn\u0027t x-\u003ezero_temp_sad_source always 0 when content_state_sb \u003e 1?\n\ndon\u0027t we want to reset the segment regardless of the partition method used, so it should make sense to put the reset code here.",
+      "parentUuid": "26090280_393b659b",
+      "revId": "b919701af91e9ab88834ae996c1aabe2796fcded",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5cac6f7_553b4c0d",
