@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fcf2b69c_e4ffe9a2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:10:47Z",
+      "side": 1,
+      "message": "I forgot to ask, does this refer to a particular bug tracking system? Usually this is written as Bug: ...; If the tracker is public then a full url can help.",
+      "revId": "d7ebc1b42015e9ff27b0417bda9dfb6836f13f81",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
