@@ -100,6 +100,52 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e661d1a2_dba31e06",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 1448,
+      "author": {
+        "id": 1221903
+      },
+      "writtenOn": "2022-01-26T02:55:11Z",
+      "side": 1,
+      "message": "This \u0027if\u0027 conditional judgement is not needed.",
+      "range": {
+        "startLine": 1448,
+        "startChar": 0,
+        "endLine": 1448,
+        "endChar": 26
+      },
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea8feef9_46125591",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 1452,
+      "author": {
+        "id": 1221903
+      },
+      "writtenOn": "2022-01-26T02:55:11Z",
+      "side": 1,
+      "message": "It\u0027s not needed too.",
+      "range": {
+        "startLine": 1452,
+        "startChar": 0,
+        "endLine": 1452,
+        "endChar": 27
+      },
+      "revId": "bc36d28fd13d687f9ca09a886fca8555547446cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bea2e29c_67477e4f",
         "filename": "configure",
         "patchSetId": 4
