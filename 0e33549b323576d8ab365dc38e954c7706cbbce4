@@ -1,0 +1,233 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb561a7d_1c9d9fe3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "same comment here for Bug: and whether this is public",
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f67e7d79_b47429a9",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "please include the rest of the common copyright header",
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bbba932b_9b42cdee",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "extension",
+      "range": {
+        "startLine": 8,
+        "startChar": 52,
+        "endLine": 8,
+        "endChar": 61
+      },
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d87fd34_fd5961d3",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "this should be VPX_VPX_UTIL_LOONGSON_INTRINSICS_H_",
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e4bf08d_edea519a",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "is versioning of the intrinsics necessary?",
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b688e421_9f625131",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "Return, here and in the other comment blocks",
+      "range": {
+        "startLine": 69,
+        "startChar": 17,
+        "endLine": 69,
+        "endChar": 23
+      },
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ded3e800_3233fcc2",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 696,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "multiplication?",
+      "range": {
+        "startLine": 696,
+        "startChar": 27,
+        "endLine": 696,
+        "endChar": 39
+      },
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74075c28_c152d6b2",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 934,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "multiplied",
+      "range": {
+        "startLine": 934,
+        "startChar": 56,
+        "endLine": 934,
+        "endChar": 64
+      },
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8e7255d_a5dabeb6",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 937,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "multiplication",
+      "range": {
+        "startLine": 937,
+        "startChar": 27,
+        "endLine": 937,
+        "endChar": 39
+      },
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "872c8a9a_1e4457eb",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 1205,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "saturated?",
+      "range": {
+        "startLine": 1205,
+        "startChar": 23,
+        "endLine": 1205,
+        "endChar": 33
+      },
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d90b2d3a_b5485065",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 1208,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-26T23:18:47Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 1208,
+        "startChar": 54,
+        "endLine": 1208,
+        "endChar": 64
+      },
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
