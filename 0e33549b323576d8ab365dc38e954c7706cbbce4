@@ -190,6 +190,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "025c1ab5_93388c0c",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-27T21:44:27Z",
+      "side": 1,
+      "message": "\u003e Versioning of the intrinsics is required.\n\nMeaning in other projects where this is copied from? A version check within libvpx wouldn\u0027t make much sense, but if this is duplicating a source file maintained elsewhere then this is ok.",
+      "parentUuid": "2ad43cb3_b56f1dee",
+      "revId": "0e33549b323576d8ab365dc38e954c7706cbbce4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b688e421_9f625131",
         "filename": "vpx_util/loongson_intrinsics.h",
         "patchSetId": 5
