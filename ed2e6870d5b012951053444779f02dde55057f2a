@@ -34,6 +34,24 @@
       "parentUuid": "5c6e55c8_d4379fc5",
       "revId": "ed2e6870d5b012951053444779f02dde55057f2a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77c2f54a_1ff4156b",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 14
+      },
+      "lineNbr": 5535,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-27T19:14:37Z",
+      "side": 1,
+      "message": "Ok, makes sense. Just that there will be many superblocks that are 0 for all 8x8 and we\u0027re still reseting, but i guess cycle-cost of doing it is small.",
+      "parentUuid": "632f5965_a7933172",
+      "revId": "ed2e6870d5b012951053444779f02dde55057f2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
