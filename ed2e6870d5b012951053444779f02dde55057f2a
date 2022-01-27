@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c6e55c8_d4379fc5",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 14
+      },
+      "lineNbr": 5535,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-01-27T18:21:42Z",
+      "side": 1,
+      "message": "don\u0027t you only need to enter here (reset) if segment_id \u003e 0 (or seg_skip \u003d 1),\notherwise the reset code is reseting 0 to 0?",
+      "revId": "ed2e6870d5b012951053444779f02dde55057f2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
