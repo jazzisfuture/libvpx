@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6268116d_37d8c1fa",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-28T20:12:14Z",
+      "side": 1,
+      "message": "I think you can keep this as the main copyright statement, but add:\n\n * Use of this source code is governed by a BSD-style license\n * that can be found in the LICENSE file in the root of the source\n * tree. An additional intellectual property rights grant can be found\n * in the file PATENTS.  All contributing project authors may\n * be found in the AUTHORS file in the root of the source tree.",
+      "revId": "0c4076cf3ab41549a3c17fface855701ead3fe5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "abc2d8fa_5b9e3ddc",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-28T20:12:14Z",
+      "side": 1,
+      "message": "extension",
+      "range": {
+        "startLine": 22,
+        "startChar": 52,
+        "endLine": 22,
+        "endChar": 61
+      },
+      "revId": "0c4076cf3ab41549a3c17fface855701ead3fe5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af47b71d_fb2802a7",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 1307,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-28T20:12:14Z",
+      "side": 1,
+      "message": "these \u0027indx\u0027 references look like they should be \u0027idx\u0027 given the parameter name",
+      "range": {
+        "startLine": 1307,
+        "startChar": 48,
+        "endLine": 1307,
+        "endChar": 52
+      },
+      "revId": "0c4076cf3ab41549a3c17fface855701ead3fe5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6159d7a_c99ff3f9",
+        "filename": "vpx_util/loongson_intrinsics.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 1331,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-28T20:12:14Z",
+      "side": 1,
+      "message": "the same here for indx vs idx",
+      "range": {
+        "startLine": 1331,
+        "startChar": 48,
+        "endLine": 1331,
+        "endChar": 52
+      },
+      "revId": "0c4076cf3ab41549a3c17fface855701ead3fe5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
