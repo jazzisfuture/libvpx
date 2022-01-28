@@ -16,6 +16,24 @@
       "message": "it looks like \u0027：\u0027 is a unicode character, changing this to \u0027:\u0027 will create a link to a monorail bug.\n\nIt looks like that was misfiled though. Maybe you wanted something under libvpx itself?\n\nhttps://bugs.chromium.org/p/webm/issues/entry?template\u003dFeature+Request",
       "revId": "c59d8eeb213277480632853a4e4ab81e3ba92d9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b04e7442_a151bda0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-01-28T02:08:24Z",
+      "side": 1,
+      "message": "\u003e it looks like \u0027：\u0027 is a unicode character, changing this to \u0027:\u0027 will create a link to a monorail bug.\n\u003e \n\u003e It looks like that was misfiled though. Maybe you wanted something under libvpx itself?\n\u003e \n\u003e https://bugs.chromium.org/p/webm/issues/entry?template\u003dFeature+Request\n\nThanks for fixing the bug link. I was also suggesting that the feature request be moved to libvpx since the chromium one was closed. With a bug for libvpx you can use \u0027Bug: webm:NNN\u0027",
+      "parentUuid": "de4d5525_e03932b0",
+      "revId": "c59d8eeb213277480632853a4e4ab81e3ba92d9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
