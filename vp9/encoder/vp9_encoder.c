@@ -3911,6 +3911,14 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
         cm, cpi->un_scaled_source, &cpi->scaled_source, (cpi->oxcf.pass == 0),
         filter_scaler, phase_scaler);
   }
+
+  if (svc->encode_last_buff_lossless_key == 1 && svc->spatial_layer_id == 0) {
+    BufferPool *const pool = cm->buffer_pool;
+    if (frame_is_intra_only(cm) && cm->current_video_frame > 0)
+      cpi->Source = &pool->frame_bufs[cm->ref_frame_map[cpi->lst_fb_idx]].buf;
+  }
+
+
 #ifdef OUTPUT_YUV_SVC_SRC
   // Write out at most 3 spatial layers.
   if (is_one_pass_cbr_svc(cpi) && svc->spatial_layer_id < 3) {
@@ -5712,7 +5720,8 @@ static void encode_frame_to_data_rate(
 
   cm->last_frame_type = cm->frame_type;
 
-  vp9_rc_postencode_update(cpi, *size);
+  if (!(cpi->svc.encode_last_buff_lossless_key && cpi->svc.spatial_layer_id == 0))
+    vp9_rc_postencode_update(cpi, *size);
 
   if (cpi->compute_frame_low_motion_onepass && oxcf->pass == 0 &&
       !frame_is_intra_only(cm) &&
@@ -5777,6 +5786,8 @@ static void encode_frame_to_data_rate(
 
   cpi->svc.previous_frame_is_intra_only = cm->intra_only;
   cpi->svc.set_intra_only_frame = 0;
+  if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1)
+    cpi->svc.encode_last_buff_lossless_key = 0;
 }
 
 static void SvcEncode(VP9_COMP *cpi, size_t *size, uint8_t *dest,

@@ -1422,6 +1422,17 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
              -1 != vp9_get_compressed_data(cpi, &lib_flags, &size, cx_data,
                                            &dst_time_stamp, &dst_end_time_stamp,
                                            !img, &encode_frame_result)) {
+
+
+        // HACK: to remove lossless key frame from bitstream, for testing
+        /*
+        if (cpi->svc.encode_last_buff_lossless_key &&
+            cpi->svc.spatial_layer_id == 0) {
+          size = 0;
+          cpi->svc.skip_enhancement_layer = 1;
+        }
+        */
+
         // Pack psnr pkt
         if (size > 0 && !cpi->use_svc) {
           // TODO(angiebird): Figure out while we don't need psnr pkt when
@@ -1937,6 +1948,21 @@ static vpx_codec_err_t ctrl_set_external_rate_control(vpx_codec_alg_priv_t *ctx,
   return VPX_CODEC_OK;
 }
 
+static vpx_codec_err_t ctrl_set_decoder_state_lossless_key(vpx_codec_alg_priv_t *ctx,
+                                                           va_list args) {
+  VP9_COMP *const cpi = ctx->cpi;
+  const unsigned int data = va_arg(args, unsigned int);
+  if (data == 1) {
+    struct vp9_extracfg extra_cfg = ctx->extra_cfg;
+    assert(cpi->svc.number_spatial_layers == 2 &&
+           cpi->oxcf.error_resilient_mode == 1);
+    cpi->svc.encode_last_buff_lossless_key = 1;
+    extra_cfg.lossless = 1;
+   return update_extra_cfg(ctx, &extra_cfg);
+  }
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP8_COPY_REFERENCE, ctrl_copy_reference },
 
@@ -1991,6 +2017,7 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP9E_SET_DISABLE_LOOPFILTER, ctrl_set_disable_loopfilter },
   { VP9E_SET_RTC_EXTERNAL_RATECTRL, ctrl_set_rtc_external_ratectrl },
   { VP9E_SET_EXTERNAL_RATE_CONTROL, ctrl_set_external_rate_control },
+  { VP9E_DECODER_STATE_LOSSLESS_KEY, ctrl_set_decoder_state_lossless_key },
 
   // Getters
   { VP8E_GET_LAST_QUANTIZER, ctrl_get_quantizer },

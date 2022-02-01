@@ -956,7 +956,8 @@ static int calc_active_worst_quality_one_pass_cbr(const VP9_COMP *cpi) {
   active_worst_quality = VPXMIN(rc->worst_quality, (ambient_qp * 5) >> 2);
   // For SVC if the current base spatial layer was key frame, use the QP from
   // that base layer for ambient_qp.
-  if (cpi->use_svc && cpi->svc.spatial_layer_id > 0) {
+  if (cpi->use_svc && cpi->svc.spatial_layer_id > 0 &&
+      !cpi->svc.encode_last_buff_lossless_key) {
     int layer = LAYER_IDS_TO_IDX(0, cpi->svc.temporal_layer_id,
                                  cpi->svc.number_temporal_layers);
     const LAYER_CONTEXT *lc = &cpi->svc.layer_context[layer];
@@ -1082,6 +1083,7 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
   } else {
     q = vp9_rc_regulate_q(cpi, rc->this_frame_target, active_best_quality,
                           active_worst_quality);
+
     if (q > *top_index) {
       // Special case when we are targeting the max allowed rate
       if (rc->this_frame_target >= rc->max_frame_bandwidth)
@@ -1850,6 +1852,13 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   // Update rate control heuristics
   rc->projected_frame_size = (int)(bytes_used << 3);
 
+  /*
+  printf("%d ** %d %d %d %d %d ** %d %d %d %d \n", is_lossless_requested(&cpi->oxcf),
+    svc->current_superframe, cm->current_video_frame, 
+    cm->frame_type, svc->spatial_layer_id, svc->temporal_layer_id,
+    cm->width, rc->projected_frame_size, qindex, rc->avg_frame_bandwidth);
+  */
+  
   // Post encode loop adjustment of Q prediction.
   vp9_rc_update_rate_correction_factors(cpi);
 

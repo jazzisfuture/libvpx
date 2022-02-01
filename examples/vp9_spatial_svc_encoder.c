@@ -1063,6 +1063,14 @@ int main(int argc, const char **argv) {
         set_frame_flags_bypass_mode_ex0(layer_id.temporal_layer_id,
                                         svc_ctx.spatial_layers, frame_cnt == 0,
                                         &ref_frame_config);
+        // HACK: only predict from LAST.
+        ref_frame_config.reference_golden[0] = 0;
+        ref_frame_config.reference_golden[1] = 0;
+        if (frame_cnt % 60 == 0 && frame_cnt > 0) {
+          ref_frame_config.lst_fb_idx[1] = 0;
+          ref_frame_config.update_buffer_slot[1] = 1 << ref_frame_config.lst_fb_idx[1]
+              | 1 << ref_frame_config.gld_fb_idx[1];
+        }
       } else if (example_pattern == 1) {
         set_frame_flags_bypass_mode_ex1(layer_id.temporal_layer_id,
                                         svc_ctx.spatial_layers, frame_cnt == 0,
@@ -1070,7 +1078,6 @@ int main(int argc, const char **argv) {
       }
       ref_frame_config.duration[0] = frame_duration * 1;
       ref_frame_config.duration[1] = frame_duration * 1;
-
       vpx_codec_control(&encoder, VP9E_SET_SVC_REF_FRAME_CONFIG,
                         &ref_frame_config);
       // Keep track of input frames, to account for frame drops in rate control
@@ -1092,12 +1099,47 @@ int main(int argc, const char **argv) {
         ++rc.layer_input_frames[sl * enc_cfg.ts_number_layers + tl];
     }
 
+    // HACK: for key frames every 60 frames.
+    if (frame_cnt == 0) {
+      // set bitrates on SL1 (tl0 and tl1) to 0 to skip SL.
+      enc_cfg.layer_target_bitrate[2] = 0;
+      enc_cfg.layer_target_bitrate[3] = 0;
+      enc_cfg.rc_target_bitrate = enc_cfg.layer_target_bitrate[0] +
+          enc_cfg.layer_target_bitrate[1] + enc_cfg.layer_target_bitrate[2] +
+          enc_cfg.layer_target_bitrate[3];
+      if (vpx_codec_enc_config_set(&encoder, &enc_cfg))
+        printf("ERORR IN CONFIG \n");
+    } else if (frame_cnt % 60 == 0) {
+      // Key frame: Set non-zero bitrate on SL1 to encoded it.
+      enc_cfg.layer_target_bitrate[2] = enc_cfg.layer_target_bitrate[0];
+      enc_cfg.layer_target_bitrate[3] = enc_cfg.layer_target_bitrate[1];
+      enc_cfg.rc_target_bitrate = enc_cfg.layer_target_bitrate[0] +
+          enc_cfg.layer_target_bitrate[1] + enc_cfg.layer_target_bitrate[2] +
+          enc_cfg.layer_target_bitrate[3];
+      vpx_codec_control(&encoder, VP9E_DECODER_STATE_LOSSLESS_KEY, 1);
+      if (vpx_codec_enc_config_set(&encoder, &enc_cfg))
+        printf("ERORR IN CONFIG \n");
+    } else if ((frame_cnt - 1)% 60 == 0 && frame_cnt > 0) {
+      // Undo skip encoding SL1.
+      enc_cfg.layer_target_bitrate[2] = 0;
+      enc_cfg.layer_target_bitrate[3] = 0;
+      enc_cfg.rc_target_bitrate = enc_cfg.layer_target_bitrate[0] +
+          enc_cfg.layer_target_bitrate[1] + enc_cfg.layer_target_bitrate[2] +
+          enc_cfg.layer_target_bitrate[3];
+      // Undo the lossless setting.
+      vpx_codec_control(&encoder, VP9E_SET_LOSSLESS, 0);
+      if (vpx_codec_enc_config_set(&encoder, &enc_cfg))
+        printf("ERORR IN CONFIG \n");
+    }
+
+
     vpx_usec_timer_start(&timer);
     res = vpx_svc_encode(
         &svc_ctx, &encoder, (end_of_stream ? NULL : &raw), pts, frame_duration,
         svc_ctx.speed >= 5 ? VPX_DL_REALTIME : VPX_DL_GOOD_QUALITY);
     vpx_usec_timer_mark(&timer);
     cx_time += vpx_usec_timer_elapsed(&timer);
+    printf("encode time: %f \n", 1.0*vpx_usec_timer_elapsed(&timer));
 
     fflush(stdout);
     if (res != VPX_CODEC_OK) {
