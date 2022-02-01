@@ -753,6 +753,12 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP8
    */
   VP8E_SET_RTC_EXTERNAL_RATECTRL,
+
+   /*!\brief Codec control to save decoder state as lossless key.
+   *
+   * Supported in codecs: VP9
+   */
+  VP9E_DECODER_STATE_LOSSLESS_KEY,
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -1084,6 +1090,8 @@ VPX_CTRL_USE_TYPE(VP9E_GET_LAST_QUANTIZER_SVC_LAYERS, int *)
 #define VPX_CTRL_VP9E_GET_LAST_QUANTIZER_SVC_LAYERS
 VPX_CTRL_USE_TYPE(VP8E_SET_RTC_EXTERNAL_RATECTRL, int)
 #define VPX_CTRL_VP8E_SET_RTC_EXTERNAL_RATECTRL
+VPX_CTRL_USE_TYPE(VP9E_DECODER_STATE_LOSSLESS_KEY, int)
+#define VPX_CTRTL_VP9E_DECODER_STATE_LOSSLESS_KEY
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */

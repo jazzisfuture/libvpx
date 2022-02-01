@@ -1299,7 +1299,7 @@ static int choose_partitioning(VP9_COMP *cpi, const TileInfo *const tile,
   // the reference (base layer frame) is key frame (i.e., is_key_frame == 1).
   int is_key_frame =
       (frame_is_intra_only(cm) ||
-       (is_one_pass_cbr_svc(cpi) &&
+       (is_one_pass_cbr_svc(cpi) && !cpi->svc.encode_last_buff_lossless_key &&
         cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame));
   // Always use 4x4 partition for key frame.
   const int use_4x4_partition = frame_is_intra_only(cm);

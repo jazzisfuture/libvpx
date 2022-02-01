@@ -57,6 +57,7 @@ void vp9_init_layer_context(VP9_COMP *const cpi) {
   svc->simulcast_mode = 0;
   svc->single_layer_svc = 0;
   svc->resize_set = 0;
+  svc->encode_last_buff_lossless_key = 0;
 
   for (i = 0; i < REF_FRAMES; ++i) {
     svc->fb_idx_spatial_layer_id[i] = 0xff;
@@ -894,6 +895,10 @@ int vp9_one_pass_cbr_svc_start_layer(VP9_COMP *const cpi) {
     RATE_CONTROL *const lrc = &lc->rc;
     lrc->worst_quality = vp9_quantizer_to_qindex(lc->max_q);
     lrc->best_quality = vp9_quantizer_to_qindex(lc->min_q);
+    if (is_lossless_requested(&cpi->oxcf) && svc->spatial_layer_id == 0) {
+      lrc->worst_quality = 0;
+      lrc->best_quality = 0;
+    }
   }
 
   if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC && svc->single_layer_svc == 1 &&

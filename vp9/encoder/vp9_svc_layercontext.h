@@ -202,6 +202,8 @@ typedef struct SVC {
   // Flag to indicate SVC is dynamically switched to a single layer.
   int single_layer_svc;
   int resize_set;
+
+  int encode_last_buff_lossless_key;
 } SVC;
 
 struct VP9_COMP;
