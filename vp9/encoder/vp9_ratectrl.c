@@ -1091,6 +1091,29 @@ static int rc_pick_q_and_bounds_one_pass_cbr(const VP9_COMP *cpi,
     }
   }
 
+  // Force lower Q on SL0 key frame and SL1 whose base is key.
+  // Skip the first key frame.
+  if (1 && cm->current_video_frame > (unsigned int)cpi->svc.number_spatial_layers) {
+    int layer = LAYER_IDS_TO_IDX(cpi->svc.spatial_layer_id,
+                                 cpi->svc.temporal_layer_id,
+                                 cpi->svc.number_temporal_layers);
+    if (frame_is_intra_only(cm)) {
+      // Key frame: only on SLO
+      // rc->avg_frame_qindex[INTER_FRAME] is average over delta frames.
+      // rc->last_boosted_qindex is lowest since last key.
+      q = VPXMIN(7 * rc->avg_frame_qindex[INTER_FRAME] >> 3, rc->last_boosted_qindex);
+      // clips to the lowest allowed.
+      q = VPXMAX(q, rc->best_quality);
+    } else if (cpi->svc.layer_context[layer].is_key_frame) {
+      // SL1 whose base is key frame.
+      // rc->avg_frame_qindex[INTER_FRAME] is average over delta frames.
+      // rc->last_boosted_qindex is lowest since last key.
+      q = VPXMIN(6 * rc->avg_frame_qindex[INTER_FRAME] >> 3, rc->last_boosted_qindex);
+      // clips to the lowest allowed.
+      q = VPXMAX(q, rc->best_quality);
+    }
+  }
+
   assert(*top_index <= rc->worst_quality && *top_index >= rc->best_quality);
   assert(*bottom_index <= rc->worst_quality &&
          *bottom_index >= rc->best_quality);
