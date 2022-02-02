@@ -8,15 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "memory"
-
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "test/codec_factory.h"
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
 #include "test/util.h"
-#include "test/y4m_video_source.h"
 #include "test/yuv_video_source.h"
 
 #define MASK_WIDTH 40
