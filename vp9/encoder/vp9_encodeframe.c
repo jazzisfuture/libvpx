@@ -1206,7 +1206,8 @@ static void chroma_check(VP9_COMP *cpi, MACROBLOCK *x, int bsize,
 }
 
 static uint64_t avg_source_sad(VP9_COMP *cpi, MACROBLOCK *x, int shift,
-                               int sb_offset) {
+                               int sb_offset, int mi_col, int mi_row) {
+  VP9_COMMON *const cm = &cpi->common;
   unsigned int tmp_sse;
   uint64_t tmp_sad;
   unsigned int tmp_variance;
@@ -1252,6 +1253,41 @@ static uint64_t avg_source_sad(VP9_COMP *cpi, MACROBLOCK *x, int shift,
     }
   }
   if (tmp_sad == 0) x->zero_temp_sad_source = 1;
+
+  // Compute spatial variance and set segment = 1 if its very low.
+  if (cpi->cyclic_refresh->use_seg_key_flat &&
+      frame_is_intra_only(cm)) {
+    int bsize = BLOCK_64X64;
+#if CONFIG_VP9_HIGHBITDEPTH
+    if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+      x->source_variance = vp9_high_get_sby_perpixel_variance(
+          cpi, &x->plane[0].src, bsize, xd->bd);
+    } else {
+      x->source_variance =
+          vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
+    }
+#else
+    x->source_variance =
+        vp9_get_sby_perpixel_variance(cpi, &x->plane[0].src, bsize);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+    if (x->source_variance < cpi->cyclic_refresh->key_variance_thr) {
+      // Set segment to 1.
+      MACROBLOCKD *const xd = &x->e_mbd;
+      int xi, yi;
+      const int bw = num_8x8_blocks_wide_lookup[bsize];
+      const int bh = num_8x8_blocks_high_lookup[bsize];
+      const int xmis = VPXMIN(cm->mi_cols - mi_col, bw);
+      const int ymis = VPXMIN(cm->mi_rows - mi_row, bh);
+      const int block_index = mi_row * cm->mi_cols + mi_col;
+      set_mode_info_offsets(cm, x, xd, mi_row, mi_col);
+      for (yi = 0; yi < ymis; yi++)
+        for (xi = 0; xi < xmis; xi++) {
+          int map_offset = block_index + yi * cm->mi_cols + xi;
+          cpi->segmentation_map[map_offset] = 1;
+        }
+      set_segment_index(cpi, x, mi_row, mi_col, BLOCK_64X64, 1);
+    }
+  }
   return tmp_sad;
 }
 
@@ -1800,7 +1836,8 @@ static void update_state(VP9_COMP *cpi, ThreadData *td, PICK_MODE_CONTEXT *ctx,
     // Else for cyclic refresh mode update the segment map, set the segment id
     // and then update the quantizer.
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
-        cpi->cyclic_refresh->content_mode) {
+        cpi->cyclic_refresh->content_mode &&
+        !frame_is_intra_only(cm)) {
       vp9_cyclic_refresh_update_segment(cpi, xd->mi[0], mi_row, mi_col, bsize,
                                         ctx->rate, ctx->dist, x->skip, p);
     }
@@ -2498,7 +2535,8 @@ static void update_state_rt(VP9_COMP *cpi, ThreadData *td,
   if (seg->enabled && (cpi->oxcf.aq_mode != NO_AQ || cpi->roi.enabled)) {
     // Setting segmentation map for cyclic_refresh.
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
-        cpi->cyclic_refresh->content_mode) {
+        cpi->cyclic_refresh->content_mode &&
+        !frame_is_intra_only(cm)) {
       vp9_cyclic_refresh_update_segment(cpi, mi, mi_row, mi_col, bsize,
                                         ctx->rate, ctx->dist, x->skip, p);
     } else {
@@ -5516,7 +5554,8 @@ static void encode_nonrd_sb_row(VP9_COMP *cpi, ThreadData *td,
     if (cpi->compute_source_sad_onepass && cpi->sf.use_source_sad) {
       int shift = cpi->Source->y_stride * (mi_row << 3) + (mi_col << 3);
       int sb_offset2 = ((cm->mi_cols + 7) >> 3) * (mi_row >> 3) + (mi_col >> 3);
-      int64_t source_sad = avg_source_sad(cpi, x, shift, sb_offset2);
+      int64_t source_sad = avg_source_sad(cpi, x, shift, sb_offset2, mi_col,
+                                          mi_row);
       if (sf->adapt_partition_source_sad &&
           (cpi->oxcf.rc_mode == VPX_VBR && !cpi->rc.is_src_frame_alt_ref &&
            source_sad > sf->adapt_partition_thresh &&
@@ -6511,7 +6550,7 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
     ++td->counts->tx.tx_totals[mi->tx_size];
     ++td->counts->tx.tx_totals[get_uv_tx_size(mi, &xd->plane[1])];
     if (cm->seg.enabled && cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
-        cpi->cyclic_refresh->content_mode)
+        cpi->cyclic_refresh->content_mode && !frame_is_intra_only(cm))
       vp9_cyclic_refresh_update_sb_postencode(cpi, mi, mi_row, mi_col, bsize);
     if (cpi->oxcf.pass == 0 && cpi->svc.temporal_layer_id == 0 &&
         (!cpi->use_svc ||
