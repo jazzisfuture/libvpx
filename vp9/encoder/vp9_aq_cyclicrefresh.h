@@ -71,6 +71,8 @@ struct CYCLIC_REFRESH {
   int counter_encode_maxq_scene_change;
   int skip_flat_static_blocks;
   int content_mode;
+  int use_seg_key_flat;
+  unsigned int key_variance_thr;
 };
 
 struct VP9_COMP;
