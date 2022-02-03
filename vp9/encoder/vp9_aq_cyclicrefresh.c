@@ -600,6 +600,8 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
   int scene_change_detected =
       cpi->rc.high_source_sad ||
       (cpi->use_svc && cpi->svc.high_source_sad_superframe);
+  // Set this to 1 to enable delta-qp on segment for spatially flat superblocks.
+  cr->use_seg_key_flat = 0;
   if (cm->current_video_frame == 0) cr->low_content_avg = 0.0;
   // Reset if resoluton change has occurred.
   if (cpi->resize_pending != 0) vp9_cyclic_refresh_reset_resize(cpi);
@@ -609,12 +611,26 @@ void vp9_cyclic_refresh_setup(VP9_COMP *const cpi) {
     unsigned char *const seg_map = cpi->segmentation_map;
     memset(seg_map, 0, cm->mi_rows * cm->mi_cols);
     vp9_disable_segmentation(&cm->seg);
-    if (cm->frame_type == KEY_FRAME || scene_change_detected) {
+    if (frame_is_intra_only(cm) || scene_change_detected) {
       memset(cr->last_coded_q_map, MAXQ,
              cm->mi_rows * cm->mi_cols * sizeof(*cr->last_coded_q_map));
       cr->sb_index = 0;
       cr->reduce_refresh = 0;
       cr->counter_encode_maxq_scene_change = 0;
+    }
+    if (cr->use_seg_key_flat && frame_is_intra_only(cm)) {
+      // Set qindex delta: fixed for now.
+      int qindex_delta = -50;
+      // Select variance threshold for segment.
+      cr->key_variance_thr = 100;
+      vp9_enable_segmentation(&cm->seg);
+      vp9_clearall_segfeatures(seg);
+      seg->abs_delta = SEGMENT_DELTADATA;
+      // Segment BASE "Q" feature is disabled so it defaults to the baseline Q.
+      vp9_disable_segfeature(seg, CR_SEGMENT_ID_BASE, SEG_LVL_ALT_Q);
+      // Use segment BOOST1 for in-frame Q adjustment.
+      vp9_enable_segfeature(seg, CR_SEGMENT_ID_BOOST1, SEG_LVL_ALT_Q);
+      vp9_set_segdata(seg, CR_SEGMENT_ID_BOOST1, SEG_LVL_ALT_Q, qindex_delta);
     }
     return;
   } else {
