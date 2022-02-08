@@ -752,7 +752,8 @@ void vp9_rc_update_rate_correction_factors(VP9_COMP *cpi) {
   // Work out how big we would have expected the frame to be at this Q given
   // the current correction factor.
   // Stay in double to avoid int overflow when values are large
-  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->common.seg.enabled) {
+  if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cpi->common.seg.enabled &&
+      !frame_is_intra_only(cm)) {
     projected_size_based_on_q =
         vp9_cyclic_refresh_estimate_bits_at_q(cpi, rate_correction_factor);
   } else {
@@ -833,6 +834,7 @@ int vp9_rc_regulate_q(const VP9_COMP *cpi, int target_bits_per_frame,
 
   do {
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ && cr->apply_cyclic_refresh &&
+        !frame_is_intra_only(cm) &&
         (!cpi->oxcf.gf_cbr_boost_pct || !cpi->refresh_golden_frame)) {
       bits_per_mb_at_this_q =
           (int)vp9_cyclic_refresh_rc_bits_per_mb(cpi, i, correction_factor);
@@ -2214,7 +2216,6 @@ static void set_intra_only_frame(VP9_COMP *cpi) {
   // only 3 reference buffers can be updated, but for temporal layers > 1
   // we generally need to use buffer slots 4 and 5.
   if ((cm->current_video_frame == 0 && svc->number_temporal_layers > 1) ||
-      svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS ||
       svc->number_spatial_layers > 3 || svc->number_temporal_layers > 3 ||
       svc->number_spatial_layers == 1)
     return;
@@ -2235,11 +2236,15 @@ static void set_intra_only_frame(VP9_COMP *cpi) {
     cpi->lst_fb_idx = -1;
     cpi->gld_fb_idx = -1;
     cpi->alt_fb_idx = -1;
+    svc->update_buffer_slot[0] = 0;
     // For intra-only frame we need to refresh all slots that were
     // being used for the base layer (fb_idx_base[i] == 1).
     // Start with assigning last first, then golden and then alt.
     for (i = 0; i < REF_FRAMES; ++i) {
-      if (svc->fb_idx_base[i] == 1) count++;
+      if (svc->fb_idx_base[i] == 1) {
+        svc->update_buffer_slot[0] |= 1 << i;
+        count++;
+      }
       if (count == 1 && cpi->lst_fb_idx == -1) cpi->lst_fb_idx = i;
       if (count == 2 && cpi->gld_fb_idx == -1) cpi->gld_fb_idx = i;
       if (count == 3 && cpi->alt_fb_idx == -1) cpi->alt_fb_idx = i;
@@ -2248,6 +2253,12 @@ static void set_intra_only_frame(VP9_COMP *cpi) {
     // to the lst_fb_idx.
     if (cpi->gld_fb_idx == -1) cpi->gld_fb_idx = cpi->lst_fb_idx;
     if (cpi->alt_fb_idx == -1) cpi->alt_fb_idx = cpi->lst_fb_idx;
+    if (svc->temporal_layering_mode == VP9E_TEMPORAL_LAYERING_MODE_BYPASS) {
+      cpi->ext_refresh_last_frame = 0;
+      cpi->ext_refresh_golden_frame = 0;
+      cpi->ext_refresh_alt_ref_frame = 0;
+      cpi->ref_frame_flags = 0;
+    }
   }
 }
 
@@ -2390,6 +2401,10 @@ void vp9_rc_get_svc_params(VP9_COMP *cpi) {
     set_intra_only_frame(cpi);
     target = vp9_calc_iframe_target_size_one_pass_cbr(cpi);
   }
+  // Overlay frame predicts from LAST (intra-only)
+  if (svc->previous_frame_is_intra_only)
+    cpi->ref_frame_flags |= VP9_LAST_FLAG;
+
   // Any update/change of global cyclic refresh parameters (amount/delta-qp)
   // should be done here, before the frame qp is selected.
   if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ)
