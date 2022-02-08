@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b6024de7_a7a29328",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1221903
+      },
+      "writtenOn": "2022-02-08T07:18:44Z",
+      "side": 1,
+      "message": "Yes, we have cross-compiler and qemu for LoongArch and a new version will be released this Friday. I will upload a URL this Friday.\nBTW, the cloud host is available too, feel free to email me if you want to try it.",
+      "parentUuid": "faa1b403_772ed081",
+      "revId": "0c4076cf3ab41549a3c17fface855701ead3fe5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "6268116d_37d8c1fa",
         "filename": "vpx_util/loongson_intrinsics.h",
         "patchSetId": 8
