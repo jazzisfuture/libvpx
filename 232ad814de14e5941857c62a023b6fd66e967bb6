@@ -22,6 +22,30 @@
       },
       "revId": "232ad814de14e5941857c62a023b6fd66e967bb6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b3e3d7c0_92d5b3ad",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2254,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-02-08T22:19:02Z",
+      "side": 1,
+      "message": "in bypass mode the  frame flags are passed into the encoder via the set_svc_ref_frame_config control, for all spatial layers. We only overwrite here for intra-only frae on base spatial layer (SL0); for the next frame (SL1) it will take the flags already set from the control.",
+      "parentUuid": "a99b629a_9e0f3141",
+      "range": {
+        "startLine": 2254,
+        "startChar": 0,
+        "endLine": 2254,
+        "endChar": 76
+      },
+      "revId": "232ad814de14e5941857c62a023b6fd66e967bb6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
