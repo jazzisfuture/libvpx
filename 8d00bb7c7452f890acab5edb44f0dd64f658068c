@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5eb5827_e8e13dee",
+        "filename": "vpx_dsp/loongarch/loopfilter_16_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-02-24T19:31:53Z",
+      "side": 1,
+      "message": "\u003e First of all, I don\u0027t know if I understand what you mean correctly. In addition to obtaining the return value, this code also needs to store the value in memory.\n\nsorry the comments weren\u0027t clear, I uploaded a new patch to demonstrate:\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/3482638/2..4/vpx_dsp/loongarch/loopfilter_16_lsx.c",
+      "parentUuid": "228b41da_27892f75",
+      "revId": "8d00bb7c7452f890acab5edb44f0dd64f658068c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cd59174e_dd22420c",
