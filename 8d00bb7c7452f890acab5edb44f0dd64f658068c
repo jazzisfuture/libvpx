@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "228b41da_27892f75",
+        "filename": "vpx_dsp/loongarch/loopfilter_16_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 239,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-02-24T04:23:35Z",
+      "side": 1,
+      "message": "First of all, I don\u0027t know if I understand what you mean correctly. In addition to obtaining the return value, this code also needs to store the value in memory.",
+      "parentUuid": "f22285ab_16ba89d8",
+      "revId": "8d00bb7c7452f890acab5edb44f0dd64f658068c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cd59174e_dd22420c",
@@ -31,6 +49,24 @@
       "writtenOn": "2022-02-23T21:44:56Z",
       "side": 1,
       "message": "this line can be removed",
+      "revId": "8d00bb7c7452f890acab5edb44f0dd64f658068c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8538107e_ae1de618",
+        "filename": "vpx_dsp/loongarch/loopfilter_16_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-02-24T04:23:35Z",
+      "side": 1,
+      "message": "First of all, I don\u0027t know if I understand what you mean correctly. In addition to obtaining the return value, this code also needs to store the value in memory.",
+      "parentUuid": "cd59174e_dd22420c",
       "revId": "8d00bb7c7452f890acab5edb44f0dd64f658068c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -52,6 +88,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f0218fb_0014e56d",
+        "filename": "vpx_dsp/loongarch/loopfilter_16_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1189,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-02-24T04:23:35Z",
+      "side": 1,
+      "message": "First of all, I don\u0027t know if I understand what you mean correctly. In addition to obtaining the return value, this code also needs to store the value in memory.",
+      "parentUuid": "ce1a66be_60e226d1",
+      "revId": "8d00bb7c7452f890acab5edb44f0dd64f658068c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c5ea6318_88d720aa",
@@ -65,6 +119,30 @@
       "writtenOn": "2022-02-23T21:44:56Z",
       "side": 1,
       "message": "make this early_exit \u003d\u003d 0, in general this project prefers that order for readability:\n\nhttps://en.wikipedia.org/wiki/Yoda_conditions",
+      "range": {
+        "startLine": 1474,
+        "startChar": 6,
+        "endLine": 1474,
+        "endChar": 22
+      },
+      "revId": "8d00bb7c7452f890acab5edb44f0dd64f658068c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "99155bc3_6427a12c",
+        "filename": "vpx_dsp/loongarch/loopfilter_16_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1474,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-02-24T04:23:35Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c5ea6318_88d720aa",
       "range": {
         "startLine": 1474,
         "startChar": 6,
