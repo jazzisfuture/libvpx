@@ -494,18 +494,6 @@ enum vp8e_enc_control_id {
    */
   VP9E_SET_COLOR_SPACE,
 
-  /*!\brief Codec control function to set temporal layering mode.
-   * \note Valid ranges: 0..3, default is "0"
-   * (VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING).
-   *                     0 = VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING
-   *                     1 = VP9E_TEMPORAL_LAYERING_MODE_BYPASS
-   *                     2 = VP9E_TEMPORAL_LAYERING_MODE_0101
-   *                     3 = VP9E_TEMPORAL_LAYERING_MODE_0212
-   *
-   * Supported in codecs: VP9
-   */
-  VP9E_SET_TEMPORAL_LAYERING_MODE,
-
   /*!\brief Codec control function to set minimum interval between GF/ARF frames
    *
    * By default the value is set as 4.
