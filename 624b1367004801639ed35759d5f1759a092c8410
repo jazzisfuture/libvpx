@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "baec0840_fc078091",
+        "filename": "test/lpf_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 695,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-03-03T18:35:44Z",
+      "side": 1,
+      "message": "there seems to be a mix of these unnecessary ()s in other checks. I\u0027ll clean this up separately. This is ok because it\u0027s consistent with the existing code. I also wonder if the grouping is correct for DSPR2 and MSA on line 151...",
+      "range": {
+        "startLine": 695,
+        "startChar": 16,
+        "endLine": 695,
+        "endChar": 17
+      },
+      "revId": "624b1367004801639ed35759d5f1759a092c8410",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
