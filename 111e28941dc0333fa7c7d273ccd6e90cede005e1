@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f458e855_71c4cbc6",
+        "filename": "configure",
+        "patchSetId": 2
+      },
+      "lineNbr": 658,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-03-15T01:33:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "46b8c06b_7033757b",
+      "revId": "111e28941dc0333fa7c7d273ccd6e90cede005e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e323c2fa_c1d75849",
@@ -31,6 +49,24 @@
       "writtenOn": "2022-03-14T23:51:14Z",
       "side": 1,
       "message": "please match the header from the other files and include the Copyright line",
+      "revId": "111e28941dc0333fa7c7d273ccd6e90cede005e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "429930e6_b7c3e188",
+        "filename": "vpx_dsp/loongarch/vpx_convolve_lsx.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-03-15T01:33:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e323c2fa_c1d75849",
       "revId": "111e28941dc0333fa7c7d273ccd6e90cede005e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
