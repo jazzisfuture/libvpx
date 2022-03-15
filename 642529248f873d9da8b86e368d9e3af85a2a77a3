@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db21abcb_9dbaf32d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-15T02:38:30Z",
+      "side": 1,
+      "message": "Not a terribly useful change, but I was comparing the two files and wanted to minimize the differences. This only makes whitespace changes. The followup removes some of the apple-specific tweaks from when they branched their gcc",
+      "revId": "642529248f873d9da8b86e368d9e3af85a2a77a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
