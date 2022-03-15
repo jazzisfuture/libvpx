@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fb411f62_f2803314",
+        "filename": "vpx_dsp/loongarch/vpx_convolve8_horiz_lsx.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-03-15T02:52:02Z",
+      "side": 1,
+      "message": "This definition is duplicated across the source files. If the compiler benefits from it being visible it can be made static.",
+      "revId": "753aaabb83dfdc2244d0e2bb4a736423a9e074c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
