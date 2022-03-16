@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "775caccd_753547e2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-03-16T20:33:05Z",
+      "side": 1,
+      "message": "Thanks for splitting this somewhat. With gerrit it can be helpful to reply to the open comments (or just mark them done). To give a good indication to reviewers that they should take another look.",
+      "revId": "30deb8b9bd19e474f7fe5b7352dca54417a5a36f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba62c819_988d365f",
+        "filename": "vpx_dsp/vpx_dsp_rtcd_defs.pl",
+        "patchSetId": 11
+      },
+      "lineNbr": 563,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-03-16T20:33:05Z",
+      "side": 1,
+      "message": "let\u0027s make this one it\u0027s own commit too",
+      "revId": "30deb8b9bd19e474f7fe5b7352dca54417a5a36f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
