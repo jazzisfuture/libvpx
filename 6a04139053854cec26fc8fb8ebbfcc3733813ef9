@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e2732e85_bdd0f299",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-03-16T00:24:23Z",
+      "side": 1,
+      "message": "Let\u0027s split the change into smaller more focused ones. The list you have above gives a good way to segment them on the fdct/highbd/fht boundaries.",
+      "revId": "6a04139053854cec26fc8fb8ebbfcc3733813ef9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
