@@ -60,7 +60,7 @@ static INLINE unsigned int sad(const uint8_t *src_ptr, int src_stride,
 // This appears to be equivalent to the above when k == 4 and refs is const
 #define sadMxNx4D(m, n)                                                        \
   void vpx_sad##m##x##n##x4d_c(const uint8_t *src_ptr, int src_stride,         \
-                               const uint8_t *const ref_array[],               \
+                               const uint8_t *const ref_array[4],              \
                                int ref_stride, uint32_t *sad_array) {          \
     int i;                                                                     \
     for (i = 0; i < 4; ++i)                                                    \
