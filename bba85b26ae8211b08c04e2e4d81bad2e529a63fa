@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d3fbb5d9_3a51157b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "ddbe8c3e_ded99207",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 121
+      },
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "c0c87624_6b840b69",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
@@ -37,6 +61,24 @@
       "writtenOn": "2022-03-12T23:58:37Z",
       "side": 1,
       "message": "Thanks for submitting this change and signing the CLA! If you could run clang-format (\u0027git cl format\u0027 should work) it would help you get past the first gate. I\u0027ve made a few quick comments.\n\nIf you could upload a small change that we could land quickly, that would be very helpful. Once your first patch is landed it will be easier for you to run the automatic tests.",
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a3382fb_27a11f97",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "Hi, Thank you for the very helpful comments. I admit gerrit is new to me and takes some kind of getting used to. Most of the style errors I have fixed but adding the fht functions to the tests I realized they fail a couple of unit tests so I have to fix them. I guess I should upload the style fixes in separate commits in any case.",
+      "parentUuid": "c0c87624_6b840b69",
       "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -54,6 +96,30 @@
       "writtenOn": "2022-03-12T23:58:37Z",
       "side": 1,
       "message": "Would you please add these to the tests:\nhttps://chromium.googlesource.com/webm/libvpx/+/refs/heads/main/test/dct_test.cc#632\n\nYou can run them with\n$ ./test_libvpx --gtest_filter\u003d\\*TransHT\\*",
+      "range": {
+        "startLine": 162,
+        "startChar": 14,
+        "endLine": 162,
+        "endChar": 24
+      },
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e3f642c_8a8a12c6",
+        "filename": "vp9/common/vp9_rtcd_defs.pl",
+        "patchSetId": 1
+      },
+      "lineNbr": 162,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "I have done so and found a couple of unit tests failing by a small margin, I need to investigate and fix those.",
+      "parentUuid": "afd57c62_d4d01b2e",
       "range": {
         "startLine": 162,
         "startChar": 14,
@@ -87,6 +153,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "140e4187_56ba4782",
+        "filename": "vp9/encoder/arm/neon/vp9_dct.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "5009f4c8_cb68ff26",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a33f38cd_b1fed014",
@@ -100,6 +190,30 @@
       "writtenOn": "2022-03-12T23:58:37Z",
       "side": 1,
       "message": "It should be possible to remove some of these includes.",
+      "range": {
+        "startLine": 18,
+        "startChar": 1,
+        "endLine": 18,
+        "endChar": 35
+      },
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d796affd_c50baf24",
+        "filename": "vp9/encoder/arm/neon/vp9_dct.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "a33f38cd_b1fed014",
       "range": {
         "startLine": 18,
         "startChar": 1,
@@ -133,6 +247,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e73893b1_3b3c9dfb",
+        "filename": "vp9/encoder/arm/neon/vp9_dct.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "I followed the logic that is followe in the SSE functions, but yes, I will add a comment on how it works.",
+      "parentUuid": "9a458bf1_12502235",
+      "range": {
+        "startLine": 28,
+        "startChar": 18,
+        "endLine": 28,
+        "endChar": 35
+      },
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0622214c_c44ca158",
@@ -146,6 +284,30 @@
       "writtenOn": "2022-03-12T23:58:37Z",
       "side": 1,
       "message": "Could you comment on saving/restoring the sign bit please",
+      "range": {
+        "startLine": 161,
+        "startChar": 0,
+        "endLine": 161,
+        "endChar": 27
+      },
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8a234c7e_52c5084c",
+        "filename": "vp9/encoder/arm/neon/vp9_dct.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "Will do.",
+      "parentUuid": "0622214c_c44ca158",
       "range": {
         "startLine": 161,
         "startChar": 0,
@@ -179,6 +341,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "93c0225c_5205f286",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "c8c2e7bb_f73ef004",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e698ec63_8e6f7c17",
@@ -192,6 +378,30 @@
       "writtenOn": "2022-03-12T23:58:37Z",
       "side": 1,
       "message": "Thanks, this comment is perfect! You can remove the commented out call above though.",
+      "range": {
+        "startLine": 165,
+        "startChar": 5,
+        "endLine": 165,
+        "endChar": 10
+      },
+      "revId": "bba85b26ae8211b08c04e2e4d81bad2e529a63fa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9420e7a3_bb29aa24",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "e698ec63_8e6f7c17",
       "range": {
         "startLine": 165,
         "startChar": 5,

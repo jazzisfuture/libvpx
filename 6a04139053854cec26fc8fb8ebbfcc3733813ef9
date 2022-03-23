@@ -16,6 +16,24 @@
       "message": "Let\u0027s split the change into smaller more focused ones. The list you have above gives a good way to segment them on the fdct/highbd/fht boundaries.",
       "revId": "6a04139053854cec26fc8fb8ebbfcc3733813ef9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c92fb257_49074bf4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "Done.  I have submitted the FDCT/highdb only and waiting for this to be approved before I upload the fht patches, as the latter depend on the former. Would you like the highbd separately as well, it\u0027s rather a trivial change.",
+      "parentUuid": "e2732e85_bdd0f299",
+      "revId": "6a04139053854cec26fc8fb8ebbfcc3733813ef9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

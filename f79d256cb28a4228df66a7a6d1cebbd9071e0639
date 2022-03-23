@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6574643_88ef6b49",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-23T12:27:17Z",
+      "side": 1,
+      "message": "I think these should be fixed now, I had resolved them days ago and didn\u0027t press Reply button to submit them, sorry about that.",
+      "revId": "f79d256cb28a4228df66a7a6d1cebbd9071e0639",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
