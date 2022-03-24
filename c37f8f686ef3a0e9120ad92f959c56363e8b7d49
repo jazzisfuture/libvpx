@@ -16,6 +16,29 @@
       "message": "https://chromium-review.googlesource.com/c/webm/libvpx/+/3352516\n\u003e the sad functions are more varied in libvpx and will require a separate\n\u003e pass\n\n...thanks, I guess I never got to it.\n\nthis is what I did in libaom:\nhttps://aomedia-review.googlesource.com/c/aom/+/151001",
       "revId": "c37f8f686ef3a0e9120ad92f959c56363e8b7d49",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "92dd73ce_aae5af44",
+        "filename": "vpx_dsp/x86/sad4d_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-03-24T01:52:16Z",
+      "side": 1,
+      "message": "I think this one can be normalized too while you\u0027re here.",
+      "range": {
+        "startLine": 26,
+        "startChar": 46,
+        "endLine": 26,
+        "endChar": 53
+      },
+      "revId": "c37f8f686ef3a0e9120ad92f959c56363e8b7d49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
