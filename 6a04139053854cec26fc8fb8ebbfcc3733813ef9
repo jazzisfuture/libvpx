@@ -34,6 +34,24 @@
       "parentUuid": "e2732e85_bdd0f299",
       "revId": "6a04139053854cec26fc8fb8ebbfcc3733813ef9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bb2b79a_ec2ab83f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-03-24T02:06:40Z",
+      "side": 1,
+      "message": "\u003e Done.  I have submitted the FDCT/highdb only and waiting for this to be approved before I upload the fht patches, as the latter depend on the former. Would you like the highbd separately as well, it\u0027s rather a trivial change.\n\nSplitting things does help in the case we need to isolate any failures or revert a change. That way we avoid removing too much.",
+      "parentUuid": "c92fb257_49074bf4",
+      "revId": "6a04139053854cec26fc8fb8ebbfcc3733813ef9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
