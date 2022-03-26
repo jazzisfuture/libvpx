@@ -56,6 +56,30 @@
       },
       "revId": "01b7b85ccf0ae612f802feae557bc915477b5b50",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2718fdd_89b681e0",
+        "filename": "vp9/encoder/arm/neon/vp9_dct.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-03-26T13:42:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "87790456_dae99c88",
+      "range": {
+        "startLine": 38,
+        "startChar": 9,
+        "endLine": 38,
+        "endChar": 20
+      },
+      "revId": "01b7b85ccf0ae612f802feae557bc915477b5b50",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
