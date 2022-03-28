@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c9b532f_a56ed759",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-28T03:08:01Z",
+      "side": 1,
+      "message": "It might be worth investigating removing the sad x3/x8 functions or putting them behind a realtime flag (they may already be?). They\u0027re only used for an exhaustive search in vp8. I think I tried removing them once but was too lazy to confirm that they didn\u0027t have any value. There is a specialized vp8_full_search_sadx3 and x8 that they get used in. It\u0027s a lot of boilerplate for no gain.",
+      "revId": "8538b16002c759dc2989a967c0cfc41551029e6f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
