@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6638527f_c6b12921",
+        "filename": "vp8/encoder/mcomp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1444,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-28T09:24:43Z",
+      "side": 0,
+      "message": "This was probably a bug. It should have been c + i.\n\nThere were three results in sad_array. If the best one was sad_array[1], then it was in column + 1, not just c",
+      "range": {
+        "startLine": 1444,
+        "startChar": 30,
+        "endLine": 1444,
+        "endChar": 31
+      },
+      "revId": "b0087f6cd2c3a2076847d52efd824007dd7693f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4bae82c_64ca8628",
+        "filename": "vp8/encoder/mcomp.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1467,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-28T09:24:43Z",
+      "side": 0,
+      "message": "The x3 and x8 versions had this optimization to only check mvsad_err_cost if thissad \u003c bestsad. Copy it back to the C version",
+      "range": {
+        "startLine": 1467,
+        "startChar": 12,
+        "endLine": 1467,
+        "endChar": 26
+      },
+      "revId": "b0087f6cd2c3a2076847d52efd824007dd7693f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

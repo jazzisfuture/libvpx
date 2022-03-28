@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4250d38f_bb0f8f34",
+        "filename": "vp8/encoder/mcomp.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1363,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-28T09:24:43Z",
+      "side": 1,
+      "message": "This was fixed for x8 in https://chromium-review.googlesource.com/c/webm/libvpx/+/67225",
+      "range": {
+        "startLine": 1362,
+        "startChar": 43,
+        "endLine": 1363,
+        "endChar": 45
+      },
+      "revId": "00018bb7bbcf293b7c9cf865dd29835a34a3598c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

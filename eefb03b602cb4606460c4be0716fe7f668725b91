@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "faf904c8_3cef5cb2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-28T09:24:43Z",
+      "side": 1,
+      "message": "The C and x3 versions used \u003c\u003c 3 instead of * 8. The integer sanitizer warning was masked because those functions were not tested.",
+      "revId": "eefb03b602cb4606460c4be0716fe7f668725b91",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
