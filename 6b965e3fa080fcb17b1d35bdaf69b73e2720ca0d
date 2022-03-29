@@ -22,6 +22,30 @@
       },
       "revId": "6b965e3fa080fcb17b1d35bdaf69b73e2720ca0d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9b678c20_d98040c4",
+        "filename": "vpx_dsp/vpx_dsp_rtcd_defs.pl",
+        "patchSetId": 6
+      },
+      "lineNbr": 1067,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-29T01:42:06Z",
+      "side": 1,
+      "message": "Ah I didn\u0027t check highbd at all. Let me re-scan these functions.",
+      "parentUuid": "aabff82e_90fdafba",
+      "range": {
+        "startLine": 1067,
+        "startChar": 154,
+        "endLine": 1067,
+        "endChar": 156
+      },
+      "revId": "6b965e3fa080fcb17b1d35bdaf69b73e2720ca0d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
