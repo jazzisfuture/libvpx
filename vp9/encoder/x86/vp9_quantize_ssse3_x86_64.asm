@@ -19,7 +19,7 @@ pw_1: times 8 dw 1
 SECTION .text
 
 %macro QUANTIZE_FP 2
-cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, skip, round, quant, \
+cglobal quantize_%1, 0, %2, 15, coeff, ncoeff, round, quant, \
                                 qcoeff, dqcoeff, dequant, \
                                 eob, scan, iscan
 
