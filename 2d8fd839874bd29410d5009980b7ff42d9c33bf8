@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d73c49f_c11e444f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-30T06:36:37Z",
+      "side": 1,
+      "message": "I think this works best as a followup, rather than first or standalone. The previous patch proves that this one is possible.\n\nThe other quantize functions could probably have the same treatment, but didn\u0027t want the size to get out of hand.",
+      "revId": "2d8fd839874bd29410d5009980b7ff42d9c33bf8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
