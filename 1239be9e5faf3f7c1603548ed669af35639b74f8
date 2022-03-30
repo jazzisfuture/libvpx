@@ -34,6 +34,23 @@
       "parentUuid": "d8d9753f_a574432d",
       "revId": "1239be9e5faf3f7c1603548ed669af35639b74f8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f57accb_0d7be736",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-30T04:02:26Z",
+      "side": 1,
+      "message": "Re-triggered the build. Looks like an jenkins issue.",
+      "revId": "1239be9e5faf3f7c1603548ed669af35639b74f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
