@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "94bf9abb_139c7074",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-03-30T20:39:06Z",
+      "side": 1,
+      "message": "\u003e Ah, I didn\u0027t see them for x86 at all. I saw them with the armv7 build using:\n\u003e $ arm-linux-gnueabi-gcc --version\n\u003e arm-linux-gnueabi-gcc (Debian 11.2.0-16) 11.2.0\n\u003e CROSS\u003darm-linux-gnueabi- ../libvpx/configure --target\u003darmv7-linux-gcc\n\u003e \n\u003e ../libvpx/vpx_dsp/arm/sad4d_neon.c:432:48: warning: argument 3 of type ‘const uint8_t * const[4]’ {aka ‘const unsigned char * const[4]’} with mismatched bound [-Warray-parameter\u003d]\n\u003e \n\u003e \n\u003e Unfortunately adding -Warray-parameter to the x86 build doesn\u0027t seem to show it up (not sure why the line has -Warray-parameter\u003d with the equal sign, but gcc doesn\u0027t seem to accept that)\n\n-Warray-parameter\u003d2 should be set with -Wall according to the man page. Thanks for clarifying the compiler. If anything else comes up like this I\u0027ll make sure to run the arm variants too.",
+      "parentUuid": "90152fa8_4ed47843",
+      "revId": "1239be9e5faf3f7c1603548ed669af35639b74f8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "0f57accb_0d7be736",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
