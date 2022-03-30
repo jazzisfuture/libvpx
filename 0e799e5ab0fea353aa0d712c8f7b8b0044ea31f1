@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b7c6dbb_a69b3853",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-30T06:02:50Z",
+      "side": 1,
+      "message": "Turns out nothing needs to be rewritten. This is all handled in vpx_dsp/x86/quantize_{sse2,ssse3}.h\n\ncalculate_dqcoeff_and_store\ncalculate_dqcoeff_and_store_32x32\n\nFor hbd, they always expand up and don\u0027t clamp for 8 bit calculations.\n\nA lot more could probably be done to dedup the other quantize functions",
+      "revId": "0e799e5ab0fea353aa0d712c8f7b8b0044ea31f1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
