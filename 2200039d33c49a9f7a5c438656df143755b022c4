@@ -16,6 +16,24 @@
       "message": "This causes some failures with VP9/EndToEndTestLarge.EndtoEndPSNRTest/*. Some of the psnr drops look a little large. I don\u0027t know if there was a difference with the sse2 that was removed.",
       "revId": "2200039d33c49a9f7a5c438656df143755b022c4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "25f1b6e6_2c7a438b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-31T22:53:52Z",
+      "side": 1,
+      "message": "Yeah, I got complacent because the unit tests passed. The max values are artificially low though.\n\nI didn\u0027t read through the code carefully enough. The assembly steps up to 32 bits, but the C goes to int64_t. Because the tests pass I thought maybe that was taken care of by some of the built in shifts.\n\nThe sse2 assembly does what it can in assembly then falls back to C for the int64_t part.",
+      "parentUuid": "290dc4f9_6edcc2cf",
+      "revId": "2200039d33c49a9f7a5c438656df143755b022c4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
