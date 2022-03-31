@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "821859d1_807cfb46",
+        "filename": "vpx_dsp/quantize.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-03-31T00:53:49Z",
+      "side": 1,
+      "message": "Whoops, the low bitdepth version needs this extra cast",
+      "range": {
+        "startLine": 163,
+        "startChar": 25,
+        "endLine": 163,
+        "endChar": 35
+      },
+      "revId": "cbb92cfa994db0d7ef71478374e9a8fe24559ae8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
