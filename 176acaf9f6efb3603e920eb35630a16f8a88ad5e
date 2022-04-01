@@ -34,6 +34,24 @@
       "parentUuid": "98003bce_6ac1d37e",
       "revId": "176acaf9f6efb3603e920eb35630a16f8a88ad5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01ba8afc_c256289e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-04-01T23:35:18Z",
+      "side": 1,
+      "message": "\u003e This error was due to an operational error, which submitted the previously erroneous version. Later, when we tested the new function, we found it when the project was compiled.\n\nGot it, thanks for confirming that the tests caught it. We can try to add build coverage here if you have a toolchain and a qemu solution that works, otherwise it will be up to your local testing to discover issues.",
+      "parentUuid": "a3b09097_fccf5708",
+      "revId": "176acaf9f6efb3603e920eb35630a16f8a88ad5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
