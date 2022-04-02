@@ -52,6 +52,24 @@
       "parentUuid": "a3b09097_fccf5708",
       "revId": "176acaf9f6efb3603e920eb35630a16f8a88ad5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a7973a7_70198890",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1221903
+      },
+      "writtenOn": "2022-04-02T03:44:50Z",
+      "side": 1,
+      "message": "Thank you very much, it would be great if you can help to setup build and test for LoongArch. LoongArch is a new architecture, some core projects already support it, like GCC，clang and kernel etc. Once qemu is ready too, we will contact you again and offer the toolchain and qemu together, is that ok.\npresently, we will strengthen local testing to avoid the same problem from happening again.",
+      "parentUuid": "01ba8afc_c256289e",
+      "revId": "176acaf9f6efb3603e920eb35630a16f8a88ad5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
