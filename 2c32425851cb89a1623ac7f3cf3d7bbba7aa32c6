@@ -16,6 +16,24 @@
       "message": "What\u0027s the state of this test (https://crbug.com/webm/1731). It isn\u0027t being run by the per-commit currently.",
       "revId": "2c32425851cb89a1623ac7f3cf3d7bbba7aa32c6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "06345054_677e52bf",
+        "filename": "test/simple_encode_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-04-04T21:23:36Z",
+      "side": 1,
+      "message": "As discussed offline, the cl is not related to the issue.\nI am working on the issue, which is not trivial.\nMy initial assessment is that the test failure is due to a diamond search function in the motion search. Possibly due to uninitialized value or pointer.",
+      "parentUuid": "f72ea550_3c2a6cb8",
+      "revId": "2c32425851cb89a1623ac7f3cf3d7bbba7aa32c6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
