@@ -44,4 +44,15 @@
     out1 = __lsx_vssrarni_h_w(s0_m, s1_m, DCT_CONST_BITS);    \
   }
 
+#define DOT_SHIFT_RIGHT_PCK_H(in0, in1, in2)                     \
+  ({                                                             \
+    __m128i dst_m;                                               \
+    __m128i tp0_m, tp1_m;                                        \
+                                                                 \
+    DUP2_ARG2(__lsx_vdp2_w_h, in0, in2, in1, in2, tp1_m, tp0_m); \
+    dst_m = __lsx_vssrarni_h_w(tp1_m, tp0_m, DCT_CONST_BITS);    \
+                                                                 \
+    dst_m;                                                       \
+  })
+
 #endif  // VPX_VPX_DSP_LOONGARCH_TXFM_MACROS_LSX_H_
