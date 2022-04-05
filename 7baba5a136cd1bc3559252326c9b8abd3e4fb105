@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53ef1b1b_0fc52a94",
+        "filename": "vpx_dsp/loongarch/sad_lsx.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 330,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-04-05T02:51:58Z",
+      "side": 1,
+      "message": "remove these trailing \u0027;\u0027. you\u0027ll get a warning with -Wextra-semi (or maybe  -Wextra-semi-stmt) under clang",
+      "range": {
+        "startLine": 330,
+        "startChar": 25,
+        "endLine": 330,
+        "endChar": 26
+      },
+      "revId": "7baba5a136cd1bc3559252326c9b8abd3e4fb105",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
