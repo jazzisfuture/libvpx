@@ -91,11 +91,11 @@ TEST_P(RealtimeTest, IntegerOverflowLarge) {
     TestIntegerOverflow(4096, 4096);
 #endif
   } else {
-    GTEST_SKIP()
-        << "TODO(https://crbug.com/webm/1748,https://crbug.com/webm/1751):"
-        << " Enable this test after bitstream errors & undefined sanitizer "
-           "warnings are fixed.";
-    // TestIntegerOverflow(16383, 16383);
+    // GTEST_SKIP()
+    //     << "TODO(https://crbug.com/webm/1748,https://crbug.com/webm/1751):"
+    //     << " Enable this test after bitstream errors & undefined sanitizer "
+    //        "warnings are fixed.";
+    TestIntegerOverflow(16383, 16383);
   }
 }
 

@@ -4425,7 +4425,9 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
 
   /* Update rate control heuristics */
   cpi->total_byte_count += (*size);
-  cpi->projected_frame_size = (int)(*size) << 3;
+  cpi->projected_frame_size = (int64_t)(*size) << 3;
+
+  printf("%lu %ld\n", *size, cpi->projected_frame_size);
 
   if (cpi->oxcf.number_of_layers > 1) {
     unsigned int i;

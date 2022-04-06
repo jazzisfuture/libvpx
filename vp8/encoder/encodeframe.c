@@ -316,7 +316,7 @@ void vp8_activity_masking(VP8_COMP *cpi, MACROBLOCK *x) {
 
 static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
                           MACROBLOCK *x, MACROBLOCKD *xd, TOKENEXTRA **tp,
-                          int *segment_counts, int *totalrate) {
+                          int *segment_counts, int64_t *totalrate) {
   int recon_yoffset, recon_uvoffset;
   int mb_col;
   int ref_fb_idx = cm->lst_fb_idx;
@@ -325,6 +325,7 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
   int recon_uv_stride = cm->yv12_fb[ref_fb_idx].uv_stride;
   int map_index = (mb_row * cpi->common.mb_cols);
 
+  printf("%d %ld\n", mb_row, *totalrate);
 #if (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
   const int num_part = (1 << cm->multi_token_partition);
   TOKENEXTRA *tp_start = cpi->tok;
@@ -445,7 +446,9 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
     x->active_ptr = cpi->active_map + map_index + mb_col;
 
     if (cm->frame_type == KEY_FRAME) {
+      // if(mb_row == 931) printf("%ld\n", *totalrate);
       *totalrate += vp8cx_encode_intra_macroblock(cpi, x, tp);
+      // if(mb_row == 931) printf("%ld\n", *totalrate);
 #ifdef MODE_STATS
       y_modes[xd->mbmi.mode]++;
 #endif
@@ -666,7 +669,7 @@ void vp8_encode_frame(VP8_COMP *cpi) {
   MACROBLOCKD *const xd = &x->e_mbd;
   TOKENEXTRA *tp = cpi->tok;
   int segment_counts[MAX_MB_SEGMENTS];
-  int totalrate;
+  int64_t totalrate;
 #if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
   BOOL_CODER *bc = &cpi->bc[1]; /* bc[0] is for control partition */
   const int num_part = (1 << cm->multi_token_partition);
@@ -811,7 +814,6 @@ void vp8_encode_frame(VP8_COMP *cpi) {
         int mode_count;
         int c_idx;
         totalrate += cpi->mb_row_ei[i].totalrate;
-
         cpi->mb.skip_true_count += cpi->mb_row_ei[i].mb.skip_true_count;
 
         for (mode_count = 0; mode_count < VP8_YMODES; ++mode_count) {
@@ -856,7 +858,7 @@ void vp8_encode_frame(VP8_COMP *cpi) {
 #if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
         tp = cpi->tok;
 #endif
-
+        printf("total rate %ld\n", totalrate);
         encode_mb_row(cpi, cm, mb_row, x, xd, &tp, segment_counts, &totalrate);
 
         /* adjust to the next row of mbs */
@@ -919,6 +921,7 @@ void vp8_encode_frame(VP8_COMP *cpi) {
 
   /* projected_frame_size in units of BYTES */
   cpi->projected_frame_size = totalrate >> 8;
+  printf("projected size %ld\n", cpi->projected_frame_size);
 
   /* Make a note of the percentage MBs coded Intra. */
   if (cm->frame_type == KEY_FRAME) {

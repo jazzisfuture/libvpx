@@ -344,7 +344,7 @@ typedef struct VP8_COMP {
   int64_t last_intra_error;
 
   int this_frame_target;
-  int projected_frame_size;
+  int64_t projected_frame_size;
   int last_q[2]; /* Separate values for Intra/Inter */
 
   double rate_correction_factor;

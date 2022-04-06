@@ -172,9 +172,8 @@ void vp8_pack_tokens(vp8_writer *w, const TOKENEXTRA *p, int xcount) {
         validate_buffer(w->buffer + w->pos, 1, w->buffer_end, w->error);
 
         w->buffer[w->pos++] = (lowvalue >> (24 - offset)) & 0xff;
-        lowvalue <<= offset;
         shift = count;
-        lowvalue &= 0xffffff;
+        lowvalue = (int)(((unsigned long)lowvalue << offset) & 0xffffff);
         count -= 8;
       }
 
@@ -223,9 +222,8 @@ void vp8_pack_tokens(vp8_writer *w, const TOKENEXTRA *p, int xcount) {
             validate_buffer(w->buffer + w->pos, 1, w->buffer_end, w->error);
 
             w->buffer[w->pos++] = (lowvalue >> (24 - offset)) & 0xff;
-            lowvalue <<= offset;
             shift = count;
-            lowvalue &= 0xffffff;
+            lowvalue = (int)(((unsigned long)lowvalue << offset) & 0xffffff);
             count -= 8;
           }
 
@@ -738,9 +736,9 @@ static int independent_coef_context_savings(VP8_COMP *cpi) {
   return savings;
 }
 
-static int default_coef_context_savings(VP8_COMP *cpi) {
+static int64_t default_coef_context_savings(VP8_COMP *cpi) {
   MACROBLOCK *const x = &cpi->mb;
-  int savings = 0;
+  int64_t savings = 0;
   int i = 0;
   do {
     int j = 0;
@@ -793,8 +791,8 @@ void vp8_calc_ref_frame_costs(int *ref_frame_cost, int prob_intra,
                                  vp8_cost_one(prob_garf);
 }
 
-int vp8_estimate_entropy_savings(VP8_COMP *cpi) {
-  int savings = 0;
+int64_t vp8_estimate_entropy_savings(VP8_COMP *cpi) {
+  int64_t savings = 0;
 
   const int *const rfct = cpi->mb.count_mb_ref_frame_usage;
   const int rf_intra = rfct[INTRA_FRAME];
@@ -834,12 +832,13 @@ int vp8_estimate_entropy_savings(VP8_COMP *cpi) {
     savings += (oldtotal - newtotal) / 256;
   }
 
+  printf("savings %ld\n", savings);
   if (cpi->oxcf.error_resilient_mode & VPX_ERROR_RESILIENT_PARTITIONS) {
     savings += independent_coef_context_savings(cpi);
   } else {
     savings += default_coef_context_savings(cpi);
   }
-
+  printf("savings %ld\n", savings);
   return savings;
 }
 
