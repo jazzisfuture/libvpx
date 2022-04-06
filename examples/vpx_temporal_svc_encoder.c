@@ -944,6 +944,7 @@ int main(int argc, char **argv) {
     struct vpx_usec_timer timer;
     vpx_codec_iter_t iter = NULL;
     const vpx_codec_cx_pkt_t *pkt;
+    int elasped = 0;
 #if ROI_MAP
     char mask_file_name[255];
 #endif
@@ -981,7 +982,9 @@ int main(int argc, char **argv) {
       die_codec(&codec, "Failed to encode frame");
     }
     vpx_usec_timer_mark(&timer);
-    cx_time += vpx_usec_timer_elapsed(&timer);
+    elasped = vpx_usec_timer_elapsed(&timer);
+    printf("%d\n", elasped);
+    cx_time += elasped;
     // Reset KF flag.
     if (layering_mode != 7) {
       layer_flags[0] &= ~VPX_EFLAG_FORCE_KF;

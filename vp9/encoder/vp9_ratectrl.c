@@ -1986,6 +1986,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   if (!frame_is_intra_only(cm)) rc->reset_high_source_sad = 0;
 
   rc->last_avg_frame_bandwidth = rc->avg_frame_bandwidth;
+  printf("%d %d ", rc->avg_frame_bandwidth, qindex);
   if (cpi->use_svc && svc->spatial_layer_id < svc->number_spatial_layers - 1)
     svc->lower_layer_qindex = cm->base_qindex;
 }
