@@ -316,7 +316,7 @@ void vp8_activity_masking(VP8_COMP *cpi, MACROBLOCK *x) {
 
 static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
                           MACROBLOCK *x, MACROBLOCKD *xd, TOKENEXTRA **tp,
-                          int *segment_counts, int *totalrate) {
+                          int *segment_counts, int64_t *totalrate) {
   int recon_yoffset, recon_uvoffset;
   int mb_col;
   int ref_fb_idx = cm->lst_fb_idx;
@@ -666,7 +666,7 @@ void vp8_encode_frame(VP8_COMP *cpi) {
   MACROBLOCKD *const xd = &x->e_mbd;
   TOKENEXTRA *tp = cpi->tok;
   int segment_counts[MAX_MB_SEGMENTS];
-  int totalrate;
+  int64_t totalrate;
 #if CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING
   BOOL_CODER *bc = &cpi->bc[1]; /* bc[0] is for control partition */
   const int num_part = (1 << cm->multi_token_partition);
