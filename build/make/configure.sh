@@ -1298,7 +1298,7 @@ EOF
           # add -no-intel-extensions to suppress warning #10237
           # refer to http://software.intel.com/en-us/forums/topic/280199
           add_ldflags -i-static -no-intel-extensions
-          enabled x86_64 && add_cflags -ipo -static -O3 -no-prec-div
+          enabled x86_64 && add_cflags -ipo -static -O2 -no-prec-div
           enabled x86_64 && AR=xiar
           case ${tune_cpu} in
             atom*)
@@ -1487,7 +1487,7 @@ EOF
     if enabled rvct; then
       enabled small && check_add_cflags -Ospace || check_add_cflags -Otime
     else
-      enabled small && check_add_cflags -O2 ||  check_add_cflags -O3
+      enabled small && check_add_cflags -O2 ||  check_add_cflags -O2
     fi
   fi
 
