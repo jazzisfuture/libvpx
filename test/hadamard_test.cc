@@ -276,6 +276,13 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(HadamardFuncWithSize(&vpx_hadamard_8x8_msa, 8),
                       HadamardFuncWithSize(&vpx_hadamard_16x16_msa, 16)));
 #endif  // HAVE_MSA
+
+#if HAVE_LSX
+INSTANTIATE_TEST_SUITE_P(
+    LSX, HadamardLowbdTest,
+    ::testing::Values(HadamardFuncWithSize(&vpx_hadamard_8x8_lsx, 8),
+                      HadamardFuncWithSize(&vpx_hadamard_16x16_lsx, 16)));
+#endif  // HAVE_LSX
 #endif  // !CONFIG_VP9_HIGHBITDEPTH
 
 #if HAVE_VSX
