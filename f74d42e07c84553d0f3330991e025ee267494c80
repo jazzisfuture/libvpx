@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23bc019d_2e1c317b",
+        "filename": "third_party/googletest/README.libvpx",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-04-16T15:58:04Z",
+      "side": 1,
+      "message": "Nit/optional: I list the files and directory in the order they are listed in \"ls -l\" output. If we do that here, it will look like this:\n\n  CONTRIBUTORS\n  googletest/\n   include\n   README.md\n   src\n  LICENSE",
+      "revId": "f74d42e07c84553d0f3330991e025ee267494c80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
