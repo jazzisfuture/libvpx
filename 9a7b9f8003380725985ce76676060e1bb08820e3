@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ba5b7d57_5af211cb",
+        "filename": "vpx_dsp/loongarch/sub_pixel_variance_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-04-18T17:38:00Z",
+      "side": 1,
+      "message": "I may have missed this in other changes, so this is consistent, but generally do/while (0) is used for this to avoid any side effects.",
+      "revId": "9a7b9f8003380725985ce76676060e1bb08820e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d82ce9c7_e1936f5c",
+        "filename": "vpx_dsp/loongarch/sub_pixel_variance_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 348,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-04-18T17:38:00Z",
+      "side": 1,
+      "message": "remove this trailing \u0027;\u0027 it will produce warnings in some clang configurations",
+      "range": {
+        "startLine": 348,
+        "startChar": 40,
+        "endLine": 348,
+        "endChar": 41
+      },
+      "revId": "9a7b9f8003380725985ce76676060e1bb08820e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
