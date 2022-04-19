@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27b17bc9_7dc409bb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-04-19T23:32:52Z",
+      "side": 1,
+      "message": "This was fixed in libaom in:\n  https://aomedia-review.googlesource.com/c/aom/+/59015",
+      "revId": "665f6a3065555317e75915af2561cf9b776e50b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
