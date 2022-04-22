@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9517a29_e813e4aa",
+        "filename": "vpx_dsp/loongarch/sub_pixel_variance_lsx.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-04-22T19:12:06Z",
+      "side": 1,
+      "message": "this one might give a warning about an extra semicolon given how it\u0027s used",
+      "range": {
+        "startLine": 311,
+        "startChar": 69,
+        "endLine": 311,
+        "endChar": 70
+      },
+      "revId": "52556f97b54be3d00c836122e2917261eca5d323",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
