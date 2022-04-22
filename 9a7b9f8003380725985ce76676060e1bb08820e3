@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9902f6e2_17d3f98e",
+        "filename": "vpx_dsp/loongarch/sub_pixel_variance_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-04-22T07:25:18Z",
+      "side": 1,
+      "message": "If I modify it, I need to introduce more parameters. So my opinion is to maintain the current state. If it really needs to be modified, I hope to submit a new patch to deal with these problems, because there are too many places to be modified.",
+      "parentUuid": "ba5b7d57_5af211cb",
+      "revId": "9a7b9f8003380725985ce76676060e1bb08820e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d82ce9c7_e1936f5c",
@@ -31,6 +49,30 @@
       "writtenOn": "2022-04-18T17:38:00Z",
       "side": 1,
       "message": "remove this trailing \u0027;\u0027 it will produce warnings in some clang configurations",
+      "range": {
+        "startLine": 348,
+        "startChar": 40,
+        "endLine": 348,
+        "endChar": 41
+      },
+      "revId": "9a7b9f8003380725985ce76676060e1bb08820e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08bd1c9d_042cef3f",
+        "filename": "vpx_dsp/loongarch/sub_pixel_variance_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 348,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-04-22T07:25:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d82ce9c7_e1936f5c",
       "range": {
         "startLine": 348,
         "startChar": 40,
