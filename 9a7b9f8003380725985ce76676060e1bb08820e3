@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "86b2600d_665644f3",
+        "filename": "vpx_dsp/loongarch/sub_pixel_variance_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-04-22T19:10:08Z",
+      "side": 1,
+      "message": "\u003e If I modify it, I need to introduce more parameters. So my opinion is to maintain the current state. If it really needs to be modified, I hope to submit a new patch to deal with these problems, because there are too many places to be modified.\n\nMaybe I\u0027m misunderstanding, but you\u0027ve already introduced scope with {}, I was only suggesting do { ... } while (0) over ({...}) as it\u0027s safer should the macro be used in an if statement without braces for example. This is ok as it\u0027s consistent with the existing code.",
+      "parentUuid": "9902f6e2_17d3f98e",
+      "revId": "9a7b9f8003380725985ce76676060e1bb08820e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d82ce9c7_e1936f5c",
