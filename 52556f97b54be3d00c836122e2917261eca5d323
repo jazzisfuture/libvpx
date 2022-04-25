@@ -22,6 +22,30 @@
       },
       "revId": "52556f97b54be3d00c836122e2917261eca5d323",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "62978e7a_1e55d0ab",
+        "filename": "vpx_dsp/loongarch/sub_pixel_variance_lsx.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-04-25T03:07:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d9517a29_e813e4aa",
+      "range": {
+        "startLine": 311,
+        "startChar": 69,
+        "endLine": 311,
+        "endChar": 70
+      },
+      "revId": "52556f97b54be3d00c836122e2917261eca5d323",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
