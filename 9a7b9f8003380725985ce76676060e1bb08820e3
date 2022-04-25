@@ -72,6 +72,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbcd2a0a_cb598837",
+        "filename": "vpx_dsp/loongarch/sub_pixel_variance_lsx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-04-25T23:46:09Z",
+      "side": 1,
+      "message": "\u003e First, I understand what you mean. Secondly, about the role of these macros, I need to restate that it has a return value. There are specific use cases in lines 111, 112 etc. If I give up ({...}), I need to add some other parameters to complete the original purpose. Finally, since there are quite a few of these macros, I hope to rearrange these changes into a new patch.\n\nThanks for clarifying, I may have over simplified things since i didn\u0027t look at all of them. Like I said, the structure is fine if it\u0027s consistent, but better to use do/while when possible.",
+      "parentUuid": "525185a7_432f1de8",
+      "revId": "9a7b9f8003380725985ce76676060e1bb08820e3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d82ce9c7_e1936f5c",
