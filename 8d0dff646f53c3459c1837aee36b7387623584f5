@@ -51,6 +51,80 @@
       "parentUuid": "f8fdc334_6a4a6627",
       "revId": "8d0dff646f53c3459c1837aee36b7387623584f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a6bc890_f06c44f4",
+        "filename": "vp9/encoder/arm/neon/vp9_diamond_search_sad_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-03T23:24:14Z",
+      "side": 1,
+      "message": "out of curiosity, have you seen any code improvements due to this?",
+      "revId": "8d0dff646f53c3459c1837aee36b7387623584f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3854d87a_ba9b163f",
+        "filename": "vp9/encoder/arm/neon/vp9_diamond_search_sad_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-03T23:24:14Z",
+      "side": 1,
+      "message": "add assert.h for these",
+      "revId": "8d0dff646f53c3459c1837aee36b7387623584f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c792d731_d9fa1540",
+        "filename": "vp9/encoder/arm/neon/vp9_diamond_search_sad_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-03T23:24:14Z",
+      "side": 1,
+      "message": "make this static const",
+      "revId": "8d0dff646f53c3459c1837aee36b7387623584f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26b59f57_816a9d82",
+        "filename": "vp9/encoder/arm/neon/vp9_diamond_search_sad_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-03T23:24:14Z",
+      "side": 1,
+      "message": "int32x4_t",
+      "range": {
+        "startLine": 148,
+        "startChar": 6,
+        "endLine": 148,
+        "endChar": 13
+      },
+      "revId": "8d0dff646f53c3459c1837aee36b7387623584f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
