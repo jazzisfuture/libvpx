@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "753a6e08_137e3cff",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-03T23:17:34Z",
+      "side": 1,
+      "message": "merge this and the line below it, git will do that automatically without a blank line afterward.",
+      "revId": "8d0dff646f53c3459c1837aee36b7387623584f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "f8fdc334_6a4a6627",
