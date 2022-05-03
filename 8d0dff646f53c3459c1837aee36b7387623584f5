@@ -16,6 +16,24 @@
       "message": "Hi guys, optimized this function, for some reason it doesn\u0027t trigger the builders for the checks, not sure that I have done something differently this time.",
       "revId": "8d0dff646f53c3459c1837aee36b7387623584f5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "68ff62d5_5920a848",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-03T23:16:40Z",
+      "side": 1,
+      "message": "\u003e Hi guys, optimized this function, for some reason it doesn\u0027t trigger the builders for the checks, not sure that I have done something differently this time.\n\nThanks, you did everything correctly. There was an issue in the backend where it missed some events. I\u0027ll retrigger this one.",
+      "parentUuid": "f8fdc334_6a4a6627",
+      "revId": "8d0dff646f53c3459c1837aee36b7387623584f5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
