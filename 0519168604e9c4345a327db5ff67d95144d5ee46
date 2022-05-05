@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef7fbd20_015befba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-05-05T11:55:13Z",
+      "side": 1,
+      "message": "\u003e Patch Set 4: Verified-1 -Code-Review\n\u003e \n\u003e Build Failed \n\u003e \n\u003e https://build.webmproject.org/jenkins/job/libvpx__per-commit_trigger/44477/ : FAILURE\n\u003e \n\u003e In the list of tests click on the number next to the failed (red) test.\n\u003e If the test has multiple configurations, click on one of the failed (red)\n\u003e configurations. Look at the console log to see the relevant commands (like\n\u003e cmake, test_libaom etc) and the failure.\n\u003e Note: for some static analysis / sanitizer warnings, Jenkins parses the warning\n\u003e from the console log and directly provides a link like \"one new warning\".\n\u003e \n\u003e By removing the Code-Review vote the following files are no longer code-owner approved by \u003cGERRIT_ACCOUNT_1128364\u003e:\n\u003e * vp9/common/vp9_rtcd_defs.pl\n\u003e * vp9/encoder/arm/neon/vp9_diamond_search_sad_neon.c\n\u003e * vp9/vp9cx.mk\n\u003e \n\nThe build failed but it looks like a badly configured environment. Is there something I should do myself?",
+      "revId": "0519168604e9c4345a327db5ff67d95144d5ee46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
