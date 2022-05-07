@@ -34,6 +34,24 @@
       "parentUuid": "ef7fbd20_015befba",
       "revId": "0519168604e9c4345a327db5ff67d95144d5ee46",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "681ff091_3a6b0e13",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-05-07T14:41:46Z",
+      "side": 1,
+      "message": "Fixed armv7 builds as well.",
+      "parentUuid": "e939c6f7_9b62758b",
+      "revId": "0519168604e9c4345a327db5ff67d95144d5ee46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
