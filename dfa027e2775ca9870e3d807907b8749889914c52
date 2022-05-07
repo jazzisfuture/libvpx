@@ -16,6 +16,24 @@
       "message": "This should be ok in a high-bitdepth build too, no? We don\u0027t have this restriction in NEON, for example.",
       "revId": "dfa027e2775ca9870e3d807907b8749889914c52",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c97e90a_07754449",
+        "filename": "vpx_dsp/loongarch/avg_lsx.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1532462
+      },
+      "writtenOn": "2022-05-07T02:25:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "40fe86ae_50d21b9f",
+      "revId": "dfa027e2775ca9870e3d807907b8749889914c52",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
