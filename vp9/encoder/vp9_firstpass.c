@@ -2751,6 +2751,34 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
     }
   }
 #endif
+  // If the external rate control model for GOP is used, the gop decisions
+  // are overwritten. Specifically, |gop_coding_frames| and |use_alt_ref|
+  // will be overwritten.
+  if (cpi->ext_ratectrl.ready &&
+      cpi->ext_ratectrl.funcs.rc_type == VPX_RC_GOP) {
+    vpx_codec_err_t codec_status;
+    vpx_rc_gop_decision_t gop_decision;
+    vpx_rc_gop_info_t gop_info;
+    gop_info.min_gf_interval = active_gf_interval.min;
+    gop_info.max_gf_interval = active_gf_interval.max;
+    gop_info.allow_alt_ref = allow_alt_ref;
+    gop_info.is_key_frame = is_key_frame;
+    gop_info.last_gop_use_alt_ref = rc->source_alt_ref_active;
+    gop_info.frames_since_key = rc->frames_since_key;
+    gop_info.frames_to_key = rc->frames_to_key;
+    gop_info.lag_in_frames = cpi->oxcf.lag_in_frames;
+    gop_info.show_index = cm->current_video_frame;
+    gop_info.coding_index = cm->current_frame_coding_index;
+
+    codec_status = vp9_extrc_get_gop_decision(&cpi->ext_ratectrl, &gop_info,
+                                              &gop_decision);
+    if (codec_status != VPX_CODEC_OK) {
+      vpx_internal_error(&cm->error, codec_status,
+                         "vp9_extrc_get_gop_decision() failed");
+    }
+    gop_coding_frames = gop_decision.gop_coding_frames;
+    use_alt_ref = gop_decision.use_alt_ref;
+  }
 
   // Was the group length constrained by the requirement for a new KF?
   rc->constrained_gf_group = (gop_coding_frames >= rc->frames_to_key) ? 1 : 0;
@@ -2940,6 +2968,11 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
   if (!is_lossless_requested(&cpi->oxcf) && !cpi->use_svc &&
       cpi->oxcf.aq_mode == NO_AQ && cpi->multi_layer_arf && !is_alt_ref_flash)
     rc->preserve_next_arf_as_gld = 1;
+  printf("show_index %d, coding_index %d, gf_interval %d, use_alt_ref %d, "
+         "gop_coding_frames %d, source_alt_ref_pending %d --\n",
+         cm->current_video_frame, cm->current_frame_coding_index,
+         rc->baseline_gf_interval, use_alt_ref, gop_coding_frames,
+         rc->source_alt_ref_pending);
 }
 
 // Intra / Inter threshold very low

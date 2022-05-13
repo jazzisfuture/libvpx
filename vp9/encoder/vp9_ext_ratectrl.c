@@ -198,3 +198,27 @@ vpx_codec_err_t vp9_extrc_update_encodeframe_result(
   }
   return VPX_CODEC_OK;
 }
+
+vpx_codec_err_t vp9_extrc_get_gop_decision(
+    EXT_RATECTRL *ext_ratectrl, const vpx_rc_gop_info_t *const gop_info,
+    vpx_rc_gop_decision_t *gop_decision) {
+  if (ext_ratectrl == NULL) {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+  if (ext_ratectrl->ready && ext_ratectrl->funcs.rc_type == VPX_RC_GOP) {
+    vpx_rc_status_t rc_status;
+    rc_status = ext_ratectrl->funcs.get_gop_decision(ext_ratectrl->model,
+                                                     gop_info, gop_decision);
+    if (gop_decision->use_alt_ref) {
+      const int arf_constraint =
+          gop_decision->gop_coding_frames >= gop_info->min_gf_interval &&
+          gop_decision->gop_coding_frames < gop_info->lag_in_frames;
+      rc_status &= arf_constraint;
+      rc_status &= gop_info->allow_alt_ref;
+    }
+    if (rc_status == VPX_RC_ERROR) {
+      return VPX_CODEC_ERROR;
+    }
+  }
+  return VPX_CODEC_OK;
+}
