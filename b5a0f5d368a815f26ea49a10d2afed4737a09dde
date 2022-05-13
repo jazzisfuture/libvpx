@@ -33,6 +33,23 @@
       "message": "This test will fail in debug build. I\u0027ll rebase on your fix once it\u0027s submitted.",
       "revId": "b5a0f5d368a815f26ea49a10d2afed4737a09dde",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd7d248b_cdb8322a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-05-13T02:56:31Z",
+      "side": 1,
+      "message": "need to rebase",
+      "revId": "b5a0f5d368a815f26ea49a10d2afed4737a09dde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
