@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "278c7e82_5b90ab8b",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-24T00:04:51Z",
+      "side": 1,
+      "message": "We\u0027re treating this as a stable API currently. I\u0027d like to avoid landing this until v1.12.0 is branched. An alternative would be to revert this in that branch or mark this interface as experimental similar to what was done in libaom for AOM_EXT_PART_ABI_VERSION:\n\nhttps://aomedia.googlesource.com/aom/+/refs/heads/main/aom/aom_encoder.h#45",
+      "revId": "074a542f498a245eb32ec1879eaf2a26601e6932",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "78fc871a_2830174d",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-24T00:04:51Z",
+      "side": 1,
+      "message": "remove this final trailing \u0027,\u0027. We try to support C90 (minus the use of // comments) with this code base.",
+      "range": {
+        "startLine": 38,
+        "startChar": 16,
+        "endLine": 38,
+        "endChar": 17
+      },
+      "revId": "074a542f498a245eb32ec1879eaf2a26601e6932",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
