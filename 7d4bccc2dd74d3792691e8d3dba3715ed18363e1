@@ -1,0 +1,130 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1988706_95ad0fb4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-24T00:17:09Z",
+      "side": 1,
+      "message": "information",
+      "range": {
+        "startLine": 14,
+        "startChar": 33,
+        "endLine": 14,
+        "endChar": 43
+      },
+      "revId": "7d4bccc2dd74d3792691e8d3dba3715ed18363e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "67ad9c54_44df3765",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-24T00:17:09Z",
+      "side": 1,
+      "message": "constraints",
+      "range": {
+        "startLine": 22,
+        "startChar": 34,
+        "endLine": 22,
+        "endChar": 44
+      },
+      "revId": "7d4bccc2dd74d3792691e8d3dba3715ed18363e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8d10cf7_645e31c0",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-24T00:17:09Z",
+      "side": 1,
+      "message": "...are from...",
+      "range": {
+        "startLine": 39,
+        "startChar": 21,
+        "endLine": 39,
+        "endChar": 27
+      },
+      "revId": "7d4bccc2dd74d3792691e8d3dba3715ed18363e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d66b332b_b223d3d0",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-24T00:17:09Z",
+      "side": 1,
+      "message": "return an error code in this case to avoid the potential for static analysis warnings due to the use of a nullptr",
+      "revId": "7d4bccc2dd74d3792691e8d3dba3715ed18363e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7e15c97_17ef02c0",
+        "filename": "vp9/encoder/vp9_ext_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 220,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-24T00:17:09Z",
+      "side": 1,
+      "message": "checks",
+      "range": {
+        "startLine": 220,
+        "startChar": 21,
+        "endLine": 220,
+        "endChar": 26
+      },
+      "revId": "7d4bccc2dd74d3792691e8d3dba3715ed18363e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "33785fe5_f9b86e32",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-24T00:17:09Z",
+      "side": 1,
+      "message": "this would be another ABI bump",
+      "revId": "7d4bccc2dd74d3792691e8d3dba3715ed18363e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
