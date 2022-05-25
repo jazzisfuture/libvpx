@@ -16,6 +16,24 @@
       "message": "I forgot to comment in the libaom code review that we should include the header (gtest.h) that declares testing::TempDir().",
       "revId": "0ad55843c6dd02da93ffe709fccc5acc19247808",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0636c093_ded2b4bb",
+        "filename": "test/video_source.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-25T18:56:20Z",
+      "side": 1,
+      "message": "\u003e I forgot to comment in the libaom code review that we should include the header (gtest.h) that declares testing::TempDir().\n\nGood point. I\u0027ll fix that here and follow up on libaom. I missed that \u003ccstring\u003e was no longer necessary after some iterations there.",
+      "parentUuid": "0695fe88_16378266",
+      "revId": "0ad55843c6dd02da93ffe709fccc5acc19247808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
