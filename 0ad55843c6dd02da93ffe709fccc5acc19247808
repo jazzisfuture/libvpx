@@ -34,6 +34,24 @@
       "parentUuid": "0695fe88_16378266",
       "revId": "0ad55843c6dd02da93ffe709fccc5acc19247808",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2b7857b_12b3f38c",
+        "filename": "test/video_source.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-05-25T19:10:31Z",
+      "side": 1,
+      "message": "\u003ccstring\u003e declares the memcpy() function that we use at lines 86-87.",
+      "parentUuid": "0636c093_ded2b4bb",
+      "revId": "0ad55843c6dd02da93ffe709fccc5acc19247808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
