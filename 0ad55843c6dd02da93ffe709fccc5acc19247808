@@ -70,6 +70,24 @@
       "parentUuid": "f2b7857b_12b3f38c",
       "revId": "0ad55843c6dd02da93ffe709fccc5acc19247808",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd99b2e9_321cb2cf",
+        "filename": "test/video_source.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-25T20:45:35Z",
+      "side": 1,
+      "message": "\u003e \u003e \u003ccstring\u003e declares the memcpy() function that we use at lines 86-87.\n\u003e \n\u003e ah you\u0027re right, I was thinking of the removal of strlen\n\nDone.",
+      "parentUuid": "4852fc87_27d7df8b",
+      "revId": "0ad55843c6dd02da93ffe709fccc5acc19247808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
