@@ -33,6 +33,24 @@
       "message": "Apologies for that mismatch, I will investigate and resubmit when done.",
       "revId": "006e1ae2b42797aaa772ed0c46571d2179d0f7a5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "107432ac_5fc31981",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-26T19:49:19Z",
+      "side": 1,
+      "message": "\u003e Apologies for that mismatch, I will investigate and resubmit when done.\n\nThanks Konstantinos, it seems we\u0027re missing some test coverage so we didn\u0027t notice it until running some full encodes.",
+      "parentUuid": "100ee9ab_072c631e",
+      "revId": "006e1ae2b42797aaa772ed0c46571d2179d0f7a5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
