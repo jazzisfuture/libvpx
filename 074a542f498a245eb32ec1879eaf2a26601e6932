@@ -99,6 +99,30 @@
       },
       "revId": "074a542f498a245eb32ec1879eaf2a26601e6932",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "12eb4797_43656165",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-05-27T20:53:40Z",
+      "side": 1,
+      "message": "\u003e Done\n\u003e Changed in the child cl.\n\nI think it might be better to do it here so that each change is consistent.",
+      "parentUuid": "d5949966_dcaa7715",
+      "range": {
+        "startLine": 38,
+        "startChar": 16,
+        "endLine": 38,
+        "endChar": 17
+      },
+      "revId": "074a542f498a245eb32ec1879eaf2a26601e6932",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
