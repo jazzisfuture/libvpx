@@ -794,8 +794,7 @@ TEST_P(ResizeCspTest, TestResizeCspWorks) {
 }
 
 VP8_INSTANTIATE_TEST_SUITE(ResizeTest, ONE_PASS_TEST_MODES);
-VP9_INSTANTIATE_TEST_SUITE(ResizeTest,
-                           ::testing::Values(::libvpx_test::kRealTime));
+VP9_INSTANTIATE_TEST_SUITE(ResizeTest, ONE_PASS_TEST_MODES);
 VP9_INSTANTIATE_TEST_SUITE(ResizeInternalTest,
                            ::testing::Values(::libvpx_test::kOnePassBest));
 VP9_INSTANTIATE_TEST_SUITE(ResizeRealtimeTest,
