@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6133955_ce6fa19c",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3473,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-06-02T04:55:57Z",
+      "side": 1,
+      "message": "this seems like a bug with clang-format",
+      "range": {
+        "startLine": 3473,
+        "startChar": 16,
+        "endLine": 3473,
+        "endChar": 17
+      },
+      "revId": "3dc6aa01bacc9818d4ccc0ee0f1b691ae0ec0315",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
