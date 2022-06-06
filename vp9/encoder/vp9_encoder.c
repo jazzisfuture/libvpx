@@ -4510,8 +4510,13 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest
         vpx_internal_error(&cm->error, codec_status,
                            "vp9_extrc_get_encodeframe_decision() failed");
       }
-      q = encode_frame_decision.q_index;
-      ext_rc_max_frame_size = encode_frame_decision.max_frame_size;
+      // If the external model makes invalid recommendations, we use
+      // libvpx's default q.
+      if (encode_frame_decision.q_index <= MAXQ &&
+          encode_frame_decision.q_index >= MINQ) {
+        q = encode_frame_decision.q_index;
+        ext_rc_max_frame_size = encode_frame_decision.max_frame_size;
+      }
     }
 
     vp9_set_quantizer(cpi, q);
