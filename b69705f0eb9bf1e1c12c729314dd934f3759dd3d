@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc357a56_b66686db",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4516,
+      "author": {
+        "id": 1318536
+      },
+      "writtenOn": "2022-06-07T00:11:26Z",
+      "side": 1,
+      "message": "It would be better if there was some specific q (like -1, maybe a named constant in the rc api header header) that causes libvpx\u0027s default q to be used. For other invalid values it causes an error.\n\nThis would make it less likely that a user of the api accidentally provides invalid qps and doesn\u0027t realize that because everything works.",
+      "range": {
+        "startLine": 4515,
+        "startChar": 10,
+        "endLine": 4516,
+        "endChar": 47
+      },
+      "revId": "b69705f0eb9bf1e1c12c729314dd934f3759dd3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
