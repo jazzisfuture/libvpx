@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5bc4a958_cb0b9577",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-06-07T18:43:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bcdbe187_6a4a8cb0",
+      "revId": "d34aa6f5f1cbcc4c4432043d27a4ef90ccd600b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "205e392d_9b210772",
@@ -31,6 +49,24 @@
       "writtenOn": "2022-06-07T17:40:05Z",
       "side": 1,
       "message": "this is just an API addition and doesn\u0027t break the ABI",
+      "revId": "d34aa6f5f1cbcc4c4432043d27a4ef90ccd600b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed61f41d_ed368571",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-06-07T18:43:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "205e392d_9b210772",
       "revId": "d34aa6f5f1cbcc4c4432043d27a4ef90ccd600b6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
