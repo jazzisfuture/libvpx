@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "03ad5681_90ab00b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1318536
+      },
+      "writtenOn": "2022-06-07T00:22:49Z",
+      "side": 1,
+      "message": "I\u0027m fine with the name change, even if there\u0027s no explicit collision with the names.\n\nNo need to revise the changelist, more of an FYI: renaming the field doesn\u0027t change the ABI, so technically you don\u0027t need to increment the version number.",
+      "revId": "5c5cfd2400b9deaa80d1e63ec03ae1b0b58a7917",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "52969172_e19ab539",
