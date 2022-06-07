@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "596d7c9f_3098a3c3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1318536
+      },
+      "writtenOn": "2022-06-07T00:17:57Z",
+      "side": 1,
+      "message": "I patched this into my code and it solves the problem of the first gop decision being before the first pass stats. Thanks",
+      "revId": "b21634073652cb7e73e52168dc2fa9c1b9a30adf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
