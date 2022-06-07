@@ -69,6 +69,24 @@
       "parentUuid": "55a86b96_389b2181",
       "revId": "5c5cfd2400b9deaa80d1e63ec03ae1b0b58a7917",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad2753bd_67e61bfb",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-06-07T05:39:00Z",
+      "side": 1,
+      "message": "change to \u0027gop_global_index\u0027",
+      "parentUuid": "3015a4ea_8d55a30c",
+      "revId": "5c5cfd2400b9deaa80d1e63ec03ae1b0b58a7917",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
