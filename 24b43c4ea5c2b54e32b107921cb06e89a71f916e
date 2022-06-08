@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8d7a0d6_a8ec12cc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1546202
+      },
+      "writtenOn": "2022-06-08T03:44:08Z",
+      "side": 1,
+      "message": "\u003e Patch Set 4: Code-Review+1\n\u003e \n\u003e Style check passed.\n\n",
+      "revId": "24b43c4ea5c2b54e32b107921cb06e89a71f916e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
