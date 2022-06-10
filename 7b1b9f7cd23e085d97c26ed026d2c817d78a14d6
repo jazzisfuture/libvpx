@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c38eeab7_71781535",
+        "filename": "test/encode_test_driver.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 294,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-10T21:03:55Z",
+      "side": 0,
+      "message": "Note that this is a protected data member, so it can be used by subclasses. VP9FrameSizeTestsLarge is the only subclass that uses this, but it also uses this effectively as a local variable.",
+      "revId": "7b1b9f7cd23e085d97c26ed026d2c817d78a14d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
