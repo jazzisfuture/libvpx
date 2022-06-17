@@ -1,0 +1,95 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6e4ed04_b6f1dbe5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T22:05:47Z",
+      "side": 1,
+      "message": "Jerome: I also posted some comments on v1.11.0 and v1.10.0. Those do not need to be addressed in this CL.",
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "132d4a27_59d9219e",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T22:05:47Z",
+      "side": 1,
+      "message": "Optional: We probably should avoid the term \"maintenance release\". Some people may interpret a maintenance release as a release with no new features, but the new codec control in this release can be considered a new feature.",
+      "range": {
+        "startLine": 2,
+        "startChar": 7,
+        "endLine": 2,
+        "endChar": 18
+      },
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fec873c7_c7a08429",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T22:05:47Z",
+      "side": 1,
+      "message": "Would you like to retroactively document the encoder ABI incompatible change in the v1.11.0 release?\n\nNew fields are added to the vpx_codec_enc_cfg_t struct.\n\nIf you do this, we should refer to this release as a major release instead of a maintenance release. (This release should have been versioned v2.0.0.)",
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "859565c2_fbb632d8",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T22:05:47Z",
+      "side": 1,
+      "message": "This item does not seem to cover the new codec control VP9E_SET_RTC_EXTERNAL_RATECTRL. Is the next item (line 40) referring to VP9E_SET_RTC_EXTERNAL_RATECTRL?",
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c901389_c7cdf3cd",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T22:05:47Z",
+      "side": 1,
+      "message": "The v1.10.0 release has an encoder ABI incompatible change: the loopfilter_ctrl array field is added to the vpx_svc_extra_cfg_t struct, which is used by the codec control VP9E_SET_SVC_PARAMETERS. Would you like to retroactively document this change?\n\n(SO_VERSION_MAJOR should have been bumped in this release.)",
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
