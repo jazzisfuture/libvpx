@@ -16,6 +16,24 @@
       "message": "I\u0027m not sure about retroactively bumping up version for the previous releases. Note that I bumped up MAJOR in the last release.\n\nAt this point (almost 9 months after the last release) I think active users are probably updated to v1.11.0.\n\nJames, what do you think?",
       "revId": "03d4c6fed9ce058ff27cdf523275d301073f6651",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d3ad38f_1728cbab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T22:50:01Z",
+      "side": 1,
+      "message": "Sorry about the confusion. I meant retroactively documenting the encoder ABI incompatible changes in v1.11.0 and v1.10.0 in CHANGELOG.",
+      "parentUuid": "1440c9b0_93bc7ecb",
+      "revId": "03d4c6fed9ce058ff27cdf523275d301073f6651",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
