@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb40c21c_5dfd4f2e",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-17T22:41:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "132d4a27_59d9219e",
+      "range": {
+        "startLine": 2,
+        "startChar": 7,
+        "endLine": 2,
+        "endChar": 18
+      },
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fec873c7_c7a08429",
