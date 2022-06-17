@@ -82,6 +82,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb7caee5_210feb53",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-17T23:33:45Z",
+      "side": 1,
+      "message": "We can document that better. That\u0027d be a change on main branch.",
+      "parentUuid": "fec873c7_c7a08429",
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "859565c2_fbb632d8",
@@ -99,6 +117,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b4e0fdf2_7bc585a4",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-17T23:33:45Z",
+      "side": 1,
+      "message": "Ack\n\nI probably forgot to mention the new control in the changelog.",
+      "parentUuid": "859565c2_fbb632d8",
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7c901389_c7cdf3cd",
@@ -112,6 +148,24 @@
       "writtenOn": "2022-06-17T22:05:47Z",
       "side": 1,
       "message": "The v1.10.0 release has an encoder ABI incompatible change: the loopfilter_ctrl array field is added to the vpx_svc_extra_cfg_t struct, which is used by the codec control VP9E_SET_SVC_PARAMETERS. Would you like to retroactively document this change?\n\n(SO_VERSION_MAJOR should have been bumped in this release.)",
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1331656_0f2189cb",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-17T23:33:45Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "7c901389_c7cdf3cd",
       "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
