@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1d067447_8d5e5761",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T20:01:46Z",
+      "side": 1,
+      "message": "We need to update the date.",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 10
+      },
+      "revId": "f98fb3a62f8da126e152dfe8f79aa3b1f848ae23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d89af85f_7f53b0e4",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T20:01:46Z",
+      "side": 1,
+      "message": "This line seems too long, if you want to keep every line under 80 characters.",
+      "revId": "f98fb3a62f8da126e152dfe8f79aa3b1f848ae23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "469a4b6e_53a2c075",
+        "filename": "libs.mk",
+        "patchSetId": 2
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-17T20:01:46Z",
+      "side": 1,
+      "message": "SO_VERSION_MAJOR should remain unchanged at 7. It is correct to bump SO_VERSION_MINOR. Note their definitions at line 310 and line 314.\n\nIf we bump SO_VERSION_MAJOR, it means the release is not ABI compatible with the previous release.",
+      "revId": "f98fb3a62f8da126e152dfe8f79aa3b1f848ae23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
