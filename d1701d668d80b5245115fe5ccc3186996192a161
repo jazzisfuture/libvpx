@@ -100,6 +100,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a570c4cb_758336c4",
+        "filename": "CHANGELOG",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-06-18T05:15:46Z",
+      "side": 1,
+      "message": "\u003e We can document that better. That\u0027d be a change on main branch.\n\nYes, I think the compatibility information should be added for the previous releases and reflected in the file in this release since it will act as a snapshot.",
+      "parentUuid": "fb7caee5_210feb53",
+      "revId": "d1701d668d80b5245115fe5ccc3186996192a161",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "859565c2_fbb632d8",
