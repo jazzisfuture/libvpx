@@ -678,6 +678,37 @@ class DatarateOnePassCbrSvcSingleBR
   }
 };
 
+// Check basic rate targeting for 1 pass CBR SVC: 3 spatial layers and 3
+// temporal layers, for 4:4:4 Profile 1.
+TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc3SL3TL444Profile1) {
+  SetSvcConfig(3, 3);
+  ::libvpx_test::Y4mVideoSource video("rush_hour_444.y4m", 0, 140);
+  cfg_.g_profile = 1;
+  cfg_.g_bit_depth = (vpx_bit_depth_t)8;
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.g_threads = 1;
+  cfg_.rc_dropframe_thresh = 0;
+  cfg_.kf_max_dist = 9999;
+
+  top_sl_width_ = 352;
+  top_sl_height_ = 288;
+  cfg_.rc_target_bitrate = 500;
+  ResetModel();
+  AssignLayerBitrates();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  CheckLayerRateTargeting(number_spatial_layers_, number_temporal_layers_, 0.78,
+                          1.15);
+#if CONFIG_VP9_DECODER
+  // The non-reference frames are expected to be mismatched frames as the
+  // encoder will avoid loopfilter on these frames.
+  EXPECT_EQ(GetNonRefFrames(), GetMismatchFrames());
+#endif
+}
+
 // Check basic rate targeting for 1 pass CBR SVC: 2 spatial layers and 1
 // temporal layer, with screen content mode on and same speed setting for all
 // layers.
