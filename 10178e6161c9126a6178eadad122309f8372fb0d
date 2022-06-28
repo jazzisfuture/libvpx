@@ -16,6 +16,24 @@
       "message": "another option might be to include the current release version / name",
       "revId": "10178e6161c9126a6178eadad122309f8372fb0d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c97e222c_87620a55",
+        "filename": "README",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-06-28T18:41:16Z",
+      "side": 0,
+      "message": "\u003e another option might be to include the current release version / name\n\nhttps://chromium.googlesource.com/webm/libwebp",
+      "parentUuid": "ddb14eee_c05a8c64",
+      "revId": "10178e6161c9126a6178eadad122309f8372fb0d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
