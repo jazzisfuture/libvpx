@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2868bb9d_aac6140e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-30T17:45:46Z",
+      "side": 1,
+      "message": "Hi Jerome,\n\nI don\u0027t know what files constitute the public interface of libvpx, so I only checked the vpx/*.h headers. I assume they are all public headers.",
+      "revId": "7bab9962a016ab36db187fc163300f0dc5e5e2e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6789bd8_62c63e1d",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-30T17:45:46Z",
+      "side": 1,
+      "message": "Optional: It would be good to document the incompatible changes to the ABI.\n\nBut let\u0027s first focus on making sure all the ABI compatibility info we added is correct.",
+      "revId": "7bab9962a016ab36db187fc163300f0dc5e5e2e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1972c4f6_1a83dcd7",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-30T17:45:46Z",
+      "side": 1,
+      "message": "IMPORTANT: Please check this again. I checked the vpx/*.h headers in v1.9.0, and I believe v1.9.0 is compatible with v1.8.2.",
+      "revId": "7bab9962a016ab36db187fc163300f0dc5e5e2e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "535ddeab_c5447931",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-30T17:45:46Z",
+      "side": 1,
+      "message": "Should we add \"with the previous release\" here and at line 127?",
+      "revId": "7bab9962a016ab36db187fc163300f0dc5e5e2e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
