@@ -54,6 +54,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cf6cad57_a4e4c310",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-30T17:58:40Z",
+      "side": 1,
+      "message": "I think this change here adding NV12 breaks the compatibility:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/2218862\n\nwith a change in vpx/vpx_image.h:\n\n```\ndiff --git a/vpx/vpx_image.h b/vpx/vpx_image.h\nindex 98be5966a..bc23be50c 100644\n--- a/vpx/vpx_image.h\n+++ b/vpx/vpx_image.h\n@@ -43,6 +43,7 @@ typedef enum vpx_img_fmt {\n   VPX_IMG_FMT_I422 \u003d VPX_IMG_FMT_PLANAR | 5,\n   VPX_IMG_FMT_I444 \u003d VPX_IMG_FMT_PLANAR | 6,\n   VPX_IMG_FMT_I440 \u003d VPX_IMG_FMT_PLANAR | 7,\n+  VPX_IMG_FMT_NV12 \u003d VPX_IMG_FMT_PLANAR | 9,\n   VPX_IMG_FMT_I42016 \u003d VPX_IMG_FMT_I420 | VPX_IMG_FMT_HIGHBITDEPTH,\n   VPX_IMG_FMT_I42216 \u003d VPX_IMG_FMT_I422 | VPX_IMG_FMT_HIGHBITDEPTH,\n   VPX_IMG_FMT_I44416 \u003d VPX_IMG_FMT_I444 | VPX_IMG_FMT_HIGHBITDEPTH,\n```",
+      "parentUuid": "1972c4f6_1a83dcd7",
+      "revId": "7bab9962a016ab36db187fc163300f0dc5e5e2e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "535ddeab_c5447931",
         "filename": "CHANGELOG",
         "patchSetId": 1
@@ -65,6 +83,24 @@
       "writtenOn": "2022-06-30T17:45:46Z",
       "side": 1,
       "message": "Should we add \"with the previous release\" here and at line 127?",
+      "revId": "7bab9962a016ab36db187fc163300f0dc5e5e2e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d713f84_2e9ae242",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-30T17:58:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "535ddeab_c5447931",
       "revId": "7bab9962a016ab36db187fc163300f0dc5e5e2e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
