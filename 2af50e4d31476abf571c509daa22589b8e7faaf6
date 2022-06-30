@@ -16,6 +16,24 @@
       "message": "Also add \"with the previous release\" here.",
       "revId": "2af50e4d31476abf571c509daa22589b8e7faaf6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23ae2117_0249aec6",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-30T20:23:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8774b40_e134399d",
+      "revId": "2af50e4d31476abf571c509daa22589b8e7faaf6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
