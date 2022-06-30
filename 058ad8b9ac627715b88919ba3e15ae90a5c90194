@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de31967c_48d4aa9d",
+        "filename": "vp9/common/vp9_alloccommon.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-30T22:51:41Z",
+      "side": 1,
+      "message": "above_context is freed with the condition (cm-\u003emi_alloc_size \u003c new_mi_size) in vp9_change_config which is called when resolution changes, here\n\nhttps://chromium.googlesource.com/webm/libvpx/+/dbac8e01e05ad3d1b47887b1ac864339115aa721/vp9/encoder/vp9_encoder.c#2053\n\nboth above_context and above_seg_context are freed.\n\nSo with the same condition here they should be allocated.\n\nThe condition for free_seg_map and alloc_seg_map doesn\u0027t change in this CL.",
+      "parentUuid": "a12d55dd_98c8f7c7",
+      "revId": "058ad8b9ac627715b88919ba3e15ae90a5c90194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "966d320b_e5454c04",
@@ -31,6 +49,24 @@
       "writtenOn": "2022-06-30T22:36:37Z",
       "side": 1,
       "message": "this can be deleted",
+      "revId": "058ad8b9ac627715b88919ba3e15ae90a5c90194",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd8b7a7a_992c7173",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2089,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-06-30T22:51:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "966d320b_e5454c04",
       "revId": "058ad8b9ac627715b88919ba3e15ae90a5c90194",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
