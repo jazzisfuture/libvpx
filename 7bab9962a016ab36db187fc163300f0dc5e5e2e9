@@ -72,6 +72,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e06ca4ff_4bc642ad",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-06-30T18:02:09Z",
+      "side": 1,
+      "message": "That\u0027s a new feature. That change didn\u0027t delete or modify any existing values of the vpx_img_fmt enum type.",
+      "parentUuid": "cf6cad57_a4e4c310",
+      "revId": "7bab9962a016ab36db187fc163300f0dc5e5e2e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "535ddeab_c5447931",
         "filename": "CHANGELOG",
         "patchSetId": 1
