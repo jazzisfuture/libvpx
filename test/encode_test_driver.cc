@@ -78,6 +78,7 @@ void Encoder::EncodeFrameInternal(const VideoSource &video,
   if (cfg_.g_w != img->d_w || cfg_.g_h != img->d_h) {
     cfg_.g_w = img->d_w;
     cfg_.g_h = img->d_h;
+    printf("frame %d g_w %d\n", video.frame(), cfg_.g_w);
     res = vpx_codec_enc_config_set(&encoder_, &cfg_);
     ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
   }
