@@ -22,6 +22,30 @@
       },
       "revId": "2544142dc2d3b668e4806b52bdeb1a01877c6436",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2a995923_9385693b",
+        "filename": "test/vp9_quantize_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 75,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-07T21:03:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc65d6db_fa16f66f",
+      "range": {
+        "startLine": 75,
+        "startChar": 16,
+        "endLine": 75,
+        "endChar": 39
+      },
+      "revId": "2544142dc2d3b668e4806b52bdeb1a01877c6436",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
