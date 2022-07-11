@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "479c06b7_91b02fa6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-11T15:46:44Z",
+      "side": 1,
+      "message": "[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/0\n     Bypass calculations       4x4  c_time \u003d 42250 \t simd_time \u003d 42390 \t Gain \u003d 0.996697 \n       Full calculations       4x4  c_time \u003d 48964 \t simd_time \u003d 44917 \t Gain \u003d 1.090100 \n     Bypass calculations       8x8  c_time \u003d 62966 \t simd_time \u003d 57912 \t Gain \u003d 1.087270 \n       Full calculations       8x8  c_time \u003d 103571 \t simd_time \u003d 76198 \t Gain \u003d 1.359235 \n     Bypass calculations     16x16  c_time \u003d 145255 \t simd_time \u003d 93763 \t Gain \u003d 1.549172 \n       Full calculations     16x16  c_time \u003d 309566 \t simd_time \u003d 195880 \t Gain \u003d 1.580386 \n[       OK ] AVX2/VP9QuantizeTest.DISABLED_Speed/0 (1223 ms)",
+      "revId": "f0fd36545fe0d13de73468c10489d40913bd3d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
