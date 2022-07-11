@@ -16,6 +16,23 @@
       "message": "Thanks for the fix. In the future when working with reverts it can be helpful for reviewers to upload the revert alone as a base patchset and then follow up with the fix.",
       "revId": "8f4d1890cbecbbec47c8baeba53e89a2b37ae3a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ede24be_98c0f097",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-07-11T19:49:00Z",
+      "side": 1,
+      "message": "verified it passes the internal test",
+      "revId": "8f4d1890cbecbbec47c8baeba53e89a2b37ae3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
