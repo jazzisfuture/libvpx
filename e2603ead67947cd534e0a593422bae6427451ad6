@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e70e0cd_70650f9c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-11T22:11:25Z",
+      "side": 1,
+      "message": "VP9_HIGHBITDEPTH avx2 vs avx (c_time)\n     Bypass calculations       4x4  c_time \u003d 41429 \t simd_time \u003d 42126 \t Gain \u003d 0.983454 \n       Full calculations       4x4  c_time \u003d 60644 \t simd_time \u003d 53270 \t Gain \u003d 1.138427 \n     Bypass calculations       8x8  c_time \u003d 70959 \t simd_time \u003d 59674 \t Gain \u003d 1.189111 \n       Full calculations       8x8  c_time \u003d 163205 \t simd_time \u003d 108186 \t Gain \u003d 1.508559 \n     Bypass calculations     16x16  c_time \u003d 164111 \t simd_time \u003d 120682 \t Gain \u003d 1.359863 \n       Full calculations     16x16  c_time \u003d 560288 \t simd_time \u003d 328123 \t Gain \u003d 1.707555 ",
+      "revId": "e2603ead67947cd534e0a593422bae6427451ad6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
