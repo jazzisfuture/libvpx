@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ed12475_d6d394a2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-13T17:20:13Z",
+      "side": 1,
+      "message": "this can be shortened to 8f4d1890c to keep the subject shorter",
+      "revId": "4ffbf2fe15bf94c2d7365f22973cb1f7c70f01b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "915974f8_70bd2323",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-13T17:20:13Z",
+      "side": 1,
+      "message": "this can be removed.",
+      "revId": "4ffbf2fe15bf94c2d7365f22973cb1f7c70f01b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
