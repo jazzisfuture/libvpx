@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bea340b_3beabe8b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-13T18:02:56Z",
+      "side": 1,
+      "message": "lowbd avx2 vs avx (c_time)\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/0\n     Bypass calculations     32x32  c_time \u003d 569137 \t simd_time \u003d 235610 \t Gain \u003d 2.415589 \n       Full calculations     32x32  c_time \u003d 2110792 \t simd_time \u003d 1252896 \t Gain \u003d 1.684730 \n\nVP9_HIGHBITDEPTH avx2 vs avx (c_time)\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/0\n     Bypass calculations     32x32  c_time \u003d 684693 \t simd_time \u003d 896035 \t Gain \u003d 0.764136 \n       Full calculations     32x32  c_time \u003d 2799058 \t simd_time \u003d 2394892 \t Gain \u003d 1.168762 ",
+      "revId": "1aebfded12b6abc3585f2ad3a9a0c45fa7245ff3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
