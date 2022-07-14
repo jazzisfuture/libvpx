@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "14b59254_b67e8c2b",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-14T23:03:38Z",
+      "side": 1,
+      "message": "maybe \u0027for the entire encode\u0027?\n\nis this an informational field, meaning the user doesn\u0027t populate this struct or field?",
+      "range": {
+        "startLine": 312,
+        "startChar": 17,
+        "endLine": 312,
+        "endChar": 34
+      },
+      "revId": "39c81f688c8c0d4cfe7699f5de3022c586224556",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a9d52b9_1f00074d",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-14T23:03:38Z",
+      "side": 1,
+      "message": "what\u0027s the interaction with the field in vpx_rc_gop_info_t and this one?",
+      "revId": "39c81f688c8c0d4cfe7699f5de3022c586224556",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
