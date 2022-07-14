@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9da8bab3_3a35ecc7",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-07-14T23:29:48Z",
+      "side": 1,
+      "message": "Yes. The user should not change this field.",
+      "parentUuid": "14b59254_b67e8c2b",
+      "range": {
+        "startLine": 312,
+        "startChar": 17,
+        "endLine": 312,
+        "endChar": 34
+      },
+      "revId": "39c81f688c8c0d4cfe7699f5de3022c586224556",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a9d52b9_1f00074d",
@@ -37,6 +61,24 @@
       "writtenOn": "2022-07-14T23:03:38Z",
       "side": 1,
       "message": "what\u0027s the interaction with the field in vpx_rc_gop_info_t and this one?",
+      "revId": "39c81f688c8c0d4cfe7699f5de3022c586224556",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "483ae99b_bb134ccc",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-07-14T23:29:48Z",
+      "side": 1,
+      "message": "This one is the decision that the external user makes. It tells the encoder whether to use alt ref for the current group of picture or not.\n\nIf \"allow_alt_ref\" is 0, then the user is expected not to make decision \"use_alt_ref \u003d 1\". An error will be returned otherwise.",
+      "parentUuid": "4a9d52b9_1f00074d",
       "revId": "39c81f688c8c0d4cfe7699f5de3022c586224556",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
