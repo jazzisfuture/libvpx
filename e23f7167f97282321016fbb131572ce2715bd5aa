@@ -16,6 +16,29 @@
       "message": "It would be good to add some reference for an overall encode, realtime / vod + cpu-used so that we can track any encoder performance increases independently from other algorithmic changes.",
       "revId": "e23f7167f97282321016fbb131572ce2715bd5aa",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6be76cde_a1a19356",
+        "filename": "vpx_dsp/x86/quantize_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-19T02:39:06Z",
+      "side": 1,
+      "message": "could be _mm256_setzero_si256",
+      "range": {
+        "startLine": 265,
+        "startChar": 21,
+        "endLine": 265,
+        "endChar": 38
+      },
+      "revId": "e23f7167f97282321016fbb131572ce2715bd5aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
