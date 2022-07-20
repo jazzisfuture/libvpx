@@ -574,6 +574,18 @@ INSTANTIATE_TEST_SUITE_P(AVX, VP9QuantizeTest,
 #endif  // HAVE_AVX
 
 #if VPX_ARCH_X86_64 && HAVE_AVX2
+#if CONFIG_VP9_HIGHBITDEPTH
+INSTANTIATE_TEST_SUITE_P(
+    AVX2, VP9QuantizeTest,
+    ::testing::Values(
+        make_tuple(&vpx_highbd_quantize_b_avx2, &vpx_highbd_quantize_b_c,
+                   VPX_BITS_8, 16, false),
+        make_tuple(&vpx_highbd_quantize_b_avx2, &vpx_highbd_quantize_b_c,
+                   VPX_BITS_10, 16, false),
+        make_tuple(&vpx_highbd_quantize_b_avx2, &vpx_highbd_quantize_b_c,
+                   VPX_BITS_12, 16, false)));
+
+#else
 INSTANTIATE_TEST_SUITE_P(
     AVX2, VP9QuantizeTest,
     ::testing::Values(make_tuple(&QuantFPWrapper<vp9_quantize_fp_avx2>,
@@ -581,6 +593,7 @@ INSTANTIATE_TEST_SUITE_P(
                                  16, true),
                       make_tuple(&vpx_quantize_b_avx2, &vpx_quantize_b_c,
                                  VPX_BITS_8, 16, false)));
+#endif  // CONFIG_VP9_HIGHBITDEPTH
 #endif  // HAVE_AVX2
 
 #if HAVE_NEON
