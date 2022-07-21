@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "17c9e723_05260813",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-21T16:51:20Z",
+      "side": 1,
+      "message": "this should const char kTestFileName[] \u003d ...\n\nglobals with non-trivial destructors are not allowed:\n\nhttps://google.github.io/styleguide/cppguide.html#Static_and_Global_Variables",
+      "range": {
+        "startLine": 42,
+        "startChar": 11,
+        "endLine": 42,
+        "endChar": 17
+      },
+      "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9bdf730d_f63afe1c",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 102,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-21T16:51:20Z",
+      "side": 1,
+      "message": "_ptr?",
+      "range": {
+        "startLine": 102,
+        "startChar": 19,
+        "endLine": 102,
+        "endChar": 21
+      },
+      "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ddbc5e62_3fc7e296",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 311,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-21T16:51:20Z",
+      "side": 1,
+      "message": "are these constants in a private header? you could define local versions to make this a little more readable.",
+      "range": {
+        "startLine": 311,
+        "startChar": 49,
+        "endLine": 311,
+        "endChar": 62
+      },
+      "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27976955_6c23d2fd",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 321,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-21T16:51:20Z",
+      "side": 1,
+      "message": "These cases can be joined with \u0027else if\u0027 to save some space.\n\nThis might be consistent with the rest of the file, so this comment could be done in a follow up.",
+      "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af7e14a7_11fb0990",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 815,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-21T16:51:20Z",
+      "side": 1,
+      "message": "get() shouldn\u0027t be needed in this case since std::unique_ptr offers an operator\u003d\u003d for this",
+      "range": {
+        "startLine": 815,
+        "startChar": 17,
+        "endLine": 815,
+        "endChar": 23
+      },
+      "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
