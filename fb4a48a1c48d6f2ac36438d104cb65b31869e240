@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "498d33e4_4a8d8408",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1318536
+      },
+      "writtenOn": "2022-07-21T20:17:07Z",
+      "side": 1,
+      "message": "Typo in the description (4 frame vidoe)",
+      "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "17c9e723_05260813",
@@ -83,6 +100,52 @@
       "writtenOn": "2022-07-21T16:51:20Z",
       "side": 1,
       "message": "These cases can be joined with \u0027else if\u0027 to save some space.\n\nThis might be consistent with the rest of the file, so this comment could be done in a follow up.",
+      "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4991b750_80279434",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 607,
+      "author": {
+        "id": 1318536
+      },
+      "writtenOn": "2022-07-21T20:17:07Z",
+      "side": 1,
+      "message": "IMO you can remove many of these EXPECT from this (and maybe the other) test case. It makes sense to have one test that checks everything, but beyond that it\u0027s probably a better test if it only checks the things you expect are specific to the test or likely to be different. The benefit would be that the test is shorter and it is easier to see what is important.\n\n(Use your judgement or get a second opinion on this)",
+      "range": {
+        "startLine": 607,
+        "startChar": 2,
+        "endLine": 607,
+        "endChar": 11
+      },
+      "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c7afec0_4930e325",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 626,
+      "author": {
+        "id": 1318536
+      },
+      "writtenOn": "2022-07-21T20:17:07Z",
+      "side": 1,
+      "message": "Would this match the intent more closely if it used gop_global_index as the condition here?\n\nif toy_rate_ctrl-\u003egop_global_index \u003d\u003d 0) ... else if (\u003d\u003d 1) ...\n\nSame for the other test case.",
+      "range": {
+        "startLine": 626,
+        "startChar": 2,
+        "endLine": 626,
+        "endChar": 67
+      },
       "revId": "fb4a48a1c48d6f2ac36438d104cb65b31869e240",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
