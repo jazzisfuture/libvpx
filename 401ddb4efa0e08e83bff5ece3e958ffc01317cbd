@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "087ed151_41a8b1e6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-22T17:16:52Z",
+      "side": 1,
+      "message": "avx2 vs sse2 (aka c_time)\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/0\n     Bypass calculations       4x4  c_time \u003d 83223 \t simd_time \u003d 51305 \t Gain \u003d 1.622123 \n       Full calculations       4x4  c_time \u003d 242304 \t simd_time \u003d 86824 \t Gain \u003d 2.790749 \n     Bypass calculations       8x8  c_time \u003d 185798 \t simd_time \u003d 68561 \t Gain \u003d 2.709966 \n       Full calculations       8x8  c_time \u003d 754072 \t simd_time \u003d 232584 \t Gain \u003d 3.242149 \n     Bypass calculations     16x16  c_time \u003d 573123 \t simd_time \u003d 149996 \t Gain \u003d 3.820922 \n       Full calculations     16x16  c_time \u003d 2954649 \t simd_time \u003d 818992 \t Gain \u003d 3.607665 \n[       OK ] AVX2/VP9QuantizeTest.DISABLED_Speed/0 (6201 ms)\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/1\n     Bypass calculations       4x4  c_time \u003d 83881 \t simd_time \u003d 51318 \t Gain \u003d 1.634534 \n       Full calculations       4x4  c_time \u003d 239337 \t simd_time \u003d 86849 \t Gain \u003d 2.755783 \n     Bypass calculations       8x8  c_time \u003d 185619 \t simd_time \u003d 68470 \t Gain \u003d 2.710954 \n       Full calculations       8x8  c_time \u003d 754804 \t simd_time \u003d 233735 \t Gain \u003d 3.229315 \n     Bypass calculations     16x16  c_time \u003d 573168 \t simd_time \u003d 150029 \t Gain \u003d 3.820381 \n       Full calculations     16x16  c_time \u003d 2954510 \t simd_time \u003d 817397 \t Gain \u003d 3.614535 \n[       OK ] AVX2/VP9QuantizeTest.DISABLED_Speed/1 (6199 ms)\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/2\n     Bypass calculations       4x4  c_time \u003d 83088 \t simd_time \u003d 51348 \t Gain \u003d 1.618135 \n       Full calculations       4x4  c_time \u003d 242282 \t simd_time \u003d 87491 \t Gain \u003d 2.769222 \n     Bypass calculations       8x8  c_time \u003d 187799 \t simd_time \u003d 68894 \t Gain \u003d 2.725912 \n       Full calculations       8x8  c_time \u003d 752701 \t simd_time \u003d 234457 \t Gain \u003d 3.210401 \n     Bypass calculations     16x16  c_time \u003d 572930 \t simd_time \u003d 150120 \t Gain \u003d 3.816480 \n       Full calculations     16x16  c_time \u003d 2955387 \t simd_time \u003d 824580 \t Gain \u003d 3.584112 \n",
+      "revId": "401ddb4efa0e08e83bff5ece3e958ffc01317cbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
