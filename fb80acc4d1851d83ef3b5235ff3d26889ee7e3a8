@@ -16,6 +16,23 @@
       "message": "I\u0027ve been meaning to review the dct change more carefully (still haven\u0027t gotten to it) but happened to notice this.",
       "revId": "fb80acc4d1851d83ef3b5235ff3d26889ee7e3a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7bfa2b58_325d1585",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-26T18:20:56Z",
+      "side": 1,
+      "message": "This is consistent, but it seems like we\u0027re missing a fht C/NEON comparison. The danger with only testing the optimized versions is a bug there could get hidden.",
+      "revId": "fb80acc4d1851d83ef3b5235ff3d26889ee7e3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
