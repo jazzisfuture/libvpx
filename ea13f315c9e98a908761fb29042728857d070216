@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ad25352_613923bf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-27T05:13:55Z",
+      "side": 1,
+      "message": "This has a positive effect on the generated assembly. It seems the compiler wasn\u0027t able to remove the unnecessary code on its own.",
+      "revId": "ea13f315c9e98a908761fb29042728857d070216",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
