@@ -16,6 +16,24 @@
       "message": "\u003e No newline at end of right file.\n\nI haven\u0027t seen them get removed by an editor before.",
       "revId": "5ea6b3b05f5e53ce3bee9296d226a50a41859475",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a9bfcfa0_79519ee1",
+        "filename": "vp9/encoder/x86/vp9_quantize_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-27T18:00:24Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "dbce6477_ddb7348c",
+      "revId": "5ea6b3b05f5e53ce3bee9296d226a50a41859475",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
