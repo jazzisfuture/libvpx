@@ -33,6 +33,24 @@
       "message": "This is consistent, but it seems like we\u0027re missing a fht C/NEON comparison. The danger with only testing the optimized versions is a bug there could get hidden.",
       "revId": "fb80acc4d1851d83ef3b5235ff3d26889ee7e3a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be074551_8c5b4e62",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1117029
+      },
+      "writtenOn": "2022-07-27T16:07:45Z",
+      "side": 1,
+      "message": "Definitely a concern, but given the infrequency of changes (and both would have to be changed at the same time) it doesn\u0027t seem like the worst tradeoff. It\u0027s slight, but it helps the tests run faster overall.",
+      "parentUuid": "7bfa2b58_325d1585",
+      "revId": "fb80acc4d1851d83ef3b5235ff3d26889ee7e3a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
