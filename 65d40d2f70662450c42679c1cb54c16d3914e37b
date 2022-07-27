@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "564d8cad_cfaf9215",
+        "filename": "test/encode_test_driver.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-07-27T22:09:56Z",
+      "side": 1,
+      "message": "preferably bit operations should be unsigned, but this type is exposed in the API so this is the simplest fix.",
+      "range": {
+        "startLine": 187,
+        "startChar": 27,
+        "endLine": 187,
+        "endChar": 48
+      },
+      "revId": "65d40d2f70662450c42679c1cb54c16d3914e37b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
