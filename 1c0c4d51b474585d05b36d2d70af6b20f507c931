@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b71f850f_3faf9da8",
+        "filename": "y4minput.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-07-27T22:56:14Z",
+      "side": 1,
+      "message": "Nit: Would be good to place this statement in the same location as https://aomedia-review.googlesource.com/c/aom/+/160424.",
+      "revId": "1c0c4d51b474585d05b36d2d70af6b20f507c931",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
