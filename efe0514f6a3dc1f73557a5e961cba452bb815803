@@ -16,6 +16,121 @@
       "message": "Hi. When enabled, these optimizations give me a ~2% improvement in encoding fps. Tests pass and output binaries checked to produce the same checksums.",
       "revId": "efe0514f6a3dc1f73557a5e961cba452bb815803",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dcee721f_eb47d268",
+        "filename": "vpx_dsp/arm/sad_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-29T12:42:12Z",
+      "side": 1,
+      "message": "These can be const. Other examples below.",
+      "range": {
+        "startLine": 26,
+        "startChar": 0,
+        "endLine": 27,
+        "endChar": 22
+      },
+      "revId": "efe0514f6a3dc1f73557a5e961cba452bb815803",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39f1c52a_0ae7021f",
+        "filename": "vpx_dsp/arm/sad_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-29T12:42:12Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 60,
+        "startChar": 2,
+        "endLine": 60,
+        "endChar": 34
+      },
+      "revId": "efe0514f6a3dc1f73557a5e961cba452bb815803",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7dd48a77_ab102ccf",
+        "filename": "vpx_dsp/arm/sad_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-29T12:42:12Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 67,
+        "startChar": 0,
+        "endLine": 68,
+        "endChar": 50
+      },
+      "revId": "efe0514f6a3dc1f73557a5e961cba452bb815803",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7f05b8ee_996292e7",
+        "filename": "vpx_dsp/arm/sad_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-29T12:42:12Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 137,
+        "startChar": 0,
+        "endLine": 137,
+        "endChar": 32
+      },
+      "revId": "efe0514f6a3dc1f73557a5e961cba452bb815803",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f8a98257_22663e3b",
+        "filename": "vpx_dsp/arm/sad_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-07-29T12:42:12Z",
+      "side": 1,
+      "message": "const",
+      "range": {
+        "startLine": 141,
+        "startChar": 0,
+        "endLine": 141,
+        "endChar": 43
+      },
+      "revId": "efe0514f6a3dc1f73557a5e961cba452bb815803",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
