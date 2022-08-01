@@ -39,6 +39,30 @@
       },
       "revId": "29db7fe9757549efa8df5cc6f3cff0ece7b4b0d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "87d2862c_e2c980d3",
+        "filename": "vp9/encoder/x86/vp9_quantize_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-01T21:14:07Z",
+      "side": 1,
+      "message": "The x86 code uses shortcuts not found in the \"C\" code, which caused a mismatch. The test was updated in 2017 to test the x86 code using a shortcut version of the \"C\" code. (see https://chromium.googlesource.com/webm/libvpx/+/fe5d87aaeb865460a1c5472fe65fc885ce234fd8)\n\nI forgot about this \"feature\" and matched the avx2 code to vp9_quantize_fp_32x32_c(). I realized my mistake when comparing the performance to the ssse3 code.",
+      "parentUuid": "463bab0e_f1acb23e",
+      "range": {
+        "startLine": 144,
+        "startChar": 3,
+        "endLine": 144,
+        "endChar": 17
+      },
+      "revId": "29db7fe9757549efa8df5cc6f3cff0ece7b4b0d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
