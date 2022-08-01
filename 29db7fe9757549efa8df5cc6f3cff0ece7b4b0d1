@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03c51c42_cf41f119",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-01T18:38:18Z",
+      "side": 1,
+      "message": "avx2 vs ssse3 (aka c_time)\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/1\n     Bypass calculations     32x32  c_time \u003d 512913 \t simd_time \u003d 256949 \t Gain \u003d 1.996167 \n       Full calculations     32x32  c_time \u003d 1337415 \t simd_time \u003d 741485 \t Gain \u003d 1.803698 ",
+      "revId": "29db7fe9757549efa8df5cc6f3cff0ece7b4b0d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
