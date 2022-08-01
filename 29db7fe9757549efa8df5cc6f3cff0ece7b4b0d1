@@ -16,6 +16,29 @@
       "message": "avx2 vs ssse3 (aka c_time)\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/1\n     Bypass calculations     32x32  c_time \u003d 512913 \t simd_time \u003d 256949 \t Gain \u003d 1.996167 \n       Full calculations     32x32  c_time \u003d 1337415 \t simd_time \u003d 741485 \t Gain \u003d 1.803698 ",
       "revId": "29db7fe9757549efa8df5cc6f3cff0ece7b4b0d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "463bab0e_f1acb23e",
+        "filename": "vp9/encoder/x86/vp9_quantize_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-01T19:57:01Z",
+      "side": 1,
+      "message": "is that a bug or just something to do with the data layout?",
+      "range": {
+        "startLine": 144,
+        "startChar": 3,
+        "endLine": 144,
+        "endChar": 17
+      },
+      "revId": "29db7fe9757549efa8df5cc6f3cff0ece7b4b0d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
