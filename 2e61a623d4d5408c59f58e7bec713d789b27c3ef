@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "00d66e50_c03d6ebd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-03T23:56:49Z",
+      "side": 1,
+      "message": "avx2 vs c\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/2\n     Bypass calculations     32x32  c_time \u003d 5923935 \t simd_time \u003d 2762223 \t Gain \u003d 2.144626 \n       Full calculations     32x32  c_time \u003d 11324802 \t simd_time \u003d 2767302 \t Gain \u003d 4.092362 ",
+      "revId": "2e61a623d4d5408c59f58e7bec713d789b27c3ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
