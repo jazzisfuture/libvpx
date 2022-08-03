@@ -33,6 +33,24 @@
       "message": "add // CONFIG_VP9_HIGHBITDEPTH",
       "revId": "5caaefc5eb861dd06ce2caf7158b1fcfba6e944f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8529830_178e9f46",
+        "filename": "vp9/encoder/x86/vp9_quantize_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-03T12:34:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "04b6da29_c056b742",
+      "revId": "5caaefc5eb861dd06ce2caf7158b1fcfba6e944f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
