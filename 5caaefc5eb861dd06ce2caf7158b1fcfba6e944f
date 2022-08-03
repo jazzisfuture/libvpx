@@ -16,6 +16,23 @@
       "message": "avx2 vs c\n[ RUN      ] AVX2/VP9QuantizeTest.DISABLED_Speed/1\n     Bypass calculations       4x4  c_time \u003d 205446 \t simd_time \u003d 65435 \t Gain \u003d 3.139696 \n       Full calculations       4x4  c_time \u003d 203495 \t simd_time \u003d 65361 \t Gain \u003d 3.113401 \n     Bypass calculations       8x8  c_time \u003d 683239 \t simd_time \u003d 152023 \t Gain \u003d 4.494313 \n       Full calculations       8x8  c_time \u003d 685257 \t simd_time \u003d 154007 \t Gain \u003d 4.449519 \n     Bypass calculations     16x16  c_time \u003d 2648221 \t simd_time \u003d 490192 \t Gain \u003d 5.402416 \n       Full calculations     16x16  c_time \u003d 2648505 \t simd_time \u003d 492292 \t Gain \u003d 5.379947 \n\n\nAVX2:\ntaskset -c 6 ./build-x86-hbd/vpxenc -o x.webm ../videos/DOTA2_10_120f.y4m --codec\u003dvp9 --rt --cpu-used\u003d-5 --threads\u003d0 --profile\u003d2 --lag-in-frames\u003d25 --min-q\u003d0 --max-q\u003d63 --auto-alt-ref\u003d1 --passes\u003d1 --kf-max-dist\u003d9999 --kf-min-dist\u003d0 --drop-frame\u003d0 --static-thresh\u003d0 --arnr-maxframes\u003d7 --arnr-strength\u003d5 --arnr-type\u003d3 --sharpness\u003d0 --undershoot-pct\u003d100 --codec\u003dvp9 --target-bitrate\u003d1600 --limit\u003d50 --bit-depth\u003d10 -t 1\nPass 1/1 frame   50/50    446523B   71443b/f 1714648b/s 5226916 us (9.57 fps)\n\ntaskset -c 6 ./build-x86-hbd/vpxenc -o x.webm ../videos/DOTA2_10_120f.y4m --codec\u003dvp9 --rt --cpu-used\u003d-5 --threads\u003d0 --profile\u003d2 --lag-in-frames\u003d25 --min-q\u003d0 --max-q\u003d63 --auto-alt-ref\u003d1 --passes\u003d1 --kf-max-dist\u003d9999 --kf-min-dist\u003d0 --drop-frame\u003d0 --static-thresh\u003d0 --arnr-maxframes\u003d7 --arnr-strength\u003d5 --arnr-type\u003d3 --sharpness\u003d0 --undershoot-pct\u003d100 --codec\u003dvp9 --target-bitrate\u003d1600 --limit\u003d50 --bit-depth\u003d10 -t 1\nPass 1/1 frame   50/50    446523B   71443b/f 1714648b/s 5215487 us (9.59 fps)\n\n\nperf report\n   5.31%  vpxenc  vpxenc  [.] vp9_quantize_fp_avx2\n   0.54%  vpxenc  vpxenc  [.] vp9_highbd_quantize_fp_avx2\n   0.20%  vpxenc  vpxenc  [.] vpx_highbd_quantize_b_avx2\n   0.02%  vpxenc  vpxenc  [.] vp9_regular_quantize_b_4x4\n   0.00%  vpxenc  vpxenc  [.] vp9_init_quantizer\n\n\nC:\ntaskset -c 6 ./build-x86-hbd/vpxenc -o x.webm ../videos/DOTA2_10_120f.y4m --codec\u003dvp9 --rt --cpu-used\u003d-5 --threads\u003d0 --profile\u003d2 --lag-in-frames\u003d25 --min-q\u003d0 --max-q\u003d63 --auto-alt-ref\u003d1 --passes\u003d1 --kf-max-dist\u003d9999 --kf-min-dist\u003d0 --drop-frame\u003d0 --static-thresh\u003d0 --arnr-maxframes\u003d7 --arnr-strength\u003d5 --arnr-type\u003d3 --sharpness\u003d0 --undershoot-pct\u003d100 --codec\u003dvp9 --target-bitrate\u003d1600 --limit\u003d50 --bit-depth\u003d10 -t 1\nPass 1/1 frame   50/50    446523B   71443b/f 1714648b/s 5334573 us (9.37 fps)\n\ntaskset -c 6 ./build-x86-hbd/vpxenc -o x.webm ../videos/DOTA2_10_120f.y4m --codec\u003dvp9 --rt --cpu-used\u003d-5 --threads\u003d0 --profile\u003d2 --lag-in-frames\u003d25 --min-q\u003d0 --max-q\u003d63 --auto-alt-ref\u003d1 --passes\u003d1 --kf-max-dist\u003d9999 --kf-min-dist\u003d0 --drop-frame\u003d0 --static-thresh\u003d0 --arnr-maxframes\u003d7 --arnr-strength\u003d5 --arnr-type\u003d3 --sharpness\u003d0 --undershoot-pct\u003d100 --codec\u003dvp9 --target-bitrate\u003d1600 --limit\u003d50 --bit-depth\u003d10 -t 1\nPass 1/1 frame   50/50    446523B   71443b/f 1714648b/s 5315644 us (9.41 fps)\n\nperf report\n   5.49%  vpxenc  vpxenc  [.] vp9_quantize_fp_avx2\n   2.16%  vpxenc  vpxenc  [.] vp9_highbd_quantize_fp_c\n   0.28%  vpxenc  vpxenc  [.] vpx_highbd_quantize_b_avx2\n   0.03%  vpxenc  vpxenc  [.] vp9_regular_quantize_b_4x4\n   0.00%  vpxenc  vpxenc  [.] vp9_set_quantizer\n   0.00%  vpxenc  vpxenc  [.] vp9_init_quantizer\n",
       "revId": "5caaefc5eb861dd06ce2caf7158b1fcfba6e944f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04b6da29_c056b742",
+        "filename": "vp9/encoder/x86/vp9_quantize_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-03T01:19:27Z",
+      "side": 1,
+      "message": "add // CONFIG_VP9_HIGHBITDEPTH",
+      "revId": "5caaefc5eb861dd06ce2caf7158b1fcfba6e944f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
