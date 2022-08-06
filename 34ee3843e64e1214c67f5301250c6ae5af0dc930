@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a62dd62a_4ac81cde",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2587,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-08-06T00:40:09Z",
+      "side": 0,
+      "message": "Note that LEVEL_1 is defined in vp9_encoder.h, its value is 10.\n\nvp9_level_defs[] is defined in vp9_encoder.c.\nThe correct iteration index to access it should start from 0.",
+      "range": {
+        "startLine": 2587,
+        "startChar": 15,
+        "endLine": 2587,
+        "endChar": 22
+      },
+      "revId": "34ee3843e64e1214c67f5301250c6ae5af0dc930",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
