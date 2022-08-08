@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5fbcaf85_ffcdafa1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-08T23:37:07Z",
+      "side": 1,
+      "message": "you\u0027ll want to update highbd_quantize_intrin_avx2.c too. This could be extracted to a function somewhere if it becomes common.",
+      "revId": "92c00b1942d74f12e751a72fe496a213ed83a41e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "26ed757b_66fe2293",
+        "filename": "vp9/encoder/x86/vp9_quantize_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-08T23:37:07Z",
+      "side": 1,
+      "message": "these extra ()s can be removed\n\nalso vs14 doesn\u0027t have this either, but\n\n```\nreturn (_mm_cvtsi128_si32(_mm256_extracti128_si256(eob, 0)) \u0026 0xffff);\n```\n\nshould work",
+      "range": {
+        "startLine": 71,
+        "startChar": 9,
+        "endLine": 71,
+        "endChar": 10
+      },
+      "revId": "92c00b1942d74f12e751a72fe496a213ed83a41e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
