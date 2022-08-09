@@ -34,6 +34,24 @@
       "parentUuid": "ab7f847c_8f2eccc4",
       "revId": "9339638815192e403d48f7d9a633945cb5b9c3c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79206ad5_db7c8ff6",
+        "filename": "vp9/encoder/x86/vp9_quantize_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-09T18:53:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3cd64f08_7c9d9fde",
+      "revId": "9339638815192e403d48f7d9a633945cb5b9c3c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
