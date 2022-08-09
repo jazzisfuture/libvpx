@@ -16,6 +16,24 @@
       "message": "this should match what\u0027s in the highbd file",
       "revId": "9339638815192e403d48f7d9a633945cb5b9c3c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3cd64f08_7c9d9fde",
+        "filename": "vp9/encoder/x86/vp9_quantize_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-09T17:00:03Z",
+      "side": 1,
+      "message": "Oooppsss... did not save.",
+      "parentUuid": "ab7f847c_8f2eccc4",
+      "revId": "9339638815192e403d48f7d9a633945cb5b9c3c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
