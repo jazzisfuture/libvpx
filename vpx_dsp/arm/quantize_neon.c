@@ -17,18 +17,56 @@
 
 static INLINE void calculate_dqcoeff_and_store(const int16x8_t qcoeff,
                                                const int16x8_t dequant,
-                                               tran_low_t *dqcoeff) {
+                                               tran_low_t *dqcoeff_ptr) {
   const int32x4_t dqcoeff_0 =
       vmull_s16(vget_low_s16(qcoeff), vget_low_s16(dequant));
   const int32x4_t dqcoeff_1 =
       vmull_s16(vget_high_s16(qcoeff), vget_high_s16(dequant));
 
 #if CONFIG_VP9_HIGHBITDEPTH
-  vst1q_s32(dqcoeff, dqcoeff_0);
-  vst1q_s32(dqcoeff + 4, dqcoeff_1);
+  vst1q_s32(dqcoeff_ptr, dqcoeff_0);
+  vst1q_s32(dqcoeff_ptr + 4, dqcoeff_1);
 #else
-  vst1q_s16(dqcoeff, vcombine_s16(vmovn_s32(dqcoeff_0), vmovn_s32(dqcoeff_1)));
+  vst1q_s16(dqcoeff_ptr, vcombine_s16(vmovn_s32(dqcoeff_0), vmovn_s32(dqcoeff_1)));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+}
+
+static inline int16x8_t quantize_b_neon(
+    const tran_low_t *coeff_ptr, tran_low_t *qcoeff_ptr,
+    tran_low_t *dqcoeff_ptr, const int16x8_t zbin, const int16x8_t round,
+    const int16x8_t quant, const int16x8_t quant_shift,
+    const int16x8_t dequant) {
+
+  // Load coeffs as 8 x 16-bit ints, take sign and abs values
+  const int16x8_t coeff = load_tran_low_to_s16q(coeff_ptr);
+  const int16x8_t coeff_sign = vshrq_n_s16(coeff, 15);
+  const int16x8_t coeff_abs = vabsq_s16(coeff);
+
+  // Calculate mask of elements outside the bin
+  const int16x8_t zbin_mask = vreinterpretq_s16_u16(vcgeq_s16(coeff_abs, zbin));
+
+  // Get the rounded values
+  const int16x8_t rounded = vqaddq_s16(coeff_abs, round);
+
+  // (round * quant * 2) >> 16 >> 1 == (round * quant) >> 16
+  int16x8_t qcoeff = vshrq_n_s16(vqdmulhq_s16(rounded, quant), 1);
+
+  qcoeff = vaddq_s16(qcoeff, rounded);
+
+  // (qcoeff * quant_shift * 2) >> 16 >> 1 == (qcoeff * quant_shift) >> 16
+  qcoeff = vshrq_n_s16(vqdmulhq_s16(qcoeff, quant_shift), 1);
+
+  // Restore the sign bit.
+  qcoeff = veorq_s16(qcoeff, coeff_sign);
+  qcoeff = vsubq_s16(qcoeff, coeff_sign);
+
+  // Only keep the relevant coeffs
+  qcoeff = vandq_s16(qcoeff, zbin_mask);
+  store_s16q_to_tran_low(qcoeff_ptr, qcoeff);
+
+  calculate_dqcoeff_and_store(qcoeff, dequant, dqcoeff_ptr);
+
+  return qcoeff;
 }
 
 void vpx_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
@@ -55,39 +93,17 @@ void vpx_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     const uint16x8_t v_iscan =
         vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
 
-    const int16x8_t coeff = load_tran_low_to_s16q(coeff_ptr);
-    const int16x8_t coeff_sign = vshrq_n_s16(coeff, 15);
-    const int16x8_t coeff_abs = vabsq_s16(coeff);
-
-    const int16x8_t zbin_mask =
-        vreinterpretq_s16_u16(vcgeq_s16(coeff_abs, zbin));
-
-    const int16x8_t rounded = vqaddq_s16(coeff_abs, round);
-
-    // (round * quant * 2) >> 16 >> 1 == (round * quant) >> 16
-    int16x8_t qcoeff = vshrq_n_s16(vqdmulhq_s16(rounded, quant), 1);
-
-    qcoeff = vaddq_s16(qcoeff, rounded);
-
-    // (qcoeff * quant_shift * 2) >> 16 >> 1 == (qcoeff * quant_shift) >> 16
-    qcoeff = vshrq_n_s16(vqdmulhq_s16(qcoeff, quant_shift), 1);
-
-    // Restore the sign bit.
-    qcoeff = veorq_s16(qcoeff, coeff_sign);
-    qcoeff = vsubq_s16(qcoeff, coeff_sign);
-
-    qcoeff = vandq_s16(qcoeff, zbin_mask);
+    const int16x8_t qcoeff =
+        quantize_b_neon(coeff_ptr, qcoeff_ptr, dqcoeff_ptr, zbin, round, quant,
+                        quant_shift, dequant);
 
     // Set non-zero elements to -1 and use that to extract values for eob.
     eob_max = vandq_u16(vtstq_s16(qcoeff, neg_one), v_iscan);
 
+    __builtin_prefetch(coeff_ptr + 64);
     coeff_ptr += 8;
     iscan += 8;
-
-    store_s16q_to_tran_low(qcoeff_ptr, qcoeff);
     qcoeff_ptr += 8;
-
-    calculate_dqcoeff_and_store(qcoeff, dequant, dqcoeff_ptr);
     dqcoeff_ptr += 8;
   }
 
@@ -105,42 +121,19 @@ void vpx_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
       const uint16x8_t v_iscan =
           vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
 
-      const int16x8_t coeff = load_tran_low_to_s16q(coeff_ptr);
-      const int16x8_t coeff_sign = vshrq_n_s16(coeff, 15);
-      const int16x8_t coeff_abs = vabsq_s16(coeff);
-
-      const int16x8_t zbin_mask =
-          vreinterpretq_s16_u16(vcgeq_s16(coeff_abs, zbin));
-
-      const int16x8_t rounded = vqaddq_s16(coeff_abs, round);
-
-      // (round * quant * 2) >> 16 >> 1 == (round * quant) >> 16
-      int16x8_t qcoeff = vshrq_n_s16(vqdmulhq_s16(rounded, quant), 1);
-
-      qcoeff = vaddq_s16(qcoeff, rounded);
-
-      // (qcoeff * quant_shift * 2) >> 16 >> 1 == (qcoeff * quant_shift) >> 16
-      qcoeff = vshrq_n_s16(vqdmulhq_s16(qcoeff, quant_shift), 1);
-
-      // Restore the sign bit.
-      qcoeff = veorq_s16(qcoeff, coeff_sign);
-      qcoeff = vsubq_s16(qcoeff, coeff_sign);
-
-      qcoeff = vandq_s16(qcoeff, zbin_mask);
+      const int16x8_t qcoeff =
+          quantize_b_neon(coeff_ptr, qcoeff_ptr, dqcoeff_ptr, zbin, round,
+                          quant, quant_shift, dequant);
 
       // Set non-zero elements to -1 and use that to extract values for eob.
       eob_max =
           vmaxq_u16(eob_max, vandq_u16(vtstq_s16(qcoeff, neg_one), v_iscan));
 
+      __builtin_prefetch(coeff_ptr + 64);
       coeff_ptr += 8;
       iscan += 8;
-
-      store_s16q_to_tran_low(qcoeff_ptr, qcoeff);
       qcoeff_ptr += 8;
-
-      calculate_dqcoeff_and_store(qcoeff, dequant, dqcoeff_ptr);
       dqcoeff_ptr += 8;
-
       n_coeffs -= 8;
     } while (n_coeffs > 0);
   }
@@ -164,24 +157,62 @@ static INLINE int32x4_t extract_sign_bit(int32x4_t a) {
 
 static INLINE void calculate_dqcoeff_and_store_32x32(const int16x8_t qcoeff,
                                                      const int16x8_t dequant,
-                                                     tran_low_t *dqcoeff) {
+                                                     tran_low_t *dqcoeff_ptr) {
   int32x4_t dqcoeff_0 = vmull_s16(vget_low_s16(qcoeff), vget_low_s16(dequant));
   int32x4_t dqcoeff_1 =
       vmull_s16(vget_high_s16(qcoeff), vget_high_s16(dequant));
 
-  // Add 1 if negative to round towards zero because the C uses division.
-  dqcoeff_0 = vaddq_s32(dqcoeff_0, extract_sign_bit(dqcoeff_0));
-  dqcoeff_1 = vaddq_s32(dqcoeff_1, extract_sign_bit(dqcoeff_1));
+   // Add 1 if negative to round towards zero because the C uses division.
+   dqcoeff_0 = vaddq_s32(dqcoeff_0, extract_sign_bit(dqcoeff_0));
+   dqcoeff_1 = vaddq_s32(dqcoeff_1, extract_sign_bit(dqcoeff_1));
 
 #if CONFIG_VP9_HIGHBITDEPTH
   dqcoeff_0 = vshrq_n_s32(dqcoeff_0, 1);
   dqcoeff_1 = vshrq_n_s32(dqcoeff_1, 1);
-  vst1q_s32(dqcoeff, dqcoeff_0);
-  vst1q_s32(dqcoeff + 4, dqcoeff_1);
+  vst1q_s32(dqcoeff_ptr, dqcoeff_0);
+  vst1q_s32(dqcoeff_ptr + 4, dqcoeff_1);
 #else
-  vst1q_s16(dqcoeff,
-            vcombine_s16(vshrn_n_s32(dqcoeff_0, 1), vshrn_n_s32(dqcoeff_1, 1)));
+  vst1q_s16(dqcoeff_ptr,
+             vcombine_s16(vshrn_n_s32(dqcoeff_0, 1), vshrn_n_s32(dqcoeff_1, 1)));
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+}
+
+static inline int16x8_t quantize_b_32x32_neon(
+    const tran_low_t *coeff_ptr, tran_low_t *qcoeff_ptr,
+    tran_low_t *dqcoeff_ptr, const int16x8_t zbin, const int16x8_t round,
+    const int16x8_t quant, const int16x8_t quant_shift,
+    const int16x8_t dequant) {
+
+  // Load coeffs as 8 x 16-bit ints, take sign and abs values
+  const int16x8_t coeff = load_tran_low_to_s16q(coeff_ptr);
+  const int16x8_t coeff_sign = vshrq_n_s16(coeff, 15);
+  const int16x8_t coeff_abs = vabsq_s16(coeff);
+
+  // Calculate mask of elements outside the bin
+  const int16x8_t zbin_mask = vreinterpretq_s16_u16(vcgeq_s16(coeff_abs, zbin));
+
+  // Get the rounded values
+  const int16x8_t rounded = vqaddq_s16(coeff_abs, round);
+
+  // (round * quant * 2) >> 16 >> 1 == (round * quant) >> 16
+  int16x8_t qcoeff = vshrq_n_s16(vqdmulhq_s16(rounded, quant), 1);
+
+  qcoeff = vaddq_s16(qcoeff, rounded);
+
+  // (qcoeff * quant_shift * 2) >> 16 == (qcoeff * quant_shift) >> 15
+  qcoeff = vqdmulhq_s16(qcoeff, quant_shift);
+
+  // Restore the sign bit.
+  qcoeff = veorq_s16(qcoeff, coeff_sign);
+  qcoeff = vsubq_s16(qcoeff, coeff_sign);
+
+  // Only keep the relevant coeffs
+  qcoeff = vandq_s16(qcoeff, zbin_mask);
+  store_s16q_to_tran_low(qcoeff_ptr, qcoeff);
+
+  calculate_dqcoeff_and_store_32x32(qcoeff, dequant, dqcoeff_ptr);
+
+  return qcoeff;
 }
 
 // Main difference is that zbin values are halved before comparison and dqcoeff
@@ -213,39 +244,17 @@ void vpx_quantize_b_32x32_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
     const uint16x8_t v_iscan =
         vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
 
-    const int16x8_t coeff = load_tran_low_to_s16q(coeff_ptr);
-    const int16x8_t coeff_sign = vshrq_n_s16(coeff, 15);
-    const int16x8_t coeff_abs = vabsq_s16(coeff);
-
-    const int16x8_t zbin_mask =
-        vreinterpretq_s16_u16(vcgeq_s16(coeff_abs, zbin));
-
-    const int16x8_t rounded = vqaddq_s16(coeff_abs, round);
-
-    // (round * quant * 2) >> 16 >> 1 == (round * quant) >> 16
-    int16x8_t qcoeff = vshrq_n_s16(vqdmulhq_s16(rounded, quant), 1);
-
-    qcoeff = vaddq_s16(qcoeff, rounded);
-
-    // (qcoeff * quant_shift * 2) >> 16 == (qcoeff * quant_shift) >> 15
-    qcoeff = vqdmulhq_s16(qcoeff, quant_shift);
-
-    // Restore the sign bit.
-    qcoeff = veorq_s16(qcoeff, coeff_sign);
-    qcoeff = vsubq_s16(qcoeff, coeff_sign);
-
-    qcoeff = vandq_s16(qcoeff, zbin_mask);
+    const int16x8_t qcoeff =
+        quantize_b_32x32_neon(coeff_ptr, qcoeff_ptr, dqcoeff_ptr, zbin, round,
+                              quant, quant_shift, dequant);
 
     // Set non-zero elements to -1 and use that to extract values for eob.
     eob_max = vandq_u16(vtstq_s16(qcoeff, neg_one), v_iscan);
 
+    __builtin_prefetch(coeff_ptr + 64);
     coeff_ptr += 8;
     iscan += 8;
-
-    store_s16q_to_tran_low(qcoeff_ptr, qcoeff);
     qcoeff_ptr += 8;
-
-    calculate_dqcoeff_and_store_32x32(qcoeff, dequant, dqcoeff_ptr);
     dqcoeff_ptr += 8;
   }
 
@@ -261,40 +270,18 @@ void vpx_quantize_b_32x32_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
       const uint16x8_t v_iscan =
           vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
 
-      const int16x8_t coeff = load_tran_low_to_s16q(coeff_ptr);
-      const int16x8_t coeff_sign = vshrq_n_s16(coeff, 15);
-      const int16x8_t coeff_abs = vabsq_s16(coeff);
-
-      const int16x8_t zbin_mask =
-          vreinterpretq_s16_u16(vcgeq_s16(coeff_abs, zbin));
-
-      const int16x8_t rounded = vqaddq_s16(coeff_abs, round);
-
-      // (round * quant * 2) >> 16 >> 1 == (round * quant) >> 16
-      int16x8_t qcoeff = vshrq_n_s16(vqdmulhq_s16(rounded, quant), 1);
-
-      qcoeff = vaddq_s16(qcoeff, rounded);
-
-      // (qcoeff * quant_shift * 2) >> 16 == (qcoeff * quant_shift) >> 15
-      qcoeff = vqdmulhq_s16(qcoeff, quant_shift);
-
-      // Restore the sign bit.
-      qcoeff = veorq_s16(qcoeff, coeff_sign);
-      qcoeff = vsubq_s16(qcoeff, coeff_sign);
-
-      qcoeff = vandq_s16(qcoeff, zbin_mask);
+      const int16x8_t qcoeff =
+          quantize_b_32x32_neon(coeff_ptr, qcoeff_ptr, dqcoeff_ptr, zbin, round,
+                                quant, quant_shift, dequant);
 
       // Set non-zero elements to -1 and use that to extract values for eob.
       eob_max =
           vmaxq_u16(eob_max, vandq_u16(vtstq_s16(qcoeff, neg_one), v_iscan));
 
+      __builtin_prefetch(coeff_ptr + 64);
       coeff_ptr += 8;
       iscan += 8;
-
-      store_s16q_to_tran_low(qcoeff_ptr, qcoeff);
       qcoeff_ptr += 8;
-
-      calculate_dqcoeff_and_store_32x32(qcoeff, dequant, dqcoeff_ptr);
       dqcoeff_ptr += 8;
     }
   }
