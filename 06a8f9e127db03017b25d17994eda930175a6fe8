@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3bc87f8_a8edde55",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-15T16:15:23Z",
+      "side": 1,
+      "message": "Hi, I have a couple of optimizations for highbd quantization functions, checksums are the same, all tests pass, I am getting about 2.5% for rt profile and 4.5% for best profile on 12-bit color videos.",
+      "revId": "06a8f9e127db03017b25d17994eda930175a6fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
