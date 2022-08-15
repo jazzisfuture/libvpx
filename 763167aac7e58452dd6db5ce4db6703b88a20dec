@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "049053c5_65eb809b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-15T17:48:31Z",
+      "side": 1,
+      "message": "[ RUN      ] NEON/VP9QuantizeTest.DISABLED_Speed/1\n     Bypass calculations       4x4  c_time \u003d 345998 \t simd_time \u003d 96237 \t Gain \u003d 3.595270 \n       Full calculations       4x4  c_time \u003d 346140 \t simd_time \u003d 95946 \t Gain \u003d 3.607654 \n     Bypass calculations       8x8  c_time \u003d 1264311 \t simd_time \u003d 311250 \t Gain \u003d 4.062043 \n       Full calculations       8x8  c_time \u003d 1264396 \t simd_time \u003d 310972 \t Gain \u003d 4.065948 \n     Bypass calculations     16x16  c_time \u003d 4829939 \t simd_time \u003d 1166127 \t Gain \u003d 4.141864 \n       Full calculations     16x16  c_time \u003d 4830168 \t simd_time \u003d 1169382 \t Gain \u003d 4.130530 \n       \n       \n       \n./vpxenc -o x.webm DOTA2_10_120f.y4m --codec\u003dvp9 --rt --cpu-used\u003d-5 --threads\u003d0 --profile\u003d2 --lag-in-frames\u003d25 --min-q\u003d0 --max-q\u003d63 --auto-alt-ref\u003d1 --passes\u003d1 --kf-max-dist\u003d9999 --kf-min-dist\u003d0 --drop-frame\u003d0 --static-thresh\u003d0 --arnr-maxframes\u003d7 --arnr-strength\u003d5 --arnr-type\u003d3 --sharpness\u003d0 --undershoot-pct\u003d100 --codec\u003dvp9 --target-bitrate\u003d1600 --limit\u003d50 --bit-depth\u003d10 -t 1\nNEON:\nPass 1/1 frame   50/50    446523B   71443b/f 1714648b/s 9989793 us (5.01 fps)\nPass 1/1 frame   50/50    446523B   71443b/f 1714648b/s 9977261 us (5.01 fps)\nC:\nPass 1/1 frame   50/50    446523B   71443b/f 1714648b/s   10131 ms (4.94 fps)\nPass 1/1 frame   50/50    446523B   71443b/f 1714648b/s   10119 ms (4.94 fps)\n\n ",
+      "revId": "763167aac7e58452dd6db5ce4db6703b88a20dec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
