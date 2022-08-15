@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "fa04ab1a_45b46475",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-15T19:03:24Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "19ef76f1_ef5ce003",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 4
+      },
+      "revId": "f1ebd047329d0aa0cbc182db48b345a97760915a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "781b836e_d3ee5b25",
         "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
         "patchSetId": 1
@@ -37,6 +61,30 @@
       "writtenOn": "2022-08-15T18:53:59Z",
       "side": 1,
       "message": "Technically these don\u0027t need to be pointers, there\u0027s no ABI/alignment issues here",
+      "range": {
+        "startLine": 155,
+        "startChar": 20,
+        "endLine": 155,
+        "endChar": 28
+      },
+      "revId": "f1ebd047329d0aa0cbc182db48b345a97760915a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e7b0403_22cb3638",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-15T19:03:24Z",
+      "side": 1,
+      "message": "old habits from x86",
+      "parentUuid": "781b836e_d3ee5b25",
       "range": {
         "startLine": 155,
         "startChar": 20,
