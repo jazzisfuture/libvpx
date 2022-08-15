@@ -16,6 +16,52 @@
       "message": "I implemented Scott\u0027s suggestion for vqdmulhq_s32() and performance improved even more. Tests pass and checksums are still correct 😊",
       "revId": "644ef514514d55344bc39ff51fe150ef70ba52f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23459b9d_e93f44d7",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-15T23:14:09Z",
+      "side": 1,
+      "message": "I\u0027ve been changing these to VPX_FORCE_INLINE.",
+      "range": {
+        "startLine": 25,
+        "startChar": 7,
+        "endLine": 25,
+        "endChar": 13
+      },
+      "revId": "644ef514514d55344bc39ff51fe150ef70ba52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eebe4dd0_8da3754f",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-15T23:14:09Z",
+      "side": 1,
+      "message": "You could expand dequant to 32 bits (int32x4) outside the loop, then vdupq_lane_s32(dequant, 1) after the first multiply. It would save a vmovl along with any other overhead with the get low/high. Just noticed you can do the same with quant, quant_shift, round, and zbin.",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 69
+      },
+      "revId": "644ef514514d55344bc39ff51fe150ef70ba52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
