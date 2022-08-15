@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3f53f2a7_a5048101",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-15T18:56:35Z",
+      "side": 1,
+      "message": "\u003e Hi, I have a couple of optimizations for highbd quantization functions, checksums are the same, all tests pass, I am getting about 2.5% for rt profile and 4.5% for best profile on 12-bit color videos.\n\nCould you add the % numbers to the commit message? It doesn\u0027t have to be overly specific with regard to hardware, but it\u0027s nice to have what the observed gains were documented.",
+      "parentUuid": "c3bc87f8_a8edde55",
+      "revId": "06a8f9e127db03017b25d17994eda930175a6fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b22640c2_cf6b55d5",
         "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
         "patchSetId": 7
