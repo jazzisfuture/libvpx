@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "556d8987_3ed932b5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-15T22:03:32Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f53f2a7_a5048101",
+      "revId": "06a8f9e127db03017b25d17994eda930175a6fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b22640c2_cf6b55d5",
@@ -49,6 +67,30 @@
       "writtenOn": "2022-08-15T18:56:28Z",
       "side": 1,
       "message": "If you prescale the quant and quant_shift, you can use vqdmulhq_s32() here instead of the mult/shift. See https://aomedia.googlesource.com/aom/+/refs/heads/main/av1/encoder/arm/neon/av1_highbd_quantize_neon.c",
+      "range": {
+        "startLine": 83,
+        "startChar": 0,
+        "endLine": 93,
+        "endChar": 41
+      },
+      "revId": "06a8f9e127db03017b25d17994eda930175a6fe8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cea57cd2_ab5c00a9",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-15T22:03:32Z",
+      "side": 1,
+      "message": "Wow, thanks for the tip Scott! That gave an even better speedup, much appreciated!",
+      "parentUuid": "b22640c2_cf6b55d5",
       "range": {
         "startLine": 83,
         "startChar": 0,

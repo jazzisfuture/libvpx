@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3fd50ef_d6b649b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-15T22:03:32Z",
+      "side": 1,
+      "message": "I implemented Scott\u0027s suggestion for vqdmulhq_s32() and performance improved even more. Tests pass and checksums are still correct 😊",
+      "revId": "644ef514514d55344bc39ff51fe150ef70ba52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
