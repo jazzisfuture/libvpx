@@ -69,6 +69,24 @@
       "parentUuid": "df338a89_2db89583",
       "revId": "6a120ea0860ad8da8489866297483c6c18389893",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b30515df_924d2d3c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-16T21:14:21Z",
+      "side": 1,
+      "message": "\u003e I am sorry, I can\u0027t understand the problem I just did a git fetch, git rebase main, fixed the conflicts, git commit --amend and did a push again, I see no conflicts locally, but still gerrit repots a problem. I\u0027m still a gerrit newbie so it\u0027s possible I may have missed a step somewhere.\n\nIf you look at the parent from:\nhttps://chromium.googlesource.com/webm/libvpx/+/b8dfac30c1f1b9fb423faa195268f2bbdb7977a3\nthis branch still seems to be pointing to an earlier commit:\nhttps://chromium.googlesource.com/webm/libvpx/+/b3536cfafe7c56fa24bfec35e9cacc2082065bd2\n\ngit fetch (or git pull in your main branch)\ngit rebase origin/main \u003cbranch\u003e should work",
+      "parentUuid": "ce2667ce_2ec4f961",
+      "revId": "6a120ea0860ad8da8489866297483c6c18389893",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
