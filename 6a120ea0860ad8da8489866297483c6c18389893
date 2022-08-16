@@ -51,6 +51,24 @@
       "message": "You\u0027ll need to rebase this, since gerrit is reporting a merge conflict.",
       "revId": "6a120ea0860ad8da8489866297483c6c18389893",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce2667ce_2ec4f961",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-16T20:58:05Z",
+      "side": 1,
+      "message": "I am sorry, I can\u0027t understand the problem I just did a git fetch, git rebase main, fixed the conflicts, git commit --amend and did a push again, I see no conflicts locally, but still gerrit repots a problem. I\u0027m still a gerrit newbie so it\u0027s possible I may have missed a step somewhere.",
+      "parentUuid": "df338a89_2db89583",
+      "revId": "6a120ea0860ad8da8489866297483c6c18389893",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
