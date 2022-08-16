@@ -134,6 +134,30 @@
       },
       "revId": "644ef514514d55344bc39ff51fe150ef70ba52f3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "beb6dd1a_7765a557",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-16T12:17:39Z",
+      "side": 1,
+      "message": "That\u0027s actually the case, thanks I reworked all these values this way, and even for the non-highbd case.",
+      "parentUuid": "87d3b164_6eb58f2b",
+      "range": {
+        "startLine": 89,
+        "startChar": 0,
+        "endLine": 91,
+        "endChar": 69
+      },
+      "revId": "644ef514514d55344bc39ff51fe150ef70ba52f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
