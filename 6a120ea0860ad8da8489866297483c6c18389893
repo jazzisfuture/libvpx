@@ -34,6 +34,23 @@
       "parentUuid": "c74a661a_9fe80f4c",
       "revId": "6a120ea0860ad8da8489866297483c6c18389893",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df338a89_2db89583",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-16T20:01:09Z",
+      "side": 1,
+      "message": "You\u0027ll need to rebase this, since gerrit is reporting a merge conflict.",
+      "revId": "6a120ea0860ad8da8489866297483c6c18389893",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
