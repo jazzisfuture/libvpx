@@ -29,12 +29,20 @@
 #endif  // __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
 
 #if defined(__clang__) && __has_attribute(no_sanitize)
+// Both of these have defined behavior and are used in certain operations or
+// optimizations thereof. There are cases where an overflow may be unintended,
+// however, so use of these attributes should be done with care.
 #define VPX_NO_UNSIGNED_OVERFLOW_CHECK \
   __attribute__((no_sanitize("unsigned-integer-overflow")))
+#define VPX_NO_UNSIGNED_SHIFT_CHECK \
+  __attribute__((no_sanitize("unsigned-shift-base")))
 #endif
 
 #ifndef VPX_NO_UNSIGNED_OVERFLOW_CHECK
 #define VPX_NO_UNSIGNED_OVERFLOW_CHECK
+#endif
+#ifndef VPX_NO_UNSIGNED_SHIFT_CHECK
+#define VPX_NO_UNSIGNED_SHIFT_CHECK
 #endif
 
 //------------------------------------------------------------------------------
