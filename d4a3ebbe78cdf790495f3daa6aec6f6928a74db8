@@ -34,6 +34,24 @@
       "parentUuid": "4b9ee05f_025035d8",
       "revId": "d4a3ebbe78cdf790495f3daa6aec6f6928a74db8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bcbd6df9_c2f76ae0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-19T20:41:10Z",
+      "side": 1,
+      "message": "Sigh, it seems while doing the rebase I managed to remove the changes, apologies for the mess. I\u0027ll do another patchset.",
+      "parentUuid": "70fbac63_61f8cd4e",
+      "revId": "d4a3ebbe78cdf790495f3daa6aec6f6928a74db8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
