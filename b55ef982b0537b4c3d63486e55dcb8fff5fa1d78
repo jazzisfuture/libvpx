@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bec72736_745ce706",
+        "filename": "vp8/encoder/x86/quantize_sse4.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T16:44:37Z",
+      "side": 1,
+      "message": "I didn\u0027t think about this one too hard. Any ideas?",
+      "revId": "b55ef982b0537b4c3d63486e55dcb8fff5fa1d78",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
