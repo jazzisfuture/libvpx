@@ -1,0 +1,158 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4a9708c_e92f2846",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T23:00:40Z",
+      "side": 1,
+      "message": "this can be 2022",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6641947e_5c258828",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T23:00:40Z",
+      "side": 1,
+      "message": "add #if defined(__GNUC__) || defined(__clang__), but better might be to (void) cast the variable. This would prevent any issues if someone tried to build this for Windows Arm.",
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3519041d_be68f668",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 134,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T23:00:40Z",
+      "side": 1,
+      "message": "these are ok because there\u0027s a define in vpx_ports/mem.h to cover msvc",
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9520fd18_f14c0e7d",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T23:00:40Z",
+      "side": 1,
+      "message": "extra scope isn\u0027t really needed here, but it\u0027s find if it was copied from existing source.",
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b9c07a8f_eb8ac01b",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T23:00:40Z",
+      "side": 1,
+      "message": "changes to this file could be a separate one in case needed to revert it or the highbd version for any reason.",
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e227ba28_f72e6356",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T23:00:40Z",
+      "side": 1,
+      "message": "use INLINE",
+      "range": {
+        "startLine": 37,
+        "startChar": 7,
+        "endLine": 37,
+        "endChar": 13
+      },
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d9a752e5_54f8ec38",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T23:00:40Z",
+      "side": 1,
+      "message": "have you seen any noticeable improvement with these?",
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4f6d4644_88c85633",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-19T23:00:40Z",
+      "side": 1,
+      "message": "use INLINE",
+      "range": {
+        "startLine": 182,
+        "startChar": 7,
+        "endLine": 182,
+        "endChar": 13
+      },
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
