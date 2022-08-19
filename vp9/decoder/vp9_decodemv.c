@@ -729,7 +729,7 @@ static void read_inter_block_mode_info(VP9Decoder *const pbi,
     // Initialize the 2nd element as even though it won't be used meaningfully
     // if is_compound is false, copying/clamping it may trigger a MSan warning.
     best_sub8x8[1].as_int = invalid_mv;
-    for (idy = 0; idy < 2; idy += num_4x4_h) {
+    for (idy = 0; idy < 2 && !xd->corrupted; idy += num_4x4_h) {
       for (idx = 0; idx < 2; idx += num_4x4_w) {
         const int j = idy * 2 + idx;
         b_mode = read_inter_mode(cm, xd, r, inter_mode_ctx);
