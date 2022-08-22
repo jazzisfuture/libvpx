@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "67c24752_ef919cb5",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T06:49:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c4a9708c_e92f2846",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6641947e_5c258828",
@@ -37,6 +61,24 @@
       "writtenOn": "2022-08-19T23:00:40Z",
       "side": 1,
       "message": "add #if defined(__GNUC__) || defined(__clang__), but better might be to (void) cast the variable. This would prevent any issues if someone tried to build this for Windows Arm.",
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6b065c9_e049c8c0",
+        "filename": "vpx_dsp/arm/highbd_quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T06:49:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6641947e_5c258828",
       "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -92,6 +134,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2c65442_ba011ff5",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T06:49:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9c07a8f_eb8ac01b",
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e227ba28_f72e6356",
@@ -105,6 +165,30 @@
       "writtenOn": "2022-08-19T23:00:40Z",
       "side": 1,
       "message": "use INLINE",
+      "range": {
+        "startLine": 37,
+        "startChar": 7,
+        "endLine": 37,
+        "endChar": 13
+      },
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c224ad2_c7439cda",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T06:49:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e227ba28_f72e6356",
       "range": {
         "startLine": 37,
         "startChar": 7,
@@ -132,6 +216,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e3d96d7_f5694812",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T06:49:00Z",
+      "side": 1,
+      "message": "I\u0027m getting a consistent 1% in fps in the 1st pass, but true it doesn\u0027t really change the final encoding duration. So, measureable yes, noticeable no.",
+      "parentUuid": "d9a752e5_54f8ec38",
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4f6d4644_88c85633",
@@ -145,6 +247,30 @@
       "writtenOn": "2022-08-19T23:00:40Z",
       "side": 1,
       "message": "use INLINE",
+      "range": {
+        "startLine": 182,
+        "startChar": 7,
+        "endLine": 182,
+        "endChar": 13
+      },
+      "revId": "9d8f5be9f69efc48bd463d925a615f7d3693a649",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0c0ae06c_4ca3c1a6",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 182,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T06:49:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4f6d4644_88c85633",
       "range": {
         "startLine": 182,
         "startChar": 7,
