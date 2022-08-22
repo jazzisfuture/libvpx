@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "75a7d867_7d2342e3",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T19:12:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "498f763b_102fcaa0",
+      "range": {
+        "startLine": 35,
+        "startChar": 7,
+        "endLine": 35,
+        "endChar": 13
+      },
+      "revId": "9313f426096d3071d2b236ae6e0102f573d5fdd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c96c121f_e6a004af",
@@ -71,6 +95,30 @@
       "writtenOn": "2022-08-22T19:10:07Z",
       "side": 1,
       "message": "use INLINE",
+      "range": {
+        "startLine": 183,
+        "startChar": 7,
+        "endLine": 183,
+        "endChar": 13
+      },
+      "revId": "9313f426096d3071d2b236ae6e0102f573d5fdd9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "afd32d93_b0749d10",
+        "filename": "vpx_dsp/arm/quantize_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T19:12:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c96c121f_e6a004af",
       "range": {
         "startLine": 183,
         "startChar": 7,
