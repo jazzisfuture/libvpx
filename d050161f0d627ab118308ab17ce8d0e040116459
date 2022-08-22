@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4b51a4b_07608706",
+        "filename": "vpx_dsp/arm/highbd_sad_neon.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-22T18:21:09Z",
+      "side": 1,
+      "message": "with VPX_FORCE_INLINE, I\u0027m guessing this behaves the same as a do/while since width and height are always \u003e 0",
+      "revId": "d050161f0d627ab118308ab17ce8d0e040116459",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
