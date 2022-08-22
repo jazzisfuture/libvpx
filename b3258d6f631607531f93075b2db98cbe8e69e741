@@ -16,6 +16,24 @@
       "message": "I may have missed this in earlier commits, lets go with \u0027[NEON] Add vpx_highbd_subtract_block function\u0027. The imperative form is preferred:\n\nhttps://git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project#commit-guidelines",
       "revId": "b3258d6f631607531f93075b2db98cbe8e69e741",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98af65eb_e4e07f2e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T19:55:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "28fd7cba_7641acfc",
+      "revId": "b3258d6f631607531f93075b2db98cbe8e69e741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
