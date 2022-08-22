@@ -16,6 +16,24 @@
       "message": "I think this one is ok to land, it will just need a rebase.",
       "revId": "b3ca9df7e16c154c110944aad42f178cf3fa07c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f808ed13_dedc3a52",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-22T17:59:41Z",
+      "side": 1,
+      "message": "Hm, I\u0027m having an issue, I did the rebase ok, git commit --amend --no-edit and then git push but I\u0027m getting this error:\n\n ! [remote rejected]     HEAD -\u003e refs/for/main (change https://chromium-review.googlesource.com/c/webm/libvpx/+/3827352 closed)\nerror: failed to push some refs to \u0027https://chromium-review.googlesource.com/webm/libvpx\u0027\n\nBut it\u0027s the Change-Id is correct, why is it trying to push to a different change?",
+      "parentUuid": "53cfc01d_04707bef",
+      "revId": "b3ca9df7e16c154c110944aad42f178cf3fa07c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
