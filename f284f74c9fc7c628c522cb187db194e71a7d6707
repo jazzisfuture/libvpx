@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4ea7bab9_94474045",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-08-23T15:47:25Z",
+      "side": 1,
+      "message": "LGTM.",
+      "revId": "f284f74c9fc7c628c522cb187db194e71a7d6707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be49fb55_ef16d045",
+        "filename": "vp8/encoder/encodemv.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2022-08-23T15:47:25Z",
+      "side": 1,
+      "message": "Optional: I like the original formatting better. Maybe we can add curly braces to these two do-while statements.",
+      "revId": "f284f74c9fc7c628c522cb187db194e71a7d6707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
