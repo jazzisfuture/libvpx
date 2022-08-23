@@ -33,6 +33,24 @@
       "message": "Optional: I like the original formatting better. Maybe we can add curly braces to these two do-while statements.",
       "revId": "f284f74c9fc7c628c522cb187db194e71a7d6707",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "71f187ef_aab33833",
+        "filename": "vp8/encoder/encodemv.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-23T22:34:34Z",
+      "side": 1,
+      "message": "\u003e Optional: I like the original formatting better. Maybe we can add curly braces to these two do-while statements.\n\nI agree with you, I\u0027ll fix this in the next patchset.",
+      "parentUuid": "be49fb55_ef16d045",
+      "revId": "f284f74c9fc7c628c522cb187db194e71a7d6707",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
