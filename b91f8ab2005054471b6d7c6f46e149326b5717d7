@@ -22,6 +22,30 @@
       },
       "revId": "b91f8ab2005054471b6d7c6f46e149326b5717d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f957c43_f705c02e",
+        "filename": "vpx_dsp/arm/highbd_variance_neon.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-08-24T13:25:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20e3e93d_32973cbe",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 11
+      },
+      "revId": "b91f8ab2005054471b6d7c6f46e149326b5717d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
