@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20e3e93d_32973cbe",
+        "filename": "vpx_dsp/arm/highbd_variance_neon.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-24T12:52:26Z",
+      "side": 1,
+      "message": "Can you check to see if the compiler is inlining these functions? If not, you might want to inline.",
+      "range": {
+        "startLine": 29,
+        "startChar": 0,
+        "endLine": 29,
+        "endChar": 11
+      },
+      "revId": "b91f8ab2005054471b6d7c6f46e149326b5717d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
