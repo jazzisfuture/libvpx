@@ -16,6 +16,24 @@
       "message": "Scott any other comments?",
       "revId": "daae445b2a467ba701e87aac06bc9c98af31dfdd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f86dc60_c4e3dcdb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-08-24T19:14:04Z",
+      "side": 1,
+      "message": "lgtm",
+      "parentUuid": "c69ab2f6_59777ce3",
+      "revId": "daae445b2a467ba701e87aac06bc9c98af31dfdd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
