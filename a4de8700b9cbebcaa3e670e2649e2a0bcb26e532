@@ -16,6 +16,75 @@
       "message": "Hi, is there anything left that I should fix in this one?",
       "revId": "a4de8700b9cbebcaa3e670e2649e2a0bcb26e532",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc5559dd_8b937e8c",
+        "filename": "vpx_dsp/arm/highbd_variance_neon.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-25T17:41:10Z",
+      "side": 1,
+      "message": "this is unused",
+      "range": {
+        "startLine": 12,
+        "startChar": 10,
+        "endLine": 12,
+        "endChar": 16
+      },
+      "revId": "a4de8700b9cbebcaa3e670e2649e2a0bcb26e532",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1034861d_add4dc02",
+        "filename": "vpx_dsp/arm/highbd_variance_neon.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-25T17:41:10Z",
+      "side": 1,
+      "message": "this check shouldn\u0027t be necessary; it could be made into an assert",
+      "range": {
+        "startLine": 56,
+        "startChar": 9,
+        "endLine": 56,
+        "endChar": 20
+      },
+      "revId": "a4de8700b9cbebcaa3e670e2649e2a0bcb26e532",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "350a3b90_26df8d50",
+        "filename": "vpx_dsp/arm/highbd_variance_neon.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-08-25T17:41:10Z",
+      "side": 1,
+      "message": "same here for the check and in other cases",
+      "range": {
+        "startLine": 254,
+        "startChar": 9,
+        "endLine": 254,
+        "endChar": 31
+      },
+      "revId": "a4de8700b9cbebcaa3e670e2649e2a0bcb26e532",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
