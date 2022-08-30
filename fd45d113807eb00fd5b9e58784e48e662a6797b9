@@ -22,6 +22,30 @@
       },
       "revId": "fd45d113807eb00fd5b9e58784e48e662a6797b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23e46a5e_6833dbb6",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4505,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-08-30T04:25:29Z",
+      "side": 1,
+      "message": "Encoding, the frame has not been encoded yet. Just the gf group structure is determined at this point.",
+      "parentUuid": "6f1a35b5_bcc38bf0",
+      "range": {
+        "startLine": 4505,
+        "startChar": 37,
+        "endLine": 4505,
+        "endChar": 45
+      },
+      "revId": "fd45d113807eb00fd5b9e58784e48e662a6797b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
