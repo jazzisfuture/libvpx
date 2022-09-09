@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "39d1d04d_39faa6f5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-09-09T16:58:43Z",
+      "side": 1,
+      "message": "\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/18\nsad16x32x4 ( 8bit) time:   151 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/18 (151 ms)\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/19\nsad16x16x4 ( 8bit) time:   149 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/19 (149 ms)\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/20\nsad16x8x4 ( 8bit) time:   157 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/20 (157 ms)\n\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/31\nsad16x32x4 (10bit) time:   151 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/31 (151 ms)\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/32\nsad16x16x4 (10bit) time:   149 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/32 (149 ms)\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/33\nsad16x8x4 (10bit) time:   157 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/33 (157 ms)\n\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/44\nsad16x32x4 (12bit) time:   157 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/44 (157 ms)\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/45\nsad16x16x4 (12bit) time:   155 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/45 (155 ms)\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/46\nsad16x8x4 (12bit) time:   164 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/46 (164 ms)\n\n--------------------------------------------------------------\n\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/2\nsad16x32x4 ( 8bit) time:    65 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/2 (65 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/3\nsad16x16x4 ( 8bit) time:    63 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/3 (63 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/4\nsad16x8x4 ( 8bit) time:    79 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/4 (79 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/5\nsad16x32x4 (10bit) time:    65 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/5 (65 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/6\nsad16x16x4 (10bit) time:    63 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/6 (63 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/7\nsad16x8x4 (10bit) time:    79 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/7 (79 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/8\nsad16x32x4 (12bit) time:    65 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/8 (65 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/9\nsad16x16x4 (12bit) time:    63 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/9 (63 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/10\nsad16x8x4 (12bit) time:    79 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/10 (79 ms)",
+      "revId": "0d734728f6c2887a219de4bd118de8cd290f50c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
