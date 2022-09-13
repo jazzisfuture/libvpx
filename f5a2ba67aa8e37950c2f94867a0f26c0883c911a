@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "41e5ffdc_937652e6",
+        "filename": "vpx_dsp/x86/highbd_sad4d_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-09-13T01:32:03Z",
+      "side": 1,
+      "message": "src is guaranteed to be aligned?",
+      "revId": "f5a2ba67aa8e37950c2f94867a0f26c0883c911a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3de2295b_074cdc51",
+        "filename": "vpx_dsp/x86/highbd_sad4d_avx2.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-09-13T01:32:03Z",
+      "side": 1,
+      "message": "if you name this HIGHBD_SAD32XNX4D clang-format should do a better job in recognizing it as a macro.",
+      "revId": "f5a2ba67aa8e37950c2f94867a0f26c0883c911a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
