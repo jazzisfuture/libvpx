@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8eb88b4_a1e65827",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-09-14T21:10:07Z",
+      "side": 1,
+      "message": "[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/13\nsad64x64x4 ( 8bit) time:   202 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/13 (202 ms)\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/26\nsad64x64x4 (10bit) time:   202 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/26 (202 ms)\n[ RUN      ] SSE2/SADx4Test.DISABLED_Speed/39\nsad64x64x4 (12bit) time:   185 ms\n[       OK ] SSE2/SADx4Test.DISABLED_Speed/39 (185 ms)\n\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/2\nsad64x64x4 ( 8bit) time:    89 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/2 (89 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/10\nsad64x64x4 (10bit) time:    89 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/10 (89 ms)\n[ RUN      ] AVX2/SADx4Test.DISABLED_Speed/18\nsad64x64x4 (12bit) time:    91 ms\n[       OK ] AVX2/SADx4Test.DISABLED_Speed/18 (91 ms)",
+      "revId": "34284e930a24f48d64220d34bc355e0883a3c569",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
