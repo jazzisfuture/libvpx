@@ -101,7 +101,6 @@ void vpx_highbd_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                                 tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                                 const int16_t *dequant_ptr, uint16_t *eob_ptr,
                                 const int16_t *scan, const int16_t *iscan) {
-  const int16x8_t one = vdupq_n_s16(1);
   const int16x8_t neg_one = vdupq_n_s16(-1);
   uint16x8_t eob_max;
 
@@ -120,8 +119,7 @@ void vpx_highbd_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   // Process first 8 values which include a dc component.
   {
     // Add one because the eob does not index from 0.
-    const uint16x8_t v_iscan =
-        vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
+    const uint16x8_t v_iscan = vreinterpretq_u16_s16(vld1q_s16(iscan));
 
     const int16x8_t qcoeff =
         highbd_quantize_b_neon(coeff_ptr, qcoeff_ptr, dqcoeff_ptr, zbin, round,
@@ -149,8 +147,7 @@ void vpx_highbd_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
 
     do {
       // Add one because the eob is not its index.
-      const uint16x8_t v_iscan =
-          vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
+      const uint16x8_t v_iscan = vreinterpretq_u16_s16(vld1q_s16(iscan));
 
       const int16x8_t qcoeff =
           highbd_quantize_b_neon(coeff_ptr, qcoeff_ptr, dqcoeff_ptr, zbin,
@@ -234,7 +231,6 @@ void vpx_highbd_quantize_b_32x32_neon(
     const int16_t *quant_shift_ptr, tran_low_t *qcoeff_ptr,
     tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr, uint16_t *eob_ptr,
     const int16_t *scan, const int16_t *iscan) {
-  const int16x8_t one = vdupq_n_s16(1);
   const int16x8_t neg_one = vdupq_n_s16(-1);
   uint16x8_t eob_max;
   int i;
@@ -254,8 +250,7 @@ void vpx_highbd_quantize_b_32x32_neon(
   // Process first 8 values which include a dc component.
   {
     // Add one because the eob does not index from 0.
-    const uint16x8_t v_iscan =
-        vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
+    const uint16x8_t v_iscan = vreinterpretq_u16_s16(vld1q_s16(iscan));
 
     const int16x8_t qcoeff =
         highbd_quantize_b_32x32_neon(coeff_ptr, qcoeff_ptr, dqcoeff_ptr, zbin,
@@ -280,8 +275,7 @@ void vpx_highbd_quantize_b_32x32_neon(
 
     for (i = 1; i < 32 * 32 / 8; ++i) {
       // Add one because the eob is not its index.
-      const uint16x8_t v_iscan =
-          vreinterpretq_u16_s16(vaddq_s16(vld1q_s16(iscan), one));
+      const uint16x8_t v_iscan = vreinterpretq_u16_s16(vld1q_s16(iscan));
 
       const int16x8_t qcoeff =
           highbd_quantize_b_32x32_neon(coeff_ptr, qcoeff_ptr, dqcoeff_ptr, zbin,
