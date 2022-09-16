@@ -190,11 +190,10 @@ static INLINE void highbd_read_chroma_dist_row_8(
   }
 }
 
-static void vp9_highbd_apply_temporal_filter_luma_8(
-    const uint16_t *y_src, int y_src_stride, const uint16_t *y_pre,
-    int y_pre_stride, const uint16_t *u_src, const uint16_t *v_src,
-    int uv_src_stride, const uint16_t *u_pre, const uint16_t *v_pre,
-    int uv_pre_stride, unsigned int block_width, unsigned int block_height,
+static void apply_temporal_filter_luma_8(
+    const uint16_t *y_pre,
+    int y_pre_stride,
+    unsigned int block_width, unsigned int block_height,
     int ss_x, int ss_y, int strength, int use_whole_blk, uint32_t *y_accum,
     uint16_t *y_count, const uint32_t *y_dist, const uint32_t *u_dist,
     const uint32_t *v_dist, const uint32_t *const *neighbors_first,
@@ -256,17 +255,12 @@ static void vp9_highbd_apply_temporal_filter_luma_8(
   highbd_accumulate_and_store_8(sum_row_first, sum_row_second, y_pre, y_count,
                                 y_accum);
 
-  y_src += y_src_stride;
   y_pre += y_pre_stride;
   y_count += y_pre_stride;
   y_accum += y_pre_stride;
   y_dist += DIST_STRIDE;
 
-  u_src += uv_src_stride;
-  u_pre += uv_pre_stride;
   u_dist += DIST_STRIDE;
-  v_src += uv_src_stride;
-  v_pre += uv_pre_stride;
   v_dist += DIST_STRIDE;
 
   // Then all the rows except the last one
@@ -300,11 +294,7 @@ static void vp9_highbd_apply_temporal_filter_luma_8(
       highbd_read_chroma_dist_row_8(ss_x, u_dist, v_dist, &u_first, &u_second,
                                     &v_first, &v_second);
 
-      u_src += uv_src_stride;
-      u_pre += uv_pre_stride;
       u_dist += DIST_STRIDE;
-      v_src += uv_src_stride;
-      v_pre += uv_pre_stride;
       v_dist += DIST_STRIDE;
     }
 
@@ -320,7 +310,6 @@ static void vp9_highbd_apply_temporal_filter_luma_8(
     highbd_accumulate_and_store_8(sum_row_first, sum_row_second, y_pre, y_count,
                                   y_accum);
 
-    y_src += y_src_stride;
     y_pre += y_pre_stride;
     y_count += y_pre_stride;
     y_accum += y_pre_stride;
@@ -363,11 +352,10 @@ static void vp9_highbd_apply_temporal_filter_luma_8(
 }
 
 // Perform temporal filter for the luma component.
-static void vp9_highbd_apply_temporal_filter_luma(
-    const uint16_t *y_src, int y_src_stride, const uint16_t *y_pre,
-    int y_pre_stride, const uint16_t *u_src, const uint16_t *v_src,
-    int uv_src_stride, const uint16_t *u_pre, const uint16_t *v_pre,
-    int uv_pre_stride, unsigned int block_width, unsigned int block_height,
+static void apply_temporal_filter_luma(
+    const uint16_t *y_pre,
+    int y_pre_stride,
+    unsigned int block_width, unsigned int block_height,
     int ss_x, int ss_y, int strength, const int *blk_fw, int use_whole_blk,
     uint32_t *y_accum, uint16_t *y_count, const uint32_t *y_dist,
     const uint32_t *u_dist, const uint32_t *v_dist) {
@@ -383,10 +371,9 @@ static void vp9_highbd_apply_temporal_filter_luma(
   // Left
   neighbors_first = HIGHBD_LUMA_LEFT_COLUMN_NEIGHBORS;
   neighbors_second = HIGHBD_LUMA_MIDDLE_COLUMN_NEIGHBORS;
-  vp9_highbd_apply_temporal_filter_luma_8(
-      y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-      u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride, u_pre + uv_blk_col,
-      v_pre + uv_blk_col, uv_pre_stride, blk_col_step, block_height, ss_x, ss_y,
+  apply_temporal_filter_luma_8(
+      y_pre + blk_col, y_pre_stride,
+      blk_col_step, block_height, ss_x, ss_y,
       strength, use_whole_blk, y_accum + blk_col, y_count + blk_col,
       y_dist + blk_col, u_dist + uv_blk_col, v_dist + uv_blk_col,
       neighbors_first, neighbors_second, top_weight, bottom_weight);
@@ -398,10 +385,9 @@ static void vp9_highbd_apply_temporal_filter_luma(
   neighbors_first = HIGHBD_LUMA_MIDDLE_COLUMN_NEIGHBORS;
   for (; blk_col < mid_width;
        blk_col += blk_col_step, uv_blk_col += uv_blk_col_step) {
-    vp9_highbd_apply_temporal_filter_luma_8(
-        y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-        u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride,
-        u_pre + uv_blk_col, v_pre + uv_blk_col, uv_pre_stride, blk_col_step,
+    apply_temporal_filter_luma_8(
+        y_pre + blk_col, y_pre_stride,
+        blk_col_step,
         block_height, ss_x, ss_y, strength, use_whole_blk, y_accum + blk_col,
         y_count + blk_col, y_dist + blk_col, u_dist + uv_blk_col,
         v_dist + uv_blk_col, neighbors_first, neighbors_second, top_weight,
@@ -416,10 +402,9 @@ static void vp9_highbd_apply_temporal_filter_luma(
   // Middle Second
   for (; blk_col < last_width;
        blk_col += blk_col_step, uv_blk_col += uv_blk_col_step) {
-    vp9_highbd_apply_temporal_filter_luma_8(
-        y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-        u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride,
-        u_pre + uv_blk_col, v_pre + uv_blk_col, uv_pre_stride, blk_col_step,
+    apply_temporal_filter_luma_8(
+        y_pre + blk_col, y_pre_stride,
+        blk_col_step,
         block_height, ss_x, ss_y, strength, use_whole_blk, y_accum + blk_col,
         y_count + blk_col, y_dist + blk_col, u_dist + uv_blk_col,
         v_dist + uv_blk_col, neighbors_first, neighbors_second, top_weight,
@@ -428,10 +413,9 @@ static void vp9_highbd_apply_temporal_filter_luma(
 
   // Right
   neighbors_second = HIGHBD_LUMA_RIGHT_COLUMN_NEIGHBORS;
-  vp9_highbd_apply_temporal_filter_luma_8(
-      y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-      u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride, u_pre + uv_blk_col,
-      v_pre + uv_blk_col, uv_pre_stride, blk_col_step, block_height, ss_x, ss_y,
+  apply_temporal_filter_luma_8(
+      y_pre + blk_col, y_pre_stride,
+      blk_col_step, block_height, ss_x, ss_y,
       strength, use_whole_blk, y_accum + blk_col, y_count + blk_col,
       y_dist + blk_col, u_dist + uv_blk_col, v_dist + uv_blk_col,
       neighbors_first, neighbors_second, top_weight, bottom_weight);
@@ -490,10 +474,8 @@ static INLINE void highbd_add_luma_dist_to_8_chroma_mod(
 // filtering on a chroma block of 8 X uv_height. If blk_fw is not NULL, use
 // blk_fw as an array of size 4 for the weights for each of the 4 subblocks,
 // else use top_weight for top half, and bottom weight for bottom half.
-static void vp9_highbd_apply_temporal_filter_chroma_8(
-    const uint16_t *y_src, int y_src_stride, const uint16_t *y_pre,
-    int y_pre_stride, const uint16_t *u_src, const uint16_t *v_src,
-    int uv_src_stride, const uint16_t *u_pre, const uint16_t *v_pre,
+static void apply_temporal_filter_chroma_8(
+    const uint16_t *u_pre, const uint16_t *v_pre,
     int uv_pre_stride, unsigned int uv_block_width,
     unsigned int uv_block_height, int ss_x, int ss_y, int strength,
     uint32_t *u_accum, uint16_t *u_count, uint32_t *v_accum, uint16_t *v_count,
@@ -565,10 +547,8 @@ static void vp9_highbd_apply_temporal_filter_chroma_8(
   highbd_accumulate_and_store_8(v_sum_row_fst, v_sum_row_snd, v_pre, v_count,
                                 v_accum);
 
-  u_src += uv_src_stride;
   u_pre += uv_pre_stride;
   u_dist += DIST_STRIDE;
-  v_src += uv_src_stride;
   v_pre += uv_pre_stride;
   v_dist += DIST_STRIDE;
   u_count += uv_pre_stride;
@@ -576,8 +556,6 @@ static void vp9_highbd_apply_temporal_filter_chroma_8(
   v_count += uv_pre_stride;
   v_accum += uv_pre_stride;
 
-  y_src += y_src_stride * (1 + ss_y);
-  y_pre += y_pre_stride * (1 + ss_y);
   y_dist += DIST_STRIDE * (1 + ss_y);
 
   // Then all the rows except the last one
@@ -649,10 +627,8 @@ static void vp9_highbd_apply_temporal_filter_chroma_8(
     highbd_accumulate_and_store_8(v_sum_row_fst, v_sum_row_snd, v_pre, v_count,
                                   v_accum);
 
-    u_src += uv_src_stride;
     u_pre += uv_pre_stride;
     u_dist += DIST_STRIDE;
-    v_src += uv_src_stride;
     v_pre += uv_pre_stride;
     v_dist += DIST_STRIDE;
     u_count += uv_pre_stride;
@@ -660,8 +636,6 @@ static void vp9_highbd_apply_temporal_filter_chroma_8(
     v_count += uv_pre_stride;
     v_accum += uv_pre_stride;
 
-    y_src += y_src_stride * (1 + ss_y);
-    y_pre += y_pre_stride * (1 + ss_y);
     y_dist += DIST_STRIDE * (1 + ss_y);
   }
 
@@ -719,10 +693,8 @@ static void vp9_highbd_apply_temporal_filter_chroma_8(
 }
 
 // Perform temporal filter for the chroma components.
-static void vp9_highbd_apply_temporal_filter_chroma(
-    const uint16_t *y_src, int y_src_stride, const uint16_t *y_pre,
-    int y_pre_stride, const uint16_t *u_src, const uint16_t *v_src,
-    int uv_src_stride, const uint16_t *u_pre, const uint16_t *v_pre,
+static void apply_temporal_filter_chroma(
+    const uint16_t *u_pre, const uint16_t *v_pre,
     int uv_pre_stride, unsigned int block_width, unsigned int block_height,
     int ss_x, int ss_y, int strength, const int *blk_fw, int use_whole_blk,
     uint32_t *u_accum, uint16_t *u_count, uint32_t *v_accum, uint16_t *v_count,
@@ -754,18 +726,14 @@ static void vp9_highbd_apply_temporal_filter_chroma(
     }
 
     if (use_whole_blk) {
-      vp9_highbd_apply_temporal_filter_chroma_8(
-          y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-          u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride,
+      apply_temporal_filter_chroma_8(
           u_pre + uv_blk_col, v_pre + uv_blk_col, uv_pre_stride, uv_width,
           uv_height, ss_x, ss_y, strength, u_accum + uv_blk_col,
           u_count + uv_blk_col, v_accum + uv_blk_col, v_count + uv_blk_col,
           y_dist + blk_col, u_dist + uv_blk_col, v_dist + uv_blk_col,
           neighbors_fst, neighbors_snd, top_weight, bottom_weight, NULL);
     } else {
-      vp9_highbd_apply_temporal_filter_chroma_8(
-          y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-          u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride,
+      apply_temporal_filter_chroma_8(
           u_pre + uv_blk_col, v_pre + uv_blk_col, uv_pre_stride, uv_width,
           uv_height, ss_x, ss_y, strength, u_accum + uv_blk_col,
           u_count + uv_blk_col, v_accum + uv_blk_col, v_count + uv_blk_col,
@@ -788,9 +756,8 @@ static void vp9_highbd_apply_temporal_filter_chroma(
     neighbors_snd = HIGHBD_CHROMA_NO_SS_MIDDLE_COLUMN_NEIGHBORS;
   }
 
-  vp9_highbd_apply_temporal_filter_chroma_8(
-      y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-      u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride, u_pre + uv_blk_col,
+  apply_temporal_filter_chroma_8(
+      u_pre + uv_blk_col,
       v_pre + uv_blk_col, uv_pre_stride, uv_width, uv_height, ss_x, ss_y,
       strength, u_accum + uv_blk_col, u_count + uv_blk_col,
       v_accum + uv_blk_col, v_count + uv_blk_col, y_dist + blk_col,
@@ -811,9 +778,7 @@ static void vp9_highbd_apply_temporal_filter_chroma(
 
   for (; uv_blk_col < uv_mid_width;
        blk_col += blk_col_step, uv_blk_col += uv_blk_col_step) {
-    vp9_highbd_apply_temporal_filter_chroma_8(
-        y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-        u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride,
+    apply_temporal_filter_chroma_8(
         u_pre + uv_blk_col, v_pre + uv_blk_col, uv_pre_stride, uv_width,
         uv_height, ss_x, ss_y, strength, u_accum + uv_blk_col,
         u_count + uv_blk_col, v_accum + uv_blk_col, v_count + uv_blk_col,
@@ -829,9 +794,7 @@ static void vp9_highbd_apply_temporal_filter_chroma(
   // Middle Second
   for (; uv_blk_col < uv_last_width;
        blk_col += blk_col_step, uv_blk_col += uv_blk_col_step) {
-    vp9_highbd_apply_temporal_filter_chroma_8(
-        y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-        u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride,
+    apply_temporal_filter_chroma_8(
         u_pre + uv_blk_col, v_pre + uv_blk_col, uv_pre_stride, uv_width,
         uv_height, ss_x, ss_y, strength, u_accum + uv_blk_col,
         u_count + uv_blk_col, v_accum + uv_blk_col, v_count + uv_blk_col,
@@ -848,9 +811,8 @@ static void vp9_highbd_apply_temporal_filter_chroma(
     neighbors_snd = HIGHBD_CHROMA_NO_SS_RIGHT_COLUMN_NEIGHBORS;
   }
 
-  vp9_highbd_apply_temporal_filter_chroma_8(
-      y_src + blk_col, y_src_stride, y_pre + blk_col, y_pre_stride,
-      u_src + uv_blk_col, v_src + uv_blk_col, uv_src_stride, u_pre + uv_blk_col,
+  apply_temporal_filter_chroma_8(
+      u_pre + uv_blk_col,
       v_pre + uv_blk_col, uv_pre_stride, uv_width, uv_height, ss_x, ss_y,
       strength, u_accum + uv_blk_col, u_count + uv_blk_col,
       v_accum + uv_blk_col, v_count + uv_blk_col, y_dist + blk_col,
@@ -929,14 +891,13 @@ void vp9_highbd_apply_temporal_filter_sse4_1(
   u_dist_ptr = u_dist + 1;
   v_dist_ptr = v_dist + 1;
 
-  vp9_highbd_apply_temporal_filter_luma(
-      y_src, y_src_stride, y_pre, y_pre_stride, u_src, v_src, uv_src_stride,
-      u_pre, v_pre, uv_pre_stride, block_width, block_height, ss_x, ss_y,
+  apply_temporal_filter_luma(
+      y_pre, y_pre_stride,
+      block_width, block_height, ss_x, ss_y,
       strength, blk_fw, use_whole_blk, y_accum, y_count, y_dist_ptr, u_dist_ptr,
       v_dist_ptr);
 
-  vp9_highbd_apply_temporal_filter_chroma(
-      y_src, y_src_stride, y_pre, y_pre_stride, u_src, v_src, uv_src_stride,
+  apply_temporal_filter_chroma(
       u_pre, v_pre, uv_pre_stride, block_width, block_height, ss_x, ss_y,
       strength, blk_fw, use_whole_blk, u_accum, u_count, v_accum, v_count,
       y_dist_ptr, u_dist_ptr, v_dist_ptr);
