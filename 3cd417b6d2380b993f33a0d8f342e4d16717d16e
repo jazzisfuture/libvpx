@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "78adb5cc_1f506c4d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-09-17T02:31:22Z",
+      "side": 1,
+      "message": "Good catch. This makes the implementation fairly unhelpful given in most cases we have high bitdepth enabled.",
+      "revId": "3cd417b6d2380b993f33a0d8f342e4d16717d16e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
