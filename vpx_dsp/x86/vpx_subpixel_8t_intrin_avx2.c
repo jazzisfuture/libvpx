@@ -289,11 +289,10 @@ static INLINE void vpx_filter_block1d16_v8_x_avx2(
     // load the last 16 bytes
     const __m128i srcRegHead2 =
         _mm_loadu_si128((const __m128i *)(src_ptr + src_pitch * 7));
-
     // merge the last 2 results together
-    s1[0] = _mm256_castsi128_si256(
+    s1[3] = _mm256_castsi128_si256(
         _mm_unpacklo_epi8(_mm256_castsi256_si128(srcRegHead1), srcRegHead2));
-    s2[0] = _mm256_castsi128_si256(
+    s2[3] = _mm256_castsi128_si256(
         _mm_unpackhi_epi8(_mm256_castsi256_si128(srcRegHead1), srcRegHead2));
 
     outReg1 = convolve8_8_avx2(s1, f);
