@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "05840a85_ca2b3502",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-09-20T11:59:40Z",
+      "side": 1,
+      "message": "I\u0027m not sure this will work. How do you tell the difference between the \"zero from the mask\" and the \"zero from iscan[0]? I think I was bit by that once while reworking the av1/vpx quantizers.",
+      "range": {
+        "startLine": 48,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 77
+      },
+      "revId": "59adaa92aa0ed252dc4e0fc39be84156fc8a2f58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
