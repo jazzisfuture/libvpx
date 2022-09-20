@@ -34,6 +34,24 @@
       "parentUuid": "fe355097_cc19ff5d",
       "revId": "f71b59beb2874fd0acdd7dceec39ebae41345044",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfa7f13e_36b8cb4f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-09-20T02:17:09Z",
+      "side": 1,
+      "message": "Hmm now that you mention it, I was incorrect about where I was looking. I\u0027m probably missing a quantize function somewhere.\n\nLooks like there is some improvement for SSE2/SSSE3. The mac M1 doesn\u0027t emulate AVX[2], will have to find another machine to diagnose that.\n\nIn the meantime, I uploaded a simpler patch which doesn\u0027t touch iscan. Maybe once I convert all of them that way I can re-try updating iscan.",
+      "parentUuid": "108dc594_965551e3",
+      "revId": "f71b59beb2874fd0acdd7dceec39ebae41345044",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
