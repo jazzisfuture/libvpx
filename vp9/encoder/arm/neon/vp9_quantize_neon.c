@@ -45,9 +45,7 @@ static VPX_FORCE_INLINE int16x8_t get_max_lane_eob(const int16_t *iscan_ptr,
                                                    int16x8_t v_eobmax,
                                                    uint16x8_t v_nz_mask) {
   const int16x8_t v_iscan = vld1q_s16(&iscan_ptr[0]);
-  const int16x8_t v_iscan_plus1 = vaddq_s16(v_iscan, vdupq_n_s16(1));
-  const int16x8_t v_nz_iscan =
-      vbslq_s16(v_nz_mask, vdupq_n_s16(0), v_iscan_plus1);
+  const int16x8_t v_nz_iscan = vbslq_s16(v_nz_mask, vdupq_n_s16(0), v_iscan);
   return vmaxq_s16(v_eobmax, v_nz_iscan);
 }
 
@@ -144,7 +142,8 @@ void vp9_quantize_fp_neon(const tran_low_t *coeff_ptr, intptr_t count,
                   qcoeff_ptr + i, dqcoeff_ptr + i, &v_eobmax);
   }
 
-  *eob_ptr = get_max_eob(v_eobmax);
+  // Add 1 to convert from 0 based index to EOB value.
+  *eob_ptr = get_max_eob(v_eobmax) + 1;
 }
 
 static INLINE int32x4_t extract_sign_bit(int32x4_t a) {
@@ -229,7 +228,8 @@ void vp9_quantize_fp_32x32_neon(const tran_low_t *coeff_ptr, intptr_t count,
     dqcoeff_ptr += 8;
   }
 
-  *eob_ptr = get_max_eob(eob_max);
+  // Add 1 to convert from 0 based index to EOB value.
+  *eob_ptr = get_max_eob(eob_max) + 1;
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
@@ -313,7 +313,8 @@ void vp9_highbd_quantize_fp_neon(const tran_low_t *coeff_ptr, intptr_t count,
     count -= 8;
   } while (count);
 
-  *eob_ptr = get_max_eob(v_eobmax);
+  // Add 1 to convert from 0 based index to EOB value.
+  *eob_ptr = get_max_eob(v_eobmax) + 1;
 }
 
 static VPX_FORCE_INLINE uint16x4_t
@@ -405,6 +406,7 @@ void vp9_highbd_quantize_fp_32x32_neon(
     count -= 8;
   } while (count);
 
-  *eob_ptr = get_max_eob(v_eobmax);
+  // Add 1 to convert from 0 based index to EOB value.
+  *eob_ptr = get_max_eob(v_eobmax) + 1;
 }
 #endif  // CONFIG_VP9_HIGHBITDEPTH
