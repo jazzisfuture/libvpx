@@ -328,8 +328,8 @@ TEST_P(ResizeTest, TestExternalResizeWorks) {
   for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
        info != frame_info_list_.end(); ++info) {
     const unsigned int frame = static_cast<unsigned>(info->pts);
-    unsigned int expected_w;
-    unsigned int expected_h;
+    unsigned int expected_w = 0;
+    unsigned int expected_h = 0;
     const size_t idx = info - frame_info_list_.begin();
     ASSERT_EQ(info->w, GetFrameWidth(idx));
     ASSERT_EQ(info->h, GetFrameHeight(idx));
@@ -565,8 +565,8 @@ TEST_P(ResizeRealtimeTest, TestExternalResizeWorks) {
   for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
        info != frame_info_list_.end(); ++info) {
     const unsigned int frame = static_cast<unsigned>(info->pts);
-    unsigned int expected_w;
-    unsigned int expected_h;
+    unsigned int expected_w = 0;
+    unsigned int expected_h = 0;
     ScaleForFrameNumber(frame, kInitialWidth, kInitialHeight, &expected_w,
                         &expected_h, video.flag_codec_,
                         video.smaller_width_larger_size_);
@@ -595,8 +595,8 @@ TEST_P(ResizeRealtimeTest, DISABLED_TestExternalResizeSmallerWidthBiggerSize) {
   for (std::vector<FrameInfo>::const_iterator info = frame_info_list_.begin();
        info != frame_info_list_.end(); ++info) {
     const unsigned int frame = static_cast<unsigned>(info->pts);
-    unsigned int expected_w;
-    unsigned int expected_h;
+    unsigned int expected_w = 0;
+    unsigned int expected_h = 0;
     ScaleForFrameNumber(frame, kInitialWidth, kInitialHeight, &expected_w,
                         &expected_h, video.flag_codec_,
                         video.smaller_width_larger_size_);
