@@ -16,6 +16,24 @@
       "message": "Can we update the test to see a failure?",
       "revId": "e81e2198b2d9f865ecdf72bb31787daaf03842de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe4ca69b_50786693",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-09-21T15:07:00Z",
+      "side": 1,
+      "message": "I did a quick test and the C code passes, the sse2 segfaults, the ssse3 mismatches, and the avx2 mismatches as well. But the avx2 (with change) seems to match the ssse3 output. This code appears to be dead code. I could not find where the convolve would be called with an odd height. Lets discuss offline.",
+      "parentUuid": "d16864da_10459ecd",
+      "revId": "e81e2198b2d9f865ecdf72bb31787daaf03842de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
