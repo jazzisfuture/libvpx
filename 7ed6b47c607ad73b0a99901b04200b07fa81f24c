@@ -46,6 +46,30 @@
       },
       "revId": "7ed6b47c607ad73b0a99901b04200b07fa81f24c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34f82cfc_1804e1b9",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4534,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-09-21T19:16:07Z",
+      "side": 1,
+      "message": "\u003e We debug overshooting issues for the ML model training using this API.\n\u003e After this change, the overshooting issue is gone.\n\u003e There is a buganizer thread about the debugging progress and discussion: b/244771006\n\nThanks I meant if the value of that parameters was checked to see if it was \u003c -1 for instance.",
+      "parentUuid": "c800c46e_965959c0",
+      "range": {
+        "startLine": 4534,
+        "startChar": 30,
+        "endLine": 4534,
+        "endChar": 66
+      },
+      "revId": "7ed6b47c607ad73b0a99901b04200b07fa81f24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
