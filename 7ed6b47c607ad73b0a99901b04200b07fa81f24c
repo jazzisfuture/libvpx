@@ -70,6 +70,30 @@
       },
       "revId": "7ed6b47c607ad73b0a99901b04200b07fa81f24c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "603fb928_c140d959",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4534,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-09-21T19:42:39Z",
+      "side": 1,
+      "message": "Now we rely on the caller to check the parameter.",
+      "parentUuid": "34f82cfc_1804e1b9",
+      "range": {
+        "startLine": 4534,
+        "startChar": 30,
+        "endLine": 4534,
+        "endChar": 66
+      },
+      "revId": "7ed6b47c607ad73b0a99901b04200b07fa81f24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
