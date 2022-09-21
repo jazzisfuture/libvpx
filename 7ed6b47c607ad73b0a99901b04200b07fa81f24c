@@ -22,6 +22,30 @@
       },
       "revId": "7ed6b47c607ad73b0a99901b04200b07fa81f24c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c800c46e_965959c0",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4534,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2022-09-21T05:06:50Z",
+      "side": 1,
+      "message": "We debug overshooting issues for the ML model training using this API.\nAfter this change, the overshooting issue is gone.\nThere is a buganizer thread about the debugging progress and discussion: b/244771006",
+      "parentUuid": "8fa198f3_41a581e8",
+      "range": {
+        "startLine": 4534,
+        "startChar": 30,
+        "endLine": 4534,
+        "endChar": 66
+      },
+      "revId": "7ed6b47c607ad73b0a99901b04200b07fa81f24c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
