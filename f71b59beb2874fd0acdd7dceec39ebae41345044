@@ -52,6 +52,24 @@
       "parentUuid": "108dc594_965551e3",
       "revId": "f71b59beb2874fd0acdd7dceec39ebae41345044",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2279dc1b_b02af0d2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-09-23T10:05:20Z",
+      "side": 1,
+      "message": "Thanks, the AVX had a bug and the AVX2 I hadn\u0027t updated at all for some reason. Fixed both, I think. Looks like that test doesn\u0027t even run until after the sanitizer is clean.\n\nFinally connected to a machine with avx[2] and fixed the code, probably.",
+      "parentUuid": "cfa7f13e_36b8cb4f",
+      "revId": "f71b59beb2874fd0acdd7dceec39ebae41345044",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
