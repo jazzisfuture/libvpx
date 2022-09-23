@@ -22,6 +22,30 @@
       },
       "revId": "59adaa92aa0ed252dc4e0fc39be84156fc8a2f58",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "281e793a_7df16403",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 48,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-09-23T10:04:09Z",
+      "side": 1,
+      "message": "Of course you\u0027re right, no wonder it hadn\u0027t been done yet 😂",
+      "parentUuid": "05840a85_ca2b3502",
+      "range": {
+        "startLine": 48,
+        "startChar": 2,
+        "endLine": 48,
+        "endChar": 77
+      },
+      "revId": "59adaa92aa0ed252dc4e0fc39be84156fc8a2f58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
