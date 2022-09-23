@@ -589,12 +589,21 @@ void vp9_get_entropy_contexts(BLOCK_SIZE bsize, TX_SIZE tx_size,
       for (i = 0; i < num_4x4_h; i += 2)
         t_left[i] = !!*(const uint16_t *)&left[i];
       break;
+// Disable gcc 12.2 false positive warning.
+// warning: writing 1 byte into a region of size 0 [-Wstringop-overflow=]
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
     case TX_16X16:
       for (i = 0; i < num_4x4_w; i += 4)
         t_above[i] = !!*(const uint32_t *)&above[i];
       for (i = 0; i < num_4x4_h; i += 4)
         t_left[i] = !!*(const uint32_t *)&left[i];
       break;
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
     default:
       assert(tx_size == TX_32X32);
       for (i = 0; i < num_4x4_w; i += 8)
