@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf96cdfd_f74e9a43",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-09-24T03:38:33Z",
+      "side": 1,
+      "message": "No change in behavior, just cleaning up a little. Going to investigate changing the direction and removing the shortcut after this.\n\nUltimate goal is to switch the ssse3 to intrinsics because it\u0027s the last function written in assembly. Then changes to things like the parameters can be considered.",
+      "revId": "c041a6ecf2c7e966230a2c0fae9d506f239ebb0a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
