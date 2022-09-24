@@ -16,6 +16,7 @@
 #include "vpx/vpx_integer.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_dsp/x86/bitdepth_conversion_sse2.h"
+#include "vpx_dsp/x86/quantize_sse2.h"
 
 void vp9_quantize_fp_sse2(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                           const int16_t *round_ptr, const int16_t *quant_ptr,
@@ -37,16 +38,11 @@ void vp9_quantize_fp_sse2(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   n_coeffs = -n_coeffs;
   zero = _mm_setzero_si128();
 
+  // Setup global values
+  load_fp_values(round_ptr, &round, quant_ptr, &quant, dequant_ptr, &dequant);
+
   {
     __m128i coeff0, coeff1;
-
-    // Setup global values
-    {
-      round = _mm_load_si128((const __m128i *)round_ptr);
-      quant = _mm_load_si128((const __m128i *)quant_ptr);
-      dequant = _mm_load_si128((const __m128i *)dequant_ptr);
-    }
-
     {
       __m128i coeff0_sign, coeff1_sign;
       __m128i qcoeff0, qcoeff1;
@@ -55,19 +51,19 @@ void vp9_quantize_fp_sse2(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
       coeff0 = load_tran_low(coeff_ptr + n_coeffs);
       coeff1 = load_tran_low(coeff_ptr + n_coeffs + 8);
 
-      // Poor man's sign extract
+      // Poor man's abs().
       coeff0_sign = _mm_srai_epi16(coeff0, 15);
       coeff1_sign = _mm_srai_epi16(coeff1, 15);
-      qcoeff0 = _mm_xor_si128(coeff0, coeff0_sign);
-      qcoeff1 = _mm_xor_si128(coeff1, coeff1_sign);
-      qcoeff0 = _mm_sub_epi16(qcoeff0, coeff0_sign);
-      qcoeff1 = _mm_sub_epi16(qcoeff1, coeff1_sign);
+      qcoeff0 = invert_sign_sse2(coeff0, coeff0_sign);
+      qcoeff1 = invert_sign_sse2(coeff1, coeff1_sign);
 
       qcoeff0 = _mm_adds_epi16(qcoeff0, round);
-      round = _mm_unpackhi_epi64(round, round);
-      qcoeff1 = _mm_adds_epi16(qcoeff1, round);
       qtmp0 = _mm_mulhi_epi16(qcoeff0, quant);
+
+      round = _mm_unpackhi_epi64(round, round);
       quant = _mm_unpackhi_epi64(quant, quant);
+
+      qcoeff1 = _mm_adds_epi16(qcoeff1, round);
       qtmp1 = _mm_mulhi_epi16(qcoeff1, quant);
 
       // Reinsert signs
