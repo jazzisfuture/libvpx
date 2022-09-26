@@ -16,6 +16,24 @@
       "message": "I would expand this to the whole function since the warning is based on optimizations and could easily be applied to the other cases.",
       "revId": "29d88d7ee2511cbeff72152440134066065e0149",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5dadb9c_6ea238a5",
+        "filename": "vp9/encoder/vp9_rd.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-09-26T21:23:34Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "81c7cfbf_a7d1632d",
+      "revId": "29d88d7ee2511cbeff72152440134066065e0149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
