@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "81c7cfbf_a7d1632d",
+        "filename": "vp9/encoder/vp9_rd.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 592,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-09-26T20:53:44Z",
+      "side": 1,
+      "message": "I would expand this to the whole function since the warning is based on optimizations and could easily be applied to the other cases.",
+      "revId": "29d88d7ee2511cbeff72152440134066065e0149",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
