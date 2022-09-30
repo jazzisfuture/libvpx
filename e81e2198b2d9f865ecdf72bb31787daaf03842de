@@ -34,6 +34,24 @@
       "parentUuid": "d16864da_10459ecd",
       "revId": "e81e2198b2d9f865ecdf72bb31787daaf03842de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "33967b2f_3f555587",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-09-30T14:19:03Z",
+      "side": 1,
+      "message": "As discussed offline, this code is unused and can be removed.",
+      "parentUuid": "fe4ca69b_50786693",
+      "revId": "e81e2198b2d9f865ecdf72bb31787daaf03842de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
