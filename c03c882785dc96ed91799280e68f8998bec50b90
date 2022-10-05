@@ -16,6 +16,29 @@
       "message": "[ RUN      ] AVX2/SADTest.DISABLED_Speed/5\n[    BENCH ] 16x32 1.8 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/5 (26 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/6\n[    BENCH ] 16x16 1.9 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/6 (27 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/7\n[    BENCH ] 16x8 2.5 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/7 (38 ms)\n\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/8\n[    BENCH ] 16x32 1.7 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/8 (26 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/9\n[    BENCH ] 16x16 1.9 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/9 (27 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/10\n[    BENCH ] 16x8 2.5 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/10 (38 ms)\n\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/11\n[    BENCH ] 16x32 1.7 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/11 (26 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/12\n[    BENCH ] 16x16 1.9 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/12 (27 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/13\n[    BENCH ] 16x8 2.5 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/13 (38 ms)\n[----------] 14 tests from AVX2/SADTest (332 ms total)\n\n\n\n\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/18\n[    BENCH ] 16x32 4.3 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/18 (64 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/19\n[    BENCH ] 16x16 4.5 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/19 (67 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/20\n[    BENCH ] 16x8 4.8 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/20 (72 ms)\n\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/29\n[    BENCH ] 16x32 4.3 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/29 (64 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/30\n[    BENCH ] 16x16 4.5 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/30 (66 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/31\n[    BENCH ] 16x8 4.8 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/31 (72 ms)\n\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/40\n[    BENCH ] 16x32 4.5 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/40 (67 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/41\n[    BENCH ] 16x16 4.6 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/41 (69 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/42\n[    BENCH ] 16x8 5.1 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/42 (76 ms)",
       "revId": "c03c882785dc96ed91799280e68f8998bec50b90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5e397d91_e04c31b3",
+        "filename": "vpx_dsp/x86/highbd_sad_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-05T19:20:42Z",
+      "side": 1,
+      "message": "this could be removed, though it\u0027s probably copied from elsewhere",
+      "range": {
+        "startLine": 10,
+        "startChar": 23,
+        "endLine": 10,
+        "endChar": 31
+      },
+      "revId": "c03c882785dc96ed91799280e68f8998bec50b90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
