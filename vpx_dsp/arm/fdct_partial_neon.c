@@ -101,3 +101,64 @@ void vpx_fdct32x32_1_neon(const int16_t *input, tran_low_t *output,
   output[0] = (tran_low_t)(sum >> 3);
   output[1] = 0;
 }
+
+#if CONFIG_VP9_HIGHBITDEPTH
+
+void vpx_highbd_fdct16x16_1_neon(const int16_t *input, tran_low_t *output,
+                                 int stride) {
+  int r;
+  int32x4_t left = vdupq_n_s32(0);
+  int32x4_t right = vdupq_n_s32(0);
+  int32_t sum;
+
+  for (r = 0; r < 16; ++r) {
+    const int16x8_t a = vld1q_s16(input);
+    const int16x8_t b = vld1q_s16(input + 8);
+    input += stride;
+    left = vaddw_s16(left, vget_low_s16(a));
+    left = vaddw_s16(left, vget_high_s16(a));
+    right = vaddw_s16(right, vget_low_s16(b));
+    right = vaddw_s16(right, vget_high_s16(b));
+  }
+
+  sum = horizontal_add_int32x4(left) + horizontal_add_int32x4(right);
+
+  output[0] = (tran_low_t)(sum >> 1);
+  output[1] = 0;
+}
+
+void vpx_highbd_fdct32x32_1_neon(const int16_t *input, tran_low_t *output,
+                                 int stride) {
+  int r;
+  int32x4_t q0 = vdupq_n_s32(0);
+  int32x4_t q1 = vdupq_n_s32(0);
+  int32x4_t q2 = vdupq_n_s32(0);
+  int32x4_t q3 = vdupq_n_s32(0);
+  int32_t sum;
+
+  for (r = 0; r < 32; ++r) {
+    const int16x8_t a0 = vld1q_s16(input);
+    const int16x8_t a1 = vld1q_s16(input + 8);
+    const int16x8_t a2 = vld1q_s16(input + 16);
+    const int16x8_t a3 = vld1q_s16(input + 24);
+    input += stride;
+    q0 = vaddw_s16(q0, vget_low_s16(a0));
+    q0 = vaddw_s16(q0, vget_high_s16(a0));
+    q1 = vaddw_s16(q1, vget_low_s16(a1));
+    q1 = vaddw_s16(q1, vget_high_s16(a1));
+    q2 = vaddw_s16(q2, vget_low_s16(a2));
+    q2 = vaddw_s16(q2, vget_high_s16(a2));
+    q3 = vaddw_s16(q3, vget_low_s16(a3));
+    q3 = vaddw_s16(q3, vget_high_s16(a3));
+  }
+
+  sum = horizontal_add_int32x4(q0);
+  sum += horizontal_add_int32x4(q1);
+  sum += horizontal_add_int32x4(q2);
+  sum += horizontal_add_int32x4(q3);
+
+  output[0] = (tran_low_t)(sum >> 3);
+  output[1] = 0;
+}
+
+#endif  // CONFIG_VP9_HIGHBITDEPTH
