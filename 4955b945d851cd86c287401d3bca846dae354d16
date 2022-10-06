@@ -51,6 +51,24 @@
       "parentUuid": "400a7e29_0fb3544c",
       "revId": "4955b945d851cd86c287401d3bca846dae354d16",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0cbee9c_25c6752b",
+        "filename": "vpx_dsp/x86/highbd_sad_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-06T20:41:14Z",
+      "side": 1,
+      "message": "\u003e Looking at the disassembly, the compiler is treating this as a do/while. Probably because the height is hardcoded.\n\nI missed that last part when looking at it. It\u0027s good enough as long as it\u0027s inlined.",
+      "parentUuid": "1e55bc69_89bbce87",
+      "revId": "4955b945d851cd86c287401d3bca846dae354d16",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
