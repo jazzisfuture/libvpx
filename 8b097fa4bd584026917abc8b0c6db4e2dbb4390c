@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7745b961_85ac8a54",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-10-07T15:18:49Z",
+      "side": 1,
+      "message": "Hi guys, I\u0027ve just sent a first bunch of patches for highbd FDCT. I\u0027ve tried to split the code wrt functionality, eg. split functions out to different files for reuse by other files, unify the fdct* naming, etc. So far all tests pass and performance gain is significant, but I might have missed a potential optimization somewhere so I welcome the review.",
+      "revId": "8b097fa4bd584026917abc8b0c6db4e2dbb4390c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
