@@ -94,6 +94,30 @@
       },
       "revId": "ff29813e9ef3026677700baba55de9f419bea797",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7280c8e7_13531d8d",
+        "filename": "vpx_dsp/arm/fdct_partial_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-07T17:11:40Z",
+      "side": 1,
+      "message": "\u003e Could not understand how this code would work because it would outrange, then noticed you posted vpx_fdct32x32_1_neon(). \n\u003e \n\u003e Here is the highbd version:\n\u003e 0000000000000714 \u003cvpx_highbd_fdct32x32_1_neon\u003e:\n\u003e  714:\t91008008 \tadd\tx8, x0, #0x20\n\u003e  718:\t937f7c49 \tsbfiz\tx9, x2, #1, #32\n\u003e  71c:\t6f00e401 \tmovi\tv1.2d, #0x0\n\u003e  720:\t5280040a \tmov\tw10, #0x20                  \t// #32\n\u003e  724:\t6f00e403 \tmovi\tv3.2d, #0x0\n\u003e  728:\t6f00e402 \tmovi\tv2.2d, #0x0\n\u003e  72c:\t6f00e400 \tmovi\tv0.2d, #0x0\n\u003e  730:\tad7f1504 \tldp\tq4, q5, [x8, #-32]\n\u003e  734:\tad401d06 \tldp\tq6, q7, [x8]\n\u003e  738:\t7100054a \tsubs\tw10, w10, #0x1\n\u003e  73c:\t8b090108 \tadd\tx8, x8, x9\n\u003e  740:\t0e641021 \tsaddw\tv1.4s, v1.4s, v4.4h\n\u003e  744:\t0e651063 \tsaddw\tv3.4s, v3.4s, v5.4h\n\u003e  748:\t0e661042 \tsaddw\tv2.4s, v2.4s, v6.4h\n\u003e  74c:\t0e671000 \tsaddw\tv0.4s, v0.4s, v7.4h\n\u003e  750:\t4e641021 \tsaddw2\tv1.4s, v1.4s, v4.8h\n\u003e  754:\t4e651063 \tsaddw2\tv3.4s, v3.4s, v5.8h\n\u003e  758:\t4e661042 \tsaddw2\tv2.4s, v2.4s, v6.8h\n\u003e  75c:\t4e671000 \tsaddw2\tv0.4s, v0.4s, v7.8h\n\u003e  760:\t54fffe81 \tb.ne\t730 \u003cvpx_highbd_fdct32x32_1_neon+0x1c\u003e  // b.any\n\u003e  764:\t4eb1b821 \taddv\ts1, v1.4s\n\u003e  768:\t4eb1b863 \taddv\ts3, v3.4s\n\u003e  76c:\t4eb1b842 \taddv\ts2, v2.4s\n\u003e  770:\t1e260028 \tfmov\tw8, s1\n\u003e  774:\t1e260069 \tfmov\tw9, s3\n\u003e  778:\t4eb1b800 \taddv\ts0, v0.4s\n\u003e  77c:\t0b080128 \tadd\tw8, w9, w8\n\u003e  780:\t1e260049 \tfmov\tw9, s2\n\u003e  784:\t1e26000a \tfmov\tw10, s0\n\u003e  788:\t0b090108 \tadd\tw8, w8, w9\n\u003e  78c:\t0b0a0108 \tadd\tw8, w8, w10\n\u003e  790:\t13037d08 \tasr\tw8, w8, #3\n\u003e  794:\t29007c28 \tstp\tw8, wzr, [x1]\n\u003e  798:\td65f03c0 \tret\n\u003e  \n\u003e  \n\u003e  The compiler is using vaddw_high_s16(), so another version shouldn\u0027t be necessary.\n\nI think recent versions of clang and gcc have both done ok with this. It might be safest to add a specialized version, but we don\u0027t have to worry about it right now.",
+      "parentUuid": "71908536_34802d6f",
+      "range": {
+        "startLine": 146,
+        "startChar": 0,
+        "endLine": 146,
+        "endChar": 42
+      },
+      "revId": "ff29813e9ef3026677700baba55de9f419bea797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
