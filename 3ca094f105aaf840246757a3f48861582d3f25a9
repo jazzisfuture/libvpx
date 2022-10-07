@@ -16,6 +16,46 @@
       "message": "[ RUN      ] AVX2/SADTest.DISABLED_Speed/5\n[    BENCH ] 64x64 1.4 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/5 (20 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/6\n[    BENCH ] 64x32 1.4 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/6 (20 ms)\n\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/13\n[    BENCH ] 64x64 1.4 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/13 (20 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/14\n[    BENCH ] 64x32 1.4 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/14 (20 ms)\n\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/21\n[    BENCH ] 64x64 1.4 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/21 (20 ms)\n[ RUN      ] AVX2/SADTest.DISABLED_Speed/22\n[    BENCH ] 64x32 1.4 ms ( ±0.0 ms )\n[       OK ] AVX2/SADTest.DISABLED_Speed/22 (20 ms)\n\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/13\n[    BENCH ] 64x64 4.0 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/13 (60 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/14\n[    BENCH ] 64x32 4.2 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/14 (62 ms)\n\n[    BENCH ] 64x64 4.0 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/24 (60 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/25\n[    BENCH ] 64x32 4.2 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/25 (62 ms)\n\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/35\n[    BENCH ] 64x64 4.0 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/35 (60 ms)\n[ RUN      ] SSE2/SADTest.DISABLED_Speed/36\n[    BENCH ] 64x32 4.2 ms ( ±0.0 ms )\n[       OK ] SSE2/SADTest.DISABLED_Speed/36 (62 ms)",
       "revId": "3ca094f105aaf840246757a3f48861582d3f25a9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf948c71_2c4beb92",
+        "filename": "vpx_dsp/x86/highbd_sad_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-07T16:42:15Z",
+      "side": 1,
+      "message": "64x64",
+      "range": {
+        "startLine": 81,
+        "startChar": 3,
+        "endLine": 81,
+        "endChar": 8
+      },
+      "revId": "3ca094f105aaf840246757a3f48861582d3f25a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b3b8c181_34bd1f8f",
+        "filename": "vpx_dsp/x86/highbd_sad_avx2.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-07T16:42:15Z",
+      "side": 1,
+      "message": "64x32",
+      "revId": "3ca094f105aaf840246757a3f48861582d3f25a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
