@@ -16,6 +16,29 @@
       "message": "Hi guys, I\u0027ve just sent a first bunch of patches for highbd FDCT. I\u0027ve tried to split the code wrt functionality, eg. split functions out to different files for reuse by other files, unify the fdct* naming, etc. So far all tests pass and performance gain is significant, but I might have missed a potential optimization somewhere so I welcome the review.",
       "revId": "8b097fa4bd584026917abc8b0c6db4e2dbb4390c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "390cf4ca_c356e30b",
+        "filename": "vpx_dsp/arm/transpose_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 572,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-07T17:14:12Z",
+      "side": 1,
+      "message": "Maybe the others should have been _in_place, but this is a simpler change even though reading \u0027new\u0027 on its own could be taken a few ways. The comment helps, thanks for adding it.",
+      "range": {
+        "startLine": 572,
+        "startChar": 36,
+        "endLine": 572,
+        "endChar": 40
+      },
+      "revId": "8b097fa4bd584026917abc8b0c6db4e2dbb4390c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
