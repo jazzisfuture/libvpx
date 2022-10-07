@@ -39,6 +39,30 @@
       },
       "revId": "8b097fa4bd584026917abc8b0c6db4e2dbb4390c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "83f831ea_45078bdd",
+        "filename": "vpx_dsp/arm/transpose_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 572,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-10-07T18:43:32Z",
+      "side": 1,
+      "message": "This is what I tried at first, but then I had to patch many files, then I thought renaming it to _outofplace, but it sounded funny 😊\nIf you like, I could send another patchset renaming the existing ones _inplace, but after these patches are cleared otherwise I will probably create a mess :-/",
+      "parentUuid": "390cf4ca_c356e30b",
+      "range": {
+        "startLine": 572,
+        "startChar": 36,
+        "endLine": 572,
+        "endChar": 40
+      },
+      "revId": "8b097fa4bd584026917abc8b0c6db4e2dbb4390c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
