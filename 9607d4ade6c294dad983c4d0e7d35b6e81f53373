@@ -22,6 +22,30 @@
       },
       "revId": "9607d4ade6c294dad983c4d0e7d35b6e81f53373",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "013140a9_1386e287",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-10-07T20:45:32Z",
+      "side": 1,
+      "message": "It is renamed in the next patchset (https://chromium-review.googlesource.com/c/webm/libvpx/+/3932956) to something more appropriate 😊",
+      "parentUuid": "905e76a5_25731b9f",
+      "range": {
+        "startLine": 345,
+        "startChar": 24,
+        "endLine": 345,
+        "endChar": 39
+      },
+      "revId": "9607d4ade6c294dad983c4d0e7d35b6e81f53373",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
