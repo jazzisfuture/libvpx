@@ -46,6 +46,30 @@
       },
       "revId": "9607d4ade6c294dad983c4d0e7d35b6e81f53373",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e8f5af0_44d61a72",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 345,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-08T02:22:53Z",
+      "side": 1,
+      "message": "\u003e It is renamed in the next patchset (https://chromium-review.googlesource.com/c/webm/libvpx/+/3932956) to something more appropriate 😊\n\nI think what Scott meant was that the function isn\u0027t used in this change, so could be moved to the FDCT 8x8 change.",
+      "parentUuid": "013140a9_1386e287",
+      "range": {
+        "startLine": 345,
+        "startChar": 24,
+        "endLine": 345,
+        "endChar": 39
+      },
+      "revId": "9607d4ade6c294dad983c4d0e7d35b6e81f53373",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
