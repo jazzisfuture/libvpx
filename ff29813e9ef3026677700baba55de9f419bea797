@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2bdb0b4c_0abd92a6",
+        "filename": "vpx_dsp/arm/fdct_partial_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-10T09:20:01Z",
+      "side": 1,
+      "message": "Modern OoO Arm cores can execute at least 2 widening-add instructions per cycle, with each instruction having a latency of 2 cycles[1]. This means that we end up with a bottleneck on the accumulator vectors here - halving the theoretical maximum performance of this loop. Let\u0027s change this to use 4 accumulator vectors[2].\n\n(The other points to note in [2] are the use of a do-while as we know we\u0027re doing at least 1 iteration, and the single use of ADDV in the final reduction - these are higher latency and lower throughput than regular ADD instructions.)\n\n[1] https://developer.arm.com/documentation/swog309707/latest\n[2] https://godbolt.org/z/PejhGMfGa",
+      "range": {
+        "startLine": 107,
+        "startChar": 0,
+        "endLine": 128,
+        "endChar": 1
+      },
+      "revId": "ff29813e9ef3026677700baba55de9f419bea797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "0e828294_18c38b7f",
         "filename": "vpx_dsp/arm/fdct_partial_neon.c",
         "patchSetId": 1
@@ -115,6 +138,29 @@
         "startChar": 0,
         "endLine": 146,
         "endChar": 42
+      },
+      "revId": "ff29813e9ef3026677700baba55de9f419bea797",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a15e6377_4ef6e937",
+        "filename": "vpx_dsp/arm/fdct_partial_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-10T09:20:01Z",
+      "side": 1,
+      "message": "Let\u0027s stick with regular Neon ADDs and then use a single ADDV - as same reasoning as the comment above.",
+      "range": {
+        "startLine": 155,
+        "startChar": 2,
+        "endLine": 158,
+        "endChar": 36
       },
       "revId": "ff29813e9ef3026677700baba55de9f419bea797",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
