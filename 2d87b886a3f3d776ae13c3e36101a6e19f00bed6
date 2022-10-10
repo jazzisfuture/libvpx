@@ -16,6 +16,23 @@
       "message": "Thanks for making those changes. LGTM.",
       "revId": "2d87b886a3f3d776ae13c3e36101a6e19f00bed6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6083c306_3e9022f7",
+        "filename": "vpx_dsp/arm/fdct_partial_neon.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-10T18:36:48Z",
+      "side": 1,
+      "message": "we\u0027ve found that with for loops using constants the assembly is equivalent, but this is ok either way.",
+      "revId": "2d87b886a3f3d776ae13c3e36101a6e19f00bed6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
