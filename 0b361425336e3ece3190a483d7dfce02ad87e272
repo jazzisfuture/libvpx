@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bfa052f6_e2233111",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-10T09:55:00Z",
+      "side": 1,
+      "message": "Is it possible to do all of this with a vqrdmulhq_s16()[1]?\n\nE.g. something like: \n*add \u003d vqrdmulhq_s16(vaddq_s16(a, b), 2 * c);\n*sub \u003d vqrdmulhq_s16(vsubq_s16(a, b), 2 * c);\n\n[1] https://developer.arm.com/architectures/instruction-sets/intrinsics/vqrdmulhq_s16",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "0b361425336e3ece3190a483d7dfce02ad87e272",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a2b22196_c2a870d3",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-10T09:55:00Z",
+      "side": 1,
+      "message": "Versions of GCC and Clang that have been released in the last year will get us out of jail here and transform this code to use a CMLT #0 instruction instead of a right shift. (CMLT is double the throughput of SSHR on Arm OoO cores.) Regardless, we ought to use the CMLT intrinsic[1] directly.\n\n(CMGT with a zero-vector will get transformed to CMLT #0 and is available on both 32- and 64-bit, unlike [2].)\n\nThis comment applies to all places in this Neon code where we want to isolate the sign bit.\n\n[1] https://developer.arm.com/architectures/instruction-sets/intrinsics/vcltq_s16\n[2] https://developer.arm.com/architectures/instruction-sets/intrinsics/vcltzq_s16",
+      "range": {
+        "startLine": 59,
+        "startChar": 2,
+        "endLine": 59,
+        "endChar": 55
+      },
+      "revId": "0b361425336e3ece3190a483d7dfce02ad87e272",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
