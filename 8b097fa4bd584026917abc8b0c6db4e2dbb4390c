@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "329af117_157b8a65",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-10T15:18:59Z",
+      "side": 1,
+      "message": "LGTM.",
+      "revId": "8b097fa4bd584026917abc8b0c6db4e2dbb4390c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "390cf4ca_c356e30b",
         "filename": "vpx_dsp/arm/transpose_neon.h",
         "patchSetId": 1
