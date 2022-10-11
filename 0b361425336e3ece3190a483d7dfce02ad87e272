@@ -45,6 +45,30 @@
       },
       "revId": "0b361425336e3ece3190a483d7dfce02ad87e272",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "40c666bb_ad7b10bd",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-10-11T06:01:28Z",
+      "side": 1,
+      "message": "Jonathan, \nI reproduced it with vcltq_s16(), but I couldn\u0027t do it with just the vcltq, I had to also use an AND in there, to isolate the sign bit, perhaps I\u0027m missing something obvious? In any case, it worked, I didn\u0027t see any difference in performance though.\n\nconst uint16x8_t a_sign_u16 \u003d vandq_u16(vcltq_s16(a, vdupq_n_s16(0)), vdupq_n_u16(1));",
+      "parentUuid": "a2b22196_c2a870d3",
+      "range": {
+        "startLine": 59,
+        "startChar": 2,
+        "endLine": 59,
+        "endChar": 55
+      },
+      "revId": "0b361425336e3ece3190a483d7dfce02ad87e272",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
