@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "e86e7032_778673af",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-10-11T06:38:16Z",
+      "side": 1,
+      "message": "So, I did try this, and it worked -passed all of the accuracy tests, however failed on one memcheck tests. (NEON/TransDCT.MemCheck/2). After some investigation, there are just two cornercases where this breaks: \nFor example:\n           a: 0000 0000 0000 0000 0000 0000 0000 a5d8 \n           b: 0000 0000 0000 0000 0000 0000 0000 a5d8\n   constant : 00002d41\nOriginal code produces:\n        *add: 0000 0000 0000 0000 0000 0000 0000 8081\nvqrdmulhq_s16:\n        add2: 0000 0000 0000 0000 0000 0000 0000 3585\n        \nSo it fails the test. However, I\u0027m not sure if this is right, the constant is too large. The opportunity for optimization here is too large to ignore, as it\u0027s just one function, perhaps it wouldn\u0027t be out of the question to change the test to lower the max value of the constant here? James, Scott?",
+      "parentUuid": "bfa052f6_e2233111",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "0b361425336e3ece3190a483d7dfce02ad87e272",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a2b22196_c2a870d3",
         "filename": "vpx_dsp/arm/fdct_neon.h",
         "patchSetId": 2
