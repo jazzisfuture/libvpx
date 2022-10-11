@@ -115,6 +115,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7e57f4a2_326a1677",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-10-11T23:03:23Z",
+      "side": 1,
+      "message": "To make debugging easier, I hard-coded max_pixel_value to 255 and forced input_extreme_block to be set to 255 as well. NEON/TransDCT.MemCheck/2 still reported an error. During the debug, I noticed a case where two positive numbers (0x5a28) added together (0xb450) in butterfly_one_coeff() would be seen as negative by vqrdmulhq_s16(). So it appears that the intermediate values are overflowing into the sign bit, causing errors. fdct goes through the data in two passes. (see vpx_fdct16x16_c) The overflow I am seeing occurs in the second pass. It might be possible to use vqrdmulhq_s16 during the first pass, and the original butterfly_one_coeff during the second pass.",
+      "parentUuid": "3034ebab_6029e364",
+      "range": {
+        "startLine": 17,
+        "startChar": 0,
+        "endLine": 32,
+        "endChar": 1
+      },
+      "revId": "0b361425336e3ece3190a483d7dfce02ad87e272",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "a2b22196_c2a870d3",
         "filename": "vpx_dsp/arm/fdct_neon.h",
         "patchSetId": 2
