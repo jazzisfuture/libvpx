@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c8016950_a50b202a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-10-12T14:47:43Z",
+      "side": 1,
+      "message": "[    BENCH ] 32x64 1.7 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/5 (25 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/6\n[    BENCH ] 32x32 2.0 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/6 (29 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/7\n[    BENCH ] 32x16 2.3 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/7 (34 ms)\n \n[    BENCH ] 32x64 1.7 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/11 (25 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/12\n[    BENCH ] 32x32 2.0 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/12 (29 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/13\n[    BENCH ] 32x16 2.3 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/13 (34 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/17\n\n[    BENCH ] 32x64 1.7 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/17 (25 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/18\n[    BENCH ] 32x32 2.0 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/18 (29 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/19\n[    BENCH ] 32x16 2.3 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/19 (34 ms)\n\n\n\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/15\n[    BENCH ] 32x64 4.8 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/15 (71 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/16\n[    BENCH ] 32x32 5.0 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/16 (75 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/17\n[    BENCH ] 32x16 4.9 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/17 (73 ms)\n\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/26\n[    BENCH ] 32x64 4.8 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/26 (71 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/27\n[    BENCH ] 32x32 5.0 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/27 (75 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/28\n[    BENCH ] 32x16 4.9 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/28 (73 ms)\n\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/37\n[    BENCH ] 32x64 4.7 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/37 (71 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/38\n[    BENCH ] 32x32 5.0 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/38 (75 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/39\n[    BENCH ] 32x16 4.9 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/39 (73 ms)",
+      "revId": "50d5093a4f1f2f0fafad09e1a106b7c3c1b9d60d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
