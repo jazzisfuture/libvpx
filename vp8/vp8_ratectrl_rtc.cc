@@ -86,12 +86,20 @@ void VP8RateControlRTC::InitRateControl(const VP8RateControlRtcConfig &rc_cfg) {
   UpdateRateControl(rc_cfg);
   cpi_->buffer_level = oxcf->starting_buffer_level;
   cpi_->bits_off_target = oxcf->starting_buffer_level;
+  if (rc_cfg.ts_number_layers > 1) {
+    double prev_layer_framerate = 0;
+    for (int i = 0; i < rc_cfg.ts_number_layers; ++i) {
+      vp8_init_temporal_layer_context(cpi_, oxcf, i, prev_layer_framerate);
+      prev_layer_framerate = cpi_->output_framerate / oxcf->rate_decimator[i];
+    }
+  }
 }
 
 void VP8RateControlRTC::UpdateRateControl(
     const VP8RateControlRtcConfig &rc_cfg) {
   VP8_COMMON *cm = &cpi_->common;
   VP8_CONFIG *oxcf = &cpi_->oxcf;
+  unsigned int prev_number_of_layers = oxcf->number_of_layers;
   vpx_clear_system_state();
   cm->Width = rc_cfg.width;
   cm->Height = rc_cfg.height;
@@ -129,12 +137,18 @@ void VP8RateControlRTC::UpdateRateControl(
            sizeof(rc_cfg.layer_target_bitrate));
     memcpy(oxcf->rate_decimator, rc_cfg.ts_rate_decimator,
            sizeof(rc_cfg.ts_rate_decimator));
-    oxcf->periodicity = 2;
-
-    double prev_layer_framerate = 0;
-    for (unsigned int i = 0; i < oxcf->number_of_layers; ++i) {
-      vp8_init_temporal_layer_context(cpi_, oxcf, i, prev_layer_framerate);
-      prev_layer_framerate = cpi_->output_framerate / oxcf->rate_decimator[i];
+    // Check if the number of temporal layers has changed, and if so reset the
+    // pattern counter and set/initialize the temporal layer context for the
+    // new layer configuration.
+    if (oxcf->number_of_layers != prev_number_of_layers) {
+      // If the number of temporal layers are changed we must start at the
+      // base of the pattern cycle, so set the layer id to 0 and reset
+      // the temporal pattern counter.
+      if (cpi_->temporal_layer_id > 0) {
+        cpi_->temporal_layer_id = 0;
+      }
+      cpi_->temporal_pattern_counter = 0;
+      vp8_reset_temporal_layer_change(cpi_, oxcf, prev_number_of_layers);
     }
   }
 
