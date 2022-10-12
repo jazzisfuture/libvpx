@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4b5db71e_e540b51d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-10-12T18:45:38Z",
+      "side": 1,
+      "message": "[    BENCH ] 64x64 1.8 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/5 (27 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/6\n[    BENCH ] 64x32 1.7 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/6 (25 ms)\n\n[    BENCH ] 64x64 1.9 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/13 (28 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/14\n[    BENCH ] 64x32 1.8 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/14 (27 ms)\n\n[    BENCH ] 64x64 1.8 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/21 (27 ms)\n[ RUN      ] AVX2/SADavgTest.DISABLED_Speed/22\n[    BENCH ] 64x32 1.7 ms ( ±0.0 ms )\n[       OK ] AVX2/SADavgTest.DISABLED_Speed/22 (25 ms)\n\n\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/13\n[    BENCH ] 64x64 5.1 ms ( ±0.1 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/13 (77 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/14\n[    BENCH ] 64x32 5.2 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/14 (77 ms)\n\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/24\n[    BENCH ] 64x64 4.8 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/24 (71 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/25\n[    BENCH ] 64x32 5.1 ms ( ±0.2 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/25 (75 ms)\n\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/35\n[    BENCH ] 64x64 5.1 ms ( ±0.0 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/35 (77 ms)\n[ RUN      ] SSE2/SADavgTest.DISABLED_Speed/36\n[    BENCH ] 64x32 4.8 ms ( ±0.2 ms )\n[       OK ] SSE2/SADavgTest.DISABLED_Speed/36 (74 ms)",
+      "revId": "7142689f00e73d461b8d00347ee84da2ee420994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
