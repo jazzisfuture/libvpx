@@ -22,6 +22,30 @@
       },
       "revId": "98151ed5fdd749bcdf3afb9216d8696a24c48db4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a4304c4b_2346904c",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-10-13T15:50:49Z",
+      "side": 1,
+      "message": "Yes, I misunderstood, should be fixed now.",
+      "parentUuid": "121cca19_a5359cbc",
+      "range": {
+        "startLine": 361,
+        "startChar": 56,
+        "endLine": 361,
+        "endChar": 67
+      },
+      "revId": "98151ed5fdd749bcdf3afb9216d8696a24c48db4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
