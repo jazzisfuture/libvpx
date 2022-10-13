@@ -366,13 +366,13 @@ static INLINE void highbd_butterfly_one_coeff_s32(const int32x4_t a,
   const int32x2_t b_lo = vget_low_s32(b);
   const int32x2_t b_hi = vget_high_s32(b);
 
-  const int64x2_t a64_lo = vmull_n_s32(a_lo, c);
-  const int64x2_t a64_hi = vmull_n_s32(a_hi, c);
+  const int64x2_t a64_lo = vmull_n_s32(a_lo, (int32_t)c);
+  const int64x2_t a64_hi = vmull_n_s32(a_hi, (int32_t)c);
 
-  const int64x2_t sum_lo = vmlal_n_s32(a64_lo, b_lo, c);
-  const int64x2_t sum_hi = vmlal_n_s32(a64_hi, b_hi, c);
-  const int64x2_t diff_lo = vmlsl_n_s32(a64_lo, b_lo, c);
-  const int64x2_t diff_hi = vmlsl_n_s32(a64_hi, b_hi, c);
+  const int64x2_t sum_lo = vmlal_n_s32(a64_lo, b_lo, (int32_t)c);
+  const int64x2_t sum_hi = vmlal_n_s32(a64_hi, b_hi, (int32_t)c);
+  const int64x2_t diff_lo = vmlsl_n_s32(a64_lo, b_lo, (int32_t)c);
+  const int64x2_t diff_hi = vmlsl_n_s32(a64_hi, b_hi, (int32_t)c);
 
   *add = vcombine_s32(vrshrn_n_s64(sum_lo, DCT_CONST_BITS),
                       vrshrn_n_s64(sum_hi, DCT_CONST_BITS));
