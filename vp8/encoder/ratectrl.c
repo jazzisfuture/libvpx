@@ -1121,6 +1121,9 @@ void vp8_update_rate_correction_factors(VP8_COMP *cpi, int damp_var) {
   }
 
   if (cpi->common.frame_type == KEY_FRAME) {
+    fprintf(stderr, "key_frame_rate_correction_factor: %f => %f\n",
+            (float) cpi->key_frame_rate_correction_factor,
+            (float) rate_correction_factor);
     cpi->key_frame_rate_correction_factor = rate_correction_factor;
   } else {
     if (cpi->oxcf.number_of_layers == 1 && !cpi->gf_noboost_onepass_cbr &&
@@ -1175,15 +1178,23 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
     /* Select the appropriate correction factor based upon type of frame. */
     if (cpi->common.frame_type == KEY_FRAME) {
       correction_factor = cpi->key_frame_rate_correction_factor;
+      fprintf(stderr, "used_key_frame_rate_correction_factor=%f\n",
+              (float) correction_factor);
     } else {
       if (cpi->oxcf.number_of_layers == 1 && !cpi->gf_noboost_onepass_cbr &&
           (cpi->common.refresh_alt_ref_frame ||
            cpi->common.refresh_golden_frame)) {
         correction_factor = cpi->gf_rate_correction_factor;
+        fprintf(stderr, "used_gf_rate_correction_factor=%f\n",
+                (float) correction_factor);
       } else {
         correction_factor = cpi->rate_correction_factor;
+        fprintf(stderr, "used_rate_correction_factor=%f\n",
+                (float) correction_factor);
       }
     }
+    fprintf(stderr, "target_bits_per_frame=%d\n",
+            target_bits_per_frame);
 
     /* Calculate required scaling factor based on target frame size and
      * size of frame produced using previous Q
@@ -1203,7 +1214,14 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
       bits_per_mb_at_this_q =
           (int)(.5 +
                 correction_factor * vp8_bits_per_mb[cpi->common.frame_type][i]);
-
+      fprintf(stderr,
+              "%d: correction_factor=%f, vp8_bits_per_mb[cpi->common.frame_type][i]=%d\n"
+              "    bits_per_mb_at_this_q=%d, target_bits_per_mb=%d\n",
+              i,
+              (float) correction_factor,
+              vp8_bits_per_mb[cpi->common.frame_type][i],
+              bits_per_mb_at_this_q,
+              target_bits_per_mb);
       if (bits_per_mb_at_this_q <= target_bits_per_mb) {
         if ((target_bits_per_mb - bits_per_mb_at_this_q) <= last_error) {
           Q = i;
@@ -1216,6 +1234,7 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
         last_error = bits_per_mb_at_this_q - target_bits_per_mb;
       }
     } while (++i <= cpi->active_worst_quality);
+    fprintf(stderr, "%d: Q=%d\n", __LINE__, Q);
 
     /* If we are at MAXQ then enable Q over-run which seeks to claw
      * back additional bits through things like the RD multiplier
@@ -1285,7 +1304,7 @@ int vp8_regulate_q(VP8_COMP *cpi, int target_bits_per_frame) {
       cpi->oxcf.end_usage == USAGE_STREAM_FROM_SERVER &&
       cpi->oxcf.screen_content_mode)
     Q = limit_q_cbr_inter(cpi->last_q[1], Q);
-
+  fprintf(stderr, "Q=%d\n", (int) Q);
   return Q;
 }
 

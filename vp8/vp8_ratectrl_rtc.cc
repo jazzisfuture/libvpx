@@ -125,18 +125,22 @@ void VP8RateControlRTC::UpdateRateControl(
         static_cast<int>(cpi_->output_framerate);
   }
 
+  fprintf(stderr, "cm->current_video_frame: %d, oxcf->number_of_layers: %d, prev_number_of_layers: %d\n",
+          (int)cm->current_video_frame, (int)oxcf->number_of_layers, (int)prev_number_of_layers);
   if (oxcf->number_of_layers > 1 || prev_number_of_layers > 1) {
     memcpy(oxcf->target_bitrate, rc_cfg.layer_target_bitrate,
            sizeof(rc_cfg.layer_target_bitrate));
     memcpy(oxcf->rate_decimator, rc_cfg.ts_rate_decimator,
            sizeof(rc_cfg.ts_rate_decimator));
     if (cm->current_video_frame == 0) {
+      fprintf(stderr, "vp8_init_temporal_layer_context\n");
       double prev_layer_framerate = 0;
       for (unsigned int i = 0; i < oxcf->number_of_layers; ++i) {
         vp8_init_temporal_layer_context(cpi_, oxcf, i, prev_layer_framerate);
         prev_layer_framerate = cpi_->output_framerate / oxcf->rate_decimator[i];
       }
     } else if (oxcf->number_of_layers != prev_number_of_layers) {
+      fprintf(stderr, "vp8_reset_temporal_layer_context\n");
       // The number of temporal layers has changed, so reset/initialize the
       // temporal layer context for the new layer configuration: this means
       // calling vp8_reset_temporal_layer_change() below.
@@ -207,7 +211,8 @@ void VP8RateControlRTC::ComputeQP(const VP8FrameParamsQpRTC &frame_params) {
   }
 
   vp8_pick_frame_size(cpi_);
-
+  fprintf(stderr, "%d: active_worst_quality=%d, active_best_quality=%d\n",
+          __LINE__, cpi_->active_worst_quality, cpi_->active_best_quality);
   if (cpi_->buffer_level >= cpi_->oxcf.optimal_buffer_level &&
       cpi_->buffered_mode) {
     /* Max adjustment is 1/4 */
@@ -232,7 +237,9 @@ void VP8RateControlRTC::ComputeQP(const VP8FrameParamsQpRTC &frame_params) {
       }
     }
   }
-
+  fprintf(stderr, "%d: active_worst_quality=%d, active_best_quality=%d\n",
+          __LINE__, cpi_->active_worst_quality, cpi_->active_best_quality);
+  fprintf(stderr, "cpi_->ni_frames=%d\n", cpi_->ni_frames);
   if (cpi_->ni_frames > 150) {
     int q = cpi_->active_worst_quality;
     if (cm->frame_type == KEY_FRAME) {
@@ -240,6 +247,8 @@ void VP8RateControlRTC::ComputeQP(const VP8FrameParamsQpRTC &frame_params) {
     } else {
       cpi_->active_best_quality = inter_minq[q];
     }
+    fprintf(stderr, "%d: active_worst_quality=%d, active_best_quality=%d\n",
+            __LINE__, cpi_->active_worst_quality, cpi_->active_best_quality);
 
     if (cpi_->buffer_level >= cpi_->oxcf.maximum_buffer_size) {
       cpi_->active_best_quality = cpi_->best_quality;
@@ -266,8 +275,12 @@ void VP8RateControlRTC::ComputeQP(const VP8FrameParamsQpRTC &frame_params) {
   if (cpi_->active_worst_quality < cpi_->active_best_quality) {
     cpi_->active_worst_quality = cpi_->active_best_quality;
   }
+  fprintf(stderr, "%d: active_worst_quality=%d, active_best_quality=%d\n",
+          __LINE__, cpi_->active_worst_quality, cpi_->active_best_quality);
 
   q_ = vp8_regulate_q(cpi_, cpi_->this_frame_target);
+  fprintf(stderr, "%d: active_worst_quality=%d, active_best_quality=%d\n",
+          __LINE__, cpi_->active_worst_quality, cpi_->active_best_quality);
   vp8_set_quantizer(cpi_, q_);
   vpx_clear_system_state();
 }
