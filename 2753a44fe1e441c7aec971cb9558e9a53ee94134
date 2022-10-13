@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "791d1279_75f5908e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-10-13T01:17:13Z",
+      "side": 1,
+      "message": "Does this work when the number of layers are changed like 2-\u003e1, 1-\u003e2, \u003e2-\u003e1, ...?\n\nLooks like key_frame_rate_correction_factor is reset to 1.0 when the number of temporal layers is changed from 2 to 1.",
+      "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
