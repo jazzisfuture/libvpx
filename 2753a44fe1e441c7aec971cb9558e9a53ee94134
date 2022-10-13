@@ -16,6 +16,24 @@
       "message": "Does this work when the number of layers are changed like 2-\u003e1, 1-\u003e2, \u003e2-\u003e1, ...?\n\nLooks like key_frame_rate_correction_factor is reset to 1.0 when the number of temporal layers is changed from 2 to 1.",
       "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fcac0ade_71db69d1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-10-13T03:39:23Z",
+      "side": 1,
+      "message": "I think it should work because of the logic in vp8_reset_temporal_layer_change():\n...\n   (i \u003d 0; i \u003c curr_num_layers; ++i) {\n    LAYER_CONTEXT *lc \u003d \u0026cpi-\u003elayer_context[i];\n    if (i \u003e\u003d prev_num_layers) {\n      vp8_init_temporal_layer_context(cpi, oxcf, i, prev_layer_framerate);\n    }\n...\nSo for 2 -\u003e 1 it should not call vp8_init_temporal_layer_context(), since prev_num_layers would be 2 and curr_num_layers \u003d 1, so the key_frame_rate_correction_factor should not be reset to 1.\n\nBut since we currently don\u0027t have any tests to cover that case, there could be an issue with 2-\u003e1. Can you try it with your tests and let us know?",
+      "parentUuid": "791d1279_75f5908e",
+      "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
