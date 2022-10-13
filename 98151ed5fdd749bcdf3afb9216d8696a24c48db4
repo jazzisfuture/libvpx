@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "121cca19_a5359cbc",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 361,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-10-13T15:45:53Z",
+      "side": 1,
+      "message": "Sorry I wasn\u0027t clear. I meant the parameter could be tran_low_t. (no casts required) Looking a little more closely, I noticed highbd_butterfly_two_coeff_s32 uses tran_coef_t. To be consistent, lets use tran_coef_t.",
+      "range": {
+        "startLine": 361,
+        "startChar": 56,
+        "endLine": 361,
+        "endChar": 67
+      },
+      "revId": "98151ed5fdd749bcdf3afb9216d8696a24c48db4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
