@@ -88,6 +88,24 @@
       "parentUuid": "00cba6ce_b92f0ce2",
       "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4283e428_9e60ff3a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-10-14T19:31:55Z",
+      "side": 1,
+      "message": "Added the condition:\nif (oxcf-\u003enumber_of_layers \u003e 1 || prev_number_of_layers \u003e 1), \n\ncan you test if this works. Don\u0027t want to do:if (oxcf-\u003enumber_of_layers \u003e\u003d 1) since we will then enter unneeded code for 1 layer case.",
+      "parentUuid": "c0053154_bf3e3ddc",
+      "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
