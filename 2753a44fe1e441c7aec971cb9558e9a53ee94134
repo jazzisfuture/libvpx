@@ -70,6 +70,24 @@
       "parentUuid": "68ad82b1_bba9e8b2",
       "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0053154_bf3e3ddc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-10-14T16:25:14Z",
+      "side": 1,
+      "message": "Neither of them in 2-\u003e1.\n```\n2022-10-14T16:21:34.774458Z VERBOSE2 video_encode_accelerator_tests: [vp8_vaapi_video_encoder_delegate.cc(457)] UpdateRates(): The number of temporal layers is changed, from 2 to 1\ncm-\u003ecurrent_video_frame: 240, oxcf-\u003enumber_of_layers: 1, prev_number_of_layers: 2\nused_key_frame_rate_correction_factor\u003d1.000000\nQ\u003d89\n```\n\nI think we need to fix `if (oxcf-\u003enumber_of_layers \u003e 1) {` in l.128.\n\nFWIW, 1-\u003e2 looks good.\n```\n2022-10-14T16:21:34.153383Z VERBOSE2 video_encode_accelerator_tests: [vp8_vaapi_video_encoder_delegate.cc(457)] UpdateRates(): The number of temporal layers is changed, from 1 to 2\ncm-\u003ecurrent_video_frame: 180, oxcf-\u003enumber_of_layers: 2, prev_number_of_layers: 1\nvp8_reset_temporal_layer_change\nused_key_frame_rate_correction_factor\u003d0.790000\n```",
+      "parentUuid": "00cba6ce_b92f0ce2",
+      "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
