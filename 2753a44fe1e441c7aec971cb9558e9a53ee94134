@@ -52,6 +52,24 @@
       "parentUuid": "fcac0ade_71db69d1",
       "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "00cba6ce_b92f0ce2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-10-14T15:57:21Z",
+      "side": 1,
+      "message": "Ok thanks for the runs and the data.\n\nSo it seems work fine for 1-\u003e2, but not 2-\u003e1?\n\nCan you add print/log inside UpdateRateControl(), at lines 133, to see what (current_video_frame, oxcf-\u003enumber_of_layers, prrev_number_of_layers) are?\nTo see if we enter vp8_reset_temporal_layer_change (as expected), or if we directly enter vp8_init_temporal_layer_context() for all layers (1 and 2, which would be wrong).",
+      "parentUuid": "68ad82b1_bba9e8b2",
+      "revId": "2753a44fe1e441c7aec971cb9558e9a53ee94134",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
