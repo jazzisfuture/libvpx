@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5910d83b_1965fd63",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-10-17T03:32:21Z",
+      "side": 1,
+      "message": "This should be performance neutral on x86_64. It looks OK on my macbook, but it doesn\u0027t emulate SSSE3 well",
+      "revId": "828d05d4a497e7f5d635a8e5bf35fca790759b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
