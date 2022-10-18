@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8058f85_af45baf7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-10-18T06:00:43Z",
+      "side": 1,
+      "message": "Bug: b/253927937",
+      "revId": "ed8752ecaeb96bd9bed9073649e94da101d2c900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ee95b98_6bd4e1df",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-10-18T06:00:43Z",
+      "side": 1,
+      "message": "Thanks. I confirmed this fixed the issue.",
+      "revId": "ed8752ecaeb96bd9bed9073649e94da101d2c900",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
