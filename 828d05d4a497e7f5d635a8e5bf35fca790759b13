@@ -16,6 +16,24 @@
       "message": "This should be performance neutral on x86_64. It looks OK on my macbook, but it doesn\u0027t emulate SSSE3 well",
       "revId": "828d05d4a497e7f5d635a8e5bf35fca790759b13",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f60e1f28_9d9047f1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-10-18T20:06:48Z",
+      "side": 1,
+      "message": "Looks neutral.\n\nASM VERSION\n-------------------\n\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/1 (76 ms)\n[ RUN      ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/2\n[    BENCH ]      Bypass calculations       4x4  8.7 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations       4x4  8.7 ms ( ±0.0 ms )\n[    BENCH ]      Bypass calculations       8x8  2.6 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations       8x8  2.6 ms ( ±0.0 ms )\n[    BENCH ]      Bypass calculations     16x16  2.1 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations     16x16  2.1 ms ( ±0.0 ms )\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/2 (402 ms)\n[ RUN      ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/3\n[    BENCH ]      Bypass calculations     32x32  0.9 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations     32x32  2.6 ms ( ±0.0 ms )\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/3 (51 ms)\n\n[ RUN      ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/2\n[    BENCH ]      Bypass calculations       4x4  6.2 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations       4x4  6.2 ms ( ±0.0 ms )\n[    BENCH ]      Bypass calculations       8x8  2.1 ms ( ±0.1 ms )\n[    BENCH ]        Full calculations       8x8  2.1 ms ( ±0.0 ms )\n[    BENCH ]      Bypass calculations     16x16  2.0 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations     16x16  2.0 ms ( ±0.0 ms )\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/2 (309 ms)\n[ RUN      ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/3\n[    BENCH ]      Bypass calculations     32x32  0.9 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations     32x32  2.5 ms ( ±0.0 ms )\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/3 (51 ms)\n[----------] 8 tests from SSSE3/VP9QuantizeTest (85092 ms total)\n\n\nINTRIN VERSION\n--------------------\n\n[ RUN      ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/2\n[    BENCH ]      Bypass calculations       4x4  6.2 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations       4x4  6.2 ms ( ±0.0 ms )\n[    BENCH ]      Bypass calculations       8x8  2.1 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations       8x8  2.1 ms ( ±0.0 ms )\n[    BENCH ]      Bypass calculations     16x16  2.0 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations     16x16  2.0 ms ( ±0.0 ms )\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/2 (308 ms)\n[ RUN      ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/3\n[    BENCH ]      Bypass calculations     32x32  0.9 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations     32x32  2.5 ms ( ±0.0 ms )\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/3 (51 ms)\n\n[ RUN      ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/2\n[    BENCH ]      Bypass calculations       4x4  6.2 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations       4x4  6.2 ms ( ±0.0 ms )\n[    BENCH ]      Bypass calculations       8x8  2.1 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations       8x8  2.1 ms ( ±0.0 ms )\n[    BENCH ]      Bypass calculations     16x16  2.0 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations     16x16  2.0 ms ( ±0.0 ms )\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/2 (307 ms)\n[ RUN      ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/3\n[    BENCH ]      Bypass calculations     32x32  0.9 ms ( ±0.0 ms )\n[    BENCH ]        Full calculations     32x32  2.6 ms ( ±0.0 ms )\n[       OK ] SSSE3/VP9QuantizeTest.DISABLED_SpeedMedian/3 (52 ms)",
+      "parentUuid": "5910d83b_1965fd63",
+      "revId": "828d05d4a497e7f5d635a8e5bf35fca790759b13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
