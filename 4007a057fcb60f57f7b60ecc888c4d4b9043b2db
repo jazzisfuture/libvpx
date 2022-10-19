@@ -16,6 +16,29 @@
       "message": "LGTM.",
       "revId": "4007a057fcb60f57f7b60ecc888c4d4b9043b2db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c2abe76_9032a3d0",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-10-19T02:40:41Z",
+      "side": 1,
+      "message": "Hmm, maybe this shall be the maximum tls so far?\n\nIf the number of temporal layers is changed like 2 -\u003e 1 -\u003e 2,\nthen rate_correction_factor for temporal_id\u003d1 is reset to 1.",
+      "range": {
+        "startLine": 344,
+        "startChar": 3,
+        "endLine": 344,
+        "endChar": 31
+      },
+      "revId": "4007a057fcb60f57f7b60ecc888c4d4b9043b2db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
