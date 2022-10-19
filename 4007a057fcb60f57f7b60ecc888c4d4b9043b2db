@@ -39,6 +39,30 @@
       },
       "revId": "4007a057fcb60f57f7b60ecc888c4d4b9043b2db",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc1f39ca_97dd7e8c",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 344,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-10-19T03:49:43Z",
+      "side": 1,
+      "message": "Don\u0027t think we will change this. Since it\u0027s not really a bug and it\u0027s behavior inside vp8 encoder that has been used for a while.\n\nWe don\u0027t know how long it\u0027s been at state 1, if its long enough it makes sense to reset. And reset rate correction to 1 is ok as it will adjust over some frames and come down.",
+      "parentUuid": "2c2abe76_9032a3d0",
+      "range": {
+        "startLine": 344,
+        "startChar": 3,
+        "endLine": 344,
+        "endChar": 31
+      },
+      "revId": "4007a057fcb60f57f7b60ecc888c4d4b9043b2db",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
