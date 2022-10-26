@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb575517_f342baca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-10-26T23:52:41Z",
+      "side": 1,
+      "message": "Want to be able to test a change in C-only before extending to neon. --disable-neon fails to build without this change.",
+      "revId": "068d79df1ffc0948324b5dd9052f93ee19c3ca90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
