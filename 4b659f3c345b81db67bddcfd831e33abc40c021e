@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "0fa42063_f2060fc8",
+        "filename": ".mailmap",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-26T23:57:33Z",
+      "side": 1,
+      "message": "Johann Koenig \u003cjohannkoenig@dhcp-172-19-7-52.mtv.corp.google.com\u003e  could use a mapping too. Not sure if you want to coalesce everything into @google.com; check out `git shortlog -e`.",
+      "revId": "4b659f3c345b81db67bddcfd831e33abc40c021e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "788d1f77_11e2eda1",
