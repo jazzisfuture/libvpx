@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9711b3d_8c6fb4d9",
+        "filename": "build/make/rtcd.pl",
+        "patchSetId": 3
+      },
+      "lineNbr": 491,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-27T04:56:18Z",
+      "side": 1,
+      "message": "@ALL_ARCHS would be sufficient here, but either way works and this is probably better if we get around to moving the 8.4+ code to rtcd.",
+      "revId": "9e1bdd12c79008a1fa8f1b9ba63194bdcd020fd7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
