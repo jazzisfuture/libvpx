@@ -1,6 +1,29 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "369d68cd_b605527b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-27T13:41:48Z",
+      "side": 1,
+      "message": "Nit: \"do not provide the necessary precision\" would be better here.",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 22
+      },
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "2ed9fc8c_f16f7a66",
@@ -14,6 +37,69 @@
       "writtenOn": "2022-10-27T07:07:06Z",
       "side": 1,
       "message": "Hi guys, apologies for the large patchset, however I couldn\u0027t make it smaller as the changes affected quite a few files. Getting the butterfly functions named in a uniform way made it significantly easier to port the 32x32 DCT to highbd (followed in a next patchset) and also much easier to read and debug the code. I tried getting some fast variants of the two coeff butterfly function to use a pair of vqrdmulh_s16, vqrdmlah_s16/vqrdmlsh_s16 (and their 32-bit variants), it worked but unfortunately I couldn\u0027t get the needed accuracy. I\u0027ll keep investigating this though to see if I could use them in some particular usecases.",
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d009e595_8f8a359d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-27T13:41:48Z",
+      "side": 1,
+      "message": "Nice patch! There are a few issues though - see the comments for details.",
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87758b73_ecb6adf4",
+        "filename": "vpx_dsp/arm/fdct32x32_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-27T13:41:48Z",
+      "side": 1,
+      "message": "Loading these values multiple times - instead of explicitly storing them in registers and reusing them - is problematic, and leads to double the required number of loads; and some spillage to the stack.\n\nIf we can\u0027t use something like \u0027restrict\u0027, to tell the compiler there\u0027s no aliasing going on, try something like the second implementation here: https://godbolt.org/z/G4denv9eM",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 1
+      },
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fdfe1245_ce9abec3",
+        "filename": "vpx_dsp/arm/fdct32x32_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-27T13:41:48Z",
+      "side": 1,
+      "message": "On first inspection (throwing this into Compiler Explorer) seems to give the same issue as above - double the number of loads.\n\nI should probably check what happens once everything gets put together though... rather than just taking chunks in isolation.",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 167,
+        "endChar": 35
+      },
       "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
