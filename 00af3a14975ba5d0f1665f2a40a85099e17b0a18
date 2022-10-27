@@ -22,6 +22,30 @@
       },
       "revId": "00af3a14975ba5d0f1665f2a40a85099e17b0a18",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb14ed6c_98368829",
+        "filename": "build/make/rtcd.pl",
+        "patchSetId": 2
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-10-27T00:25:14Z",
+      "side": 1,
+      "message": "Whoops, bad testing on my end. This does indeed fix it.",
+      "parentUuid": "41eee5bd_d83b6798",
+      "range": {
+        "startLine": 453,
+        "startChar": 0,
+        "endLine": 453,
+        "endChar": 22
+      },
+      "revId": "00af3a14975ba5d0f1665f2a40a85099e17b0a18",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
