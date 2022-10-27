@@ -102,6 +102,46 @@
       },
       "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4acb164_a13cea50",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-10-27T14:29:46Z",
+      "side": 1,
+      "message": "../libvpx/vpx_dsp/arm/fdct_neon.h:50:38: warning: implicit conversion loses integer precision: \u0027tran_high_t\u0027 (aka \u0027long\u0027) to \u0027int32_t\u0027 (aka \u0027int\u0027) [-Wshorten-64-to-32]\n  int32x4_t c \u003d vdupq_n_s32(constant \u003c\u003c 17);\n  \nconstant should be tran_coef_t.",
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "da2e330d_4671842d",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-10-27T14:29:46Z",
+      "side": 1,
+      "message": "tran_coef_t",
+      "range": {
+        "startLine": 80,
+        "startChar": 48,
+        "endLine": 80,
+        "endChar": 59
+      },
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
