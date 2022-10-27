@@ -81,6 +81,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bda00a70_eb3c681e",
+        "filename": "vpx_dsp/arm/fdct32x32_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-27T21:18:13Z",
+      "side": 1,
+      "message": "Ignore the above - once this is inlined the compiler works out that there is no aliasing. Apologies for jumping the gun on this..",
+      "parentUuid": "87758b73_ecb6adf4",
+      "range": {
+        "startLine": 21,
+        "startChar": 0,
+        "endLine": 57,
+        "endChar": 1
+      },
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fdfe1245_ce9abec3",
@@ -94,6 +118,30 @@
       "writtenOn": "2022-10-27T13:41:48Z",
       "side": 1,
       "message": "On first inspection (throwing this into Compiler Explorer) seems to give the same issue as above - double the number of loads.\n\nI should probably check what happens once everything gets put together though... rather than just taking chunks in isolation.",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 167,
+        "endChar": 35
+      },
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "be7d7540_c2a90a53",
+        "filename": "vpx_dsp/arm/fdct32x32_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-10-27T21:18:13Z",
+      "side": 1,
+      "message": "Compiling the whole thing does sort out all of the aliasing issues - ignore the above comment.",
+      "parentUuid": "fdfe1245_ce9abec3",
       "range": {
         "startLine": 151,
         "startChar": 2,
