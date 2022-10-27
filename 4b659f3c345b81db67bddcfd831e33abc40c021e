@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c01ff74_b9ccd812",
+        "filename": ".mailmap",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-10-27T00:16:04Z",
+      "side": 1,
+      "message": "tools/gen_authors filters out those corp addresses. A few other people had them too.\n\nRe combining into corp, I wanted to have a separate entry for my personal stuff",
+      "parentUuid": "0fa42063_f2060fc8",
+      "revId": "4b659f3c345b81db67bddcfd831e33abc40c021e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "788d1f77_11e2eda1",
