@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ed9fc8c_f16f7a66",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-10-27T07:07:06Z",
+      "side": 1,
+      "message": "Hi guys, apologies for the large patchset, however I couldn\u0027t make it smaller as the changes affected quite a few files. Getting the butterfly functions named in a uniform way made it significantly easier to port the 32x32 DCT to highbd (followed in a next patchset) and also much easier to read and debug the code. I tried getting some fast variants of the two coeff butterfly function to use a pair of vqrdmulh_s16, vqrdmlah_s16/vqrdmlsh_s16 (and their 32-bit variants), it worked but unfortunately I couldn\u0027t get the needed accuracy. I\u0027ll keep investigating this though to see if I could use them in some particular usecases.",
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
