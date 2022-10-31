@@ -176,6 +176,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a094de08_4a5d49fd",
+        "filename": "vpx_dsp/arm/fdct32x32_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-10-31T17:49:00Z",
+      "side": 1,
+      "message": "\u003e Compiling the whole thing does sort out all of the aliasing issues - ignore the above comment.\n\nThanks for following up. We have benefited from using restrict in other projects, so there\u0027s definitely room in some areas here where things aren\u0027t necessarily inlined.",
+      "parentUuid": "be7d7540_c2a90a53",
+      "range": {
+        "startLine": 151,
+        "startChar": 2,
+        "endLine": 167,
+        "endChar": 35
+      },
+      "revId": "8f242cef6be30081393858c4740740eb2ecb1399",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c4acb164_a13cea50",
