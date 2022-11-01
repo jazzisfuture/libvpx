@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e16da5a_93341de4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T23:05:26Z",
+      "side": 1,
+      "message": "Also went ahead and fixed all the other coeffs as well for consistency.",
+      "parentUuid": "4f809ade_2bd1018b",
+      "revId": "ac47180e0e00059e1c062e2f17244cf50a7d3453",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ec866c69_86b1518d",
