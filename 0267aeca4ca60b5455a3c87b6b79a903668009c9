@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b7f6f07e_40b37702",
+        "filename": "vpx_dsp/arm/fdct16x16_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T21:08:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "85b398f1_99feae5a",
+      "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fcc460ec_03ae18ff",
@@ -31,6 +49,24 @@
       "writtenOn": "2022-11-01T19:09:44Z",
       "side": 1,
       "message": "here too.",
+      "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1d82047_0a35a117",
+        "filename": "vpx_dsp/arm/fdct16x16_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T21:08:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fcc460ec_03ae18ff",
       "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -58,6 +94,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "be6d495c_8c482d44",
+        "filename": "vpx_dsp/arm/fdct32x32_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T21:08:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5786b552_d3b39b9e",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c1960511_23be0d87",
@@ -75,6 +135,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c5a378d_97939608",
+        "filename": "vpx_dsp/arm/fdct32x32_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T21:08:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c1960511_23be0d87",
+      "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "408f2c2e_65ffe615",
@@ -88,6 +166,24 @@
       "writtenOn": "2022-11-01T19:09:44Z",
       "side": 1,
       "message": "this can be removed",
+      "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57376733_81e7d16f",
+        "filename": "vpx_dsp/arm/fdct4x4_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T21:08:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "408f2c2e_65ffe615",
       "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -115,6 +211,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f657f95_2c44cbf9",
+        "filename": "vpx_dsp/arm/fdct4x4_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T21:08:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6ac203e4_9486c87b",
+      "range": {
+        "startLine": 11,
+        "startChar": 29,
+        "endLine": 11,
+        "endChar": 30
+      },
+      "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8c9d8493_e0415075",
@@ -132,6 +252,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "05fb03bf_8096dfe2",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 199,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T21:08:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8c9d8493_e0415075",
+      "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f60ef1b4_d1335ad6",
@@ -145,6 +283,30 @@
       "writtenOn": "2022-11-01T19:09:44Z",
       "side": 1,
       "message": "missing a period or comma after \u0027round\u0027",
+      "range": {
+        "startLine": 310,
+        "startChar": 57,
+        "endLine": 310,
+        "endChar": 66
+      },
+      "revId": "0267aeca4ca60b5455a3c87b6b79a903668009c9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed40734b_d4ade34f",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 310,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-01T21:08:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f60ef1b4_d1335ad6",
       "range": {
         "startLine": 310,
         "startChar": 57,
