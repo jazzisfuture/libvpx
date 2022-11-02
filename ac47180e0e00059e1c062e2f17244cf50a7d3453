@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "97bb578b_f09c6d4f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-11-02T02:21:09Z",
+      "side": 1,
+      "message": "\u003e Also went ahead and fixed all the other coeffs as well for consistency.\n\nThanks and don\u0027t worry about the patch mishaps, it can be hard to work through multiple iterations when you\u0027ve got patches stacked. I only noticed it by comparing between two patchsets like:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/3983175/4..6",
+      "parentUuid": "0e16da5a_93341de4",
+      "revId": "ac47180e0e00059e1c062e2f17244cf50a7d3453",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ec866c69_86b1518d",
