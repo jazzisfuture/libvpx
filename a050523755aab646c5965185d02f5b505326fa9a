@@ -34,6 +34,23 @@
       "parentUuid": "40ac4fde_7fd4e439",
       "revId": "a050523755aab646c5965185d02f5b505326fa9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bda10621_4816c646",
+        "filename": "vpx_dsp/arm/fdct32x32_neon.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 1415,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-11-03T17:34:05Z",
+      "side": 1,
+      "message": "functions within headers should be marked INLINE. Are there plans to use this header elsewhere?",
+      "revId": "a050523755aab646c5965185d02f5b505326fa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
