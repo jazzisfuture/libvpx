@@ -16,6 +16,24 @@
       "message": "Hi again, anything I should fix here?",
       "revId": "a050523755aab646c5965185d02f5b505326fa9a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93fc7ccc_36a20545",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-11-03T16:09:26Z",
+      "side": 1,
+      "message": "LGTM, nothing stands out to me.",
+      "parentUuid": "40ac4fde_7fd4e439",
+      "revId": "a050523755aab646c5965185d02f5b505326fa9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
