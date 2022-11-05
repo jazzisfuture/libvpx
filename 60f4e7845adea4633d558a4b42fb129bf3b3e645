@@ -16,6 +16,23 @@
       "message": "This is the endgame I had in mind by shifting to all intrinsics. Still trying to figure out what the perf change is, but looking at the disassembly it\u0027s definitely an improvement at the function level. Might need to convert the rest of the quantize functions before it\u0027s an overall gain.\n\nLet me know if this could be accepted or if it\u0027s a bad idea.",
       "revId": "60f4e7845adea4633d558a4b42fb129bf3b3e645",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f82303f6_562a1f81",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-11-05T02:00:00Z",
+      "side": 1,
+      "message": "I tried checking this with ./vpxenc niklas_1280_720_30.y4m --kf-min-dist\u003d1 --kf-max-dist\u003d1 --codec\u003dvp9 -o file.ivf\n\nThere wasn\u0027t much change, but it seemed to trend positive. Is there a better encoder line to focus on the quantize?",
+      "revId": "60f4e7845adea4633d558a4b42fb129bf3b3e645",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
