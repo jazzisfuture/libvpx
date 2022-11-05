@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d325d5d1_5874836f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-11-05T00:55:45Z",
+      "side": 1,
+      "message": "This is the endgame I had in mind by shifting to all intrinsics. Still trying to figure out what the perf change is, but looking at the disassembly it\u0027s definitely an improvement at the function level. Might need to convert the rest of the quantize functions before it\u0027s an overall gain.\n\nLet me know if this could be accepted or if it\u0027s a bad idea.",
+      "revId": "60f4e7845adea4633d558a4b42fb129bf3b3e645",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
