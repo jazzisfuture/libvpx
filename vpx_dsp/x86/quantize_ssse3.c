@@ -16,6 +16,7 @@
 #include "vpx_dsp/x86/bitdepth_conversion_sse2.h"
 #include "vpx_dsp/x86/quantize_sse2.h"
 #include "vpx_dsp/x86/quantize_ssse3.h"
+#include "vp9/encoder/vp9_block.h"
 
 void vpx_quantize_b_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                           const int16_t *zbin_ptr, const int16_t *round_ptr,
@@ -107,11 +108,8 @@ void vpx_quantize_b_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   *eob_ptr = accumulate_eob(eob);
 }
 
-void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
-                                const int16_t *zbin_ptr,
-                                const int16_t *round_ptr,
-                                const int16_t *quant_ptr,
-                                const int16_t *quant_shift_ptr,
+void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr,
+                                const struct macroblock_plane *const mb_plane,
                                 tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                                 const int16_t *dequant_ptr, uint16_t *eob_ptr,
                                 const int16_t *scan, const int16_t *iscan) {
@@ -127,11 +125,10 @@ void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   __m128i eob = zero, eob0;
 
   (void)scan;
-  (void)n_coeffs;
 
   // Setup global values.
   // The 32x32 halves zbin and round.
-  zbin = _mm_load_si128((const __m128i *)zbin_ptr);
+  zbin = _mm_load_si128((const __m128i *)mb_plane->zbin);
   // Shift with rounding.
   zbin = _mm_add_epi16(zbin, one);
   zbin = _mm_srli_epi16(zbin, 1);
@@ -139,13 +136,13 @@ void vpx_quantize_b_32x32_ssse3(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   // it is a strict "greater" comparison.
   zbin = _mm_sub_epi16(zbin, one);
 
-  round = _mm_load_si128((const __m128i *)round_ptr);
+  round = _mm_load_si128((const __m128i *)mb_plane->round);
   round = _mm_add_epi16(round, one);
   round = _mm_srli_epi16(round, 1);
 
-  quant = _mm_load_si128((const __m128i *)quant_ptr);
+  quant = _mm_load_si128((const __m128i *)mb_plane->quant);
   dequant = _mm_load_si128((const __m128i *)dequant_ptr);
-  shift = _mm_load_si128((const __m128i *)quant_shift_ptr);
+  shift = _mm_load_si128((const __m128i *)mb_plane->quant_shift);
   // I suspect this is not technically OK because quant_shift can be up
   // to 1 << 16 and shifting up again will outrange that, but the test is not
   // comprehensive enough to catch that and "it's been that way forever"
