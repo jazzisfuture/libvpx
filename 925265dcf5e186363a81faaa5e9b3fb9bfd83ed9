@@ -50,6 +50,24 @@
       "message": "can\u0027t `vrshrq_n_s32` be used here?",
       "revId": "925265dcf5e186363a81faaa5e9b3fb9bfd83ed9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "60e68525_c139b1df",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 432,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-11-10T21:26:05Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "c6cf1c79_4d920f4d",
+      "revId": "925265dcf5e186363a81faaa5e9b3fb9bfd83ed9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
