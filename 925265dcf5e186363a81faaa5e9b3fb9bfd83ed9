@@ -16,6 +16,40 @@
       "message": "Hi guys, I refactored the FHT functions using the butterfly functions and provided the highbd version for fht4x4, 8x8 and 16x16 will follow shortly.",
       "revId": "925265dcf5e186363a81faaa5e9b3fb9bfd83ed9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3dcf283_8dfa4ce8",
+        "filename": "test/dct_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 668,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-11-10T20:53:54Z",
+      "side": 1,
+      "message": "in the non-highbitdepth path there look to be both _c/_neon and _neon/_neon pairs.",
+      "revId": "925265dcf5e186363a81faaa5e9b3fb9bfd83ed9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c6cf1c79_4d920f4d",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 432,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-11-10T20:53:54Z",
+      "side": 1,
+      "message": "can\u0027t `vrshrq_n_s32` be used here?",
+      "revId": "925265dcf5e186363a81faaa5e9b3fb9bfd83ed9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
