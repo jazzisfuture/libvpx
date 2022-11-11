@@ -82,7 +82,7 @@ class RcInterfaceTest
   }
 
   virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
-    rc_api_->PostEncodeUpdate(pkt->data.frame.sz);
+    rc_api_->PostEncodeUpdate(pkt->data.frame.sz, frame_params_);
   }
 
   void RunOneLayer() {
@@ -162,10 +162,13 @@ class RcInterfaceTest
   bool encoder_exit_;
 };
 
-class RcInterfaceSvcTest : public ::libvpx_test::EncoderTest,
-                           public ::libvpx_test::CodecTestWithParam<int> {
+class RcInterfaceSvcTest
+    : public ::libvpx_test::EncoderTest,
+      public ::libvpx_test::CodecTestWith2Params<int, int> {
  public:
-  RcInterfaceSvcTest() : EncoderTest(GET_PARAM(0)), aq_mode_(GET_PARAM(1)) {}
+  RcInterfaceSvcTest()
+      : EncoderTest(GET_PARAM(0)), aq_mode_(GET_PARAM(1)), key_interval_(3000),
+        inter_layer_pred_off_(GET_PARAM(2)), parallel_spatial_layers_(false) {}
   virtual ~RcInterfaceSvcTest() {}
 
  protected:
@@ -184,6 +187,10 @@ class RcInterfaceSvcTest : public ::libvpx_test::EncoderTest,
       encoder->Control(VP9E_SET_RTC_EXTERNAL_RATECTRL, 1);
       encoder->Control(VP9E_SET_SVC, 1);
       encoder->Control(VP9E_SET_SVC_PARAMETERS, &svc_params_);
+      if (inter_layer_pred_off_) {
+        encoder->Control(VP9E_SET_SVC_INTER_LAYER_PRED,
+                         INTER_LAYER_PRED_OFF_NONKEY);
+      }
     }
     frame_params_.frame_type = video->frame() % key_interval_ == 0
                                    ? libvpx::RcFrameType::kKeyFrame
@@ -232,26 +239,48 @@ class RcInterfaceSvcTest : public ::libvpx_test::EncoderTest,
     }
   }
 
+  virtual void SetFrameParamsSvc(int sl) {
+    frame_params_.spatial_layer_id = sl;
+    if (rc_cfg_.ts_number_layers == 3)
+      frame_params_.temporal_layer_id =
+          kTemporalId3Layer[current_superframe_ % 4];
+    else if (rc_cfg_.ts_number_layers == 2)
+      frame_params_.temporal_layer_id =
+          kTemporalId2Layer[current_superframe_ % 2];
+    else
+      frame_params_.temporal_layer_id = 0;
+    frame_params_.frame_type =
+        current_superframe_ % key_interval_ == 0 && sl == 0
+            ? libvpx::RcFrameType::kKeyFrame
+            : libvpx::RcFrameType::kInterFrame;
+  }
+
   virtual void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) {
     ::libvpx_test::CxDataIterator iter = encoder->GetCxData();
     for (int sl = 0; sl < rc_cfg_.ss_number_layers; sl++) sizes_[sl] = 0;
     while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
       ParseSuperframeSizes(static_cast<const uint8_t *>(pkt->data.frame.buf),
                            pkt->data.frame.sz);
-      for (int sl = 0; sl < rc_cfg_.ss_number_layers; sl++) {
-        if (sizes_[sl] > 0) {
-          frame_params_.spatial_layer_id = sl;
-          if (rc_cfg_.ts_number_layers == 3)
-            frame_params_.temporal_layer_id =
-                kTemporalId3Layer[current_superframe_ % 4];
-          else if (rc_cfg_.ts_number_layers == 2)
-            frame_params_.temporal_layer_id =
-                kTemporalId2Layer[current_superframe_ % 2];
-          else
-            frame_params_.temporal_layer_id = 0;
-          rc_api_->ComputeQP(frame_params_);
-          frame_params_.frame_type = libvpx::RcFrameType::kInterFrame;
-          rc_api_->PostEncodeUpdate(sizes_[sl]);
+      if (!parallel_spatial_layers_ || current_superframe_ == 0) {
+        for (int sl = 0; sl < rc_cfg_.ss_number_layers; sl++) {
+          if (sizes_[sl] > 0) {
+            SetFrameParamsSvc(sl);
+            rc_api_->ComputeQP(frame_params_);
+            rc_api_->PostEncodeUpdate(sizes_[sl], frame_params_);
+          }
+        }
+      } else {
+        for (int sl = 0; sl < rc_cfg_.ss_number_layers; sl++) {
+          if (sizes_[sl] > 0) {
+            SetFrameParamsSvc(sl);
+            rc_api_->ComputeQP(frame_params_);
+          }
+        }
+        for (int sl = 0; sl < rc_cfg_.ss_number_layers; sl++) {
+          if (sizes_[sl] > 0) {
+            SetFrameParamsSvc(sl);
+            rc_api_->PostEncodeUpdate(sizes_[sl], frame_params_);
+          }
         }
       }
     }
@@ -259,6 +288,8 @@ class RcInterfaceSvcTest : public ::libvpx_test::EncoderTest,
       int loopfilter_level, qp;
       encoder->Control(VP9E_GET_LOOPFILTER_LEVEL, &loopfilter_level);
       encoder->Control(VP8E_GET_LAST_QUANTIZER, &qp);
+      // There's no way we can get QP for lower spatial layers.
+      // It only verifies the QP on the top spatial layer here.
       ASSERT_EQ(rc_api_->GetQP(), qp);
       ASSERT_EQ(rc_api_->GetLoopfilterLevel(), loopfilter_level);
     }
@@ -272,7 +303,6 @@ class RcInterfaceSvcTest : public ::libvpx_test::EncoderTest,
   void RunSvc() {
     dynamic_spatial_layers_ = 0;
     SetRCConfigSvc(3, 3);
-    key_interval_ = 10000;
     rc_api_ = libvpx::VP9RateControlRTC::Create(rc_cfg_);
     SetEncoderConfigSvc(3, 3);
 
@@ -298,7 +328,19 @@ class RcInterfaceSvcTest : public ::libvpx_test::EncoderTest,
   void RunSvcDynamicSpatial() {
     dynamic_spatial_layers_ = 1;
     SetRCConfigSvc(3, 3);
-    key_interval_ = 10000;
+    rc_api_ = libvpx::VP9RateControlRTC::Create(rc_cfg_);
+    SetEncoderConfigSvc(3, 3);
+
+    ::libvpx_test::I420VideoSource video("desktop_office1.1280_720-020.yuv",
+                                         1280, 720, 30, 1, 0, kNumFrames);
+
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
+  void RunSvcParallelSpatialLayers() {
+    if (!inter_layer_pred_off_) return;
+    parallel_spatial_layers_ = true;
+    SetRCConfigSvc(3, 3);
     rc_api_ = libvpx::VP9RateControlRTC::Create(rc_cfg_);
     SetEncoderConfigSvc(3, 3);
 
@@ -501,6 +543,9 @@ class RcInterfaceSvcTest : public ::libvpx_test::EncoderTest,
   uint32_t sizes_[8];
   int key_interval_;
   int dynamic_spatial_layers_;
+  bool inter_layer_pred_off_;
+  // ComputeQP() and PostEncodeUpdate() don't need to be sequential for KSVC.
+  bool parallel_spatial_layers_;
 };
 
 TEST_P(RcInterfaceTest, OneLayer) { RunOneLayer(); }
@@ -513,7 +558,12 @@ TEST_P(RcInterfaceSvcTest, SvcPeriodicKey) { RunSvcPeriodicKey(); }
 
 TEST_P(RcInterfaceSvcTest, SvcDynamicSpatial) { RunSvcDynamicSpatial(); }
 
+TEST_P(RcInterfaceSvcTest, DISABLED_SvcParallelSpatialLayers) {
+  RunSvcParallelSpatialLayers();
+}
+
 VP9_INSTANTIATE_TEST_SUITE(RcInterfaceTest, ::testing::Values(0, 3),
                            ::testing::Values(VPX_CBR, VPX_VBR));
-VP9_INSTANTIATE_TEST_SUITE(RcInterfaceSvcTest, ::testing::Values(0, 3));
+VP9_INSTANTIATE_TEST_SUITE(RcInterfaceSvcTest, ::testing::Values(0, 3),
+                           ::testing::Values(true, false));
 }  // namespace
