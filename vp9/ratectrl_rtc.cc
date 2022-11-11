@@ -188,6 +188,9 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
   } else {
     vp9_update_temporal_layer_framerate(cpi_);
     vp9_restore_layer_context(cpi_);
+    // This is needed to ensure key frame gets set in rc_get_svc_params.
+    if (cm->frame_type == KEY_FRAME)
+      cpi_->frame_flags = cpi_->frame_flags | FRAMEFLAGS_KEY;
     vp9_rc_get_svc_params(cpi_);
   }
   int bottom_index, top_index;
