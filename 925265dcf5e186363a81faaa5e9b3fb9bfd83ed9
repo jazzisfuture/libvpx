@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4caf05a0_71d434a5",
+        "filename": "test/dct_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 668,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-11T09:30:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c3dcf283_8dfa4ce8",
+      "revId": "925265dcf5e186363a81faaa5e9b3fb9bfd83ed9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c6cf1c79_4d920f4d",
@@ -66,6 +84,24 @@
       "side": 1,
       "message": "Yes.",
       "parentUuid": "c6cf1c79_4d920f4d",
+      "revId": "925265dcf5e186363a81faaa5e9b3fb9bfd83ed9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d02ef9a_20ff75ba",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 432,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2022-11-11T09:30:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "60e68525_c139b1df",
       "revId": "925265dcf5e186363a81faaa5e9b3fb9bfd83ed9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
