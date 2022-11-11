@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9006add5_4f94574c",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 443,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2022-11-11T12:19:34Z",
+      "side": 1,
+      "message": "These don\u0027t give us anything now we\u0027re doing it all with a single instruction. Let\u0027s just use the intrinsic directly wherever we call these.",
+      "range": {
+        "startLine": 423,
+        "startChar": 0,
+        "endLine": 443,
+        "endChar": 1
+      },
+      "revId": "e7cfb48c9bb15d9ed7604ca399db88779ef7de49",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
