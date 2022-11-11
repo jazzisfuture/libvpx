@@ -39,6 +39,30 @@
       },
       "revId": "8f6a9c080cdc70c8687e44baba23472abbc499a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d59bf370_5fb20374",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-11-11T05:23:08Z",
+      "side": 1,
+      "message": "done. Can you verify the fix again with latest patch.",
+      "parentUuid": "fb4d570a_e52aa295",
+      "range": {
+        "startLine": 163,
+        "startChar": 4,
+        "endLine": 163,
+        "endChar": 59
+      },
+      "revId": "8f6a9c080cdc70c8687e44baba23472abbc499a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
