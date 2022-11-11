@@ -82,7 +82,7 @@ class RcInterfaceTest
   }
 
   virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
-    rc_api_->PostEncodeUpdate(pkt->data.frame.sz);
+    rc_api_->PostEncodeUpdate(pkt->data.frame.sz, frame_params_);
   }
 
   void RunOneLayer() {
@@ -251,7 +251,7 @@ class RcInterfaceSvcTest : public ::libvpx_test::EncoderTest,
             frame_params_.temporal_layer_id = 0;
           rc_api_->ComputeQP(frame_params_);
           frame_params_.frame_type = libvpx::RcFrameType::kInterFrame;
-          rc_api_->PostEncodeUpdate(sizes_[sl]);
+          rc_api_->PostEncodeUpdate(sizes_[sl], frame_params_);
         }
       }
     }
