@@ -269,13 +269,12 @@ void vpx_quantize_b_32x32_c(const tran_low_t *coeff_ptr,
 
 #if CONFIG_VP9_HIGHBITDEPTH
 void vpx_highbd_quantize_b_32x32_c(
-    const tran_low_t *coeff_ptr, intptr_t n_coeffs, const int16_t *zbin_ptr,
-    const int16_t *round_ptr, const int16_t *quant_ptr,
-    const int16_t *quant_shift_ptr, tran_low_t *qcoeff_ptr,
-    tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr, uint16_t *eob_ptr,
-    const int16_t *scan, const int16_t *iscan) {
-  const int zbins[2] = { ROUND_POWER_OF_TWO(zbin_ptr[0], 1),
-                         ROUND_POWER_OF_TWO(zbin_ptr[1], 1) };
+    const tran_low_t *coeff_ptr, const struct macroblock_plane *const mb_plane,
+    tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr, const int16_t *dequant_ptr,
+    uint16_t *eob_ptr, const int16_t *scan, const int16_t *iscan) {
+  const intptr_t n_coeffs = 32 * 32;
+  const int zbins[2] = { ROUND_POWER_OF_TWO(mb_plane->zbin[0], 1),
+                         ROUND_POWER_OF_TWO(mb_plane->zbin[1], 1) };
   const int nzbins[2] = { zbins[0] * -1, zbins[1] * -1 };
 
   int idx = 0;
@@ -303,9 +302,10 @@ void vpx_highbd_quantize_b_32x32_c(
     const int coeff = coeff_ptr[rc];
     const int coeff_sign = (coeff >> 31);
     const int abs_coeff = (coeff ^ coeff_sign) - coeff_sign;
-    const int64_t tmp1 = abs_coeff + ROUND_POWER_OF_TWO(round_ptr[rc != 0], 1);
-    const int64_t tmp2 = ((tmp1 * quant_ptr[rc != 0]) >> 16) + tmp1;
-    const int abs_qcoeff = (int)((tmp2 * quant_shift_ptr[rc != 0]) >> 15);
+    const int64_t tmp1 =
+        abs_coeff + ROUND_POWER_OF_TWO(mb_plane->round[rc != 0], 1);
+    const int64_t tmp2 = ((tmp1 * mb_plane->quant[rc != 0]) >> 16) + tmp1;
+    const int abs_qcoeff = (int)((tmp2 * mb_plane->quant_shift[rc != 0]) >> 15);
     qcoeff_ptr[rc] = (tran_low_t)((abs_qcoeff ^ coeff_sign) - coeff_sign);
     dqcoeff_ptr[rc] = qcoeff_ptr[rc] * dequant_ptr[rc != 0] / 2;
     if (abs_qcoeff) eob = idx_arr[i];
