@@ -82,7 +82,7 @@ class RcInterfaceTest
   }
 
   virtual void FramePktHook(const vpx_codec_cx_pkt_t *pkt) {
-    rc_api_->PostEncodeUpdate(pkt->data.frame.sz);
+    rc_api_->PostEncodeUpdate(pkt->data.frame.sz, frame_params_);
   }
 
   void RunOneLayer() {
