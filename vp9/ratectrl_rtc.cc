@@ -158,6 +158,11 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
   }
   vp9_set_mb_mi(cm, cm->width, cm->height);
   cm->frame_type = frame_params.frame_type;
+  // This is needed to ensure key frame does not get unset in rc_get_svc_params.
+  if (cm->frame_type == KEY_FRAME)
+    cpi_->frame_flags = cpi_->frame_flags | FRAMEFLAGS_KEY;
+  else
+    cpi_->frame_flags = 0;
   cpi_->refresh_golden_frame = (cm->frame_type == KEY_FRAME) ? 1 : 0;
   cpi_->sf.use_nonrd_pick_mode = 1;
   if (cpi_->svc.number_spatial_layers == 1 &&
