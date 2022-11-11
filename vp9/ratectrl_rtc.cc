@@ -215,7 +215,11 @@ int *VP9RateControlRTC::GetDeltaQ() const {
   return cpi_->cyclic_refresh->qindex_delta;
 }
 
-void VP9RateControlRTC::PostEncodeUpdate(uint64_t encoded_frame_size) {
+void VP9RateControlRTC::PostEncodeUpdate(
+    uint64_t encoded_frame_size, const VP9FrameParamsQpRTC &frame_params) {
+  cpi_->common.frame_type = frame_params.frame_type;
+  cpi_->svc.spatial_layer_id = frame_params.spatial_layer_id;
+  cpi_->svc.temporal_layer_id = frame_params.temporal_layer_id;
   vp9_rc_postencode_update(cpi_, encoded_frame_size);
   if (cpi_->svc.number_spatial_layers > 1 ||
       cpi_->svc.number_temporal_layers > 1)
