@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd4dc444_6a60d7bc",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-11-11T03:39:55Z",
+      "side": 1,
+      "message": "Shall this be done in l.160 or so?",
+      "range": {
+        "startLine": 191,
+        "startChar": 4,
+        "endLine": 193,
+        "endChar": 61
+      },
+      "revId": "1a06e756521bb4fa885f73428bb8ff50c14f9d45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db70e380_4c35c535",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-11-11T03:39:55Z",
+      "side": 1,
+      "message": "frame_flags are never reset.\nOnce frame_flags has FRAMEFLAGS_KEY bit mask, the bitmask is kept after that.\n  \ncpi_-\u003eframe_flags \u003d 0; in l.160 fixes the issue.",
+      "range": {
+        "startLine": 193,
+        "startChar": 12,
+        "endLine": 193,
+        "endChar": 23
+      },
+      "revId": "1a06e756521bb4fa885f73428bb8ff50c14f9d45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
