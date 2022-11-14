@@ -268,6 +268,10 @@ typedef struct VP9Common {
   int above_context_alloc_cols;
 
   int lf_row;
+
+#if CONFIG_RAJAT_TEST
+  double *rme_delta;
+#endif
 } VP9_COMMON;
 
 static INLINE void init_frame_indexes(VP9_COMMON *cm) {

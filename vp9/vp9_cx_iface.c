@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <fcntl.h>
 
 #include "./vpx_config.h"
 #include "vpx/vpx_encoder.h"
