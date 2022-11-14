@@ -102,9 +102,10 @@ void vpx_highbd_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
                                 const int16_t *quant_shift_ptr,
                                 tran_low_t *qcoeff_ptr, tran_low_t *dqcoeff_ptr,
                                 const int16_t *dequant_ptr, uint16_t *eob_ptr,
-                                const int16_t *scan, const int16_t *iscan) {
+                                const struct ScanOrder *const scan_order) {
   const int16x8_t neg_one = vdupq_n_s16(-1);
   uint16x8_t eob_max;
+  const int16_t *iscan = scan_order->iscan;
 
   // Only the first element of each vector is DC.
   // High half has identical elements, but we can reconstruct it from the low
@@ -180,7 +181,6 @@ void vpx_highbd_quantize_b_neon(const tran_low_t *coeff_ptr, intptr_t n_coeffs,
   // Need these here, else the compiler complains about mixing declarations and
   // code in C90
   (void)n_coeffs;
-  (void)scan;
 }
 
 static VPX_FORCE_INLINE int32x4_t extract_sign_bit(int32x4_t a) {
