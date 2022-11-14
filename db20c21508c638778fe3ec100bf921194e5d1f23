@@ -39,6 +39,30 @@
       },
       "revId": "db20c21508c638778fe3ec100bf921194e5d1f23",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3188b57a_731b8c26",
+        "filename": "vpx_dsp/quantize.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-11-14T23:40:03Z",
+      "side": 1,
+      "message": "It\u0027s OK for the quantize because it\u0027s vp9-specific. It was only added to vpx_dsp for sharing with vp10. It could get moved back to vp9/\n\n# quantization\nifeq ($(CONFIG_VP9_ENCODER),yes)\nDSP_SRCS-yes            +\u003d quantize.c\nDSP_SRCS-yes            +\u003d quantize.h",
+      "parentUuid": "05f13c66_bf63fbfe",
+      "range": {
+        "startLine": 17,
+        "startChar": 9,
+        "endLine": 17,
+        "endChar": 34
+      },
+      "revId": "db20c21508c638778fe3ec100bf921194e5d1f23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
