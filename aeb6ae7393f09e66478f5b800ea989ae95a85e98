@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dd96a850_57595fdb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-11-14T21:59:30Z",
+      "side": 1,
+      "message": "Hey Marco, when I tried to change this in 2017 it was still using x-\u003eskip_block. I ran the tests and it doesn\u0027t seem to hit it anymore, do you think this is safe to submit?",
+      "revId": "aeb6ae7393f09e66478f5b800ea989ae95a85e98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
