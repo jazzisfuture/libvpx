@@ -226,7 +226,11 @@ void vp9_first_pass_encode_tile_mb_row(struct VP9_COMP *cpi,
                                        struct ThreadData *td,
                                        FIRSTPASS_DATA *fp_acc_data,
                                        struct TileDataEnc *tile_data,
-                                       MV *best_ref_mv, int mb_row);
+                                       MV *best_ref_mv, int mb_row
+#if CONFIG_RAJAT_TEST
+                                      ,int *rme
+#endif
+                                       );
 
 void vp9_init_second_pass(struct VP9_COMP *cpi);
 void vp9_rc_get_second_pass_params(struct VP9_COMP *cpi);
