@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca02728b_6bc0d41b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2022-11-14T22:01:08Z",
+      "side": 1,
+      "message": "I\u0027m working on doing all these together for the regular quantize_b, hoping that all of them at the same time will give a bit of boost to encoding.",
+      "revId": "8ef0f05a25ddbbd2e4cc1a6650a64990dfba684e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
