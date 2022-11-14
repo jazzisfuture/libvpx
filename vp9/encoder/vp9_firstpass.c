@@ -873,7 +873,11 @@ static void store_fp_motion_vector(VP9_COMP *cpi, const MV *mv,
 void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
                                        FIRSTPASS_DATA *fp_acc_data,
                                        TileDataEnc *tile_data, MV *best_ref_mv,
-                                       int mb_row) {
+                                       int mb_row
+#if CONFIG_RAJAT_TEST
+  ,int *rme
+#endif
+                                       ) {
   int mb_col;
   MACROBLOCK *const x = &td->mb;
   VP9_COMMON *const cm = &cpi->common;
@@ -1135,6 +1139,10 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
                                               &unscaled_last_source_buf_2d);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
 
+#if CONFIG_RAJAT_TEST
+      *(rme+mb_index) = raw_motion_error;
+#endif
+
       if (raw_motion_error > NZ_MOTION_PENALTY) {
         // Test last reference frame using the previous best mv as the
         // starting point (best reference) for the search.
@@ -1354,11 +1362,48 @@ static void first_pass_encode(VP9_COMP *cpi, FIRSTPASS_DATA *fp_acc_data) {
   }
 #endif
 
+#if CONFIG_RAJAT_TEST
+  int lower=0, upper=0;
+  int rme[cm->mb_rows][cm->mb_cols];
+  int i,j;
+
+  memset(rme, 0, sizeof(int)*cm->mb_rows*cm->mb_cols);
+
+  for (mb_row = 0; mb_row < cm->mb_rows; ++mb_row) {
+    best_ref_mv = zero_mv;
+    vp9_first_pass_encode_tile_mb_row(cpi, &cpi->td, fp_acc_data, &tile_data,
+                                      &best_ref_mv, mb_row, rme);
+  }
+
+  int pixels_per_block = 0;
+
+  // printf("%d %d - lower: %d, upper: %d\n", , lower, upper);
+  for (i = 0; i < cm->mb_rows; i++) {
+    for (j = 0; j < cm->mb_cols; j++) {
+      // printf("%ld ", rme[i][j]);
+      BLOCK_SIZE bsize = get_bsize(cm, i, j);
+      switch (bsize) {
+        case BLOCK_8X8: pixels_per_block = 8*8;
+        case BLOCK_16X8: pixels_per_block = 16*8;
+        case BLOCK_8X16: pixels_per_block = 8*16;
+        default: pixels_per_block = 16*16;
+      }
+      double prev_rme = *(cm->rme_delta+(i*cm->mb_cols+j));
+      prev_rme *= (double) (pixels_per_block*(cm->current_frame_coding_index));
+      prev_rme += (double) rme[i][j];
+      prev_rme /= (double) (pixels_per_block*(cm->current_frame_coding_index + 1));
+      *(cm->rme_delta+(i*cm->mb_cols+j)) = prev_rme;
+    }
+    // printf("\n");
+  }
+  // printf("%d, %d\n", cm->mb_rows, cm->mb_cols);
+#else
   for (mb_row = 0; mb_row < cm->mb_rows; ++mb_row) {
     best_ref_mv = zero_mv;
     vp9_first_pass_encode_tile_mb_row(cpi, &cpi->td, fp_acc_data, &tile_data,
                                       &best_ref_mv, mb_row);
   }
+#endif
 }
 
 void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {

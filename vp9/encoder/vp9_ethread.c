@@ -449,8 +449,15 @@ static int first_pass_worker_hook(void *arg1, void *arg2) {
       best_ref_mv = zero_mv;
       vp9_zero(fp_acc_data);
       fp_acc_data.image_data_start_row = INVALID_ROW;
+#if CONFIG_RAJAT_TEST
+  int *rme;
+#endif
       vp9_first_pass_encode_tile_mb_row(cpi, thread_data->td, &fp_acc_data,
-                                        this_tile, &best_ref_mv, mb_row);
+                                        this_tile, &best_ref_mv, mb_row
+                                        #if CONFIG_RAJAT_TEST
+                                          ,rme
+                                        #endif
+                                        );
     }
   }
   return 0;
