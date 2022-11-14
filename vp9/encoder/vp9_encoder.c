@@ -12,6 +12,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 #include "./vp9_rtcd.h"
 #include "./vpx_config.h"
@@ -20,6 +21,10 @@
 #include "vpx_dsp/psnr.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_dsp/vpx_filter.h"
+
+#if CONFIG_RAJAT_TEST
+#include "vp9/encoder/vp9_aq_lowmotion.h"
+#endif
 #if CONFIG_INTERNAL_STATS
 #include "vpx_dsp/ssim.h"
 #endif
@@ -4132,6 +4137,12 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
   }
 #endif
 
+#if CONFIG_RAJAT_TEST
+  if (cpi->oxcf.aq_mode == LOW_MOTION_AQ) {
+    printf("Without recode loop\n");
+  }
+#endif
+
   apply_active_map(cpi);
 
   vp9_encode_frame(cpi);
@@ -4540,6 +4551,16 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest
       vp9_alt_ref_aq_setup_map(cpi->alt_ref_aq, cpi);
     } else if (oxcf->aq_mode == PSNR_AQ) {
       vp9_psnr_aq_mode_setup(&cm->seg);
+#if CONFIG_RAJAT_TEST
+    } else if (oxcf->aq_mode == LOW_MOTION_AQ) {
+      // printf("with recode loop\n");
+      // vp9_first_pass increases count of current_frame_coding_index
+      if (cm->current_frame_coding_index == 0) {
+        free(cm->rme_delta);
+      }
+      vp9_low_motion_setup(cpi);
+      // vp9_low_motion_print_segmentation_map(cpi);
+#endif
     }
 
     vp9_encode_frame(cpi);
@@ -7889,7 +7910,37 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->td.mb.fwd_txfm4x4 = lossless ? vp9_fwht4x4 : vpx_fdct4x4;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     cpi->td.mb.inv_txfm_add = lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
+#if CONFIG_RAJAT_TEST
+    int i,j;
+    const char fname[] = "output.txt";
+
+    FILE *fp = fopen(fname, "w+");
+
+    if (cm->current_frame_coding_index == 0) {
+
+      cm->rme_delta = malloc(sizeof(double)*cm->mb_cols*cm->mb_rows);
+
+      memset(cm->rme_delta, 0, sizeof(double)*cm->mb_cols*cm->mb_rows);
+    }
+
+    // printf("mb_rows %d , mb_cols %d\n", cm->mb_rows, cm->mb_cols);
+    // printf("mi_rows %d , mi_cols %d\n", cm->mi_rows, cm->mi_cols);
+
     vp9_first_pass(cpi, source);
+
+    for (i = 0; i < cm->mb_rows; i++) {
+      for (j = 0; j < cm->mb_cols; j++) {
+        // printf("%f ", *(cm->rme_delta+(i*cm->mb_cols+j)));
+        fprintf(fp, "%f ", *(cm->rme_delta+(i*cm->mb_cols+j)));
+      }
+      // printf("\n");
+      fprintf(fp, "\n");
+    }
+
+    fclose(fp);
+#else
+    vp9_first_pass(cpi, source);
+#endif
   } else if (oxcf->pass == 2 && !cpi->use_svc) {
     Pass2Encode(cpi, size, dest, frame_flags, encode_frame_result);
     vp9_twopass_postencode_update(cpi);

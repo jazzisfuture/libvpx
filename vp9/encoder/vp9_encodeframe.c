@@ -212,6 +212,9 @@ static void set_segment_index(VP9_COMP *cpi, MACROBLOCK *const x, int mi_row,
       break;
     case PSNR_AQ: mi->segment_id = segment_index; break;
     case PERCEPTUAL_AQ: mi->segment_id = x->segment_id; break;
+    case LOW_MOTION_AQ: 
+      get_segment_id(cm, map, bsize, mi_row, mi_col);
+      break;
     default:
       // NO_AQ or PSNR_AQ
       break;
@@ -1797,6 +1800,13 @@ static void update_state(VP9_COMP *cpi, ThreadData *td, PICK_MODE_CONTEXT *ctx,
           seg->update_map ? cpi->segmentation_map : cm->last_frame_seg_map;
       mi_addr->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
     }
+#if CONFIG_RAJAT_TEST
+    if (cpi->oxcf.aq_mode == LOW_MOTION_AQ) {
+      const uint8_t *const map =
+          seg->update_map ? cpi->segmentation_map : cm->last_frame_seg_map;
+      mi_addr->segment_id = get_segment_id(cm, map, bsize, mi_row, mi_col);
+    }
+#endif
     // Else for cyclic refresh mode update the segment map, set the segment id
     // and then update the quantizer.
     if (cpi->oxcf.aq_mode == CYCLIC_REFRESH_AQ &&
