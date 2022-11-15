@@ -16,6 +16,24 @@
       "message": "Hey Marco, when I tried to change this in 2017 it was still using x-\u003eskip_block. I ran the tests and it doesn\u0027t seem to hit it anymore, do you think this is safe to submit?",
       "revId": "aeb6ae7393f09e66478f5b800ea989ae95a85e98",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96fd73a2_6d2e4841",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2022-11-15T07:55:59Z",
+      "side": 1,
+      "message": "Hi Johann, I think it seems safe, you added an assert to check for x-\u003eskip so it should be fine.",
+      "parentUuid": "dd96a850_57595fdb",
+      "revId": "aeb6ae7393f09e66478f5b800ea989ae95a85e98",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
