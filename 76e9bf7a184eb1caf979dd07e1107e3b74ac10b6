@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ffc22c1b_67d43112",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 2316,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-11-15T20:09:22Z",
+      "side": 1,
+      "message": "why not just use vp9_calc_pframe_target_size_one_pass_vbr?",
+      "range": {
+        "startLine": 2316,
+        "startChar": 8,
+        "endLine": 2316,
+        "endChar": 12
+      },
+      "revId": "76e9bf7a184eb1caf979dd07e1107e3b74ac10b6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
