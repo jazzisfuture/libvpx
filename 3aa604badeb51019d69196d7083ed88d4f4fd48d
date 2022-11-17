@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01a71cd2_58d69fef",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-11-17T07:12:22Z",
+      "side": 1,
+      "message": "What do you think?\nThe client needs to know the delta_q size. as for map size, the client can be computed, but it\u0027s nicer for rate controller to return it too.\n\nThere is no span in libvpx (also std::span is not allowed in chromium).\nI am using std::pair\u003cdata, size\u003e. \n\nThis CL also fixes the map to be returned in GetCyclicRefreshMap(), from cpi_-\u003ecyclic_refresh-\u003emap to cpi_-\u003esegmentation_map.",
+      "revId": "3aa604badeb51019d69196d7083ed88d4f4fd48d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
