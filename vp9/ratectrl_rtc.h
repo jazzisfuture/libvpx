@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <utility>
 
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_enums.h"
@@ -110,8 +111,8 @@ class VP9RateControlRTC {
   // GetQP() needs to be called after ComputeQP() to get the latest QP
   int GetQP() const;
   int GetLoopfilterLevel() const;
-  signed char *GetCyclicRefreshMap() const;
-  int *GetDeltaQ() const;
+  std::pair<const uint8_t *, size_t> GetCyclicRefreshMap() const;
+  std::pair<const int *, size_t> GetDeltaQ() const;
   void ComputeQP(const VP9FrameParamsQpRTC &frame_params);
   // Feedback to rate control with the size of current encoded frame
   void PostEncodeUpdate(uint64_t encoded_frame_size);
