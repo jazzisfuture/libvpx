@@ -69,6 +69,23 @@
       "parentUuid": "8bb5093e_956263b1",
       "revId": "3aa604badeb51019d69196d7083ed88d4f4fd48d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "384893c6_ee0a5894",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-11-17T10:11:05Z",
+      "side": 1,
+      "message": "-1 as we would like to change the interface more.",
+      "revId": "3aa604badeb51019d69196d7083ed88d4f4fd48d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
