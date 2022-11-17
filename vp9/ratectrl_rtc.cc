@@ -205,12 +205,14 @@ int VP9RateControlRTC::GetLoopfilterLevel() const {
   return lf->filter_level;
 }
 
-signed char *VP9RateControlRTC::GetCyclicRefreshMap() const {
-  return cpi_->cyclic_refresh->map;
+std::pair<const uint8_t *, size_t> VP9RateControlRTC::GetCyclicRefreshMap()
+    const {
+  return { cpi_->segmentation_map,
+           cpi_->common.mi_cols * cpi_->common.mi_rows };
 }
 
-int *VP9RateControlRTC::GetDeltaQ() const {
-  return cpi_->cyclic_refresh->qindex_delta;
+std::pair<const int *, size_t> VP9RateControlRTC::GetDeltaQ() const {
+  return { cpi_->cyclic_refresh->qindex_delta, 3u };
 }
 
 void VP9RateControlRTC::PostEncodeUpdate(uint64_t encoded_frame_size) {
