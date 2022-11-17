@@ -34,6 +34,23 @@
       "parentUuid": "01a71cd2_58d69fef",
       "revId": "3aa604badeb51019d69196d7083ed88d4f4fd48d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "528d3720_2e5fd7d5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2022-11-17T08:39:04Z",
+      "side": 1,
+      "message": "I don\u0027t have a permission to submit the CL. So defer Marco and Jerome for submission.",
+      "revId": "3aa604badeb51019d69196d7083ed88d4f4fd48d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
