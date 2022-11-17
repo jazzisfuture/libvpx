@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <utility>
 
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_enums.h"
@@ -56,6 +57,13 @@ struct VP9FrameParamsQpRTC {
   FRAME_TYPE frame_type;
   int spatial_layer_id;
   int temporal_layer_id;
+};
+
+struct VP9SegmentationData {
+  const uint8_t *segmentation_map;
+  size_t segmentation_map_size;
+  const int *delta_q;
+  size_t delta_q_size;
 };
 
 // This interface allows using VP9 real-time rate control without initializing
@@ -110,8 +118,7 @@ class VP9RateControlRTC {
   // GetQP() needs to be called after ComputeQP() to get the latest QP
   int GetQP() const;
   int GetLoopfilterLevel() const;
-  signed char *GetCyclicRefreshMap() const;
-  int *GetDeltaQ() const;
+  bool GetSegmentationData(VP9SegmentationData *segmentation_data) const;
   void ComputeQP(const VP9FrameParamsQpRTC &frame_params);
   // Feedback to rate control with the size of current encoded frame
   void PostEncodeUpdate(uint64_t encoded_frame_size);
