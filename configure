@@ -289,6 +289,7 @@ EXPERIMENT_LIST="
     emulate_hardware
     non_greedy_mv
     rate_ctrl
+    roi_file_aq
 "
 CONFIG_LIST="
     dependency_tracking

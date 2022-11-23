@@ -130,6 +130,9 @@ typedef enum {
   // AQ based on lookahead temporal
   // variance (only valid for altref frames)
   LOOKAHEAD_AQ = 7,
+#if CONFIG_ROI_FILE_AQ
+  SUBTITLES_AQ = 8,
+#endif
   AQ_MODE_COUNT  // This should always be the last member of the enum
 } AQ_MODE;
 
