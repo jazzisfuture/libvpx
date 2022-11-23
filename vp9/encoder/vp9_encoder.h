@@ -127,9 +127,12 @@ typedef enum {
   EQUATOR360_AQ = 4,
   PERCEPTUAL_AQ = 5,
   PSNR_AQ = 6,
+#if CONFIG_ROI_FILE_AQ
+  ROI_FILE_AQ,
+#endif
   // AQ based on lookahead temporal
   // variance (only valid for altref frames)
-  LOOKAHEAD_AQ = 7,
+  LOOKAHEAD_AQ,
   AQ_MODE_COUNT  // This should always be the last member of the enum
 } AQ_MODE;
 
