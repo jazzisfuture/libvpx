@@ -129,7 +129,12 @@ typedef enum {
   PSNR_AQ = 6,
   // AQ based on lookahead temporal
   // variance (only valid for altref frames)
+#if !CONFIG_ROI_FILE_AQ
   LOOKAHEAD_AQ = 7,
+#else
+  ROI_FILE_AQ = 7,
+  LOOKAHEAD_AQ = 8,
+#endif
   AQ_MODE_COUNT  // This should always be the last member of the enum
 } AQ_MODE;
 

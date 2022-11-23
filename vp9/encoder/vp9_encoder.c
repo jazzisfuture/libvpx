@@ -82,7 +82,9 @@
 #include "vp9/encoder/vp9_svc_layercontext.h"
 #include "vp9/encoder/vp9_temporal_filter.h"
 #include "vp9/vp9_cx_iface.h"
-
+#if CONFIG_ROI_FILE_AQ
+#include "vp9/encoder/vp9_aq_roi_file.h"
+#endif
 #define AM_SEGMENT_ID_INACTIVE 7
 #define AM_SEGMENT_ID_ACTIVE 0
 
@@ -4110,7 +4112,13 @@ static int encode_without_recode_loop(VP9_COMP *cpi, size_t *size,
     // it may be pretty bad for rate-control,
     // and I should handle it somehow
     vp9_alt_ref_aq_setup_map(cpi->alt_ref_aq, cpi);
-  } else {
+  }
+#if CONFIG_ROI_FILE_AQ
+  else if (cpi->oxcf.aq_mode == ROI_FILE_AQ) {
+    vp9_roi_setup(cpi);
+  }
+#endif
+  else {
 #endif
     // If ROI is enabled and skip feature is used for segmentation, apply cyclic
     // refresh but not apply ROI for skip for the first 20 frames (defined by
@@ -4551,6 +4559,11 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest
     } else if (oxcf->aq_mode == PSNR_AQ) {
       vp9_psnr_aq_mode_setup(&cm->seg);
     }
+#if CONFIG_ROI_FILE_AQ
+    else if (oxcf->aq_mode == ROI_FILE_AQ) {
+      vp9_roi_setup(cpi);
+    }
+#endif
 
     vp9_encode_frame(cpi);
 
