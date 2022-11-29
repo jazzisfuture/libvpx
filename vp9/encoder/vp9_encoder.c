@@ -7613,6 +7613,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   const int gf_group_index = cpi->twopass.gf_group.index;
   int i;
 
+#if CONFIG_LOW_MOTION_AQ
+  int j, k;
+  const char fname[] = "output.txt";
+  FILE *fp;
+#endif
+
   if (is_one_pass_svc(cpi)) {
     vp9_one_pass_svc_start_layer(cpi);
   }

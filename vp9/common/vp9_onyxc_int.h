@@ -268,6 +268,12 @@ typedef struct VP9Common {
   int above_context_alloc_cols;
 
   int lf_row;
+<<<<<<< PATCH SET (227b58 [VP9] Low Motion - RME delta first pass calculation)
+#if CONFIG_LOW_MOTION_AQ
+  double *rme_delta;
+#endif
+=======
+>>>>>>> BASE      (d998bd Merge "vp9/rate_ctrl_rtc: Improve get cyclic refresh data" i)
 } VP9_COMMON;
 
 static INLINE void init_frame_indexes(VP9_COMMON *cm) {

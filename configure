@@ -289,6 +289,10 @@ EXPERIMENT_LIST="
     emulate_hardware
     non_greedy_mv
     rate_ctrl
+<<<<<<< PATCH SET (227b58 [VP9] Low Motion - RME delta first pass calculation)
+    low_motion_aq
+=======
+>>>>>>> BASE      (d998bd Merge "vp9/rate_ctrl_rtc: Improve get cyclic refresh data" i)
 "
 CONFIG_LIST="
     dependency_tracking
