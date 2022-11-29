@@ -41,6 +41,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "53cd3c33_915b6122",
+        "filename": "configure",
+        "patchSetId": 8
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "653a9388_6189407a",
+      "range": {
+        "startLine": 292,
+        "startChar": 4,
+        "endLine": 292,
+        "endChar": 16
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d519d701_3695f16f",
@@ -54,6 +78,30 @@
       "writtenOn": "2022-11-29T19:15:57Z",
       "side": 1,
       "message": "Code below should be guarded by macro too",
+      "range": {
+        "startLine": 5,
+        "startChar": 28,
+        "endLine": 5,
+        "endChar": 29
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e210632f_49181876",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d519d701_3695f16f",
       "range": {
         "startLine": 5,
         "startChar": 28,
@@ -87,6 +135,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "472d3d48_fdce82b0",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "436057d9_2eee6a12",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 13
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0ef1627f_0a5f9418",
@@ -100,6 +172,30 @@
       "writtenOn": "2022-11-29T19:15:57Z",
       "side": 1,
       "message": "This name maybe too general so it might conflict with other things later. Maybe rename to something like \"ROI_QINDEX_DELTA\"?",
+      "range": {
+        "startLine": 10,
+        "startChar": 8,
+        "endLine": 10,
+        "endChar": 20
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "69d41ba5_5612b2b9",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0ef1627f_0a5f9418",
       "range": {
         "startLine": 10,
         "startChar": 8,
@@ -133,6 +229,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "91975312_471a1319",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6bc54f7_270370af",
+      "range": {
+        "startLine": 12,
+        "startChar": 8,
+        "endLine": 12,
+        "endChar": 17
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "94c57890_c8142927",
@@ -146,6 +266,30 @@
       "writtenOn": "2022-11-29T19:15:57Z",
       "side": 1,
       "message": "where is this file pointer closed?",
+      "range": {
+        "startLine": 35,
+        "startChar": 7,
+        "endLine": 35,
+        "endChar": 13
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0c8b894_ea6a0119",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "94c57890_c8142927",
       "range": {
         "startLine": 35,
         "startChar": 7,
@@ -179,6 +323,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "148d227f_32ae9811",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6bfe2251_c433654c",
+      "range": {
+        "startLine": 37,
+        "startChar": 3,
+        "endLine": 37,
+        "endChar": 12
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "771e01a7_5f3ffb1a",
@@ -192,6 +360,30 @@
       "writtenOn": "2022-11-29T19:15:57Z",
       "side": 1,
       "message": "This should be guarded by CONFIG_SUBTITLE_AQ",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 70
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0bee9701_c8a04895",
+        "filename": "vp9/encoder/vp9_aq_subtitles.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "771e01a7_5f3ffb1a",
       "range": {
         "startLine": 8,
         "startChar": 0,
@@ -225,6 +417,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d963374e_dbaedfa6",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30755699_cb956b74",
+      "range": {
+        "startLine": 130,
+        "startChar": 2,
+        "endLine": 130,
+        "endChar": 19
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "99e0ae8e_a833d415",
@@ -238,6 +454,30 @@
       "writtenOn": "2022-11-29T19:15:57Z",
       "side": 1,
       "message": "Should this be added with the condition that CONFIG_SUBTITLE_AQ is on?",
+      "range": {
+        "startLine": 95,
+        "startChar": 11,
+        "endLine": 95,
+        "endChar": 15
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96a06a2a_6dd44259",
+        "filename": "vp9/vp9cx.mk",
+        "patchSetId": 8
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-29T21:06:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "99e0ae8e_a833d415",
       "range": {
         "startLine": 95,
         "startChar": 11,
