@@ -1,0 +1,251 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d12f977_68f9abe4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "Thanks for the CL, Raj! I\u0027ve let some comments.",
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "653a9388_6189407a",
+        "filename": "configure",
+        "patchSetId": 8
+      },
+      "lineNbr": 292,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "This is not necessarily confined to subtitles. Do you think it would be better if we name it to something broader, like \"roi_file_aq\"?",
+      "range": {
+        "startLine": 292,
+        "startChar": 4,
+        "endLine": 292,
+        "endChar": 16
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d519d701_3695f16f",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "Code below should be guarded by macro too",
+      "range": {
+        "startLine": 5,
+        "startChar": 28,
+        "endLine": 5,
+        "endChar": 29
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "436057d9_2eee6a12",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "What about using a enum for this?",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 8,
+        "endChar": 13
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0ef1627f_0a5f9418",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "This name maybe too general so it might conflict with other things later. Maybe rename to something like \"ROI_QINDEX_DELTA\"?",
+      "range": {
+        "startLine": 10,
+        "startChar": 8,
+        "endLine": 10,
+        "endChar": 20
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6bc54f7_270370af",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "Same here, macro name is too general.",
+      "range": {
+        "startLine": 12,
+        "startChar": 8,
+        "endLine": 12,
+        "endChar": 17
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "94c57890_c8142927",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "where is this file pointer closed?",
+      "range": {
+        "startLine": 35,
+        "startChar": 7,
+        "endLine": 35,
+        "endChar": 13
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6bfe2251_c433654c",
+        "filename": "vp9/encoder/vp9_aq_subtitles.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "May also be worthwhile to add comments on how the file should be formatted.",
+      "range": {
+        "startLine": 37,
+        "startChar": 3,
+        "endLine": 37,
+        "endChar": 12
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "771e01a7_5f3ffb1a",
+        "filename": "vp9/encoder/vp9_aq_subtitles.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "This should be guarded by CONFIG_SUBTITLE_AQ",
+      "range": {
+        "startLine": 8,
+        "startChar": 0,
+        "endLine": 12,
+        "endChar": 70
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30755699_cb956b74",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "Is there a reason why we don\u0027t append this to the end of the list? Also it would be better to guard this addition with #if CONFIG_SUBTITLES_AQ",
+      "range": {
+        "startLine": 130,
+        "startChar": 2,
+        "endLine": 130,
+        "endChar": 19
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "99e0ae8e_a833d415",
+        "filename": "vp9/vp9cx.mk",
+        "patchSetId": 8
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-29T19:15:57Z",
+      "side": 1,
+      "message": "Should this be added with the condition that CONFIG_SUBTITLE_AQ is on?",
+      "range": {
+        "startLine": 95,
+        "startChar": 11,
+        "endLine": 95,
+        "endChar": 15
+      },
+      "revId": "815b0fd6fa38aa40668887e2093af852dd9eff80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
