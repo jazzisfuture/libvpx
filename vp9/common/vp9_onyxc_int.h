@@ -268,8 +268,12 @@ typedef struct VP9Common {
   int above_context_alloc_cols;
 
   int lf_row;
+<<<<<<< HEAD
 
 #if CONFIG_RAJAT_TEST
+=======
+#if CONFIG_LOW_MOTION_AQ
+>>>>>>> 5837c6bad ([VP9] Low Motion - RME delta first pass calculation)
   double *rme_delta;
 #endif
 } VP9_COMMON;
