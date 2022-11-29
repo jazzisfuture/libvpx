@@ -12,6 +12,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <fcntl.h>
 
 #include "./vp9_rtcd.h"
 #include "./vpx_config.h"
@@ -7613,6 +7614,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   const int gf_group_index = cpi->twopass.gf_group.index;
   int i;
 
+#if CONFIG_LOW_MOTION_AQ
+  int j, k;
+  const char fname[] = "lowmotion_sum_of_motion_error.txt";
+  FILE *fp;
+#endif
+
   if (is_one_pass_svc(cpi)) {
     vp9_one_pass_svc_start_layer(cpi);
   }
@@ -7874,7 +7881,26 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->td.mb.fwd_txfm4x4 = lossless ? vp9_fwht4x4 : vpx_fdct4x4;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     cpi->td.mb.inv_txfm_add = lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
+#if CONFIG_LOW_MOTION_AQ
+    fp = fopen(fname, "w+");
+
+    if (cm->current_frame_coding_index == 0) {
+      cm->rme_delta = calloc(cm->mb_cols * cm->mb_rows, sizeof(double));
+    }
+
     vp9_first_pass(cpi, source);
+
+    for (j = 0; j < cm->mb_rows; j++) {
+      for (k = 0; k < cm->mb_cols; k++) {
+        fprintf(fp, "%f ", *(cm->rme_delta + (j * cm->mb_cols + k)));
+      }
+      fprintf(fp, "\n");
+    }
+
+    fclose(fp);
+#else
+    vp9_first_pass(cpi, source);
+#endif
   } else if (oxcf->pass == 2 && !cpi->use_svc) {
     Pass2Encode(cpi, size, dest, frame_flags, encode_frame_result);
     vp9_twopass_postencode_update(cpi);
