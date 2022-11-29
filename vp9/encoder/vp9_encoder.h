@@ -972,6 +972,9 @@ typedef struct VP9_COMP {
   RATE_QSTEP_MODEL rq_model[ENCODE_FRAME_TYPES];
 #endif
   EXT_RATECTRL ext_ratectrl;
+#if CONFIG_LOW_MOTION_AQ
+  int *rme;
+#endif
 } VP9_COMP;
 
 #if CONFIG_RATE_CTRL

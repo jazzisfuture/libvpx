@@ -268,8 +268,7 @@ typedef struct VP9Common {
   int above_context_alloc_cols;
 
   int lf_row;
-
-#if CONFIG_RAJAT_TEST
+#if CONFIG_LOW_MOTION_AQ
   double *rme_delta;
 #endif
 } VP9_COMMON;

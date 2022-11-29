@@ -7634,6 +7634,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   const int gf_group_index = cpi->twopass.gf_group.index;
   int i;
 
+#if CONFIG_LOW_MOTION_AQ
+  int j, k;
+  const char fname[] = "output.txt";
+  FILE *fp;
+#endif
+
   if (is_one_pass_svc(cpi)) {
     vp9_one_pass_svc_start_layer(cpi);
   }
@@ -7895,37 +7901,7 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
     cpi->td.mb.fwd_txfm4x4 = lossless ? vp9_fwht4x4 : vpx_fdct4x4;
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     cpi->td.mb.inv_txfm_add = lossless ? vp9_iwht4x4_add : vp9_idct4x4_add;
-#if CONFIG_RAJAT_TEST
-    int i,j;
-    const char fname[] = "output.txt";
-
-    FILE *fp = fopen(fname, "w+");
-
-    if (cm->current_frame_coding_index == 0) {
-
-      cm->rme_delta = malloc(sizeof(double)*cm->mb_cols*cm->mb_rows);
-
-      memset(cm->rme_delta, 0, sizeof(double)*cm->mb_cols*cm->mb_rows);
-    }
-
-    // printf("mb_rows %d , mb_cols %d\n", cm->mb_rows, cm->mb_cols);
-    // printf("mi_rows %d , mi_cols %d\n", cm->mi_rows, cm->mi_cols);
-
     vp9_first_pass(cpi, source);
-
-    for (i = 0; i < cm->mb_rows; i++) {
-      for (j = 0; j < cm->mb_cols; j++) {
-        // printf("%f ", *(cm->rme_delta+(i*cm->mb_cols+j)));
-        fprintf(fp, "%f ", *(cm->rme_delta+(i*cm->mb_cols+j)));
-      }
-      // printf("\n");
-      fprintf(fp, "\n");
-    }
-
-    fclose(fp);
-#else
-    vp9_first_pass(cpi, source);
-#endif
   } else if (oxcf->pass == 2 && !cpi->use_svc) {
     Pass2Encode(cpi, size, dest, frame_flags, encode_frame_result);
     vp9_twopass_postencode_update(cpi);
