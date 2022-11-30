@@ -140,6 +140,30 @@
       },
       "revId": "a064ae34f5759497b629472b69f061c391518637",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "181dedc8_c8f63476",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-30T22:19:28Z",
+      "side": 1,
+      "message": "That would work I think. One way to avoid problems of the enum values is to let it propagate them by itself. something like:\n\ntypedef enum {\n  NO_AQ \u003d 0,\n  VARIANCE_AQ \u003d 1,\n  COMPLEXITY_AQ \u003d 2,\n  CYCLIC_REFRESH_AQ \u003d 3,\n  EQUATOR360_AQ \u003d 4,\n  PERCEPTUAL_AQ \u003d 5,\n  PSNR_AQ \u003d 6,\n#if ....\n  SUBTITLES_AQ,\n#endif\n  // AQ based on lookahead temporal\n  // variance (only valid for altref frames)\n  LOOKAHEAD_AQ,\n  AQ_MODE_COUNT  // This should always be the last member of the enum\n} AQ_MODE;",
+      "parentUuid": "cf274787_9cc0ebd4",
+      "range": {
+        "startLine": 184,
+        "startChar": 11,
+        "endLine": 184,
+        "endChar": 56
+      },
+      "revId": "a064ae34f5759497b629472b69f061c391518637",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
