@@ -16,6 +16,24 @@
       "message": "let me know if the changes look good!",
       "revId": "eb892709de7b126b7d7fa17f41f91b9c53557d59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cb10016c_5fef8c94",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-30T18:16:17Z",
+      "side": 1,
+      "message": "Thanks for resolving the comments! Looks like there are some pre-submit failures, possibly style problems?",
+      "parentUuid": "8ca87ca9_9b5b4b3b",
+      "revId": "eb892709de7b126b7d7fa17f41f91b9c53557d59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
