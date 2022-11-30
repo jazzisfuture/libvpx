@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a30fe436_07b4f2b6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-30T21:23:43Z",
+      "side": 1,
+      "message": "Since we are not constrained to subtitles, we may want to replace the mentions of subtitles with things like regions of interest (roi).",
+      "range": {
+        "startLine": 7,
+        "startChar": 6,
+        "endLine": 7,
+        "endChar": 15
+      },
+      "revId": "a064ae34f5759497b629472b69f061c391518637",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c05e06e9_80f05602",
+        "filename": "vp9/encoder/vp9_aq_roi_file.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-30T21:23:43Z",
+      "side": 1,
+      "message": "here too, and some other variable / comments later.",
+      "range": {
+        "startLine": 14,
+        "startChar": 8,
+        "endLine": 14,
+        "endChar": 17
+      },
+      "revId": "a064ae34f5759497b629472b69f061c391518637",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de5549b6_eed8ac56",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-11-30T21:23:43Z",
+      "side": 1,
+      "message": "Does this mean LOOKAHEAD_AQ cannot be used as an option in config? In that case we also need to respect that.",
+      "range": {
+        "startLine": 184,
+        "startChar": 11,
+        "endLine": 184,
+        "endChar": 56
+      },
+      "revId": "a064ae34f5759497b629472b69f061c391518637",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
