@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "05d8d732_7e51a56f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-30T22:15:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a30fe436_07b4f2b6",
+      "range": {
+        "startLine": 7,
+        "startChar": 6,
+        "endLine": 7,
+        "endChar": 15
+      },
+      "revId": "a064ae34f5759497b629472b69f061c391518637",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c05e06e9_80f05602",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "28dc312b_8b33ca33",
+        "filename": "vp9/encoder/vp9_aq_roi_file.h",
+        "patchSetId": 10
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-30T22:15:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c05e06e9_80f05602",
+      "range": {
+        "startLine": 14,
+        "startChar": 8,
+        "endLine": 14,
+        "endChar": 17
+      },
+      "revId": "a064ae34f5759497b629472b69f061c391518637",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "de5549b6_eed8ac56",
@@ -60,6 +108,30 @@
       "writtenOn": "2022-11-30T21:23:43Z",
       "side": 1,
       "message": "Does this mean LOOKAHEAD_AQ cannot be used as an option in config? In that case we also need to respect that.",
+      "range": {
+        "startLine": 184,
+        "startChar": 11,
+        "endLine": 184,
+        "endChar": 56
+      },
+      "revId": "a064ae34f5759497b629472b69f061c391518637",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf274787_9cc0ebd4",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1561788
+      },
+      "writtenOn": "2022-11-30T22:15:59Z",
+      "side": 1,
+      "message": "So should I revert to my original method of swapping LOOKAHEAD_AQ and ROI_FILE_AQ?",
+      "parentUuid": "de5549b6_eed8ac56",
       "range": {
         "startLine": 184,
         "startChar": 11,
