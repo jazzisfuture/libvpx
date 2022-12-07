@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01f868d0_c91d1daf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-12-07T19:28:00Z",
+      "side": 1,
+      "message": "There\u0027s more file-wide cleanup that could be done, but for now the test is consistent with the existing code.",
+      "revId": "5a32b3b0287f34bc1d905a83ff8be0b78effb362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a70981ad_8562d9f0",
+        "filename": "test/vp9_subtract_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-12-07T19:28:00Z",
+      "side": 1,
+      "message": "\u003ctuple\u003e should be included for this; add a comment for the parameters, bitdepth, optimized / ref function",
+      "range": {
+        "startLine": 173,
+        "startChar": 20,
+        "endLine": 173,
+        "endChar": 25
+      },
+      "revId": "5a32b3b0287f34bc1d905a83ff8be0b78effb362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1474806_79910de6",
+        "filename": "test/vp9_subtract_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-12-07T19:28:00Z",
+      "side": 1,
+      "message": "these 2 can be constexpr and have their names adjusted too",
+      "revId": "5a32b3b0287f34bc1d905a83ff8be0b78effb362",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
