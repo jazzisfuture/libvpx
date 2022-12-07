@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03dbb7df_212f9af6",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 909,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-12-07T20:17:43Z",
+      "side": 1,
+      "message": "you can remove `virtual` when using `override`",
+      "range": {
+        "startLine": 909,
+        "startChar": 2,
+        "endLine": 909,
+        "endChar": 9
+      },
+      "revId": "421f0849cf3794fb90513ca9fd90eaffbb729868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0a62e64_7092eb6f",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-12-07T20:17:43Z",
+      "side": 1,
+      "message": "This should be bumped due to the struct change",
+      "revId": "421f0849cf3794fb90513ca9fd90eaffbb729868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a1a391f3_e4808b5a",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-12-07T20:17:43Z",
+      "side": 1,
+      "message": "references in text could be expanded to rd multiplier for clarity",
+      "range": {
+        "startLine": 455,
+        "startChar": 38,
+        "endLine": 455,
+        "endChar": 44
+      },
+      "revId": "421f0849cf3794fb90513ca9fd90eaffbb729868",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
