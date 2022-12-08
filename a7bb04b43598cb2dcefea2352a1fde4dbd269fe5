@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b078bb5c_a0437f9f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000882
+      },
+      "writtenOn": "2022-12-08T20:08:04Z",
+      "side": 1,
+      "message": "[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/0\n[4x4]: ref_time\u003d  2506 \t simd_time\u003d   980 \t gain\u003d2.557143 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/0 (3 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/1\n[4x8]: ref_time\u003d  4235 \t simd_time\u003d  1436 \t gain\u003d2.949164 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/1 (5 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/2\n[8x4]: ref_time\u003d  2497 \t simd_time\u003d  1031 \t gain\u003d2.421920 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/2 (3 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/3\n[8x8]: ref_time\u003d  4291 \t simd_time\u003d  1483 \t gain\u003d2.893459 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/3 (6 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/4\n[8x16]: ref_time\u003d  7729 \t simd_time\u003d  2457 \t gain\u003d3.145706 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/4 (10 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/5\n[16x8]: ref_time\u003d  4707 \t simd_time\u003d  1528 \t gain\u003d3.080497 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/5 (6 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/6\n[16x16]: ref_time\u003d  8769 \t simd_time\u003d  2467 \t gain\u003d3.554520 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/6 (11 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/7\n[16x32]: ref_time\u003d 17461 \t simd_time\u003d  4297 \t gain\u003d4.063533 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/7 (22 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/8\n[32x16]: ref_time\u003d 13534 \t simd_time\u003d  4199 \t gain\u003d3.223148 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/8 (17 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/9\n[32x32]: ref_time\u003d 27895 \t simd_time\u003d  8131 \t gain\u003d3.430697 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/9 (36 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/10\n[32x64]: ref_time\u003d 53866 \t simd_time\u003d 16578 \t gain\u003d3.249246 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/10 (70 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/11\n[64x32]: ref_time\u003d 40747 \t simd_time\u003d 13114 \t gain\u003d3.107137 \n[       OK ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/11 (54 ms)\n[ RUN      ] AVX2/VPXHBDSubtractBlockTest.DISABLED_Speed/12\n[64x64]: ref_time\u003d 79090 \t simd_time\u003d 25883 \t gain\u003d3.055674",
+      "revId": "a7bb04b43598cb2dcefea2352a1fde4dbd269fe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
