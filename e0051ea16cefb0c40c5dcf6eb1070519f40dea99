@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c482150e_e46370b6",
+        "filename": "test/vp9_ratectrl_rtc_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-12-14T17:06:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "550c26fc_c1ab5537",
+      "range": {
+        "startLine": 30,
+        "startChar": 10,
+        "endLine": 30,
+        "endChar": 22
+      },
+      "revId": "e0051ea16cefb0c40c5dcf6eb1070519f40dea99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e89a2a30_02a3390b",
@@ -37,6 +61,30 @@
       "writtenOn": "2022-12-07T15:40:23Z",
       "side": 1,
       "message": "Maybe put them in a constant global array like\n\nconst int kLayerTargetBitrate3TemporalLayers \u003d {...};\n\nAnd use it here and in SetRCConfigSvc3Spatial",
+      "range": {
+        "startLine": 381,
+        "startChar": 7,
+        "endLine": 391,
+        "endChar": 41
+      },
+      "revId": "e0051ea16cefb0c40c5dcf6eb1070519f40dea99",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d40fc5f_da1f89be",
+        "filename": "test/vp9_ratectrl_rtc_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 391,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2022-12-14T17:06:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e89a2a30_02a3390b",
       "range": {
         "startLine": 381,
         "startChar": 7,
