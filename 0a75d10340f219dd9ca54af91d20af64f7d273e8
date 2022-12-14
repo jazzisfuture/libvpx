@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b81fd61_e952508f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-12-14T01:39:01Z",
+      "side": 1,
+      "message": "these two should be \u0027armv7\u0027",
+      "range": {
+        "startLine": 10,
+        "startChar": 18,
+        "endLine": 10,
+        "endChar": 23
+      },
+      "revId": "0a75d10340f219dd9ca54af91d20af64f7d273e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d73f4a7_ccfdb860",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2022-12-14T01:39:01Z",
+      "side": 1,
+      "message": "Thanks for the patch. I had something for this a while ago, but never got around to pushing it.",
+      "revId": "0a75d10340f219dd9ca54af91d20af64f7d273e8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
