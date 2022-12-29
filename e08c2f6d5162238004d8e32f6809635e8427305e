@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c7a996c_fcea6103",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-12-29T18:16:06Z",
+      "side": 1,
+      "message": "One possible improvement for the future: instead of writing to a hard-coded file at every frame, we can just prove an API which prints the info we have to a file. And in this way vpxenc (or maybe even ffmpeg) can call the API to save to the file.\n\nEven better, we can just return the pointer to the map, and let the client (vpxenc) decide whether it wants to write to a file, or save it in memory for future use.\n\nNo need to do this in this CL though.",
+      "revId": "e08c2f6d5162238004d8e32f6809635e8427305e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00b1a555_f62a55a9",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 7619,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2022-12-29T18:16:06Z",
+      "side": 1,
+      "message": "Consider sth more descriptive?",
+      "range": {
+        "startLine": 7619,
+        "startChar": 23,
+        "endLine": 7619,
+        "endChar": 35
+      },
+      "revId": "e08c2f6d5162238004d8e32f6809635e8427305e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
