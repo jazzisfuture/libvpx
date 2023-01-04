@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "906f7432_998d68d6",
+        "filename": "vp9/common/vp9_onyxc_int.h",
+        "patchSetId": 9
+      },
+      "lineNbr": 272,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-01-04T23:22:16Z",
+      "side": 1,
+      "message": "Why add this in VP9_COMMON instead of VP9_COMP?",
+      "range": {
+        "startLine": 272,
+        "startChar": 10,
+        "endLine": 272,
+        "endChar": 19
+      },
+      "revId": "e62d0b1cbd58310eebb9f08208083094f51b4316",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89ebfa14_627a3d5d",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-01-04T23:22:16Z",
+      "side": 1,
+      "message": "Why is this needed?",
+      "revId": "e62d0b1cbd58310eebb9f08208083094f51b4316",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc6bba4f_a7c4fde8",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 7621,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-01-04T23:22:16Z",
+      "side": 1,
+      "message": "Move this down, so all file writing code stay together.",
+      "range": {
+        "startLine": 7617,
+        "startChar": 0,
+        "endLine": 7621,
+        "endChar": 6
+      },
+      "revId": "e62d0b1cbd58310eebb9f08208083094f51b4316",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "941bfef0_c787dc39",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 7888,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-01-04T23:22:16Z",
+      "side": 1,
+      "message": "Did you free this somewhere?",
+      "range": {
+        "startLine": 7888,
+        "startChar": 6,
+        "endLine": 7888,
+        "endChar": 19
+      },
+      "revId": "e62d0b1cbd58310eebb9f08208083094f51b4316",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4787c4f8_c38cdf40",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 7903,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-01-04T23:22:16Z",
+      "side": 1,
+      "message": "May change this section to:\n\n    vp9_first_pass(cpi, source);\n#if CONFIG_LOW_MOTION_AQ\n    int j, k;\n    const char fname[] \u003d \"lowmotion_sum_of_motion_error.txt\";\n    FILE *fp;\n    fp \u003d fopen(fname, \"w+\");\n\n    if (cm-\u003ecurrent_frame_coding_index \u003d\u003d 0) {\n      cm-\u003erme_delta \u003d calloc(cm-\u003emb_cols * cm-\u003emb_rows, sizeof(double));\n    }\n\n    for (j \u003d 0; j \u003c cm-\u003emb_rows; j++) {\n      for (k \u003d 0; k \u003c cm-\u003emb_cols; k++) {\n        fprintf(fp, \"%f \", *(cm-\u003erme_delta + (j * cm-\u003emb_cols + k)));\n      }\n      fprintf(fp, \"\\n\");\n    }\n\n    fclose(fp);    \n#endif",
+      "range": {
+        "startLine": 7884,
+        "startChar": 0,
+        "endLine": 7903,
+        "endChar": 6
+      },
+      "revId": "e62d0b1cbd58310eebb9f08208083094f51b4316",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "abc0bcb4_b3879a76",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 1356,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-01-04T23:22:16Z",
+      "side": 1,
+      "message": "Move this part below as well",
+      "range": {
+        "startLine": 1351,
+        "startChar": 0,
+        "endLine": 1356,
+        "endChar": 6
+      },
+      "revId": "e62d0b1cbd58310eebb9f08208083094f51b4316",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf82ce46_8fc09a59",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 1371,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-01-04T23:22:16Z",
+      "side": 1,
+      "message": "Free this memory somewhere?",
+      "range": {
+        "startLine": 1371,
+        "startChar": 1,
+        "endLine": 1371,
+        "endChar": 10
+      },
+      "revId": "e62d0b1cbd58310eebb9f08208083094f51b4316",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
