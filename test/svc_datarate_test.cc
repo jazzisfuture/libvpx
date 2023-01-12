@@ -16,8 +16,12 @@
 #include "test/util.h"
 #include "test/y4m_video_source.h"
 #include "vp9/common/vp9_onyxc_int.h"
+#include "vp9/encoder/vp9_quantize.h"
 #include "vpx/vpx_codec.h"
 #include "vpx_ports/bitops.h"
+
+#include <random>
+#include <vector>
 
 namespace svc_test {
 namespace {
@@ -1770,6 +1774,13 @@ TEST_P(DatarateOnePassCbrSvcPostencodeDrop, OnePassCbrSvc2QL1TLScreen) {
 
 VP9_INSTANTIATE_TEST_SUITE(DatarateOnePassCbrSvcSingleBR,
                            ::testing::Range(5, 10));
+
+#if CONFIG_VP9
+INSTANTIATE_TEST_SUITE_P(
+    VP9, DatarateOnePassCbrSvcPerLayerQp,
+    ::testing::Values(
+        static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)));
+#endif
 
 VP9_INSTANTIATE_TEST_SUITE(DatarateOnePassCbrSvcPostencodeDrop,
                            ::testing::Range(5, 6));
