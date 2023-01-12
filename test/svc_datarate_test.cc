@@ -16,8 +16,12 @@
 #include "test/util.h"
 #include "test/y4m_video_source.h"
 #include "vp9/common/vp9_onyxc_int.h"
+#include "vp9/encoder/vp9_quantize.h"
 #include "vpx/vpx_codec.h"
 #include "vpx_ports/bitops.h"
+
+#include <random>
+#include <vector>
 
 namespace svc_test {
 namespace {
@@ -1152,6 +1156,75 @@ TEST_P(DatarateOnePassCbrSvcSingleBR, OnePassCbrSvc2SL1TL5x5MultipleRuns) {
 #endif
 }
 
+class DatarateOnePassCbrSvcPerLayerQp
+    : public DatarateOnePassCbrSvc,
+      public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
+ public:
+  DatarateOnePassCbrSvcPerLayerQp() : DatarateOnePassCbrSvc(GetParam()) {
+    memset(&svc_params_, 0, sizeof(svc_params_));
+  }
+  virtual ~DatarateOnePassCbrSvcPerLayerQp() {}
+
+ protected:
+  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                                  ::libvpx_test::Encoder *encoder) {
+    DatarateOnePassCbrSvc::PreEncodeFrameHook(video, encoder);
+    for (size_t sl = 0; sl < cfg_.ss_number_layers; ++sl)
+      for (size_t tl = 0; tl < cfg_.ts_number_layers; ++tl) {
+        const size_t layer = sl * cfg_.ts_number_layers + tl;
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<int> distribution(0, 63);
+        layer_qp_[layer] = distribution(gen);
+        svc_params_.max_quantizers[layer] = layer_qp_[layer];
+        svc_params_.min_quantizers[layer] = layer_qp_[layer];
+      }
+    encoder->Control(VP9E_SET_SVC_PARAMETERS, &svc_params_);
+  }
+
+  virtual void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) {
+    size_t num_layers = layer_qp_.size();
+    std::vector<int> actual_layer_qp(num_layers);
+    encoder->Control(VP9E_GET_LAST_QUANTIZER_SVC_LAYERS,
+                     actual_layer_qp.data());
+    for (size_t i = 0; i < num_layers; ++i) {
+      ASSERT_EQ(actual_layer_qp[i], vp9_quantizer_to_qindex(layer_qp_[i]));
+    }
+  }
+
+  virtual void SetUp() {
+    InitializeConfig();
+    SetMode(::libvpx_test::kRealTime);
+    speed_setting_ = 7;
+    ResetModel();
+  }
+
+ protected:
+  std::vector<int> layer_qp_;
+};
+
+TEST_P(DatarateOnePassCbrSvcPerLayerQp, SvcPerLayerQp3TL3SL) {
+  SetSvcConfig(3, 3);
+  layer_qp_.resize(9);
+
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.g_threads = 1;
+  cfg_.kf_max_dist = 9999;
+  cfg_.rc_dropframe_thresh = 10;
+  cfg_.rc_target_bitrate = 400;
+  ::libvpx_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30, 1,
+                                       0, 400);
+  top_sl_width_ = 640;
+  top_sl_height_ = 480;
+  ResetModel();
+
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+
 // Params: speed setting and index for bitrate array.
 class DatarateOnePassCbrSvcMultiBR
     : public DatarateOnePassCbrSvc,
@@ -1770,6 +1843,13 @@ TEST_P(DatarateOnePassCbrSvcPostencodeDrop, OnePassCbrSvc2QL1TLScreen) {
 
 VP9_INSTANTIATE_TEST_SUITE(DatarateOnePassCbrSvcSingleBR,
                            ::testing::Range(5, 10));
+
+#if CONFIG_VP9
+INSTANTIATE_TEST_SUITE_P(
+    VP9, DatarateOnePassCbrSvcPerLayerQp,
+    ::testing::Values(
+        static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)));
+#endif
 
 VP9_INSTANTIATE_TEST_SUITE(DatarateOnePassCbrSvcPostencodeDrop,
                            ::testing::Range(5, 6));

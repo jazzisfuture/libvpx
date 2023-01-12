@@ -200,7 +200,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
     bool again;
     for (again = true; again; video->Next()) {
       again = (video->img() != nullptr);
-
+      if (!again) break;
       PreEncodeFrameHook(video);
       PreEncodeFrameHook(video, encoder.get());
       encoder->EncodeFrame(video, frame_flags_);
