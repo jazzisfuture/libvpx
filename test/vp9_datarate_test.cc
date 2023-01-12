@@ -17,6 +17,8 @@
 #include "vpx/vpx_codec.h"
 #include "vpx_ports/bitops.h"
 
+#include <random>
+
 namespace {
 
 class DatarateTestVP9 : public ::libvpx_test::EncoderTest {
@@ -809,6 +811,56 @@ TEST_P(DatarateTestVP9PostEncodeDrop, PostEncodeDropScreenContent) {
       << " The datarate for the file is greater than target by too much!";
 }
 
+class DatarateTestVP9FrameQp
+    : public DatarateTestVP9,
+      public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
+ public:
+  DatarateTestVP9FrameQp() : DatarateTestVP9(GetParam()) {}
+  virtual ~DatarateTestVP9FrameQp() {}
+
+ protected:
+  virtual void SetUp() {
+    InitializeConfig();
+    SetMode(::libvpx_test::kRealTime);
+    ResetModel();
+  }
+
+  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                                  ::libvpx_test::Encoder *encoder) {
+    set_cpu_used_ = 7;
+    DatarateTestVP9::PreEncodeFrameHook(video, encoder);
+    std::default_random_engine generator;
+    std::uniform_int_distribution<int> distribution(0, 63);
+    frame_qp_ = distribution(generator);
+    encoder->Control(VP9E_SET_QUANTIZER_ONE_PASS, frame_qp_);
+  }
+
+  virtual void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) {
+    int qp = 0;
+    encoder->Control(VP8E_GET_LAST_QUANTIZER_64, &qp);
+    ASSERT_EQ(frame_qp_, qp);
+  }
+
+ private:
+  int frame_qp_;
+};
+
+TEST_P(DatarateTestVP9FrameQp, VP9SetFrameQp) {
+  cfg_.rc_buf_initial_sz = 500;
+  cfg_.rc_buf_optimal_sz = 500;
+  cfg_.rc_buf_sz = 1000;
+  cfg_.rc_dropframe_thresh = 0;
+  cfg_.rc_min_quantizer = 0;
+  cfg_.rc_max_quantizer = 63;
+  cfg_.rc_end_usage = VPX_CBR;
+  cfg_.g_lag_in_frames = 0;
+
+  ::libvpx_test::I420VideoSource video("niklas_640_480_30.yuv", 640, 480, 30, 1,
+                                       0, 400);
+  ResetModel();
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+
 #if CONFIG_VP9_TEMPORAL_DENOISING
 // Params: speed setting.
 class DatarateTestVP9RealTimeDenoiser : public DatarateTestVP9RealTime {
@@ -942,6 +994,13 @@ VP9_INSTANTIATE_TEST_SUITE(DatarateTestVP9LargeVBR, ::testing::Range(5, 9),
                            ::testing::Range(0, 2));
 
 VP9_INSTANTIATE_TEST_SUITE(DatarateTestVP9RealTime, ::testing::Range(5, 10));
+
+#if CONFIG_VP9
+INSTANTIATE_TEST_SUITE_P(
+    VP9, DatarateTestVP9FrameQp,
+    ::testing::Values(
+        static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)));
+#endif
 
 VP9_INSTANTIATE_TEST_SUITE(DatarateTestVP9RealTimeDeltaQUV,
                            ::testing::Range(5, 10),
