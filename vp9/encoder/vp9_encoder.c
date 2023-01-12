@@ -1527,6 +1527,7 @@ static void init_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   init_buffer_indices(cpi);
 
   vp9_noise_estimate_init(&cpi->noise_estimate, cm->width, cm->height);
+  cpi->fixed_qp_onepass = 0;
 }
 
 void vp9_check_reset_rc_flag(VP9_COMP *cpi) {
@@ -2027,8 +2028,10 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   vp9_new_framerate(cpi, cpi->framerate);
 
   // Set absolute upper and lower quality limits
-  rc->worst_quality = cpi->oxcf.worst_allowed_q;
-  rc->best_quality = cpi->oxcf.best_allowed_q;
+  if (cpi->common.current_video_frame == 0 || !cpi->fixed_qp_onepass) {
+    rc->worst_quality = cpi->oxcf.worst_allowed_q;
+    rc->best_quality = cpi->oxcf.best_allowed_q;
+  }
 
   cm->interp_filter = cpi->sf.default_interp_filter;
 
@@ -7932,6 +7935,9 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                                oxcf->pass == 2)) {
     vp9_save_layer_context(cpi);
   }
+
+  if (cpi->svc.spatial_layer_id == cpi->svc.number_spatial_layers - 1)
+    cpi->fixed_qp_onepass = 0;
 
   vpx_usec_timer_mark(&cmptimer);
   cpi->time_compress_data += vpx_usec_timer_elapsed(&cmptimer);
