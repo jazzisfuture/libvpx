@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91d452ff_b1d1260e",
+        "filename": "test/vp9_datarate_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 889,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-01-19T02:54:01Z",
+      "side": 1,
+      "message": "why use bypass mode? this means you have to set the reference structure, i don\u0027t see that being done here, So better to use VP9E_TEMPORAL_LAYERING_MODE_0212 (fixed mode for 3 temporal layers).\n\nAlso set the layer target_bitrates, otherwise they will be 0?",
+      "revId": "d337c75e9d49bd13769520e481cbcd093e291db2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
