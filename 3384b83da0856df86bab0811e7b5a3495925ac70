@@ -16,6 +16,23 @@
       "message": "Hi guys, these patches should conclude the FHT highbd NEON optimizations. I thought of sending 2 separate commits for this, one for the actual FHT functions and another for the transpose changes, but they seemed trivial to justify a new changeset.",
       "revId": "3384b83da0856df86bab0811e7b5a3495925ac70",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fd1dd7bb_046eb605",
+        "filename": "vpx_dsp/arm/fdct_neon.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 250,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-01-26T03:12:23Z",
+      "side": 1,
+      "message": "These comments already exist so they\u0027re fine. Rereading them, though, they\u0027re a bit hard to parse, so we might want to follow up on them.",
+      "revId": "3384b83da0856df86bab0811e7b5a3495925ac70",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
