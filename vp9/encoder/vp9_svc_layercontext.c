@@ -887,6 +887,7 @@ int vp9_one_pass_svc_start_layer(VP9_COMP *const cpi) {
   lc = &svc->layer_context[svc->spatial_layer_id * svc->number_temporal_layers +
                            svc->temporal_layer_id];
 
+  printf("%d %d\n", svc->temporal_layering_mode, svc->use_set_ref_frame_config);
   // Setting the worst/best_quality via the encoder control: SET_SVC_PARAMETERS,
   // only for non-BYPASS mode for now.
   if (svc->temporal_layering_mode != VP9E_TEMPORAL_LAYERING_MODE_BYPASS ||
@@ -894,6 +895,11 @@ int vp9_one_pass_svc_start_layer(VP9_COMP *const cpi) {
     RATE_CONTROL *const lrc = &lc->rc;
     lrc->worst_quality = vp9_quantizer_to_qindex(lc->max_q);
     lrc->best_quality = vp9_quantizer_to_qindex(lc->min_q);
+    if (cpi->fixed_qp_onepass) {
+      lrc->worst_quality = cpi->rc.worst_quality;
+      lrc->best_quality = cpi->rc.best_quality;
+    }
+    printf("quality %d %d\n", lrc->worst_quality, lrc->best_quality);
   }
 
   if (cpi->oxcf.resize_mode == RESIZE_DYNAMIC && svc->single_layer_svc == 1 &&
