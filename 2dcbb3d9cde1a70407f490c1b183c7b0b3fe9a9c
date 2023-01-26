@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bab951e1_11b11176",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-01-26T03:14:37Z",
+      "side": 1,
+      "message": "Add fixed svc mode for temporal layers",
+      "revId": "2dcbb3d9cde1a70407f490c1b183c7b0b3fe9a9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af011267_5d0ee026",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-01-26T03:14:37Z",
+      "side": 1,
+      "message": "to test fixing QP-per frame",
+      "revId": "2dcbb3d9cde1a70407f490c1b183c7b0b3fe9a9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
