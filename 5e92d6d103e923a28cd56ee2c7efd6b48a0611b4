@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "21aff91b_ead8ae79",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-01-30T17:03:10Z",
+      "side": 1,
+      "message": "Hi James, could you submit this one please? (Neither Gerda, nor myself (Chromium committer) have permissions to submit - which seems odd with CR+2 from an owner already granted.)",
+      "revId": "5e92d6d103e923a28cd56ee2c7efd6b48a0611b4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "4d5fc6a5_ab21e3ff",
         "filename": "vpx_dsp/arm/transpose_neon.h",
         "patchSetId": 1
