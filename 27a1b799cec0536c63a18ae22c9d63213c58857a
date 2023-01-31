@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d17c0e3_55585ccc",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-01-31T21:11:48Z",
+      "side": 1,
+      "message": "VPX_EXT_RATECTRL_ABI_VERSION was changed from the last release.",
+      "revId": "27a1b799cec0536c63a18ae22c9d63213c58857a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df81193b_0c6892b6",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-01-31T21:11:48Z",
+      "side": 1,
+      "message": "v1.12.1",
+      "range": {
+        "startLine": 11,
+        "startChar": 30,
+        "endLine": 11,
+        "endChar": 36
+      },
+      "revId": "27a1b799cec0536c63a18ae22c9d63213c58857a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
