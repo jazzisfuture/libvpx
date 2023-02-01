@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "58be1d8c_8e05c9a3",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-01T02:39:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7d17c0e3_55585ccc",
+      "revId": "27a1b799cec0536c63a18ae22c9d63213c58857a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "df81193b_0c6892b6",
@@ -31,6 +49,30 @@
       "writtenOn": "2023-01-31T21:11:48Z",
       "side": 1,
       "message": "v1.12.1",
+      "range": {
+        "startLine": 11,
+        "startChar": 30,
+        "endLine": 11,
+        "endChar": 36
+      },
+      "revId": "27a1b799cec0536c63a18ae22c9d63213c58857a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2627aece_3c88703c",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-01T02:39:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df81193b_0c6892b6",
       "range": {
         "startLine": 11,
         "startChar": 30,
