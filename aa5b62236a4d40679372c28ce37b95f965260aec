@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d322617_6ca14df8",
+        "filename": ".mailmap",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-01T19:17:08Z",
+      "side": 0,
+      "message": "I think this was intentional:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/3984469",
+      "revId": "aa5b62236a4d40679372c28ce37b95f965260aec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
