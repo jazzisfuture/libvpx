@@ -16,6 +16,24 @@
       "message": "I think this was intentional:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/3984469",
       "revId": "aa5b62236a4d40679372c28ce37b95f965260aec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d89eb025_06967250",
+        "filename": ".mailmap",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-01T21:30:42Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "5d322617_6ca14df8",
+      "revId": "aa5b62236a4d40679372c28ce37b95f965260aec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
