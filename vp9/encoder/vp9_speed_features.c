@@ -991,11 +991,9 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi, int speed) {
   sf->exhaustive_searches_thresh =
       (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) ? (1 << 20)
                                                               : INT_MAX;
-  if (cpi->twopass.fr_content_type == FC_GRAPHICS_ANIMATION) {
-    for (i = 0; i < MAX_MESH_STEP; ++i) {
-      sf->mesh_patterns[i].range = best_quality_mesh_pattern[i].range;
-      sf->mesh_patterns[i].interval = best_quality_mesh_pattern[i].interval;
-    }
+  for (i = 0; i < MAX_MESH_STEP; ++i) {
+    sf->mesh_patterns[i].range = best_quality_mesh_pattern[i].range;
+    sf->mesh_patterns[i].interval = best_quality_mesh_pattern[i].interval;
   }
 
   if (oxcf->mode == REALTIME)
