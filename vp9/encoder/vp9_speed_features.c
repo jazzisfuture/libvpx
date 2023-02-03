@@ -996,6 +996,14 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi, int speed) {
       sf->mesh_patterns[i].range = best_quality_mesh_pattern[i].range;
       sf->mesh_patterns[i].interval = best_quality_mesh_pattern[i].interval;
     }
+  } else {
+    for (i = 0; i < MAX_MESH_STEP; ++i) {
+      const int mesh_density_level = 0;
+      sf->mesh_patterns[i].range =
+          good_quality_mesh_patterns[mesh_density_level][i].range;
+      sf->mesh_patterns[i].interval =
+          good_quality_mesh_patterns[mesh_density_level][i].interval;
+    }
   }
 
   if (oxcf->mode == REALTIME)
