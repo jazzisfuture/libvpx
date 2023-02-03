@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e164bb06_61546d48",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-02-03T18:46:16Z",
+      "side": 1,
+      "message": "For reference, here are patchset 2\u0027s results:\n\n        avg_psnr:\tovr_psnr:\tssim:\tencoding_spdup:\n\nlowres2:  0.029\t         0.040\t       0.044\t-0.766\nmidres2   0.015\t         0.020\t       0.007\t-1.115\nhdres2:  -0.016\t        -0.019\t       0.023\t-1.459",
+      "revId": "3252ff88f8505c182d33ee332e7f74eea5751aa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
