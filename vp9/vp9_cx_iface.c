@@ -1676,8 +1676,8 @@ static vpx_codec_err_t ctrl_set_scale_mode(vpx_codec_alg_priv_t *ctx,
 
   if (mode) {
     const int res =
-        vp9_set_internal_size(ctx->cpi, (VPX_SCALING)mode->h_scaling_mode,
-                              (VPX_SCALING)mode->v_scaling_mode);
+        vp9_set_internal_size(ctx->cpi, (VPX_SCALING_MODE)mode->h_scaling_mode,
+                              (VPX_SCALING_MODE)mode->v_scaling_mode);
     return (res == 0) ? VPX_CODEC_OK : VPX_CODEC_INVALID_PARAM;
   }
   return VPX_CODEC_INVALID_PARAM;
