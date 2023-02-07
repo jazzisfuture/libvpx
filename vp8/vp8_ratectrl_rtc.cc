@@ -11,6 +11,7 @@
 #include <math.h>
 #include <new>
 #include "vp8/vp8_ratectrl_rtc.h"
+#include "vp8/encoder/onyx_int.h"
 #include "vp8/encoder/ratectrl.h"
 #include "vpx_ports/system_state.h"
 

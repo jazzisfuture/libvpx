@@ -21,6 +21,8 @@
 extern "C" {
 #endif
 
+typedef enum { KEY_FRAME = 0, INTER_FRAME = 1 } FRAME_TYPE;
+
 /* Only need this for fixed-size arrays, for structs just assign. */
 
 #define vp8_copy(Dest, Src)              \

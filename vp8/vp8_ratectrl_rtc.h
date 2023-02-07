@@ -14,9 +14,10 @@
 #include <cstdint>
 #include <memory>
 
-#include "vp8/encoder/onyx_int.h"
 #include "vp8/common/common.h"
 #include "vpx/internal/vpx_ratectrl_rtc.h"
+
+struct VP8_COMP;
 
 namespace libvpx {
 struct VP8RateControlRtcConfig : public VpxRateControlRtcConfig {
@@ -38,7 +39,7 @@ class VP8RateControlRTC {
       const VP8RateControlRtcConfig &cfg);
   ~VP8RateControlRTC() {
     if (cpi_) {
-      vpx_free(cpi_->gf_active_flags);
+      // vpx_free(cpi_->gf_active_flags);
       vpx_free(cpi_);
     }
   }
@@ -54,7 +55,7 @@ class VP8RateControlRTC {
  private:
   VP8RateControlRTC() {}
   void InitRateControl(const VP8RateControlRtcConfig &cfg);
-  VP8_COMP *cpi_;
+  struct VP8_COMP *cpi_;
   int q_;
 };
 
