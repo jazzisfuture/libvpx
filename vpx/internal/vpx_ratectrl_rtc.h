@@ -14,6 +14,7 @@
 #include "vpx/vpx_encoder.h"
 
 namespace libvpx {
+
 struct VpxRateControlRtcConfig {
  public:
   VpxRateControlRtcConfig() {
