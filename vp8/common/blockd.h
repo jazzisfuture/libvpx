@@ -11,6 +11,8 @@
 #ifndef VPX_VP8_COMMON_BLOCKD_H_
 #define VPX_VP8_COMMON_BLOCKD_H_
 
+#include "vp8/common/common.h"
+
 void vpx_log(const char *format, ...);
 
 #include "vpx/internal/vpx_codec_internal.h"
@@ -59,8 +61,6 @@ extern const unsigned char vp8_block2left[25];
 extern const unsigned char vp8_block2above[25];
 
 #define VP8_COMBINEENTROPYCONTEXTS(Dest, A, B) Dest = (A) + (B)
-
-typedef enum { KEY_FRAME = 0, INTER_FRAME = 1 } FRAME_TYPE;
 
 typedef enum {
   DC_PRED, /* average of above and left pixels */

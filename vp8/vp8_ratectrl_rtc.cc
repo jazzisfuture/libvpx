@@ -11,6 +11,7 @@
 #include <math.h>
 #include <new>
 #include "vp8/vp8_ratectrl_rtc.h"
+#include "vp8/encoder/onyx_int.h"
 #include "vp8/encoder/ratectrl.h"
 #include "vpx_ports/system_state.h"
 
@@ -63,6 +64,13 @@ std::unique_ptr<VP8RateControlRTC> VP8RateControlRTC::Create(
   rc_api->InitRateControl(cfg);
 
   return rc_api;
+}
+
+VP8RateControlRTC::~VP8RateControlRTC() {
+  if (cpi_) {
+    vpx_free(cpi_->gf_active_flags);
+    vpx_free(cpi_);
+  }
 }
 
 void VP8RateControlRTC::InitRateControl(const VP8RateControlRtcConfig &rc_cfg) {
