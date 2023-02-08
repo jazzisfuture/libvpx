@@ -16,6 +16,63 @@
       "message": "Hi Hiro,\n\nI tested this change on your CL in chromium[1] and it worked.\n\nHowever, to remove the dependencies on the big headers from vp8 and vp9, I need to remove using of FRAME_TYPE. So now it\u0027s just an int.\n\nAnother option is to define an enum inside the rate controller, something like RC_FRAME_TYPE and cast it to FRAME_TYPE when used.\n\nWhen we roll this into chromium, you need to change the type where it\u0027s used in chromium as well.",
       "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "747b1b62_ddddc8f1",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-08T19:25:28Z",
+      "side": 1,
+      "message": "the default constructor for VpxRateControlRtcConfig is a bit strange.",
+      "range": {
+        "startLine": 22,
+        "startChar": 40,
+        "endLine": 22,
+        "endChar": 63
+      },
+      "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0802aa3_17cacc4d",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-08T19:25:28Z",
+      "side": 1,
+      "message": "you should include \u003ccstring\u003e for this",
+      "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "408857a9_adec6674",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-08T19:25:28Z",
+      "side": 1,
+      "message": "an enum might be a better choice, otherwise this should have some documentation.",
+      "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
