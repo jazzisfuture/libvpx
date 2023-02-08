@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "297c1282_f9718657",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-08T15:28:49Z",
+      "side": 1,
+      "message": "Hi Hiro,\n\nI tested this change on your CL in chromium[1] and it worked.\n\nHowever, to remove the dependencies on the big headers from vp8 and vp9, I need to remove using of FRAME_TYPE. So now it\u0027s just an int.\n\nAnother option is to define an enum inside the rate controller, something like RC_FRAME_TYPE and cast it to FRAME_TYPE when used.\n\nWhen we roll this into chromium, you need to change the type where it\u0027s used in chromium as well.",
+      "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
