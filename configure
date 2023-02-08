@@ -229,6 +229,7 @@ enable_feature spatial_resampling
 enable_feature multithread
 enable_feature os_support
 enable_feature temporal_denoising
+enable_feature consistent_recode
 
 CODECS="
     vp8_encoder
