@@ -3774,7 +3774,6 @@ static void set_frame_size(VP9_COMP *cpi) {
   set_ref_ptrs(cm, xd, LAST_FRAME, LAST_FRAME);
 }
 
-#if CONFIG_CONSISTENT_RECODE || CONFIG_RATE_CTRL
 static void save_encode_params(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   const int tile_cols = 1 << cm->log2_tile_cols;
@@ -3805,7 +3804,6 @@ static void save_encode_params(VP9_COMP *cpi) {
       }
   }
 }
-#endif  // CONFIG_CONSISTENT_RECODE || CONFIG_RATE_CTRL
 
 static INLINE void set_raw_source_frame(VP9_COMP *cpi) {
 #ifdef ENABLE_KF_DENOISE
@@ -5484,14 +5482,8 @@ static void encode_frame_to_data_rate(
   memset(cpi->mode_chosen_counts, 0,
          MAX_MODES * sizeof(*cpi->mode_chosen_counts));
 #endif
-#if CONFIG_CONSISTENT_RECODE
   // Backup to ensure consistency between recodes
   save_encode_params(cpi);
-#elif CONFIG_RATE_CTRL
-  if (cpi->oxcf.use_simple_encode_api) {
-    save_encode_params(cpi);
-  }
-#endif
   if (cpi->ext_ratectrl.ready &&
       (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_RDMULT) != 0) {
     vpx_codec_err_t codec_status;
