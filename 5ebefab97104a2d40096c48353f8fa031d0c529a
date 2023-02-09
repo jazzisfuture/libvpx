@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "71f66dd7_2be96de3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2023-02-09T22:56:31Z",
+      "side": 1,
+      "message": "Given the performance impact is very limited, probably worth just removing this flag altogether. The stability benefits weigh more.",
+      "revId": "5ebefab97104a2d40096c48353f8fa031d0c529a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c37dd525_f7c2edd1",
