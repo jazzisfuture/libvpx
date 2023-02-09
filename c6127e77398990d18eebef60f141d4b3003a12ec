@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9dde9400_a4751229",
+        "filename": "test/vp8_ratectrl_rtc_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 130,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-09T18:57:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8a9305d0_18679682",
+      "range": {
+        "startLine": 130,
+        "startChar": 45,
+        "endLine": 130,
+        "endChar": 46
+      },
+      "revId": "c6127e77398990d18eebef60f141d4b3003a12ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "300040ef_a53fe854",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "13f68341_9c64208f",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-09T18:57:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "300040ef_a53fe854",
+      "range": {
+        "startLine": 56,
+        "startChar": 2,
+        "endLine": 56,
+        "endChar": 5
+      },
+      "revId": "c6127e77398990d18eebef60f141d4b3003a12ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f3fb2555_86d620a0",
@@ -60,6 +108,24 @@
       "writtenOn": "2023-02-09T18:35:12Z",
       "side": 1,
       "message": "since we\u0027re targeting \u003e\u003d C++11 I think this can be an enum class given how it\u0027s used.\n\nThis code base is inconsistent, but names like RcFrameType and RcFrameTypeKey (or KEY_FRAME if using the enum class) would be more correct stylistically.",
+      "revId": "c6127e77398990d18eebef60f141d4b3003a12ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "897750e1_07088b2e",
+        "filename": "vpx/internal/vpx_ratectrl_rtc.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-09T18:57:24Z",
+      "side": 1,
+      "message": "I\u0027m using the style guide for enum here:\nhttps://google.github.io/styleguide/cppguide.html#Enumerator_Names\n\nWe can keep it consistent with the style guide for the rate control library.",
+      "parentUuid": "f3fb2555_86d620a0",
       "revId": "c6127e77398990d18eebef60f141d4b3003a12ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
