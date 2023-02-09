@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bebd772_e47f2b59",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-02-09T13:59:26Z",
+      "side": 1,
+      "message": "Do we have to keep the c89 requirement for libvpx?",
+      "revId": "459cfc8bae26afde6a16421b6f0e5ff5269ebb80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
