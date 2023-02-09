@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "f918064d_c4f83bda",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-09T18:45:26Z",
+      "side": 1,
+      "message": "At one point these may have generated better code or appeared faster in micro benchmarks on some android devices (ca. 2016). That was just done empirically though, are these documented as having a higher latency?\n\nhttps://bugs.chromium.org/p/webm/issues/detail?id\u003d1299",
+      "revId": "459cfc8bae26afde6a16421b6f0e5ff5269ebb80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "1bebd772_e47f2b59",
@@ -14,6 +31,24 @@
       "writtenOn": "2023-02-09T13:59:26Z",
       "side": 1,
       "message": "Do we have to keep the c89 requirement for libvpx?",
+      "revId": "459cfc8bae26afde6a16421b6f0e5ff5269ebb80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fc02a1f2_4ab87ebd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-09T18:45:26Z",
+      "side": 1,
+      "message": "\u003e Do we have to keep the c89 requirement for libvpx?\n\nIt\u0027s unlikely nowadays that it\u0027s necessary, but I\u0027d like to do something coordinated with a release if we were going to go that path. I\u0027ve mentioned to others that restrict should be used more broadly in libaom and libvpx since we\u0027ve seen some nice improvements in libgav1 (and to some extent libwebp, but I didn\u0027t finish up there). For now we can do something like:\n\nhttps://chromium.googlesource.com/codecs/libgav1/+/refs/tags/v0.18.0/src/utils/common.h#45\nhttps://chromium.googlesource.com/webm/libwebp/+/refs/tags/v1.3.0/src/dsp/dsp.h#31\n\nBetter to do that kind of addition in a separate change though.",
+      "parentUuid": "1bebd772_e47f2b59",
       "revId": "459cfc8bae26afde6a16421b6f0e5ff5269ebb80",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
