@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c37dd525_f7c2edd1",
+        "filename": "configure",
+        "patchSetId": 1
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-09T22:49:38Z",
+      "side": 1,
+      "message": "if there are bugs with the feature being turned off them maybe it should just be removed.",
+      "range": {
+        "startLine": 232,
+        "startChar": 15,
+        "endLine": 232,
+        "endChar": 32
+      },
+      "revId": "5ebefab97104a2d40096c48353f8fa031d0c529a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
