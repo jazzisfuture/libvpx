@@ -59,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "91c4bb0e_a4bb34df",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-09T15:18:09Z",
+      "side": 1,
+      "message": "Could you point out what specifically is strange? Thanks.",
+      "parentUuid": "747b1b62_ddddc8f1",
+      "range": {
+        "startLine": 22,
+        "startChar": 40,
+        "endLine": 22,
+        "endChar": 63
+      },
+      "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c0802aa3_17cacc4d",
@@ -76,6 +100,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ebe8a48e_90ac2c22",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-09T15:18:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0802aa3_17cacc4d",
+      "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "408857a9_adec6674",
@@ -89,6 +131,24 @@
       "writtenOn": "2023-02-08T19:25:28Z",
       "side": 1,
       "message": "an enum might be a better choice, otherwise this should have some documentation.",
+      "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "167eb4a1_e31b72f4",
+        "filename": "vp8/vp8_ratectrl_rtc.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-02-09T15:18:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "408857a9_adec6674",
       "revId": "6e3f5f13c6458f49df9aa01df780627949a8933e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
