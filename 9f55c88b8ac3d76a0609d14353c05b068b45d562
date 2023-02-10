@@ -55,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a7fa0f8b_761b6358",
+        "filename": "vpx_dsp/arm/highbd_subpel_variance_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1434130
+      },
+      "writtenOn": "2023-02-10T16:34:17Z",
+      "side": 1,
+      "message": "Here is the patch optimizing vpx_highbd_comp_avg_pred_neon: https://chromium-review.googlesource.com/c/webm/libvpx/+/4239538 .\nIs this okay as a separate patch or should we integrate it into this one?",
+      "parentUuid": "c065efff_1c4654a1",
+      "revId": "9f55c88b8ac3d76a0609d14353c05b068b45d562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e901777b_570ec6fb",
         "filename": "vpx_dsp/arm/highbd_subpel_variance_neon.c",
         "patchSetId": 2
