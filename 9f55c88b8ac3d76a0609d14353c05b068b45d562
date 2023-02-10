@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c065efff_1c4654a1",
+        "filename": "vpx_dsp/arm/highbd_subpel_variance_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1434130
+      },
+      "writtenOn": "2023-02-10T01:18:35Z",
+      "side": 1,
+      "message": "This code is no longer in use by the averaging sub-pixel variance (next patch), so we\u0027re only moving it around for now, but it will be optimized in a subsequent patch (tomorrow).",
+      "parentUuid": "2df264fc_39988844",
+      "revId": "9f55c88b8ac3d76a0609d14353c05b068b45d562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e901777b_570ec6fb",
         "filename": "vpx_dsp/arm/highbd_subpel_variance_neon.c",
         "patchSetId": 2
