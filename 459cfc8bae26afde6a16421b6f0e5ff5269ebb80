@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "d1d22132_97830bc9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-02-10T01:29:52Z",
+      "side": 1,
+      "message": "We publish a Software Optimization Guide (SWOG) for every micro-architecture which documents the latency and throughput numbers for every instruction; as well as any performance quirks, pitfalls and general programmer recommendations. The SWOG for the Neoverse-N1, for example, can be found here[1].\n\nIn [1], LD4 has a latency of 10 cycles, and we can only execute 1 LD4 every 5 cycles. ST4 has a latency of 9 cycles and only 1 ST4 can be executed every 6 cycles. This is in contrast to LDP having latency 7 and throughput 1, and STP having latency 3 and throughput 1/2 - note section 4.4 in the document on \"Optimizing Memory Copy\".\n\nI think you seeing LD4,ST4 being faster was a result of no \u0027restrict\u0027 keyword, so the compiler used the same registers, and everything executed serially. If this was the case, using fewer instructions - that move much more data around - would be faster, even if each those instructions have higher latency and lower throughput individually.\n\n[1] https://developer.arm.com/documentation/PJDOC-466751330-9707/r4p1/?lang\u003den",
+      "parentUuid": "f918064d_c4f83bda",
+      "revId": "459cfc8bae26afde6a16421b6f0e5ff5269ebb80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "1bebd772_e47f2b59",
