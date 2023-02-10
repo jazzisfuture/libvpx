@@ -56,6 +56,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1764c646_5fb0b3ff",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-02-10T10:12:00Z",
+      "side": 1,
+      "message": "The characteristics of these instructions will be similar for all Arm-designed cores - whether Cortex or Neoverse. You can infer a few things about the underlying micro-architectures if you compare the SWOG numbers for Cortex and Neoverse cores. E.g. if you compare Neoverse-N1 and Cortex-A76[1]\n\n[1] https://developer.arm.com/documentation/pjdoc466751330-7215/latest/",
+      "parentUuid": "87669ab1_9ce30b1a",
+      "revId": "459cfc8bae26afde6a16421b6f0e5ff5269ebb80",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1bebd772_e47f2b59",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
