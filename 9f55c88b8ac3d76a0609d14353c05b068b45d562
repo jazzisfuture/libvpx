@@ -142,6 +142,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ba54274_8fd53226",
+        "filename": "vpx_dsp/arm/highbd_subpel_variance_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-13T20:51:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e901777b_570ec6fb",
+      "revId": "9f55c88b8ac3d76a0609d14353c05b068b45d562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "44e657b6_304ceb9d",
@@ -155,6 +173,24 @@
       "writtenOn": "2023-02-09T18:56:57Z",
       "side": 1,
       "message": "same comment here for do/while",
+      "revId": "9f55c88b8ac3d76a0609d14353c05b068b45d562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4367e836_32a677df",
+        "filename": "vpx_dsp/arm/highbd_subpel_variance_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-13T20:51:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "44e657b6_304ceb9d",
       "revId": "9f55c88b8ac3d76a0609d14353c05b068b45d562",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
