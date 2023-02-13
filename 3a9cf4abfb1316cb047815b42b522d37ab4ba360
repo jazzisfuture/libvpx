@@ -16,6 +16,23 @@
       "message": "Hi Hiro,\n\nI added frame param to the API for PostEncodeUpdate.\n\nCould you please test it?\n\nThanks.",
       "revId": "3a9cf4abfb1316cb047815b42b522d37ab4ba360",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1599b2bc_c6b4bf92",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2023-02-13T05:57:23Z",
+      "side": 1,
+      "message": "Hi Jerome, this patch doesn\u0027t work and I cannot debug it by myself; in L3T1 encoding, the produced bitrate in L1 and L2 overshoot very much. I didn\u0027t run L3T3 but I expect the same problem will happen.\nIt seems like some side-effects in ComputQP() and PostEncode() causes some bugs in calling them like ComputeQP() to L1, L2, L3 and thereafter PostEncodeEncode() to L1, L2, L3.\nCould you debug it?",
+      "revId": "3a9cf4abfb1316cb047815b42b522d37ab4ba360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
