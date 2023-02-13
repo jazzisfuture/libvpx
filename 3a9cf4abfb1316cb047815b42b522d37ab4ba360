@@ -51,6 +51,24 @@
       "parentUuid": "1599b2bc_c6b4bf92",
       "revId": "3a9cf4abfb1316cb047815b42b522d37ab4ba360",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57708139_443da1b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2023-02-13T06:55:29Z",
+      "side": 1,
+      "message": "Yes, I agree with you. It is great to increase the test coverage more in the rc test.",
+      "parentUuid": "10fe43b8_11e220cd",
+      "revId": "3a9cf4abfb1316cb047815b42b522d37ab4ba360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
