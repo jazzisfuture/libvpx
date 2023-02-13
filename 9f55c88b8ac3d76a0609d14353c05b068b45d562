@@ -107,6 +107,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a3d179f1_fda6ff3d",
+        "filename": "vpx_dsp/arm/highbd_subpel_variance_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1434130
+      },
+      "writtenOn": "2023-02-13T20:23:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "896cdacb_f708a748",
+      "revId": "9f55c88b8ac3d76a0609d14353c05b068b45d562",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e901777b_570ec6fb",
