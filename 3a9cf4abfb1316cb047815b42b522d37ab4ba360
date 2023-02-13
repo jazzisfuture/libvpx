@@ -33,6 +33,24 @@
       "message": "Hi Jerome, this patch doesn\u0027t work and I cannot debug it by myself; in L3T1 encoding, the produced bitrate in L1 and L2 overshoot very much. I didn\u0027t run L3T3 but I expect the same problem will happen.\nIt seems like some side-effects in ComputQP() and PostEncode() causes some bugs in calling them like ComputeQP() to L1, L2, L3 and thereafter PostEncodeEncode() to L1, L2, L3.\nCould you debug it?",
       "revId": "3a9cf4abfb1316cb047815b42b522d37ab4ba360",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "10fe43b8_11e220cd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-02-13T06:32:19Z",
+      "side": 1,
+      "message": "Is this for the parallel encode? We should add a testcase in vp9_ratecrtrl_rtc_test.cc to verify issues for this type of encode.\n\nThe testcase there currently is always sequential: {ComputeQP(), PostEncode()} is done for SLO, SL1, SL2. For parallel encode we should do ComputeQP() for SL0,SL1,SL2, and then PostEncode() for SL0,SL1,SL2?",
+      "parentUuid": "1599b2bc_c6b4bf92",
+      "revId": "3a9cf4abfb1316cb047815b42b522d37ab4ba360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
