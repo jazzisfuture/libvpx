@@ -69,6 +69,24 @@
       "parentUuid": "10fe43b8_11e220cd",
       "revId": "3a9cf4abfb1316cb047815b42b522d37ab4ba360",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07eb0efe_e8101142",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-02-13T07:00:22Z",
+      "side": 1,
+      "message": "Ok. We did recently add more tests for dynamic layer change and key frames in svc, but there is no test for parallel encode. We\u0027ll add one for that.",
+      "parentUuid": "57708139_443da1b6",
+      "revId": "3a9cf4abfb1316cb047815b42b522d37ab4ba360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
