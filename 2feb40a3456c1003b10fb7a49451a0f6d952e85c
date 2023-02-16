@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eff7c81f_a48c246e",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-02-16T16:53:51Z",
+      "side": 1,
+      "message": "This controls overshoot? Did you notice much change in bit rate accuracy for midres and hdres?",
+      "range": {
+        "startLine": 84,
+        "startChar": 8,
+        "endLine": 84,
+        "endChar": 29
+      },
+      "revId": "2feb40a3456c1003b10fb7a49451a0f6d952e85c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
