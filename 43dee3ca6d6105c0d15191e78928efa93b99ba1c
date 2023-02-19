@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c3e663be_992dd0f6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1566138
+      },
+      "writtenOn": "2023-02-19T16:05:35Z",
+      "side": 1,
+      "message": "I\u0027m attempting to tune the code some more and I think I may have engineered it too hard for its own good. If `vp9_get_energy_class` is a simple chain of `if`s, then both gcc and clang vectorize the code just fine.",
+      "revId": "43dee3ca6d6105c0d15191e78928efa93b99ba1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
