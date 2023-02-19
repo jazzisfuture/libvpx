@@ -62,6 +62,22 @@ static const int plane_rd_mult[REF_TYPES][PLANE_TYPES] = {
 #define RIGHT_SHIFT_POSSIBLY_NEGATIVE(num, shift) \
   (((num) >= 0) ? (num) >> (shift) : -((-(num)) >> (shift)))
 
+static uint16_t vp9_get_energy_class(tran_low_t v) {
+  if (v < 0) {
+    v = -v;
+  }
+  if (v < 4) {
+    return v;
+  }
+  if (v == 4) {
+    return 3;
+  }
+  if (v <= 10) {
+    return 4;
+  }
+  return 5;
+}
+
 int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
                    int ctx) {
   MACROBLOCKD *const xd = &mb->e_mbd;
@@ -116,9 +132,8 @@ int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
   assert((!plane_type && !plane) || (plane_type && plane));
   assert(eob <= default_eob);
 
-  for (i = 0; i < eob; i++) {
-    const int rc = scan[i];
-    token_cache[rc] = vp9_pt_energy_class[vp9_get_token(qcoeff[rc])];
+  for (i = 0; i < default_eob; i++) {
+    token_cache[i] = vp9_get_energy_class(qcoeff[i]);
   }
   final_eob = 0;
 
