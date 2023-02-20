@@ -136,6 +136,20 @@ static INLINE uint8x16_t load_unaligned_u8_16x1(const uint8_t *buf) {
   return vld1q_u8(a);
 }
 
+// Load 4 contiguous uint16 elements when alignment is not guaranteed.
+static INLINE uint16x4_t load_unaligned_u16_4x1(const uint16_t *buf) {
+  uint16_t a[4];
+  memcpy(a, buf, 8);
+  return vld1_u16(a);
+}
+
+// Load 8 contiguous uint16 elements when alignment is not guaranteed.
+static INLINE uint16x8_t load_unaligned_u16_8x1(const uint16_t *buf) {
+  uint16_t a[8];
+  memcpy(a, buf, 16);
+  return vld1q_u16(a);
+}
+
 // Store 4 contiguous bytes from the low half of an 8x8 vector.
 static INLINE void store_u8_4x1(uint8_t *buf, uint8x8_t a) {
   vst1_lane_u32((uint32_t *)buf, vreinterpret_u32_u8(a), 0);
