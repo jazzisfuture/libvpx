@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aab0e199_a9799c59",
+        "filename": "vpx_dsp/arm/intrapred_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-21T18:37:55Z",
+      "side": 1,
+      "message": "For the loads in mem_neon.h we used an intermediate to avoid any potential for issues on e.g., windows/visual studio. Though the type should support this it\u0027s not something we\u0027ve commonly done, unless a case slipped in somewhere.",
+      "revId": "9565a3839ecda3d6d75b15efa5f302e0dc3a10d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

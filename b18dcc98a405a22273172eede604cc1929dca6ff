@@ -81,6 +81,24 @@
       "parentUuid": "489dfcc1_cb33a915",
       "revId": "b18dcc98a405a22273172eede604cc1929dca6ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7d80255c_1e4ecbe9",
+        "filename": "vpx_dsp/arm/intrapred_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 485,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-21T18:37:55Z",
+      "side": 1,
+      "message": "\u003e The original C code ( https://chromium.googlesource.com/webm/libvpx/+/refs/changes/67/4249167/1/vpx_dsp/intrapred.c#45 ) uses memcpy from the earlier dst elements and a memset of a31 for the remainder to achieve the same effect as ext here, albeit this approach makes the pure C code noticeably slower than ideal due to needing to load previously-stored memory and due to the resulting awkward lengths of some of the memcpys and memsets. I\u0027ve added some speedup numbers to the commit message to motivate the change. Hope that makes sense!\n\nThanks for the explanation and adding the numbers.",
+      "parentUuid": "c07d7c58_5d7d3751",
+      "revId": "b18dcc98a405a22273172eede604cc1929dca6ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
