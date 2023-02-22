@@ -213,7 +213,7 @@ class VP9QuantizeBase : public AbstractBench {
   int16_t *r_ptr_;
   int16_t *q_ptr_;
   int count_;
-  const scan_order *scan_;
+  const ScanOrder *scan_;
   uint16_t eob_;
 };
 
