@@ -16,6 +16,23 @@
       "message": "Hi Yunqing,\n\nIn this patch, we skip redundant iterations in joint motion search. In joint_motion_search, the last two iterations use the search result of the first two iterations as the starting MV. If the search results do not change, the last two iterations are not necessary and can be skipped. Specifically, further iterations of search are skipped if in the previous iteration, the motion vector of the searched ref frame is unchanged, and the other ref frame\u0027s full-pixel mv is unchanged. A similar logic is present in the libaom codebase. \n\nThe change is bit-exact, and the results are as follows:\n```\n                        Instruction Count\ncpu-used  Resolution    Reduction(%)\n  0        LOWRES2         1.727\n  0        MIDRES2         1.379\n  0        HDRES2          1.128\n  0        Average         1.411\n```\nThe instruction count reduction specified has been measured using command:\n$ perf stat -e instructions:u ./aomenc\n\nPlease review the patch.\n\nThanks",
       "revId": "c4ee2b2f033d377427017b2b8244e5f29fe80961",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c7bcb5b_ffed2770",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-02-22T19:28:12Z",
+      "side": 1,
+      "message": "Good improvement. Looks good.",
+      "revId": "c4ee2b2f033d377427017b2b8244e5f29fe80961",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
