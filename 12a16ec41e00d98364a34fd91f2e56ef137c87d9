@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e357d70_e3c9943d",
+        "filename": "vpx_dsp/arm/mem_neon.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-22T19:52:45Z",
+      "side": 1,
+      "message": "can we make this a dup and remove the dup(0) like in load_unaligned_u8()? In that case better code was generated, but here maybe the compiler was doing the right thing.",
+      "revId": "12a16ec41e00d98364a34fd91f2e56ef137c87d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

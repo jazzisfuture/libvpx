@@ -34,6 +34,24 @@
       "parentUuid": "aab0e199_a9799c59",
       "revId": "9565a3839ecda3d6d75b15efa5f302e0dc3a10d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b13a4d6_cb8e0557",
+        "filename": "vpx_dsp/arm/intrapred_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 396,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-22T19:52:45Z",
+      "side": 1,
+      "message": "\u003e Done. Also added a similar helper for the vst1_lane_u32 to clean up the store in this one, but I think the other block sizes are fine as-is.\n\nThanks for taking care of that.",
+      "parentUuid": "be86c1ad_53a44165",
+      "revId": "9565a3839ecda3d6d75b15efa5f302e0dc3a10d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
