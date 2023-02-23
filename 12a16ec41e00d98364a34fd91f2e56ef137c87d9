@@ -52,6 +52,24 @@
       "parentUuid": "6971cac0_801d35ac",
       "revId": "12a16ec41e00d98364a34fd91f2e56ef137c87d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ae0ae855_79a2397c",
+        "filename": "vpx_dsp/arm/mem_neon.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-23T18:08:14Z",
+      "side": 1,
+      "message": "Thanks for testing those George. It looks like (c) and (d) aren\u0027t great with gcc \u003c 12, so that brings us back to (a). My concern is that, just like my original comment, it will be a target for clean up at some point leading to something like (b) or (d). Given there\u0027s no stride, (d) is a reasonable choice to me. We are also ignoring any effects when the code is inlined into more complex functions, so maybe we can be optimistic with gcc \u003c 11 and go with (d). In practice, I think clang is the main priority and we should try to accommodate gcc and msvc when we can.\n\n\u003e It should be noted that (b) worked properly for GCC versions \u003c12 (and Clang) - which is why we implemented them this way. It is very unfortunate that this GCC regression has crept in.\n\nI agree. It might be worth filing a bug. More concerning is when we have regressions in correctness, which has happened a few times among gcc/clang/msvc. I would still like it if our library tests could be incorporated into the release testing of those compilers.",
+      "parentUuid": "c9bbcd93_529cafae",
+      "revId": "12a16ec41e00d98364a34fd91f2e56ef137c87d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
