@@ -16,6 +16,29 @@
       "message": "Thanks!",
       "revId": "0f888815c546f7b3bda0795d0a585203bde406bc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "615ff86a_5126a4cf",
+        "filename": "test/vp9_ratectrl_rtc_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 167,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-02-23T17:37:09Z",
+      "side": 1,
+      "message": "The type of the second parameter should be `bool`, not `int`. See line 171 and line 570.",
+      "range": {
+        "startLine": 167,
+        "startChar": 54,
+        "endLine": 167,
+        "endChar": 57
+      },
+      "revId": "0f888815c546f7b3bda0795d0a585203bde406bc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
