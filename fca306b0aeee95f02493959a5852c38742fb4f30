@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9681b043_2b4a3efd",
+        "filename": "vpx_dsp/arm/highbd_hadamard_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-23T18:30:18Z",
+      "side": 1,
+      "message": "These extra ()s can be removed in this case and line 171. For the others, if you prefer them for clarity they\u0027re all right to keep.",
+      "range": {
+        "startLine": 156,
+        "startChar": 55,
+        "endLine": 156,
+        "endChar": 56
+      },
+      "revId": "fca306b0aeee95f02493959a5852c38742fb4f30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4ae759c6_d4bc2d2d",
+        "filename": "vpx_dsp/arm/highbd_hadamard_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-23T18:30:18Z",
+      "side": 1,
+      "message": "drop this line",
+      "revId": "fca306b0aeee95f02493959a5852c38742fb4f30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
