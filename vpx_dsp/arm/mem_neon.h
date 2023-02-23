@@ -150,6 +150,11 @@ static INLINE void store_u8_4x1_high(uint8_t *buf, uint8x8_t a) {
   vst1_lane_u32((uint32_t *)buf, vreinterpret_u32_u8(a), 1);
 }
 
+// Store 2 contiguous elements from the low half of a 16x4 vector.
+static INLINE void store_u16_2x1(uint16_t *buf, uint16x4_t a) {
+  vst1_lane_u32((uint32_t *)buf, vreinterpret_u32_u16(a), 0);
+}
+
 // Load 2 sets of 4 bytes when alignment is not guaranteed.
 static INLINE uint8x8_t load_unaligned_u8(const uint8_t *buf,
                                           ptrdiff_t stride) {
