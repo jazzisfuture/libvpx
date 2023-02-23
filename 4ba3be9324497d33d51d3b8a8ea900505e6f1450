@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d487073_6dfc2560",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-02-23T00:24:51Z",
+      "side": 1,
+      "message": "This is for tx 32x32 and should be okey.",
+      "revId": "4ba3be9324497d33d51d3b8a8ea900505e6f1450",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
