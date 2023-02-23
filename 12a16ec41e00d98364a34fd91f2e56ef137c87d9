@@ -34,6 +34,24 @@
       "parentUuid": "2e357d70_e3c9943d",
       "revId": "12a16ec41e00d98364a34fd91f2e56ef137c87d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9bbcd93_529cafae",
+        "filename": "vpx_dsp/arm/mem_neon.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-02-23T11:42:50Z",
+      "side": 1,
+      "message": "It should be noted that (b) worked properly for GCC versions \u003c12 (and Clang) - which is why we implemented them this way. It is very unfortunate that this GCC regression has crept in.",
+      "parentUuid": "6971cac0_801d35ac",
+      "revId": "12a16ec41e00d98364a34fd91f2e56ef137c87d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
