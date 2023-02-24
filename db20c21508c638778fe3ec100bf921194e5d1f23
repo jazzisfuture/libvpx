@@ -121,6 +121,30 @@
       },
       "revId": "db20c21508c638778fe3ec100bf921194e5d1f23",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a16aba6d_0037e9db",
+        "filename": "vpx_dsp/quantize.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2023-02-24T22:55:24Z",
+      "side": 1,
+      "message": "I was hoping I added enough \u0027const\u0027 qualifiers but it\u0027s probably best not to rely on the compiler in this situation.",
+      "parentUuid": "ca72d067_71edae0b",
+      "range": {
+        "startLine": 248,
+        "startChar": 36,
+        "endLine": 248,
+        "endChar": 46
+      },
+      "revId": "db20c21508c638778fe3ec100bf921194e5d1f23",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
