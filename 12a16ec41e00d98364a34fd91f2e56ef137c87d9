@@ -70,6 +70,24 @@
       "parentUuid": "c9bbcd93_529cafae",
       "revId": "12a16ec41e00d98364a34fd91f2e56ef137c87d9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d51a6cf4_f3e3f4e0",
+        "filename": "vpx_dsp/arm/mem_neon.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2023-02-27T14:36:40Z",
+      "side": 1,
+      "message": "I\u0027ve updated load_unaligned_u8_8x1 and load_unaligned_u8_16x1 to use the memcpy+vld1 approach from (d). Performance as listed in the commit message is unchanged.",
+      "parentUuid": "ae0ae855_79a2397c",
+      "revId": "12a16ec41e00d98364a34fd91f2e56ef137c87d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
