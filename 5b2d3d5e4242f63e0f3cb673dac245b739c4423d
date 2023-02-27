@@ -51,6 +51,24 @@
       "parentUuid": "ece2dca2_6e3829f8",
       "revId": "5b2d3d5e4242f63e0f3cb673dac245b739c4423d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d1105ce7_751b26a0",
+        "filename": "tools_common.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-27T21:55:43Z",
+      "side": 1,
+      "message": "\u003e \u003e Optional: None of these struct members need to be const. Note that `name` should point to `const char` but the pointer itself doesn\u0027t need to be const:\n\u003e \u003e \n\u003e \u003e ```\n\u003e \u003e   const char *name;\n\u003e \u003e ```\n\u003e \u003e \n\u003e \u003e Code Search shows we always use `const VpxInterface`. So it is redundant to declare the struct members as const.\n\u003e \u003e \n\u003e \u003e This cleanup can be made in a separate CL so that this CL focuses on fixing the cfi sanitizer error.\n\u003e \n\u003e I agree. Likely the author was thinking these would only be assigned once in table entries.\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/4294640",
+      "parentUuid": "12b702fc_3342c05d",
+      "revId": "5b2d3d5e4242f63e0f3cb673dac245b739c4423d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
