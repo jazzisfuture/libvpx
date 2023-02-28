@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0f9395a_332ae573",
+        "filename": "vpx_dsp/arm/variance_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 399,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-28T02:44:21Z",
+      "side": 0,
+      "message": "this was weird, thanks for fixing it. In the end we may just return the value and let the caller site set *sse, but that can be done separately.",
+      "revId": "45dc0d34d2fa1a848c282d8fc992206fa69f01b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
