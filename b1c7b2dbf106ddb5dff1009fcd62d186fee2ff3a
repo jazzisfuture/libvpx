@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "146dbba4_17f11598",
+        "filename": "vpx_dsp/arm/mem_neon.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-02-28T02:23:36Z",
+      "side": 1,
+      "message": "We shouldn\u0027t need a memcpy for `vl1d1_u8` or `vld1q_u8`, no? I think you can just use these directly instead of adding the new functions. The issue with 4x1 is the load into a uint32 register.",
+      "revId": "b1c7b2dbf106ddb5dff1009fcd62d186fee2ff3a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
