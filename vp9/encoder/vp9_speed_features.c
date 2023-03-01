@@ -227,6 +227,7 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   sf->temporal_filter_search_method = NSTEP;
   sf->tx_size_search_breakout = 1;
   sf->use_square_partition_only = !boosted;
+  sf->interp_filt_prune_plane_rd = 1;
 
   sf->intra_y_mode_mask[TX_32X32] = INTRA_DC_H_V;
 
@@ -950,6 +951,7 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi, int speed) {
   sf->prune_ref_frame_for_rect_partitions = 0;
   sf->temporal_filter_search_method = MESH;
   sf->allow_skip_txfm_ac_dc = 0;
+  sf->interp_filt_prune_plane_rd = 0;
 
   for (i = 0; i < TX_SIZES; i++) {
     sf->intra_y_mode_mask[i] = INTRA_ALL;
