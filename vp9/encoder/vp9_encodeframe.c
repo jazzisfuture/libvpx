@@ -2031,10 +2031,10 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
     // Check block complexity as part of descision on using quantized
     // coefficient optimisation inside the rd loop.
     x->block_qcoeff_opt =
-        cpi->sf.allow_quant_coeff_opt && (logvar <= cpi->sf.quant_opt_thresh);
+        cpi->sf.quant_coeff_opt_level && (logvar <= cpi->sf.quant_opt_thresh);
   } else {
     x->block_tx_domain = cpi->sf.allow_txfm_domain_distortion;
-    x->block_qcoeff_opt = cpi->sf.allow_quant_coeff_opt;
+    x->block_qcoeff_opt = cpi->sf.quant_coeff_opt_level;
   }
 
   set_segment_index(cpi, x, mi_row, mi_col, bsize, 0);
