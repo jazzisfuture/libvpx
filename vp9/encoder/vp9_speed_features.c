@@ -229,6 +229,10 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
   sf->use_square_partition_only = !boosted;
   sf->early_term_interp_search_plane_rd = 1;
   sf->cb_pred_filter_search = 1;
+  sf->trellis_opt_tx_rd.method = sf->optimize_coefficients
+                                     ? ENABLE_TRELLIS_OPT_TX_RD_RESIDUAL_MSE
+                                     : DISABLE_TRELLIS_OPT;
+  sf->trellis_opt_tx_rd.thresh = boosted ? 4 : 3;
 
   sf->intra_y_mode_mask[TX_32X32] = INTRA_DC_H_V;
 
@@ -275,8 +279,10 @@ static void set_good_speed_feature_framesize_independent(VP9_COMP *cpi,
 
     sf->allow_txfm_domain_distortion = 1;
     sf->tx_domain_thresh = tx_dom_thresholds[(speed < 6) ? speed : 5];
-    sf->allow_quant_coeff_opt = sf->optimize_coefficients;
-    sf->quant_opt_thresh = qopt_thresholds[(speed < 6) ? speed : 5];
+    sf->trellis_opt_tx_rd.method = sf->optimize_coefficients
+                                       ? ENABLE_TRELLIS_OPT_TX_RD_SRC_VAR
+                                       : DISABLE_TRELLIS_OPT;
+    sf->trellis_opt_tx_rd.thresh = qopt_thresholds[(speed < 6) ? speed : 5];
     sf->less_rectangular_check = 1;
     sf->use_rd_breakout = 1;
     sf->adaptive_motion_search = 1;
@@ -470,8 +476,8 @@ static void set_rt_speed_feature_framesize_independent(
   if (speed >= 1) {
     sf->allow_txfm_domain_distortion = 1;
     sf->tx_domain_thresh = 0.0;
-    sf->allow_quant_coeff_opt = 0;
-    sf->quant_opt_thresh = 0.0;
+    sf->trellis_opt_tx_rd.method = DISABLE_TRELLIS_OPT;
+    sf->trellis_opt_tx_rd.thresh = 0.0;
     sf->use_square_partition_only = !frame_is_intra_only(cm);
     sf->less_rectangular_check = 1;
     sf->tx_size_search_method =
@@ -946,8 +952,9 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi, int speed) {
   sf->adaptive_interp_filter_search = 0;
   sf->allow_txfm_domain_distortion = 0;
   sf->tx_domain_thresh = 99.0;
-  sf->allow_quant_coeff_opt = sf->optimize_coefficients;
-  sf->quant_opt_thresh = 99.0;
+  sf->trellis_opt_tx_rd.method =
+      sf->optimize_coefficients ? ENABLE_TRELLIS_OPT : DISABLE_TRELLIS_OPT;
+  sf->trellis_opt_tx_rd.thresh = 99.0;
   sf->allow_acl = 1;
   sf->enable_tpl_model = oxcf->enable_tpl_model;
   sf->prune_ref_frame_for_rect_partitions = 0;
