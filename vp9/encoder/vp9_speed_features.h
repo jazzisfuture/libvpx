@@ -292,7 +292,12 @@ typedef struct SPEED_FEATURES {
   int coeff_prob_appx_step;
 
   // Enable uniform quantizer followed by trellis coefficient optimization
-  int allow_quant_coeff_opt;
+  // 0 : Disable trellis coefficient optimization
+  // 1 : Enable trellis coefficient optimization based on source variance of
+  // the prediction block
+  // 2, 3 : Enable trellis coefficient optimization based on
+  // residual mse of the transform block
+  int quant_coeff_opt_level;
   double quant_opt_thresh;
 
   // Enable asymptotic closed-loop encoding decision for key frame and
