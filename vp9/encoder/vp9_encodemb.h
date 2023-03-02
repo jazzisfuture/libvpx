@@ -18,9 +18,16 @@
 extern "C" {
 #endif
 
+typedef enum {
+  DISABLE_TRELLIS_OPT,  // Disable trellis optimization
+  ENABLE_TRELLIS_OPT,   // Enable Trellis optimization
+  TX_RD_TRELLIS_OPT,    // Trellis optimization in transform RD
+} TRELLIS_OPT_TYPE;
+
 struct encode_b_args {
+  const struct VP9_COMP *cpi;
   MACROBLOCK *x;
-  int enable_coeff_opt;
+  TRELLIS_OPT_TYPE trellis_opt_type;
   ENTROPY_CONTEXT *ta;
   ENTROPY_CONTEXT *tl;
   int8_t *skip;
@@ -32,8 +39,8 @@ struct encode_b_args {
 };
 int vp9_optimize_b(MACROBLOCK *mb, int plane, int block, TX_SIZE tx_size,
                    int ctx);
-void vp9_encode_sb(MACROBLOCK *x, BLOCK_SIZE bsize, int mi_row, int mi_col,
-                   int output_enabled);
+void vp9_encode_sb(const struct VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
+                   int mi_row, int mi_col, int output_enabled);
 void vp9_encode_sby_pass1(MACROBLOCK *x, BLOCK_SIZE bsize);
 void vp9_xform_quant_fp(MACROBLOCK *x, int plane, int block, int row, int col,
                         BLOCK_SIZE plane_bsize, TX_SIZE tx_size);
@@ -47,8 +54,9 @@ void vp9_subtract_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane);
 void vp9_encode_block_intra(int plane, int block, int row, int col,
                             BLOCK_SIZE plane_bsize, TX_SIZE tx_size, void *arg);
 
-void vp9_encode_intra_block_plane(MACROBLOCK *x, BLOCK_SIZE bsize, int plane,
-                                  int enable_optimize_b);
+void vp9_encode_intra_block_plane(const struct VP9_COMP *cpi, MACROBLOCK *x,
+                                  BLOCK_SIZE bsize, int plane,
+                                  int trellis_opt_type);
 
 #ifdef __cplusplus
 }  // extern "C"

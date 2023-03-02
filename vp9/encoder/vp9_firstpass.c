@@ -985,7 +985,7 @@ void vp9_first_pass_encode_tile_mb_row(VP9_COMP *cpi, ThreadData *td,
     // Fix - zero the 16x16 block first. This ensures correct this_error for
     // block sizes smaller than 16x16.
     vp9_zero_array(x->plane[0].src_diff, 256);
-    vp9_encode_intra_block_plane(x, bsize, 0, 0);
+    vp9_encode_intra_block_plane(cpi, x, bsize, 0, DISABLE_TRELLIS_OPT);
     this_error = vpx_get_mb_ss(x->plane[0].src_diff);
     this_intra_error = this_error;
 

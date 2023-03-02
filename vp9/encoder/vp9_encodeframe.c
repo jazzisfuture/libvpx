@@ -2021,20 +2021,20 @@ static void rd_pick_sb_modes(VP9_COMP *cpi, TileDataEnc *tile_data,
   // Save rdmult before it might be changed, so it can be restored later.
   orig_rdmult = x->rdmult;
 
-  if ((cpi->sf.tx_domain_thresh > 0.0) || (cpi->sf.quant_opt_thresh > 0.0)) {
+  if ((cpi->sf.tx_domain_thresh > 0.0) ||
+      (cpi->sf.trellis_opt_tx_rd.thresh > 0.0)) {
     double logvar = vp9_log_block_var(cpi, x, bsize);
-    // Check block complexity as part of descision on using pixel or transform
+    // Check block complexity as part of decision on using pixel or transform
     // domain distortion in rd tests.
     x->block_tx_domain = cpi->sf.allow_txfm_domain_distortion &&
                          (logvar >= cpi->sf.tx_domain_thresh);
 
-    // Check block complexity as part of descision on using quantized
-    // coefficient optimisation inside the rd loop.
-    x->block_qcoeff_opt =
-        cpi->sf.allow_quant_coeff_opt && (logvar <= cpi->sf.quant_opt_thresh);
+    // Store block complexity to decide on using quantized coefficient
+    // optimization inside the rd loop.
+    x->log_block_src_var = logvar;
   } else {
     x->block_tx_domain = cpi->sf.allow_txfm_domain_distortion;
-    x->block_qcoeff_opt = cpi->sf.allow_quant_coeff_opt;
+    x->log_block_src_var = 0.0;
   }
 
   set_segment_index(cpi, x, mi_row, mi_col, bsize, 0);
@@ -6467,7 +6467,8 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
 #endif  // CONFIG_BETTER_HW_COMPATIBILITY && CONFIG_VP9_HIGHBITDEPTH
     mi->skip = 1;
     for (plane = 0; plane < MAX_MB_PLANE; ++plane)
-      vp9_encode_intra_block_plane(x, VPXMAX(bsize, BLOCK_8X8), plane, 1);
+      vp9_encode_intra_block_plane(cpi, x, VPXMAX(bsize, BLOCK_8X8), plane,
+                                   ENABLE_TRELLIS_OPT);
     if (output_enabled) sum_intra_stats(td->counts, mi);
     vp9_tokenize_sb(cpi, td, t, !output_enabled, seg_skip,
                     VPXMAX(bsize, BLOCK_8X8));
@@ -6508,7 +6509,8 @@ static void encode_superblock(VP9_COMP *cpi, ThreadData *td, TOKENEXTRA **t,
     }
 #endif
 
-    vp9_encode_sb(x, VPXMAX(bsize, BLOCK_8X8), mi_row, mi_col, output_enabled);
+    vp9_encode_sb(cpi, x, VPXMAX(bsize, BLOCK_8X8), mi_row, mi_col,
+                  output_enabled);
     vp9_tokenize_sb(cpi, td, t, !output_enabled, seg_skip,
                     VPXMAX(bsize, BLOCK_8X8));
   }
