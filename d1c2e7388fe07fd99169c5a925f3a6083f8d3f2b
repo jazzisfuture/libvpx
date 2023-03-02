@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42599e92_dd6507ab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-02T11:46:45Z",
+      "side": 1,
+      "message": "Hi guys,\nI\u0027d like some input on the use of the constants. Right now I\u0027ve copied the file just in case I had to change it for Arm. However, I didn\u0027t have to, it\u0027s exactly the same as the SSE4.1. I don\u0027t know what the policy about such cases is. Should I just include the x86 header from the arm implementations? Should I keep the copy? Should I suggest moving the constants to common and modify both x86 and arm headers to include that?",
+      "revId": "d1c2e7388fe07fd99169c5a925f3a6083f8d3f2b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
