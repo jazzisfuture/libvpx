@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "eef2e07e_99b72cf7",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2023-03-03T06:48:29Z",
+      "side": 1,
+      "message": "I think n_coeffs (in this context) is only used to determine the size of the block (16 for 4x4, 32 for 8x8, etc). Because 32x32 has it\u0027s own function, it\u0027s always set to 1024. Checking for zero and shortcutting the function is still possible, and even done in ssse3:\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/libvpx/source/libvpx/vpx_dsp/x86/quantize_ssse3.c;l\u003d166",
+      "parentUuid": "36cface8_e37fc8e7",
+      "revId": "848f6e733789c627b6606baf1c85e32be997e36f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a5307b45_c778df03",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 8
