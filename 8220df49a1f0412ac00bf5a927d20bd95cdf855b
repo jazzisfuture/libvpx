@@ -22,6 +22,30 @@
       },
       "revId": "8220df49a1f0412ac00bf5a927d20bd95cdf855b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed3e02e6_bddc7337",
+        "filename": "test/vp9_quantize_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-03T20:21:52Z",
+      "side": 1,
+      "message": "\u003e This doesn\u0027t give me any trouble with the arm compiler. Is it a reasonable way to fix the issue?\n\nYes, this will avoid the aligned-new requirement for the test. You still want to use memalign to guarantee the member alignment.",
+      "parentUuid": "aef59389_4ffae843",
+      "range": {
+        "startLine": 155,
+        "startChar": 0,
+        "endLine": 155,
+        "endChar": 46
+      },
+      "revId": "8220df49a1f0412ac00bf5a927d20bd95cdf855b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
