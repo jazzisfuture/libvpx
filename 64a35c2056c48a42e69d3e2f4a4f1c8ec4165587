@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d884302_83b77f9b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1572272
+      },
+      "writtenOn": "2023-03-03T07:14:51Z",
+      "side": 1,
+      "message": "Hi Yunqing,\n\nIn this CL, we have enabled Chessboard pattern for the interpolation filter evaluations when the filter is not switchable. To facilitate this, we have introduced a new level in the existing sf: cb_pred_filter_search, which employs the same logic for the actual filter search at higher speeds.\n\nThe combined impact of this CL and its parent wrt its ref commit is: \n```\n                 Instruction Count        BD-Rate Loss(%)       \ncpu   Resolution   Reduction(%)    avg.psnr   ovr.psnr    ssim  \n 0       LOWRES2      2.315         0.0160     0.0208    0.0337\n 0       MIDRES2      2.588         0.0207     0.0189    0.0847\n 0        HDRES2      2.487         0.0260     0.0308    0.1333\n 0       Average      2.464         0.0209     0.0235    0.0839\n```\n\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./aomenc …\n```\n\nPlease review the CL.\n\nThanks,\nNeeraj",
+      "revId": "64a35c2056c48a42e69d3e2f4a4f1c8ec4165587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
