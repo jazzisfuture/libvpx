@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1b457fdd_9642b51b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-03-03T16:01:44Z",
+      "side": 1,
+      "message": "Hi Yunqing,\n\nIn this CL we have added the AVX2 for the function vpx_filter_block1d8_h8_avx2().\n\nThis is a bit exact change. Please check the borg results for good encoding mode below.\n```\n                 Instruction Count\ncpu   Resolution   Reduction(%)\n 0       LOWRES2      1.388\n 0       MIDRES2      1.071\n 0        HDRES2      0.831\n 0       Average      1.097\n ```\n \nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./vpxenc …\n```\n\nPlease check the module level scaling w.r.t C function (timer based) for existing (SSSE3) and new AVX2 intrinsics:\n```\n Block     Scaling\n Size   SSSE3      AVX2\n 8x4\t11.56x\t 12.93x\t\t\n 8x8\t15.02x\t 19.01x\n 8x16   17.93x\t 24.69x\n```\nKindly review the CL.\n\nRegards,\nAnupam",
+      "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
