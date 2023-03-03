@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "32eb7bc5_3566ca0b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1572272
+      },
+      "writtenOn": "2023-03-03T07:11:38Z",
+      "side": 1,
+      "message": "Hi Yunqing,\n\nThis CL prunes the interpolation filter search based on the rdcost of individual planes.\n\nFor RD computation, the parent version uses the \"vector\" function vp9_model_rd_from_var_lapndz_vec(), which requires all planes to be processed together. This was a bit-exact change in  https://chromium-review.googlesource.com/c/webm/libvpx/+/420416. To enable planewise rdcost processing, we have used the function  vp9_model_rd_from_var_lapndz() instead. This change is verified to be bit-exact with a negligible encode-time impact to cpu 0.\n\nThe rdcost based early termination can save calls to \u0027build_inter_predictor\u0027 and \u0027model_rd\u0027 for remaining planes.\n\nThis CL is not bit-exact due to the existing frame-level filter-selection logic, which stores and updates the cost of each filter. Since we are pruning some filter evals, a small BD-Rate impact is expected as the filter selection for subsequent frames is affected.\n\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./aomenc …\n```\n\nKindly review the CL.\n\nRegards,\nNeeraj",
+      "revId": "75d9343cc03bf6a3a9a8d290ef10fc0dc347bf93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
