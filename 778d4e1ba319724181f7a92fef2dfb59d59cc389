@@ -55,6 +55,40 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a616da9e_13db6235",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-03T19:51:03Z",
+      "side": 1,
+      "message": "I think Jonathan\u0027s comments apply here too",
+      "revId": "778d4e1ba319724181f7a92fef2dfb59d59cc389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b6302e9_ddecf795",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_constants.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-03T19:51:03Z",
+      "side": 1,
+      "message": "Yes I think moving this one level would be a good idea.\n\nOne practice we haven\u0027t followed in libvpx is using \u0027.inc\u0027 files to indicate they\u0027re meant to be included and not built on their own. This is more of a technique to keep tables out of headers and avoid potential ODR issues (in C++). Moving this to a .h file is fine for now for consistency.",
+      "revId": "778d4e1ba319724181f7a92fef2dfb59d59cc389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "51136334_09a3e10a",
         "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
         "patchSetId": 5
