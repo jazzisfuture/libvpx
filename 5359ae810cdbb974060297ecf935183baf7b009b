@@ -16,6 +16,24 @@
       "message": "I\u0027d like to revert this if possible. Was there a reason for treating the round_fp buffer this way?",
       "revId": "5359ae810cdbb974060297ecf935183baf7b009b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d7f52a8_a3f377b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2023-03-03T05:02:18Z",
+      "side": 1,
+      "message": "I don\u0027t recall the specific reason of doing that. But looks like it is revertible at this point.",
+      "parentUuid": "917e1251_e369224f",
+      "revId": "5359ae810cdbb974060297ecf935183baf7b009b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
