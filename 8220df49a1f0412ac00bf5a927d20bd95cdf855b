@@ -46,6 +46,30 @@
       },
       "revId": "8220df49a1f0412ac00bf5a927d20bd95cdf855b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8dbb7974_53ea9fe5",
+        "filename": "test/vp9_quantize_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2023-03-05T23:08:55Z",
+      "side": 1,
+      "message": "Ah, I was hoping the DECLARE_ALIGNED within the struct would deal with that, but I guess it\u0027s only aligned relative to the struct.",
+      "parentUuid": "ed3e02e6_bddc7337",
+      "range": {
+        "startLine": 155,
+        "startChar": 0,
+        "endLine": 155,
+        "endChar": 46
+      },
+      "revId": "8220df49a1f0412ac00bf5a927d20bd95cdf855b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
