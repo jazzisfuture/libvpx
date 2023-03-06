@@ -16,6 +16,69 @@
       "message": "Hi Yunqing,\n\nIn this CL we have added the AVX2 for the function vpx_filter_block1d8_h8_avx2().\n\nThis is a bit exact change. Please check the borg results for good encoding mode below.\n```\n                 Instruction Count\ncpu   Resolution   Reduction(%)\n 0       LOWRES2      1.388\n 0       MIDRES2      1.071\n 0        HDRES2      0.831\n 0       Average      1.097\n ```\n \nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./vpxenc …\n```\n\nPlease check the module level scaling w.r.t C function (timer based) for existing (SSSE3) and new AVX2 intrinsics:\n```\n Block     Scaling\n Size   SSSE3      AVX2\n 8x4\t11.56x\t 12.93x\t\t\n 8x8\t15.02x\t 19.01x\n 8x16   17.93x\t 24.69x\n```\nKindly review the CL.\n\nRegards,\nAnupam",
       "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a91db5d9_c470d3d9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-06T18:08:28Z",
+      "side": 1,
+      "message": "Thanks. Nice speedup with 1 SIMD function! Do we need to add the unit test for this avx2 function?",
+      "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97eda4de_59ce02b2",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-06T18:08:28Z",
+      "side": 1,
+      "message": "Is this needed?",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 39
+      },
+      "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9974b86d_1198d8d2",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-06T18:08:28Z",
+      "side": 1,
+      "message": "Not sure if unrolling the loop will provide further speedup? For convolve functions, it is worth studying and deep optimization.",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 16
+      },
+      "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
