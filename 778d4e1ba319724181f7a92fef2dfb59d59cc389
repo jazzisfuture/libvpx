@@ -70,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc937a03_1325a8b2",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-06T13:46:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a616da9e_13db6235",
+      "revId": "778d4e1ba319724181f7a92fef2dfb59d59cc389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6b6302e9_ddecf795",
@@ -87,6 +105,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e4c0bf93_49e0aed6",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_constants.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-06T13:46:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6b6302e9_ddecf795",
+      "revId": "778d4e1ba319724181f7a92fef2dfb59d59cc389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "51136334_09a3e10a",
@@ -100,6 +136,30 @@
       "writtenOn": "2023-03-03T18:04:29Z",
       "side": 1,
       "message": "We can do this by computing the absolute difference (vabd) followed by a single widening multiply (vmull) - removing the need for the two vmovl widens.",
+      "range": {
+        "startLine": 28,
+        "startChar": 0,
+        "endLine": 33,
+        "endChar": 49
+      },
+      "revId": "778d4e1ba319724181f7a92fef2dfb59d59cc389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "af062a1d_291c16c5",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-06T13:46:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51136334_09a3e10a",
       "range": {
         "startLine": 28,
         "startChar": 0,
@@ -133,6 +193,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3811b15_dc0106c9",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-06T13:46:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "566c9094_56cee8cb",
+      "range": {
+        "startLine": 43,
+        "startChar": 0,
+        "endLine": 52,
+        "endChar": 52
+      },
+      "revId": "778d4e1ba319724181f7a92fef2dfb59d59cc389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "af55a3a3_1d51da8c",
@@ -156,6 +240,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "123ed1be_03166648",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 119,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-06T13:46:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "af55a3a3_1d51da8c",
+      "range": {
+        "startLine": 117,
+        "startChar": 2,
+        "endLine": 119,
+        "endChar": 50
+      },
+      "revId": "778d4e1ba319724181f7a92fef2dfb59d59cc389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7cbc6730_0c825193",
@@ -169,6 +277,30 @@
       "writtenOn": "2023-03-03T18:04:29Z",
       "side": 1,
       "message": "I think we can simplify this and the 4 adds below into 4 widening multiply accumulates. (vmlal_u16)",
+      "range": {
+        "startLine": 148,
+        "startChar": 1,
+        "endLine": 154,
+        "endChar": 52
+      },
+      "revId": "778d4e1ba319724181f7a92fef2dfb59d59cc389",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3dadfa83_b68dca11",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-06T13:46:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7cbc6730_0c825193",
       "range": {
         "startLine": 148,
         "startChar": 1,
