@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6dc67eb_1b326863",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-06T21:48:19Z",
+      "side": 1,
+      "message": "Thanks for looking into this. I\u0027ll bring the change over to libaom after this lands.",
+      "revId": "27f4223090057102737f0b37af1b36b91ba4a2d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e91b07c_999b6088",
+        "filename": "vpx_dsp/arm/variance_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-06T21:48:19Z",
+      "side": 1,
+      "message": "Can we bring this in line with libaom?\n\nhttps://aomedia.googlesource.com/aom/+/293bdf27b073f5b9c01be8e9e2592793eaf2dbb3/aom_dsp/arm/variance_neon.c#482\n\nThe non-dotprod path will need to be updated there. I can pull the fix over once it lands here.",
+      "revId": "27f4223090057102737f0b37af1b36b91ba4a2d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
