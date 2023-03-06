@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b619618_74fd9cb4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-06T23:43:39Z",
+      "side": 1,
+      "message": "No need to make any change now, but it can be helpful in a reland to first push the original change and then upload a new patch with the fix to make the change easier to diff.",
+      "revId": "7e88600bf90787765c3e98d5f0bd7cf72b74d6ba",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
