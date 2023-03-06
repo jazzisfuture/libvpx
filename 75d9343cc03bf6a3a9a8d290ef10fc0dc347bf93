@@ -16,6 +16,46 @@
       "message": "Hi Yunqing,\n\nThis CL prunes the interpolation filter search based on the rdcost of individual planes.\n\nFor RD computation, the parent version uses the \"vector\" function vp9_model_rd_from_var_lapndz_vec(), which requires all planes to be processed together. This was a bit-exact change in  https://chromium-review.googlesource.com/c/webm/libvpx/+/420416. To enable planewise rdcost processing, we have used the function  vp9_model_rd_from_var_lapndz() instead. This change is verified to be bit-exact with a negligible encode-time impact to cpu 0.\n\nThe rdcost based early termination can save calls to \u0027build_inter_predictor\u0027 and \u0027model_rd\u0027 for remaining planes.\n\nThis CL is not bit-exact due to the existing frame-level filter-selection logic, which stores and updates the cost of each filter. Since we are pruning some filter evals, a small BD-Rate impact is expected as the filter selection for subsequent frames is affected.\n\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./aomenc …\n```\n\nKindly review the CL.\n\nRegards,\nNeeraj",
       "revId": "75d9343cc03bf6a3a9a8d290ef10fc0dc347bf93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b48123fa_ec7f5c05",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-06T17:32:12Z",
+      "side": 1,
+      "message": "Overall looks good. Nice speedup with no BD-rtae loss!",
+      "revId": "75d9343cc03bf6a3a9a8d290ef10fc0dc347bf93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7d8f5500_32009163",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-06T17:32:12Z",
+      "side": 1,
+      "message": "Is there specific reason to move the prediction into this function? Feel that the prediction doesn\u0027t belong to this function?",
+      "range": {
+        "startLine": 213,
+        "startChar": 4,
+        "endLine": 213,
+        "endChar": 34
+      },
+      "revId": "75d9343cc03bf6a3a9a8d290ef10fc0dc347bf93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
