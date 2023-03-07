@@ -33,6 +33,24 @@
       "message": "Can we bring this in line with libaom?\n\nhttps://aomedia.googlesource.com/aom/+/293bdf27b073f5b9c01be8e9e2592793eaf2dbb3/aom_dsp/arm/variance_neon.c#482\n\nThe non-dotprod path will need to be updated there. I can pull the fix over once it lands here.",
       "revId": "27f4223090057102737f0b37af1b36b91ba4a2d8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0df2fbd_0add1591",
+        "filename": "vpx_dsp/arm/variance_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-03-07T00:16:42Z",
+      "side": 1,
+      "message": "Done - and thanks!",
+      "parentUuid": "8e91b07c_999b6088",
+      "revId": "27f4223090057102737f0b37af1b36b91ba4a2d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
