@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6481ffcf_61fa1800",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2953,
+      "author": {
+        "id": 1572272
+      },
+      "writtenOn": "2023-03-07T15:22:05Z",
+      "side": 1,
+      "message": "Actually, the speed-up of this CL (wrt its parent) is in the similar range or even less for higher speeds.\n```\n                 Instruction Count        BD-Rate Loss(%)       \ncpu   Resolution   Reduction(%)    avg.psnr   ovr.psnr    ssim  \n 1       Average      0.834         0.0235     0.0045    0.0060\n 2       Average      0.919        -0.0020     0.0093   -0.0100\n 3       Average      0.660         0.0443     0.0563   -0.0002 \n```\nThe reduction in scope is probably due to the existing sf\u0027s such as \u0027adaptive_pred_interp_filter\u0027 and \u0027use_rd_breakout\u0027 (enabled for speed \u003e\u003d 1) and \u0027cb_pred_filter_search\u0027 (enabled with advanced pruning for speed \u003e\u003d 3). These sf\u0027s cannot be extended to speed 0, since that trade-off is not good.",
+      "parentUuid": "a7a941b1_aa8ff114",
+      "range": {
+        "startLine": 2950,
+        "startChar": 4,
+        "endLine": 2953,
+        "endChar": 16
+      },
+      "revId": "64a35c2056c48a42e69d3e2f4a4f1c8ec4165587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "21b5642b_84029c2d",
@@ -71,6 +95,30 @@
       "writtenOn": "2023-03-06T17:49:09Z",
       "side": 1,
       "message": "0?",
+      "range": {
+        "startLine": 465,
+        "startChar": 30,
+        "endLine": 465,
+        "endChar": 31
+      },
+      "revId": "64a35c2056c48a42e69d3e2f4a4f1c8ec4165587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f756ca2f_aa682fe7",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 465,
+      "author": {
+        "id": 1572272
+      },
+      "writtenOn": "2023-03-07T15:22:05Z",
+      "side": 1,
+      "message": "Corrected.",
+      "parentUuid": "21b5642b_84029c2d",
       "range": {
         "startLine": 465,
         "startChar": 30,

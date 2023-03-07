@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3b6a4e40_e3696f47",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1572272
+      },
+      "writtenOn": "2023-03-07T15:22:05Z",
+      "side": 1,
+      "message": "Hi Yunqing,\n\nThanks for reviewing. We have made changes as per your suggestions. \n\nWe also tested the combined impact of this CL + its parent, wrt ref commit, for higher speeds:\n```\n                 Instruction Count        BD-Rate Loss(%)       \ncpu   Resolution   Reduction(%)    avg.psnr   ovr.psnr    ssim  \n 1       Average      2.557         0.0426     0.0350    0.0669\n 2       Average      2.873         0.1560     0.1498    0.2480\n 3       Average      1.571         0.1931     0.1937    0.2263\n ```\n\nRegards,\nNeeraj",
+      "revId": "b9933679bf0088527f2f762bad50a4bb7820bdf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8df8dd63_81fe7d6d",
+        "filename": "vp9/encoder/vp9_speed_features.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1572272
+      },
+      "writtenOn": "2023-03-07T15:22:05Z",
+      "side": 1,
+      "message": "Added a comment on the sf usage",
+      "range": {
+        "startLine": 402,
+        "startChar": 0,
+        "endLine": 406,
+        "endChar": 47
+      },
+      "revId": "b9933679bf0088527f2f762bad50a4bb7820bdf1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
