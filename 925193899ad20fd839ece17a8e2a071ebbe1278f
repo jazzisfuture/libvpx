@@ -1,0 +1,274 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88e7aaed_7d994999",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "these ()s can be removed",
+      "range": {
+        "startLine": 66,
+        "startChar": 65,
+        "endLine": 66,
+        "endChar": 66
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1f888ac8_4566dc59",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "I haven\u0027t looked this over closely, but I\u0027m wondering if `vmlal_high` could be made to work for the aarch64 case.",
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "437f1648_e6b961da",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "since this function is static, you can remove `vp9_`",
+      "range": {
+        "startLine": 170,
+        "startChar": 12,
+        "endLine": 170,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0208ed6b_f4b7fd7f",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "`UINT16_MAX`?",
+      "range": {
+        "startLine": 210,
+        "startChar": 65,
+        "endLine": 210,
+        "endChar": 75
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13779a90_7fd715a5",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "since this function is static, you can remove `vp9_`",
+      "range": {
+        "startLine": 331,
+        "startChar": 12,
+        "endLine": 331,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ba80691e_4a6fd692",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "since this function is static, you can remove `vp9_`",
+      "range": {
+        "startLine": 450,
+        "startChar": 12,
+        "endLine": 450,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc46988b_4a590426",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 669,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "since this function is static, you can remove `vp9_`",
+      "range": {
+        "startLine": 669,
+        "startChar": 12,
+        "endLine": 669,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "84df3b53_0bf5441d",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 829,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "subblock",
+      "range": {
+        "startLine": 829,
+        "startChar": 28,
+        "endLine": 829,
+        "endChar": 35
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cfa3ca30_3527e936",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "2023",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "971d5584_ae2b6a30",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "Same comment in this file for the `vp9_` prefix removal on static functions",
+      "range": {
+        "startLine": 248,
+        "startChar": 12,
+        "endLine": 248,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97459f3e_0387e441",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "block width",
+      "range": {
+        "startLine": 438,
+        "startChar": 25,
+        "endLine": 438,
+        "endChar": 35
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e382424a_aad5167a",
+        "filename": "vp9/encoder/vp9_temporal_filter_constants.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T21:39:07Z",
+      "side": 1,
+      "message": "this could remain as 2019 or made to 2023 given the rename.",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 27
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
