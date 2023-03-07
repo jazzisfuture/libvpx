@@ -37,6 +37,41 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "4ca3e1c5_964498c7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-03-07T14:15:23Z",
+      "side": 1,
+      "message": "Hi Yunqing,\nWe have taken care of your comments. Please review the patch.\nRegards,\nAnupam",
+      "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "85219bba_182451aa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-03-07T14:15:23Z",
+      "side": 1,
+      "message": "This function is called from vpx_filter_block1d8_h8_avx2() for which unit test is already available. Hence, we have not added unit test.",
+      "parentUuid": "a91db5d9_c470d3d9",
+      "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "97eda4de_59ce02b2",
         "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
         "patchSetId": 2
@@ -48,6 +83,30 @@
       "writtenOn": "2023-03-06T18:08:28Z",
       "side": 1,
       "message": "Is this needed?",
+      "range": {
+        "startLine": 18,
+        "startChar": 0,
+        "endLine": 18,
+        "endChar": 39
+      },
+      "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6be49550_e16f4ef4",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-03-07T14:15:23Z",
+      "side": 1,
+      "message": "This include file is required since convolve8_8_ssse3() used in this file is defined there.",
+      "parentUuid": "97eda4de_59ce02b2",
       "range": {
         "startLine": 18,
         "startChar": 0,
@@ -71,6 +130,30 @@
       "writtenOn": "2023-03-06T18:08:28Z",
       "side": 1,
       "message": "Not sure if unrolling the loop will provide further speedup? For convolve functions, it is worth studying and deep optimization.",
+      "range": {
+        "startLine": 207,
+        "startChar": 1,
+        "endLine": 207,
+        "endChar": 16
+      },
+      "revId": "047f6c9ddd3159a5641ef916498104c587f4a1e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "00454eb4_fd4cb85f",
+        "filename": "vpx_dsp/x86/vpx_subpixel_8t_intrin_avx2.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 207,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-03-07T14:15:23Z",
+      "side": 1,
+      "message": "Thank you for the suggestion. We have updated the patch for loop unrolling. There is a small improvement in test results. Please check.",
+      "parentUuid": "9974b86d_1198d8d2",
       "range": {
         "startLine": 207,
         "startChar": 1,
