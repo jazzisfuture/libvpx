@@ -34,6 +34,24 @@
       "parentUuid": "cfdccdf3_83b57fad",
       "revId": "62827575462ecdb7790b60f5da302b6395cef798",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ee13254_7ab14893",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T19:58:37Z",
+      "side": 1,
+      "message": "\u003e I tried pulling the aom version of the setup into the tests in libvpx but noticed failures in the neon implementations for d63 (not highbd) and d45 (both std and highbd). Is interesting that these three don\u0027t seem to hit any issues in the md5 tests or when running under asan, but I think it is worth me fixing them anyway if only just so we can make the tests stronger here (at least for arm, I can\u0027t speak to the other arch implementations and whether modifying the tests would not cause test failures for them of course).\n\nYes that was my thinking too, which is why I started down the x86 path. It\u0027s always easiest if we can match the behavior of the C-code or explicitly document the reasoning if we decide to diverge. In libvpx some of the code may have existed before test coverage or after the loop change.",
+      "parentUuid": "e0d8b31c_8e1325eb",
+      "revId": "62827575462ecdb7790b60f5da302b6395cef798",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
