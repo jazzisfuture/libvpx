@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "53799b79_6509602b",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Unfortunately, the parameter is int(32-bit) so doing a left shift meant a value of zero in vdupq_n_u64() so I had to cast.",
+      "parentUuid": "88e7aaed_7d994999",
+      "range": {
+        "startLine": 66,
+        "startChar": 65,
+        "endLine": 66,
+        "endChar": 66
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "1f888ac8_4566dc59",
         "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
         "patchSetId": 11
@@ -43,6 +67,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "79545be0_44ccfed1",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "I can try that and provide a separate patch if you like.",
+      "parentUuid": "1f888ac8_4566dc59",
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "437f1648_e6b961da",
         "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
         "patchSetId": 11
@@ -54,6 +96,30 @@
       "writtenOn": "2023-03-07T21:39:07Z",
       "side": 1,
       "message": "since this function is static, you can remove `vp9_`",
+      "range": {
+        "startLine": 170,
+        "startChar": 12,
+        "endLine": 170,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23eb26b6_a58e011a",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "437f1648_e6b961da",
       "range": {
         "startLine": 170,
         "startChar": 12,
@@ -89,6 +155,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ca21364c_34e1d2ac",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "It was taken from the SSE implementation, I guess it\u0027s referring to the 12-bit pixel max integer values used in the addition.",
+      "parentUuid": "0208ed6b_f4b7fd7f",
+      "range": {
+        "startLine": 210,
+        "startChar": 65,
+        "endLine": 210,
+        "endChar": 75
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "13779a90_7fd715a5",
         "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
         "patchSetId": 11
@@ -100,6 +190,30 @@
       "writtenOn": "2023-03-07T21:39:07Z",
       "side": 1,
       "message": "since this function is static, you can remove `vp9_`",
+      "range": {
+        "startLine": 331,
+        "startChar": 12,
+        "endLine": 331,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e63a2d4c_6bf3d9af",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "13779a90_7fd715a5",
       "range": {
         "startLine": 331,
         "startChar": 12,
@@ -133,6 +247,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a0dfe76_ea01d89d",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 450,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ba80691e_4a6fd692",
+      "range": {
+        "startLine": 450,
+        "startChar": 12,
+        "endLine": 450,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fc46988b_4a590426",
@@ -146,6 +284,30 @@
       "writtenOn": "2023-03-07T21:39:07Z",
       "side": 1,
       "message": "since this function is static, you can remove `vp9_`",
+      "range": {
+        "startLine": 669,
+        "startChar": 12,
+        "endLine": 669,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "63733d7c_7d84b83d",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 669,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fc46988b_4a590426",
       "range": {
         "startLine": 669,
         "startChar": 12,
@@ -179,6 +341,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0eadc0b_92fd57b6",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 829,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "84df3b53_0bf5441d",
+      "range": {
+        "startLine": 829,
+        "startChar": 28,
+        "endLine": 829,
+        "endChar": 35
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cfa3ca30_3527e936",
@@ -192,6 +378,30 @@
       "writtenOn": "2023-03-07T21:39:07Z",
       "side": 1,
       "message": "2023",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 22
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d1aa1ff5_17cc98bf",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cfa3ca30_3527e936",
       "range": {
         "startLine": 2,
         "startChar": 18,
@@ -225,6 +435,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3c3ee16a_3b9cd4f4",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "971d5584_ae2b6a30",
+      "range": {
+        "startLine": 248,
+        "startChar": 12,
+        "endLine": 248,
+        "endChar": 16
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "97459f3e_0387e441",
@@ -248,6 +482,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "de12c319_9aa13064",
+        "filename": "vp9/encoder/arm/neon/vp9_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 438,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97459f3e_0387e441",
+      "range": {
+        "startLine": 438,
+        "startChar": 25,
+        "endLine": 438,
+        "endChar": 35
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e382424a_aad5167a",
@@ -261,6 +519,30 @@
       "writtenOn": "2023-03-07T21:39:07Z",
       "side": 1,
       "message": "this could remain as 2019 or made to 2023 given the rename.",
+      "range": {
+        "startLine": 2,
+        "startChar": 18,
+        "endLine": 2,
+        "endChar": 27
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bead79e3_fc8af5f1",
+        "filename": "vp9/encoder/vp9_temporal_filter_constants.h",
+        "patchSetId": 11
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1537919
+      },
+      "writtenOn": "2023-03-07T22:00:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e382424a_aad5167a",
       "range": {
         "startLine": 2,
         "startChar": 18,
