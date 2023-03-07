@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6ad680c_5595e242",
+        "filename": "vp9/encoder/arm/neon/vp9_error_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T01:15:37Z",
+      "side": 1,
+      "message": "Since we\u0027re working with unsigned types, we should be able to accumulate all 4, no? In the worst case this would be `\u003d (2^15 - 1)^2 * 4`. Does having two schedule better?",
+      "revId": "71efce61f16537ecff3b997df2af3d0ca64a3d59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

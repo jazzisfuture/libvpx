@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45e25639_67da1b62",
+        "filename": "vp9/encoder/arm/neon/vp9_error_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T01:15:37Z",
+      "side": 0,
+      "message": "I think we still want some form of these asserts, with the minimum being 16.\n\nstep is 1 with 4x4:\nhttps://chromium.googlesource.com/webm/libvpx/+/d94e16404a08f3a67aa570d6b8c107ae47e158b5/vp9/encoder/vp9_pickmode.c#835",
+      "revId": "d94e16404a08f3a67aa570d6b8c107ae47e158b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
