@@ -16,6 +16,24 @@
       "message": "Since we\u0027re working with unsigned types, we should be able to accumulate all 4, no? In the worst case this would be `\u003d (2^15 - 1)^2 * 4`. Does having two schedule better?",
       "revId": "71efce61f16537ecff3b997df2af3d0ca64a3d59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a47811b_ef8b8681",
+        "filename": "vp9/encoder/arm/neon/vp9_error_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1434130
+      },
+      "writtenOn": "2023-03-07T11:33:56Z",
+      "side": 1,
+      "message": "Having two allows splitting the computation across two multiply-accumulate pipes on CPUs that have them. Added a comment to explain this.",
+      "parentUuid": "f6ad680c_5595e242",
+      "revId": "71efce61f16537ecff3b997df2af3d0ca64a3d59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
