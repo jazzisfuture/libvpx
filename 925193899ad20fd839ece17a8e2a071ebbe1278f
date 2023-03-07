@@ -131,6 +131,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c11ef76c_28006dbb",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T23:07:38Z",
+      "side": 1,
+      "message": "\u003e I can try that and provide a separate patch if you like.\n\nRecent versions of gcc and clang have done all right in synthesizing these. I was just thinking out loud when I saw the widening being done.",
+      "parentUuid": "79545be0_44ccfed1",
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "437f1648_e6b961da",
@@ -215,6 +233,30 @@
       "side": 1,
       "message": "It was taken from the SSE implementation, I guess it\u0027s referring to the 12-bit pixel max integer values used in the addition.",
       "parentUuid": "0208ed6b_f4b7fd7f",
+      "range": {
+        "startLine": 210,
+        "startChar": 65,
+        "endLine": 210,
+        "endChar": 75
+      },
+      "revId": "925193899ad20fd839ece17a8e2a071ebbe1278f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d96cc37d_531e6d16",
+        "filename": "vp9/encoder/arm/neon/vp9_highbd_temporal_filter_neon.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T23:07:38Z",
+      "side": 1,
+      "message": "\u003e It was taken from the SSE implementation, I guess it\u0027s referring to the 12-bit pixel max integer values used in the addition.\n\nI see, I was just confused by the constant name. `2^12 - 1` might have been more understandable, but it\u0027s ok to leave this for now for consistency.",
+      "parentUuid": "ca21364c_34e1d2ac",
       "range": {
         "startLine": 210,
         "startChar": 65,
