@@ -56,6 +56,30 @@
       },
       "revId": "75d9343cc03bf6a3a9a8d290ef10fc0dc347bf93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dac4f95b_4762bd1f",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1572272
+      },
+      "writtenOn": "2023-03-07T11:38:23Z",
+      "side": 1,
+      "message": "With this change, we can (a) build inter predictor and (b) compute rdcost, on a per-plane basis. After any plane, if the current rdcost is higher than the best rdcost, we can exit. This saves computations for both (a) and (b) steps for subsequent planes. For this reason, vp9_build_inter_predictors_sbp() needs to be within the plane-loop.\n\nWe can possibly name this function differently, since it does two operations (a) and (b). Shall we rename it e.g. build_inter_pred_model_rd_earlyterm() ?",
+      "parentUuid": "7d8f5500_32009163",
+      "range": {
+        "startLine": 213,
+        "startChar": 4,
+        "endLine": 213,
+        "endChar": 34
+      },
+      "revId": "75d9343cc03bf6a3a9a8d290ef10fc0dc347bf93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
