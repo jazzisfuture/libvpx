@@ -82,6 +82,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "62844db9_956b44eb",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2953,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-07T16:37:16Z",
+      "side": 1,
+      "message": "Thanks.",
+      "parentUuid": "6481ffcf_61fa1800",
+      "range": {
+        "startLine": 2950,
+        "startChar": 4,
+        "endLine": 2953,
+        "endChar": 16
+      },
+      "revId": "64a35c2056c48a42e69d3e2f4a4f1c8ec4165587",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "21b5642b_84029c2d",
