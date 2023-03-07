@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfdccdf3_83b57fad",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-07T03:21:51Z",
+      "side": 1,
+      "message": "Unfortunately this was lost along the way. There appears to be some issues in the ssse3 which don\u0027t surface in the test vectors. Note AV1 still has the original loop which didn\u0027t do extension:\nhttps://aomedia.googlesource.com/aom/+/3b1b26e9736b52ede90bf3974513c73991ac6668/test/intrapred_test.cc#80",
+      "revId": "62827575462ecdb7790b60f5da302b6395cef798",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
