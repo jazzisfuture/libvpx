@@ -33,6 +33,24 @@
       "message": "Good speedup.",
       "revId": "775d594e462252c0e8f8113955122e9c34eeab44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d473444e_963ec9bc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-10T01:02:35Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "d4397a35_699bf3c6",
+      "revId": "775d594e462252c0e8f8113955122e9c34eeab44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
