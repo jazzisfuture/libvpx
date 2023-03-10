@@ -16,6 +16,23 @@
       "message": "In this CL, we have added the AVX2 for the function vpx_filter_block1d8_v8().\nThe borg results for good encoding mode are below.\n```\n                 Instruction Count\ncpu   Resolution   Reduction(%)\n0       LOWRES2      1.347\n0       MIDRES2      1.046\n0        HDRES2      0.805\n0       Average      1.066\n```\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./vpxenc …\n```\nThe module level scaling w.r.t C function (timer based) for existing (SSSE3) and new AVX2 intrinsics:\n```\nBlock     Scaling\nSize   SSSE3      AVX2\n8x4     9.25x     11.29x\n8x8    11.29x     14.11x\n8x16   12.96x     19.76x\n```",
       "revId": "775d594e462252c0e8f8113955122e9c34eeab44",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03c68959_4d99bb75",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-10T01:02:13Z",
+      "side": 1,
+      "message": "Good speedup.",
+      "revId": "775d594e462252c0e8f8113955122e9c34eeab44",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
