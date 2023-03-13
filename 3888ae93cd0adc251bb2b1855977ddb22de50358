@@ -16,6 +16,133 @@
       "message": "In parent commit, trellis coefficient optimization is disabled for prediction blocks with larger source variance for cpu 1-5, using the sf \u0027allow_quant_coeff_opt\u0027. If this logic is extended to speed 0 the speed-up vs BD-Rate trade-off is not good. \n\nIn this CL, a less-aggressive level is added to this sf, applicable for cpu 0. With this logic, the trellis coefficient optimization is disabled for transform blocks with larger residual errors. The threshold used is dependent on the quantizer. This change is bit-exact for cpu-used \u003e\u003d 1. \n\nThe instruction count reduction specified has been measured using command: \n```\n$ perf stat -e instructions:u ./aomenc\n```",
       "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed93079c_5de23b60",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-13T19:18:42Z",
+      "side": 1,
+      "message": "Nice speed gain! Thanks. Unfortunately, current code base has a complicated approach to indicate the trellis opt, which will be more complicated with this change. We need to simplify the logic. What do you think?",
+      "parentUuid": "ee64158e_a0ef1f21",
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2989f0da_83afad5f",
+        "filename": "vp9/encoder/vp9_encodemb.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 952,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-13T19:18:42Z",
+      "side": 1,
+      "message": "Trellis opt skipping wasn\u0027t enabled for intra frames before. With this change, it happens for intra frame with a higher threshold, right?",
+      "range": {
+        "startLine": 952,
+        "startChar": 7,
+        "endLine": 952,
+        "endChar": 28
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "21966ce0_11de3993",
+        "filename": "vp9/encoder/vp9_encodemb.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-13T19:18:42Z",
+      "side": 1,
+      "message": "There is already enable_coeff_opt for trellis opt decision. Possible to find another clear way to handle this instead of adding skip_coeff_opt?",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 20
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "80f66960_103c246d",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 736,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-13T19:18:42Z",
+      "side": 1,
+      "message": "Use the same style as above?",
+      "range": {
+        "startLine": 735,
+        "startChar": 3,
+        "endLine": 736,
+        "endChar": 47
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e1ff0833_d406c7e0",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 791,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-13T19:18:42Z",
+      "side": 1,
+      "message": "Could x-\u003eblock_qcoeff_opt decision be moved here as well, so x-\u003eblock_qcoeff_opt is not needed? Anything stops that?",
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "325b9f5e_c39cac0f",
+        "filename": "vp9/encoder/vp9_speed_features.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-13T19:18:42Z",
+      "side": 1,
+      "message": "These 2 features work together. The new levels added has their own way to figure out the threshold. It is somewhat confusing. Possible to make it more clear? E.g. consolidate quant_opt_thresh into quant_coeff_opt_level?",
+      "range": {
+        "startLine": 300,
+        "startChar": 2,
+        "endLine": 301,
+        "endChar": 26
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
