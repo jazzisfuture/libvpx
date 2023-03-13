@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee64158e_a0ef1f21",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-13T12:33:51Z",
+      "side": 1,
+      "message": "In parent commit, trellis coefficient optimization is disabled for prediction blocks with larger source variance for cpu 1-5, using the sf \u0027allow_quant_coeff_opt\u0027. If this logic is extended to speed 0 the speed-up vs BD-Rate trade-off is not good. \n\nIn this CL, a less-aggressive level is added to this sf, applicable for cpu 0. With this logic, the trellis coefficient optimization is disabled for transform blocks with larger residual errors. The threshold used is dependent on the quantizer. This change is bit-exact for cpu-used \u003e\u003d 1. \n\nThe instruction count reduction specified has been measured using command: \n```\n$ perf stat -e instructions:u ./aomenc\n```",
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
