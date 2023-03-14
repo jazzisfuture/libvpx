@@ -46,6 +46,30 @@
       },
       "revId": "eab52a4f3c5bece97b8a2656553903aacd8f7ab4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "787abb8d_9a783113",
+        "filename": "vpx_dsp/arm/mem_neon.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-14T19:31:43Z",
+      "side": 1,
+      "message": "\u003e Um, I don\u0027t think so. Yes, the increment is 8 bytes, but if I understand correctly, we\u0027re doing pointer arithmetic against a uint16_t pointer - so 4 uint16_ts is 8 bytes.\n\u003e \n\nYou\u0027re right, I misread and assumed `uint8_t`.\n\n\u003e That said, I do take your point about making sure that this is beneficial in the real code and not just the (speed or other) unit tests. The code generation certainly looks unpleasant where these get invoked.",
+      "parentUuid": "3595ca54_e00b6305",
+      "range": {
+        "startLine": 181,
+        "startChar": 16,
+        "endLine": 181,
+        "endChar": 17
+      },
+      "revId": "eab52a4f3c5bece97b8a2656553903aacd8f7ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
