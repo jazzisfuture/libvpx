@@ -16,6 +16,24 @@
       "message": "Adding documentation similar to the non-highbitdepth function would be good to rationalize the data types used. avg.c has some notes that can be used.",
       "revId": "d1155c272aefb20f695303a722ce72ed238a8859",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2cb4d8c3_f3495209",
+        "filename": "vpx_dsp/arm/highbd_avg_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1434130
+      },
+      "writtenOn": "2023-03-14T15:25:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9dddfb11_aa4f7763",
+      "revId": "d1155c272aefb20f695303a722ce72ed238a8859",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
