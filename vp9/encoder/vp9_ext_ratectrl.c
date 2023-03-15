@@ -214,15 +214,15 @@ vpx_codec_err_t vp9_extrc_get_gop_decision(
   if (gop_decision->use_alt_ref) {
     const int arf_constraint =
         gop_decision->gop_coding_frames >= gop_info->min_gf_interval &&
-        gop_decision->gop_coding_frames < gop_info->lag_in_frames;
+        gop_decision->gop_coding_frames < gop_info->lag_in_frames &&
+        gop_decision->gop_coding_frames - gop_decision->use_alt_ref <=
+            gop_info->max_gf_interval;
     if (!arf_constraint || !gop_info->allow_alt_ref) return VPX_CODEC_ERROR;
   }
   // TODO(chengchen): Take min and max gf interval from the model
   // and overwrite libvpx's decision so that we can get rid
   // of one of the checks here.
-  if (gop_decision->gop_coding_frames > gop_info->frames_to_key ||
-      gop_decision->gop_coding_frames - gop_decision->use_alt_ref >
-          gop_info->max_gf_interval) {
+  if (gop_decision->gop_coding_frames > gop_info->frames_to_key) {
     return VPX_CODEC_ERROR;
   }
   if (rc_status == VPX_RC_ERROR) {
