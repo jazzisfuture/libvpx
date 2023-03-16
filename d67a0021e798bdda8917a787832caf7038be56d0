@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bfe91741_059bee59",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-16T20:43:46Z",
+      "side": 1,
+      "message": "The constructor and the `InitRateControl()` method have been replaced by the `Create()` factory method.",
+      "revId": "d67a0021e798bdda8917a787832caf7038be56d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1081c01c_848e6b62",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-16T20:43:46Z",
+      "side": 1,
+      "message": "`PostEncode()` has a second parameter now.",
+      "revId": "d67a0021e798bdda8917a787832caf7038be56d0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
