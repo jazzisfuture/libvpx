@@ -31,7 +31,10 @@ std::unique_ptr<VP9RateControlRTC> VP9RateControlRTC::Create(
   }
   vp9_zero(*rc_api->cpi_);
 
-  rc_api->InitRateControl(cfg);
+  if (!rc_api->InitRateControl(cfg)) {
+    rc_api.reset();
+    return nullptr;
+  }
   if (cfg.aq_mode) {
     VP9_COMP *const cpi = rc_api->cpi_;
     cpi->segmentation_map = static_cast<uint8_t *>(
@@ -71,7 +74,7 @@ VP9RateControlRTC::~VP9RateControlRTC() {
   }
 }
 
-void VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
+bool VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
   VP9_COMMON *cm = &cpi_->common;
   VP9EncoderConfig *oxcf = &cpi_->oxcf;
   RATE_CONTROL *const rc = &cpi_->rc;
@@ -88,7 +91,7 @@ void VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
   cm->current_video_frame = 0;
   rc->kf_boost = DEFAULT_KF_BOOST;
 
-  UpdateRateControl(rc_cfg);
+  if (!UpdateRateControl(rc_cfg)) return false;
   vp9_set_mb_mi(cm, cm->width, cm->height);
 
   cpi_->use_svc = (cpi_->svc.number_spatial_layers > 1 ||
@@ -102,10 +105,21 @@ void VP9RateControlRTC::InitRateControl(const VP9RateControlRtcConfig &rc_cfg) {
   vp9_rc_init(oxcf, 0, rc);
   rc->constrain_gf_key_freq_onepass_vbr = 0;
   cpi_->sf.use_nonrd_pick_mode = 1;
+  return true;
 }
 
-void VP9RateControlRTC::UpdateRateControl(
+bool VP9RateControlRTC::UpdateRateControl(
     const VP9RateControlRtcConfig &rc_cfg) {
+  // Since VPX_MAX_LAYERS (12) is less than the product of VPX_SS_MAX_LAYERS (5)
+  // and VPX_TS_MAX_LAYERS (5), check all three.
+  if (rc_cfg.ss_number_layers < 1 ||
+      rc_cfg.ss_number_layers > VPX_SS_MAX_LAYERS ||
+      rc_cfg.ts_number_layers < 1 ||
+      rc_cfg.ts_number_layers > VPX_TS_MAX_LAYERS ||
+      rc_cfg.ss_number_layers * rc_cfg.ts_number_layers > VPX_MAX_LAYERS) {
+    return false;
+  }
+
   VP9_COMMON *cm = &cpi_->common;
   VP9EncoderConfig *oxcf = &cpi_->oxcf;
   RATE_CONTROL *const rc = &cpi_->rc;
@@ -161,6 +175,7 @@ void VP9RateControlRTC::UpdateRateControl(
                                            (int)cpi_->oxcf.target_bandwidth);
   }
   vp9_check_reset_rc_flag(cpi_);
+  return true;
 }
 
 void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
