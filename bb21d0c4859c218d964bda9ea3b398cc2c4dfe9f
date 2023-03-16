@@ -39,6 +39,47 @@
       },
       "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f1e66d2d_2934b7f0",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-16T22:49:49Z",
+      "side": 1,
+      "message": "Thank you for the suggestion. I also considered this when I wrote the libaom CL. In the end I used `bool` simply because I was lazy. Now that I have seen the code that uses these RTC rate control classes, I think it is more convenient for their `UpdateRateControl()` methods to return the same type. Here is the code that uses the rate control classes. Note that it is a template:\n\n```\ntemplate \u003ctypename RateControlConfigType,\n          typename RateCtrlType,\n          typename FrameParamsType\u003e\nclass VideoRateControlWrapperInternal : public VideoRateControlWrapper {\n public:\n  ...\n  void UpdateRateControl(const RateControlConfig\u0026 config) override {\n    DCHECK(impl_);\n    impl_-\u003eUpdateRateControl(ConvertControlConfig(config));\n  }\n  ...\n private:\n  ...\n\n  std::unique_ptr\u003cRateCtrlType\u003e impl_;\n};\n```\n\nWhen this code is ready to check the return value of `impl_-\u003eUpdateRateControl()`, if `VP9RateControlRTC::UpdateRateControl()` returns `vpx_codec_err_t` and `AV1RateControlRTC::UpdateRateControl()` returns `aom_codec_err_t`, it will be harder for this template class to check the return value in a uniform way. I think it is still possible, because there is a precedence to handle the different input parameters of the `PostEncodeUpdate()` methods. But extra work will be needed.",
+      "parentUuid": "464b6a5e_45efd678",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 4
+      },
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "645304b9_1fedfe52",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-16T22:49:49Z",
+      "side": 1,
+      "message": "The `ss_number_layers` initialization was inadvertently deleted in commit 65a1751e5b98bf7f1d21bcbfdef352af34fb205d.",
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
