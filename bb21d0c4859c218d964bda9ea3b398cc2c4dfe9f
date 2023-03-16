@@ -16,6 +16,29 @@
       "message": "James: I think it is not necessary to reset `rc_api` before returning `nullptr`. Do you agree?",
       "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "464b6a5e_45efd678",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-03-16T22:33:31Z",
+      "side": 1,
+      "message": "second thought: maybe it\u0027s better to return a ```vpx_codec_err_t``` and specify the error code? like ```VPX_CODEC_INVALID_PARAMS```\n\nSame for libaom, ```aom_codec_err_t```",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 4
+      },
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
