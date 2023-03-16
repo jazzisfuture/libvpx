@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a3262992_48399c11",
+        "filename": "test/minmax_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-16T20:10:45Z",
+      "side": 1,
+      "message": "Pull the allocations outside of the loop. These could be stack buffers too, but the high bitdepth indirection makes it difficult either way.",
+      "revId": "d4c648e37113e4c459fe462551edc12db48f6c1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
