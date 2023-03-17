@@ -149,6 +149,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "2102a3a7_cac5195e",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-17T21:11:14Z",
+      "side": 1,
+      "message": "I analyzed the `VideoRateControlWrapperInternal` template class in Chrome\u0027s media/gpu/windows/video_rate_control_wrapper.h. We don\u0027t need to add a template parameter. We just need to remove the implementation of the `UpdateRateControl()` method from the template class. I.e., change it from:\n\n```\n  void UpdateRateControl(const RateControlConfig\u0026 config) override {\n    DCHECK(impl_);\n    impl_-\u003eUpdateRateControl(ConvertControlConfig(config));\n  }\n```\n\nto:\n\n```\n  void UpdateRateControl(const RateControlConfig\u0026 config) override;\n```\n\nThen each instantiation of the template needs to specialize the `UpdateRateControl()` method.\n\nHirokazu: could you look into how `VideoRateControlWrapperInternal::UpdateRateControl()` should report failure? That will help us decide whether the libaom and libvpx rate control classes need to report the reason for failure (i.e., an error code) or just a success/failure boolean. Thanks.",
+      "parentUuid": "b644d2c4_87424e30",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 4
+      },
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "645304b9_1fedfe52",
