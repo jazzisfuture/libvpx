@@ -28,6 +28,8 @@ struct encode_b_args {
   const struct VP9_COMP *cpi;
   MACROBLOCK *x;
   TRELLIS_OPT_TYPE trellis_opt_type;
+  int *sse_calc_done;
+  int64_t *sse;
   ENTROPY_CONTEXT *ta;
   ENTROPY_CONTEXT *tl;
   int8_t *skip;

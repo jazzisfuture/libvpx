@@ -761,12 +761,16 @@ void vp9_encode_sb(const VP9_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize,
   int plane;
 #if CONFIG_MISMATCH_DEBUG
   struct encode_b_args arg = { cpi,           x,      ENABLE_TRELLIS_OPT,
+                               NULL,  // &sse_calc_done
+                               NULL,  // &sse
                                NULL,  // above entropy context
                                NULL,  // left entropy context
                                &mi->skip,     mi_row, mi_col,
                                output_enabled };
 #else
   struct encode_b_args arg = { cpi,      x, ENABLE_TRELLIS_OPT,
+                               NULL,  // &sse_calc_done
+                               NULL,  // &sse
                                NULL,  // above entropy context
                                NULL,  // left entropy context
                                &mi->skip };
@@ -866,7 +870,8 @@ void vp9_encode_block_intra(int plane, int block, int row, int col,
     vpx_subtract_block(tx_size_in_pixels, tx_size_in_pixels, src_diff,
                        diff_stride, src, src_stride, dst, dst_stride);
 #endif
-    enable_trellis_opt = do_trellis_opt(args);
+    enable_trellis_opt = do_trellis_opt(pd, src_diff, diff_stride, row, col,
+                                        plane_bsize, tx_size, args);
   }
 
   if (enable_trellis_opt) {
@@ -1037,15 +1042,27 @@ void vp9_encode_intra_block_plane(const VP9_COMP *cpi, MACROBLOCK *x,
 #if CONFIG_MISMATCH_DEBUG
   // TODO(angiebird): make mismatch_debug support intra mode
   struct encode_b_args arg = {
-    cpi, x, trellis_opt_type, ctx.ta[plane], ctx.tl[plane], &xd->mi[0]->skip,
+    cpi,
+    x,
+    trellis_opt_type,
+    NULL,  // &sse_calc_done
+    NULL,  // &sse
+    ctx.ta[plane],
+    ctx.tl[plane],
+    &xd->mi[0]->skip,
     0,  // mi_row
     0,  // mi_col
     0   // output_enabled
   };
 #else
-  struct encode_b_args arg = {
-    cpi, x, trellis_opt_type, ctx.ta[plane], ctx.tl[plane], &xd->mi[0]->skip
-  };
+  struct encode_b_args arg = { cpi,
+                               x,
+                               trellis_opt_type,
+                               NULL,  // &sse_calc_done
+                               NULL,  // &sse
+                               ctx.ta[plane],
+                               ctx.tl[plane],
+                               &xd->mi[0]->skip };
 #endif
 
   if (trellis_opt_type != DISABLE_TRELLIS_OPT && x->optimize &&
