@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "66ff5c4f_2f99f1b9",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-17T00:32:13Z",
+      "side": 1,
+      "message": "\u003e James: I think it is not necessary to reset `rc_api` before returning `nullptr`. Do you agree?\n\nI agree.",
+      "parentUuid": "cc235f15_f1a5b47a",
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "464b6a5e_45efd678",
