@@ -1376,6 +1376,7 @@ void vp9_setup_tpl_stats(VP9_COMP *cpi) {
   int frame_idx;
   cpi->tpl_bsize = BLOCK_32X32;
 
+  printf("\nSETUP TPL for frame %d\n", cpi->common.current_video_frame);
   init_gop_frames(cpi, gf_picture, gf_group, &tpl_group_frames);
 
   init_tpl_stats(cpi);
