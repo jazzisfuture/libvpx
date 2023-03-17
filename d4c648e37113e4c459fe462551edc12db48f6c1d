@@ -16,6 +16,24 @@
       "message": "Pull the allocations outside of the loop. These could be stack buffers too, but the high bitdepth indirection makes it difficult either way.",
       "revId": "d4c648e37113e4c459fe462551edc12db48f6c1d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad082f0f_c8cad60b",
+        "filename": "test/minmax_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-17T00:30:30Z",
+      "side": 1,
+      "message": "\u003e Pull the allocations outside of the loop. These could be stack buffers too, but the high bitdepth indirection makes it difficult either way.\n\nDon\u0027t forget to mark the comments resolved so reviewers know it\u0027s safe to take another look.",
+      "parentUuid": "a3262992_48399c11",
+      "revId": "d4c648e37113e4c459fe462551edc12db48f6c1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
