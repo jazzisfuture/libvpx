@@ -50,6 +50,8 @@
 #endif
 #include "./y4minput.h"
 
+#include "vp9/encoder/vp9_encoder.h"
+
 static size_t wrap_fwrite(const void *ptr, size_t size, size_t nmemb,
                           FILE *stream) {
   return fwrite(ptr, size, nmemb, stream);
@@ -161,6 +163,8 @@ static const arg_def_t disable_warnings =
 static const arg_def_t disable_warning_prompt =
     ARG_DEF("y", "disable-warning-prompt", 0,
             "Display warnings, but do not prompt user to continue.");
+static const arg_def_t export_tpl_stats =
+    ARG_DEF(NULL, "export-tpl-stats", 0, "Export TPL stats of vp9 encoder");
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static const arg_def_t test16bitinternalarg = ARG_DEF(
@@ -191,6 +195,7 @@ static const arg_def_t *main_args[] = { &help,
                                         &disable_warnings,
                                         &disable_warning_prompt,
                                         &recontest,
+                                        &export_tpl_stats,
                                         NULL };
 
 static const arg_def_t usage =
@@ -531,9 +536,7 @@ static const arg_def_t disable_loopfilter =
             "1: Loopfilter off for non reference frames\n"
             "                                          "
             "2: Loopfilter off for all frames");
-#endif
 
-#if CONFIG_VP9_ENCODER
 static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &auto_altref_vp9,
                                        &sharpness,
@@ -804,6 +807,8 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
       global->disable_warnings = 1;
     else if (arg_match(&arg, &disable_warning_prompt, argi))
       global->disable_warning_prompt = 1;
+    else if (arg_match(&arg, &export_tpl_stats, argi))
+      global->export_tpl_stats = 1;
     else
       argj++;
   }
@@ -1982,6 +1987,13 @@ int main(int argc, const char **argv_) {
 
         if (got_data && global.test_decode != TEST_DECODE_OFF)
           FOREACH_STREAM(test_decode(stream, global.test_decode, global.codec));
+
+        if (got_data && global.export_tpl_stats) {
+          TplDepFrame *tpl_stats = NULL;
+          FOREACH_STREAM(vpx_codec_control(&stream->encoder, VP9E_GET_TPL_STATS,
+                                           &tpl_stats));
+          vpx_free(tpl_stats);
+        }
       }
 
       fflush(stdout);
