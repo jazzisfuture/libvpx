@@ -56,15 +56,12 @@ class IntraPredTest : public ::testing::TestWithParam<PredParam> {
     int error_count = 0;
     for (int i = 0; i < count_test_block; ++i) {
       // Fill edges with random data, try first with saturated values.
-      for (int x = -1; x < block_size; x++) {
+      for (int x = -1; x < 2 * block_size; x++) {
         if (i == 0) {
           above_row_[x] = mask_;
         } else {
           above_row_[x] = rnd.Rand16() & mask_;
         }
-      }
-      for (int x = block_size; x < 2 * block_size; x++) {
-        above_row_[x] = above_row_[block_size - 1];
       }
       for (int y = 0; y < block_size; y++) {
         if (i == 0) {
