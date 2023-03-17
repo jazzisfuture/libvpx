@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fef98c04_384ae9e4",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-17T02:01:27Z",
+      "side": 1,
+      "message": "Thanks. Removed the `rc_api.reset()` calls.",
+      "parentUuid": "66ff5c4f_2f99f1b9",
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "464b6a5e_45efd678",
