@@ -1728,11 +1728,19 @@ static int64_t encode_inter_mb_segment(VP9_COMP *cpi, MACROBLOCK *x,
       x->fwd_txfm4x4(vp9_raster_block_offset_int16(BLOCK_8X8, k, p->src_diff),
                      coeff, 8);
 #if CONFIG_VP9_HIGHBITDEPTH
-      vpx_highbd_quantize_b(coeff, 4 * 4, p->zbin, p->round, p->quant,
-                            p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
-                            so->scan, so->iscan);
-      thisdistortion += vp9_highbd_block_error_dispatch(
-          coeff, BLOCK_OFFSET(pd->dqcoeff, k), 16, &ssz, bd);
+      if (xd->cur_buf->flags & YV12_FLAG_HIGHBITDEPTH) {
+        vpx_highbd_quantize_b(coeff, 4 * 4, p->zbin, p->round, p->quant,
+                              p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
+                              so->scan, so->iscan);
+        thisdistortion += vp9_highbd_block_error_dispatch(
+            coeff, BLOCK_OFFSET(pd->dqcoeff, k), 16, &ssz, bd);
+      } else {
+        vpx_quantize_b(coeff, 4 * 4, p->zbin, p->round, p->quant,
+                       p->quant_shift, qcoeff, dqcoeff, pd->dequant, eob,
+                       so->scan, so->iscan);
+        thisdistortion +=
+            vp9_block_error(coeff, BLOCK_OFFSET(pd->dqcoeff, k), 16, &ssz);
+      }
 #else
       vpx_quantize_b(coeff, 4 * 4, p->zbin, p->round, p->quant, p->quant_shift,
                      qcoeff, dqcoeff, pd->dequant, eob, so->scan, so->iscan);
