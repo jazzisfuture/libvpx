@@ -245,6 +245,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "0578f590_92379276",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2023-03-18T02:35:23Z",
+      "side": 1,
+      "message": "Ack. I am fine with bool.",
+      "parentUuid": "06ec6e81_4895c993",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 4
+      },
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "645304b9_1fedfe52",
