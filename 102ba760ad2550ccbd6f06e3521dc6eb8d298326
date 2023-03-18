@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb9e07a2_2781d446",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1715,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2023-03-18T02:55:13Z",
+      "side": 1,
+      "message": "bd is set here. Could probably be outside the loop.",
+      "range": {
+        "startLine": 1715,
+        "startChar": 16,
+        "endLine": 1715,
+        "endChar": 18
+      },
+      "revId": "102ba760ad2550ccbd6f06e3521dc6eb8d298326",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ff18a14d_d8d07ae5",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1731,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2023-03-18T02:55:13Z",
+      "side": 1,
+      "message": "Not sure if this should check the flag or just bd !\u003d 8",
+      "range": {
+        "startLine": 1731,
+        "startChar": 31,
+        "endLine": 1731,
+        "endChar": 53
+      },
+      "revId": "102ba760ad2550ccbd6f06e3521dc6eb8d298326",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
