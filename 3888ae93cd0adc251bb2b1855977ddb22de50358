@@ -103,6 +103,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c4fa031b_eb710b04",
+        "filename": "vp9/encoder/vp9_encodemb.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 952,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-20T11:00:04Z",
+      "side": 1,
+      "message": "For speed \u003e\u003d1, trellis opt skipping was enabled for all frames (including intra frames). At speed 0, trellis opt was not skipped. The CL https://chromium-review.googlesource.com/c/webm/libvpx/+/4349755 skips trellis opt for intra/ARF frames with a higher threshold.",
+      "parentUuid": "710c54e2_9bf99c5f",
+      "range": {
+        "startLine": 952,
+        "startChar": 7,
+        "endLine": 952,
+        "endChar": 28
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "21966ce0_11de3993",
         "filename": "vp9/encoder/vp9_encodemb.h",
         "patchSetId": 5

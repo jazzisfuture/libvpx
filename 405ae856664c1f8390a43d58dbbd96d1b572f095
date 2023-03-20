@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "61d006b1_5d0378cf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-20T11:00:04Z",
+      "side": 1,
+      "message": "This patch refactors code related to speed features \u0027allow_quant_coeff_opt\u0027 and \u0027quant_opt_thresh\u0027 (skip trellis coefficient optimization based on source variance of the prediction block) to facilitate skipping of trellis optimization based on residual mse at speed 0.",
+      "revId": "405ae856664c1f8390a43d58dbbd96d1b572f095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
