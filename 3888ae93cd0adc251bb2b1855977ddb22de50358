@@ -38,6 +38,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ab7a1492_ba943dbf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-20T05:05:00Z",
+      "side": 1,
+      "message": "Ack. This patch refactors code related to enabling trellis coefficient optimization. The dependent patch https://chromium-review.googlesource.com/c/webm/libvpx/+/4349755 skips trellis coefficient optimization for transform blocks with larger residual mse at speed 0.",
+      "parentUuid": "ed93079c_5de23b60",
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2989f0da_83afad5f",
         "filename": "vp9/encoder/vp9_encodemb.c",
         "patchSetId": 5
@@ -49,6 +67,30 @@
       "writtenOn": "2023-03-13T19:18:42Z",
       "side": 1,
       "message": "Trellis opt skipping wasn\u0027t enabled for intra frames before. With this change, it happens for intra frame with a higher threshold, right?",
+      "range": {
+        "startLine": 952,
+        "startChar": 7,
+        "endLine": 952,
+        "endChar": 28
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "710c54e2_9bf99c5f",
+        "filename": "vp9/encoder/vp9_encodemb.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 952,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-20T05:05:00Z",
+      "side": 1,
+      "message": "Trellis opt skipping was enabled for intra frames before. In this patch, it happens for  intra/ARF frames with a higher threshold.",
+      "parentUuid": "2989f0da_83afad5f",
       "range": {
         "startLine": 952,
         "startChar": 7,
@@ -84,6 +126,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0e94e3e0_64336d17",
+        "filename": "vp9/encoder/vp9_encodemb.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-20T05:05:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "21966ce0_11de3993",
+      "range": {
+        "startLine": 30,
+        "startChar": 6,
+        "endLine": 30,
+        "endChar": 20
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "80f66960_103c246d",
         "filename": "vp9/encoder/vp9_rdopt.c",
         "patchSetId": 5
@@ -95,6 +161,30 @@
       "writtenOn": "2023-03-13T19:18:42Z",
       "side": 1,
       "message": "Use the same style as above?",
+      "range": {
+        "startLine": 735,
+        "startChar": 3,
+        "endLine": 736,
+        "endChar": 47
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4574ed9_02cdeda0",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 736,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-20T05:05:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "80f66960_103c246d",
       "range": {
         "startLine": 735,
         "startChar": 3,
@@ -124,6 +214,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "1d6e9e09_8bf05e43",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 791,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-20T05:05:00Z",
+      "side": 1,
+      "message": "Done. Moved the decision to do_trellis_opt().",
+      "parentUuid": "e1ff0833_d406c7e0",
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "325b9f5e_c39cac0f",
         "filename": "vp9/encoder/vp9_speed_features.h",
         "patchSetId": 5
@@ -135,6 +243,30 @@
       "writtenOn": "2023-03-13T19:18:42Z",
       "side": 1,
       "message": "These 2 features work together. The new levels added has their own way to figure out the threshold. It is somewhat confusing. Possible to make it more clear? E.g. consolidate quant_opt_thresh into quant_coeff_opt_level?",
+      "range": {
+        "startLine": 300,
+        "startChar": 2,
+        "endLine": 301,
+        "endChar": 26
+      },
+      "revId": "3888ae93cd0adc251bb2b1855977ddb22de50358",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "078797b2_38208659",
+        "filename": "vp9/encoder/vp9_speed_features.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 301,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-03-20T05:05:00Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "325b9f5e_c39cac0f",
       "range": {
         "startLine": 300,
         "startChar": 2,
