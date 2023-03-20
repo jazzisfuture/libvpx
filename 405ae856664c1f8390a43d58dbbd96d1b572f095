@@ -16,6 +16,47 @@
       "message": "This patch refactors code related to speed features \u0027allow_quant_coeff_opt\u0027 and \u0027quant_opt_thresh\u0027 (skip trellis coefficient optimization based on source variance of the prediction block) to facilitate skipping of trellis optimization based on residual mse at speed 0.",
       "revId": "405ae856664c1f8390a43d58dbbd96d1b572f095",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7862c0f_f27e2d9a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-20T16:27:47Z",
+      "side": 1,
+      "message": "Looks good! Thanks for getting it done.",
+      "parentUuid": "61d006b1_5d0378cf",
+      "revId": "405ae856664c1f8390a43d58dbbd96d1b572f095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2804c7b4_1f7d179f",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 2027,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-20T16:27:47Z",
+      "side": 1,
+      "message": "Thanks for fixing the comments.",
+      "range": {
+        "startLine": 2027,
+        "startChar": 3,
+        "endLine": 2027,
+        "endChar": 77
+      },
+      "revId": "405ae856664c1f8390a43d58dbbd96d1b572f095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
