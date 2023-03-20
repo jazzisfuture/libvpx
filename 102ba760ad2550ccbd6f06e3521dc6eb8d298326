@@ -62,6 +62,30 @@
       },
       "revId": "102ba760ad2550ccbd6f06e3521dc6eb8d298326",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0cbf0a0f_61c08ff9",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1731,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-20T20:18:43Z",
+      "side": 1,
+      "message": "\u003e Not sure if this should check the flag or just bd !\u003d 8\n\nIt looks like this check is more common. I\u0027m not sure why this was removed in https://chromium-review.googlesource.com/c/webm/libvpx/+/304740/5/vp9/encoder/vp9_rdopt.c#b1379",
+      "parentUuid": "ff18a14d_d8d07ae5",
+      "range": {
+        "startLine": 1731,
+        "startChar": 31,
+        "endLine": 1731,
+        "endChar": 53
+      },
+      "revId": "102ba760ad2550ccbd6f06e3521dc6eb8d298326",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
