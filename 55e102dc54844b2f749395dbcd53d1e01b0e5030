@@ -16,6 +16,23 @@
       "message": "In this CL, trellis coefficient optimization is disabled for transform blocks with larger residual errors. The threshold used is dependent on the quantizer. This change is bit-exact for cpu-used \u003e\u003d 1. The parent of this CL is https://chromium-review.googlesource.com/c/webm/libvpx/+/4326367/7\n\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./aomenc\n```",
       "revId": "55e102dc54844b2f749395dbcd53d1e01b0e5030",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6d9dee7_8c57e71a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-03-20T16:35:39Z",
+      "side": 1,
+      "message": "Looks good. Nice speedup!",
+      "revId": "55e102dc54844b2f749395dbcd53d1e01b0e5030",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
