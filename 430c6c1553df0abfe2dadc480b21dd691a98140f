@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf33a3be_c2d1ab61",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-22T02:22:43Z",
+      "side": 1,
+      "message": "Here is a  precedent of returning bool to indicate success/failure.\n\nBut this method seems unused right now. So we can certainly remove this method and switch to returning vpx_codec_err_t.",
+      "revId": "430c6c1553df0abfe2dadc480b21dd691a98140f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
