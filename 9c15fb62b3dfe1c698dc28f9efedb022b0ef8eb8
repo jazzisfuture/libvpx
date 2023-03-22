@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6f3b6bc_bb04e53c",
+        "filename": "vpxenc.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1998,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-22T19:53:18Z",
+      "side": 1,
+      "message": "`vpx_free` isn\u0027t a part of the public API:\n\n```\n...\n/usr/bin/ld: vpxenc.c.o: in function `main\u0027:\nvpxenc.c:(.text.startup+0x2335): undefined reference to `vpx_free\u0027\ncollect2: error: ld returned 1 exit status\n```\n\nThis might have been done as a new packet type.",
+      "revId": "9c15fb62b3dfe1c698dc28f9efedb022b0ef8eb8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
