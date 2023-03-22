@@ -15,9 +15,14 @@
 #include "third_party/googletest/src/include/gtest/gtest.h"
 
 #include "./vpx_config.h"
+#include "test/codec_factory.h"
+#include "test/encode_test_driver.h"
+#include "test/i420_video_source.h"
+#include "test/util.h"
 #include "test/video_source.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
+#include "vpx_mem/vpx_mem.h"
 
 namespace {
 
@@ -359,5 +364,56 @@ TEST(EncodeAPI, ConfigChangeThreadCount) {
     }
   }
 }
+
+#if CONFIG_VP9_ENCODER
+
+class GetTplStatsTest
+    : public ::libvpx_test::EncoderTest,
+      public ::testing::TestWithParam<const ::libvpx_test::CodecFactory *> {
+ protected:
+  GetTplStatsTest() : EncoderTest(GetParam()) {}
+  virtual ~GetTplStatsTest() {}
+
+  virtual void SetUp() {
+    InitializeConfig();
+    SetMode(::libvpx_test::kTwoPassGood);
+    cfg_.g_lag_in_frames = 25;
+    cfg_.rc_end_usage = VPX_VBR;
+    cfg_.rc_buf_sz = 1000;
+    cfg_.rc_buf_initial_sz = 500;
+    cfg_.rc_buf_optimal_sz = 600;
+  }
+
+  virtual void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
+                                  ::libvpx_test::Encoder *encoder) {
+    if (video->frame() == 0) {
+      encoder->Control(VP8E_SET_CPUUSED, 0);
+      encoder->Control(VP9E_SET_TPL, 1);
+    }
+  }
+
+  virtual void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) {
+    void *tpl_frame_stats;
+    encoder->Control(VP9E_GET_TPL_STATS, &tpl_frame_stats);
+    vpx_free(tpl_frame_stats);
+  }
+};
+
+TEST_P(GetTplStatsTest, GetTplStatsCodecControlTest) {
+  cfg_.rc_target_bitrate = 200;
+  cfg_.g_error_resilient = 0;
+  cfg_.g_threads = 2;
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
+                                       30, 1, 0, 100);
+
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    VP9, GetTplStatsTest,
+    ::testing::Values(
+        static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)));
+
+#endif  // CONFIG_VP9_ENCODER
 
 }  // namespace
