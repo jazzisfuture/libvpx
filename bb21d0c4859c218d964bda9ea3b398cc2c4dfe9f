@@ -295,6 +295,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e47903f6_80c8ea39",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-03-22T14:33:09Z",
+      "side": 1,
+      "message": "Thanks Wan-Teh.\n\nAt this point I think it\u0027s good enough to use a bool, as the library is simple and we don\u0027t need complicated error handling.",
+      "parentUuid": "d2ad97a1_7612c78a",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 4
+      },
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "645304b9_1fedfe52",
         "filename": "vp9/ratectrl_rtc.h",
         "patchSetId": 2
