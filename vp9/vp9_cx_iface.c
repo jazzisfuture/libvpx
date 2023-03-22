@@ -1794,7 +1794,7 @@ static vpx_codec_err_t ctrl_get_tpl_stats(vpx_codec_alg_priv_t *ctx,
   VP9_COMMON *const cm = &cpi->common;
   TplDepFrame **data = va_arg(args, TplDepFrame **);
   int i;
-  *data = vpx_calloc(MAX_ARF_GOP_SIZE, sizeof(TplDepFrame));
+  *data = calloc(MAX_ARF_GOP_SIZE, sizeof(TplDepFrame));
   for (i = 0; i < MAX_ARF_GOP_SIZE; i++) {
     const int mi_cols = mi_cols_aligned_to_sb(cm->mi_cols);
     const int mi_rows = mi_cols_aligned_to_sb(cm->mi_rows);
@@ -1802,7 +1802,7 @@ static vpx_codec_err_t ctrl_get_tpl_stats(vpx_codec_alg_priv_t *ctx,
     (*data)[i] = cpi->tpl_stats[i];
     (*data)[i].tpl_stats_ptr = NULL;
     (*data)[i].tpl_stats_ptr =
-        vpx_calloc(mi_rows * mi_cols, sizeof(*(*data)[i].tpl_stats_ptr));
+        calloc(mi_rows * mi_cols, sizeof(*(*data)[i].tpl_stats_ptr));
     memcpy((*data)[i].tpl_stats_ptr, cpi->tpl_stats[i].tpl_stats_ptr,
            copy_size);
   }

@@ -1995,7 +1995,7 @@ int main(int argc, const char **argv_) {
           TplDepFrame *tpl_stats = NULL;
           FOREACH_STREAM(vpx_codec_control(&stream->encoder, VP9E_GET_TPL_STATS,
                                            &tpl_stats));
-          vpx_free(tpl_stats);
+          free(tpl_stats);
         }
 #endif
       }
