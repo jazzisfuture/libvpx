@@ -22,6 +22,23 @@
       },
       "revId": "0bc19ed1d62288bccf00b966d855ca9733980483",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eeeec9b4_32df1d1b",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-22T02:23:09Z",
+      "side": 1,
+      "message": "Although this method returns `bool`, it seems that this method is unused and can be removed.",
+      "revId": "0bc19ed1d62288bccf00b966d855ca9733980483",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
