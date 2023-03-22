@@ -22,6 +22,7 @@
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/vp9_cx_iface.h"
 #include "vpx/internal/vpx_ratectrl_rtc.h"
+#include "vpx/vpx_codec.h"
 #include "vpx_mem/vpx_mem.h"
 
 struct VP9_COMP;
@@ -30,6 +31,7 @@ namespace libvpx {
 struct VP9RateControlRtcConfig : public VpxRateControlRtcConfig {
  public:
   VP9RateControlRtcConfig() {
+    ss_number_layers = 1;
     vp9_zero(max_quantizers);
     vp9_zero(min_quantizers);
     vp9_zero(scaling_factor_den);
@@ -89,7 +91,7 @@ class VP9RateControlRTC {
       const VP9RateControlRtcConfig &cfg);
   ~VP9RateControlRTC();
 
-  void UpdateRateControl(const VP9RateControlRtcConfig &rc_cfg);
+  vpx_codec_err_t UpdateRateControl(const VP9RateControlRtcConfig &rc_cfg);
   // GetQP() needs to be called after ComputeQP() to get the latest QP
   int GetQP() const;
   int GetLoopfilterLevel() const;
@@ -101,7 +103,7 @@ class VP9RateControlRTC {
 
  private:
   VP9RateControlRTC() {}
-  void InitRateControl(const VP9RateControlRtcConfig &cfg);
+  vpx_codec_err_t InitRateControl(const VP9RateControlRtcConfig &cfg);
   struct VP9_COMP *cpi_;
 };
 

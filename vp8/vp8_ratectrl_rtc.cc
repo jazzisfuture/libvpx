@@ -62,7 +62,7 @@ std::unique_ptr<VP8RateControlRTC> VP8RateControlRTC::Create(
   if (!rc_api->cpi_) return nullptr;
   vp8_zero(*rc_api->cpi_);
 
-  rc_api->InitRateControl(cfg);
+  if (rc_api->InitRateControl(cfg) != VPX_CODEC_OK) return nullptr;
 
   return rc_api;
 }
@@ -74,7 +74,8 @@ VP8RateControlRTC::~VP8RateControlRTC() {
   }
 }
 
-void VP8RateControlRTC::InitRateControl(const VP8RateControlRtcConfig &rc_cfg) {
+vpx_codec_err_t VP8RateControlRTC::InitRateControl(
+    const VP8RateControlRtcConfig &rc_cfg) {
   VP8_COMMON *cm = &cpi_->common;
   VP8_CONFIG *oxcf = &cpi_->oxcf;
   oxcf->end_usage = USAGE_STREAM_FROM_SERVER;
@@ -92,13 +93,20 @@ void VP8RateControlRTC::InitRateControl(const VP8RateControlRtcConfig &rc_cfg) {
   cpi_->kf_bitrate_adjustment = 0;
   cpi_->gf_overspend_bits = 0;
   cpi_->non_gf_bitrate_adjustment = 0;
-  UpdateRateControl(rc_cfg);
+  vpx_codec_err_t res = UpdateRateControl(rc_cfg);
+  if (res != VPX_CODEC_OK) return res;
   cpi_->buffer_level = oxcf->starting_buffer_level;
   cpi_->bits_off_target = oxcf->starting_buffer_level;
+  return VPX_CODEC_OK;
 }
 
-void VP8RateControlRTC::UpdateRateControl(
+vpx_codec_err_t VP8RateControlRTC::UpdateRateControl(
     const VP8RateControlRtcConfig &rc_cfg) {
+  if (rc_cfg.ts_number_layers < 1 ||
+      rc_cfg.ts_number_layers > VPX_TS_MAX_LAYERS) {
+    return VPX_CODEC_INVALID_PARAM;
+  }
+
   VP8_COMMON *cm = &cpi_->common;
   VP8_CONFIG *oxcf = &cpi_->oxcf;
   const unsigned int prev_number_of_layers = oxcf->number_of_layers;
@@ -199,6 +207,7 @@ void VP8RateControlRTC::UpdateRateControl(
 
   vp8_new_framerate(cpi_, cpi_->framerate);
   vpx_clear_system_state();
+  return VPX_CODEC_OK;
 }
 
 void VP8RateControlRTC::ComputeQP(const VP8FrameParamsQpRTC &frame_params) {
