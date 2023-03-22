@@ -343,6 +343,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "da36de39_65b990ae",
+        "filename": "vp9/ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-03-22T16:22:39Z",
+      "side": 1,
+      "message": "I looked into this. The `GetSegmentationData()` method was added in https://chromium-review.googlesource.com/c/webm/libvpx/+/4032950 for b/259487065, and that bug is still open. I guess Hirokazu hasn\u0027t got around to using the new method.",
+      "parentUuid": "06c94275_f72121d9",
+      "range": {
+        "startLine": 77,
+        "startChar": 0,
+        "endLine": 77,
+        "endChar": 4
+      },
+      "revId": "bb21d0c4859c218d964bda9ea3b398cc2c4dfe9f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "645304b9_1fedfe52",
         "filename": "vp9/ratectrl_rtc.h",
         "patchSetId": 2
