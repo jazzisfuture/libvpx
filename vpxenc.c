@@ -1993,9 +1993,13 @@ int main(int argc, const char **argv_) {
 #if CONFIG_VP9_ENCODER
         if (got_data && global.export_tpl_stats) {
           TplDepFrame *tpl_stats = NULL;
+          int i;
           FOREACH_STREAM(vpx_codec_control(&stream->encoder, VP9E_GET_TPL_STATS,
                                            &tpl_stats));
-          vpx_free(tpl_stats);
+          for (i = 0; i < MAX_ARF_GOP_SIZE; i++) {
+            free(tpl_stats[i].tpl_stats_ptr);
+          }
+          free(tpl_stats);
         }
 #endif
       }
