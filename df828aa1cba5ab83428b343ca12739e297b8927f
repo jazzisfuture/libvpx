@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45d7a36b_ea74c2f2",
+        "filename": "vpx_dsp/arm/highbd_intrapred_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-23T21:27:40Z",
+      "side": 1,
+      "message": "To control code size can this be rerolled? With a constant in the loop the compiler can choose to do this.",
+      "revId": "df828aa1cba5ab83428b343ca12739e297b8927f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
