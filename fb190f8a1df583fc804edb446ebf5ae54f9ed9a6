@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23fc9c96_a6fdf226",
+        "filename": "vpx_dsp/arm/intrapred_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-24T19:11:13Z",
+      "side": 1,
+      "message": "same comment here about code size. I don\u0027t think we need to be this aggressive with the unrolling.",
+      "revId": "fb190f8a1df583fc804edb446ebf5ae54f9ed9a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
