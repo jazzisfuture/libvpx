@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4dc3a2c_5d9dec8d",
+        "filename": "vp9/common/vp9_scan.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-24T02:22:44Z",
+      "side": 1,
+      "message": "I forgot to normalize the struct name itself.",
+      "range": {
+        "startLine": 26,
+        "startChar": 15,
+        "endLine": 26,
+        "endChar": 25
+      },
+      "revId": "82f0afa77dda11f06958b32534ef0e54788dc991",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
