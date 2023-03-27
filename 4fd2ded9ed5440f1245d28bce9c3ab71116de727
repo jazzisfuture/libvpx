@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74677153_6f15f68d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-27T23:05:25Z",
+      "side": 1,
+      "message": "add `Bug: webm:1797`",
+      "revId": "4fd2ded9ed5440f1245d28bce9c3ab71116de727",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
