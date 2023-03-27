@@ -16,6 +16,24 @@
       "message": "same comment here about code size. I don\u0027t think we need to be this aggressive with the unrolling.",
       "revId": "fb190f8a1df583fc804edb446ebf5ae54f9ed9a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24c0852d_da2bf96f",
+        "filename": "vpx_dsp/arm/intrapred_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 397,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2023-03-27T16:36:33Z",
+      "side": 1,
+      "message": "Unlike the highbd version of this code we only have two registers here to update through the loop, which appears to be not enough work to keep the core busy and hence performance suffers quite a bit if this is in a loop.\n\nI also tried wrapping this in a for-loop and maintaining a second copy of d0 that I pre-shift by 1 to allow shifting twice as many registers by 2 in the inner loop as a halfway approach to try and give the core enough work to do, however even this version was still quite a bit worse than the fully unrolled approach on larger micro-architectures like Neoverse V1.\n\nIn theory compilers could unroll the loop and simplify the shifts, however it appears that neither GCC nor Clang do that today, e.g. https://godbolt.org/z/n1b8cGqr9\n\nLet me know if you have anything else you\u0027d like me to try. I\u0027m happy to introduce some helper functions to reduce the size of the .c file itself but I appreciate that with compiler inlining that won\u0027t actually change the code size.",
+      "parentUuid": "23fc9c96_a6fdf226",
+      "revId": "fb190f8a1df583fc804edb446ebf5ae54f9ed9a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
