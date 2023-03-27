@@ -16,6 +16,24 @@
       "message": "To control code size can this be rerolled? With a constant in the loop the compiler can choose to do this.",
       "revId": "df828aa1cba5ab83428b343ca12739e297b8927f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6fc93f42_5244a234",
+        "filename": "vpx_dsp/arm/highbd_intrapred_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 484,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2023-03-27T16:27:13Z",
+      "side": 1,
+      "message": "In the 32x32 case it appears there is enough instruction-level parallelism in the loop with the four registers to keep the core occupied, so yes! I\u0027ve left the 8x8 and 16x16 versions unrolled since they do not have the same amount of ILP to keep the core busy and I see some big regressions there otherwise.",
+      "parentUuid": "45d7a36b_ea74c2f2",
+      "revId": "df828aa1cba5ab83428b343ca12739e297b8927f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
