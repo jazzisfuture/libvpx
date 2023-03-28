@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e8752e03_f708e1e4",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2023-03-28T13:50:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5d13a569_3adadd2c",
+      "revId": "22a6266670b57d89fb5ab703a688971c69323422",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2cff0515_f3c41666",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-03-27T23:06:05Z",
       "side": 1,
       "message": "add `TODO(webm:1797): ...`",
+      "revId": "22a6266670b57d89fb5ab703a688971c69323422",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb7442e5_63d42c30",
+        "filename": "test/vp9_intrapred_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2023-03-28T13:50:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2cff0515_f3c41666",
       "revId": "22a6266670b57d89fb5ab703a688971c69323422",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
