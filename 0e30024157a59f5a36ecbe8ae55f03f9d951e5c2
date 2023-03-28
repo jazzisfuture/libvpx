@@ -16,6 +16,24 @@
       "message": "add `Bug: webm:1797`",
       "revId": "0e30024157a59f5a36ecbe8ae55f03f9d951e5c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8693751_7a273e1e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2023-03-28T13:49:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cb090827_83f0e9c5",
+      "revId": "0e30024157a59f5a36ecbe8ae55f03f9d951e5c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
