@@ -51,6 +51,24 @@
       "parentUuid": "9114a3d8_44e843b9",
       "revId": "972149cafeb71d6f08df89e91a0130d6a38c4b15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2109d21_9129d304",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-03-29T17:03:40Z",
+      "side": 1,
+      "message": "Yes this should be fixed too. Also check the same for AV1.",
+      "parentUuid": "5b24450f_f7eb9327",
+      "revId": "972149cafeb71d6f08df89e91a0130d6a38c4b15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
