@@ -33,6 +33,24 @@
       "message": "Hmm, looks like we have the same problem over here?",
       "revId": "972149cafeb71d6f08df89e91a0130d6a38c4b15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b24450f_f7eb9327",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-03-29T16:56:27Z",
+      "side": 1,
+      "message": "Yeah it could be an issue, this mode (VP9E_TEMPORAL_LAYERING_MODE_NOLAYERING, which means no temporal layers and only spatial layers) isn\u0027t being used by webrtc (at least the test). But I think it needs to be fixed too.\n\nI\u0027ll upload another CL to do that.\n\nThanks for catching it!",
+      "parentUuid": "9114a3d8_44e843b9",
+      "revId": "972149cafeb71d6f08df89e91a0130d6a38c4b15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
