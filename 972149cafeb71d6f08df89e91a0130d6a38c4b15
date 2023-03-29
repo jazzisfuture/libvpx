@@ -69,6 +69,24 @@
       "parentUuid": "5b24450f_f7eb9327",
       "revId": "972149cafeb71d6f08df89e91a0130d6a38c4b15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55de9f12_930051fb",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-03-29T17:17:44Z",
+      "side": 1,
+      "message": "Fixed here in libvpx:\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/4381253",
+      "parentUuid": "c2109d21_9129d304",
+      "revId": "972149cafeb71d6f08df89e91a0130d6a38c4b15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
