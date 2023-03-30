@@ -282,11 +282,26 @@ typedef struct SPEED_FEATURES {
   // adds overhead.
   int static_segmentation;
 
-  // If 1 we iterate finding a best reference for 2 ref frames together - via
-  // a log search that iterates 4 times (check around mv for last for best
-  // error of combined predictor then check around mv for alt). If 0 we
-  // we just use the best motion vector found for each frame by itself.
-  BLOCK_SIZE comp_inter_joint_search_thresh;
+  // 0: Iterate finding best reference for 2 ref frames together - via a log
+  // search that iterates 4 times (check around mv for last for best error of
+  // combined predictor then check around mv for alt) for all bsize
+  // 1: Iterate 4 times for bsize > 32X32,
+  //            2 times for bsize 8x8, 32X32
+  // 2: Simply use the best motion vector found for each frame by itself for
+  // blocks > 32X32
+
+  // The best compound predictor is found using an iterative log search process
+  // that searches for best ref0 mv using error of combined predictor and then
+  // searches for best ref1 mv. This sf determines the number of iterations of
+  // this process based on block size. The becomes more aggressive from 0 to 2
+  // The following table indicates # iterations w.r.t bsize:
+  //  --------------------------------------------------
+  // |sf|bsize < 8X8|8X8 <= bsize <= 16X16|bsize > 16X16|
+  // |0 |     4     |          4          |      4      |
+  // |1 |     4     |          2          |      0      |
+  // |2 |     0     |          0          |      0      |
+  //  --------------------------------------------------
+  int comp_inter_joint_search_itr;
 
   // This variable is used to cap the maximum number of times we skip testing a
   // mode to be evaluated. A high value means we will be faster.
