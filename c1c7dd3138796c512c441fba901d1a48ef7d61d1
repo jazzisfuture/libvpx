@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4904fbd5_8107a2f5",
+        "filename": "vpx_dsp/arm/intrapred_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 870,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-03-30T19:13:48Z",
+      "side": 0,
+      "message": "looks like something borrowed from x86.",
+      "revId": "c1c7dd3138796c512c441fba901d1a48ef7d61d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
