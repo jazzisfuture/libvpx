@@ -16,6 +16,24 @@
       "message": "I may have mentioned before, I think this was an artifact of gcc/clang not coalescing the loads. If things have improved, with clang especially, this is ok.",
       "revId": "5b05f6f3a01d7e25d0573b482245a2b8b0eb09bd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "016dd723_32a89400",
+        "filename": "vpx_dsp/arm/intrapred_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2023-03-30T08:56:06Z",
+      "side": 0,
+      "message": "Makes sense! Clang seems pretty good from looking at the disassembly. GCC has a few weird bits with the address generation but it seems good enough on these specific cases at least.\n\nIf we did run into more problems along those lines in future we could introduce a new mem_neon.h wrapper to allow using vld1q_u8_x2 etc on compilers that support it since that should still be a win over ld2, but that seems unnecessary for now at least.",
+      "parentUuid": "5e225796_a26038b0",
+      "revId": "5b05f6f3a01d7e25d0573b482245a2b8b0eb09bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
