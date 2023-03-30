@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d00b6ba_dfadf4ae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1262226
+      },
+      "writtenOn": "2023-03-30T12:50:19Z",
+      "side": 1,
+      "message": "This CL introduces a speed feature to prune single inter modes (NEARMV and ZEROMV) based on mv difference and mode rate w.r.t previously evaluated mode corresponding to the same reference frame.\n\nPlease check the applicability of the sf across resolution w.r.t frame type. The sf is not enabled for HDRES2 resolution set as the trade-off is not good.\n```\n Frame type \u003d\u003e Boosted  Non-boosted\n  LOWRES2        ON         ON\n  MIDRES2       OFF         ON\n   HDRES2       OFF        OFF\n```\nIn commit message:\n[-] sign indicates instruction count increase\n[+] sign indicates instruction count reduction \n\nThe instruction count reduction specified has been measured using command:\n`$ perf stat -e instructions:u ./vpxenc …`",
+      "revId": "1025d37b03247c790723dac7f4084e04fd45f2b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
