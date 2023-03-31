@@ -34,6 +34,23 @@
       "parentUuid": "3d00b6ba_dfadf4ae",
       "revId": "1025d37b03247c790723dac7f4084e04fd45f2b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03c3831b_f1b2d0ca",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1262226
+      },
+      "writtenOn": "2023-03-31T08:54:20Z",
+      "side": 1,
+      "message": "Thank you for the review.\n\u003e **The strategy looks fine to me since NEARESTMV and NEWMV are always evaluated (is there any other feature to prune these 2 modes?)**\n\nThere is a pruning logic for `NEARESTMV` in `check_best_zero_mv()` function\n- prunes `NEARESTMV`, `NEARMV` and `ZEROMV` modes having zero mv based on mode cost\n- the pruning logic used in this function accounts only mode cost whereas the logic introduced in this CL accounts mode cost, mv rate and absolute mv difference\n- the logic used in this function is not defined under any speed feature\n\nThere is a speed feature related to `NEWMV` mode - `limit_newmv_early_exit`\n- the sf reduces the rd threshold update used for early exit based on variance\n- applicable only for `NEWMV` mode with ref frame `LAST_FRAME`\n\n\u003e **As you mentioned, the tradeoff isn\u0027t good for hdres. Is there any midres clip having large coding loss?**\n\nCoding loss observed in `MIDRES2` testset is minimal. Please check the results of contents with worst case quality loss.\n```\n                               Instruction Count  BD-Rate Loss(%)\ncpu            Content            Reduction(%)      avg.psnr\n 0     Tango_854x480_60fps_8bit     -0.105           0.2311\n 0  CatRobot_854x480_60fps_8bit      2.166           0.1596\n 0                park_joy_480p      0.155           0.1544\n```",
+      "revId": "1025d37b03247c790723dac7f4084e04fd45f2b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
