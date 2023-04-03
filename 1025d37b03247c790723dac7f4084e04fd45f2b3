@@ -69,6 +69,24 @@
       "parentUuid": "03c3831b_f1b2d0ca",
       "revId": "1025d37b03247c790723dac7f4084e04fd45f2b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97b5e9a9_5d0c3b3b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1262226
+      },
+      "writtenOn": "2023-04-03T12:36:26Z",
+      "side": 1,
+      "message": "The pruning logic used in this speed feature already addressed this scenario.\n\nIn this patch, the mode rate of single modes are maintained in `single_mode_rate[]` array. The array is initialized with `INT_MAX` and updated after motion search in `handle_inter_mode()`. When `NEARESTMV` or `NEWMV` mode is pruned by the speed feature, the array is not updated (i.e., it still holds `INT_MAX`). In such scenarios, `NEARMV` and `ZEROMV` modes are not pruned by the sf since `this_mode_rate` is less than `INT_MAX`.\n\nWe believe that any other additional check is not required for this pruning logic. Please let us know your thoughts.",
+      "parentUuid": "9e855621_f03c0239",
+      "revId": "1025d37b03247c790723dac7f4084e04fd45f2b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
