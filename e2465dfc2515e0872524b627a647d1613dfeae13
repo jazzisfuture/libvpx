@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6684804b_12b20dda",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-04-04T11:34:35Z",
+      "side": 1,
+      "message": "Added AVX2 intrinsic for the the following functions\n1. vpx_variance8x4\n2. vpx_variance8x8\n3. vpx_variance8x16\n\nThe borg results for good encoding mode are below.\n```\n                 Instruction Count\ncpu   Resolution   Reduction(%)\n 0       LOWRES2      0.698\n 0       MIDRES2      0.577\n 0        HDRES2      0.469\n 0       Average      0.582\n ```\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./vpxenc …\n```\nThe module level scaling w.r.t C function (timer based) for existing (SSE2) and new AVX2 intrinsics:\n```\nBlock     Scaling\nSize    SSE2      AVX2\n8x4     3.52x     3.79x\n8x8     4.29x     4.55x\n8x16    4.60x     5.51x\n```",
+      "revId": "e2465dfc2515e0872524b627a647d1613dfeae13",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
