@@ -224,6 +224,25 @@ unsigned int vpx_highbd_sad16x8_avx2(const uint8_t *src_ptr, int src_stride,
   }
 }
 
+#define HIGHBD_SAD_SKIP_MxN(m, n)                                       \
+  unsigned int vpx_highbd_sad_skip_##m##x##n##_avx2(                    \
+      const uint8_t *src, int src_stride, const uint8_t *ref,           \
+      int ref_stride) {                                                 \
+    return 2 * vpx_highbd_sad##m##x##n##_avx2(src, 2 * src_stride, ref, \
+                                              2 * ref_stride);          \
+  }
+
+HIGHBD_SAD_SKIP_MxN(16, 8);
+HIGHBD_SAD_SKIP_MxN(16, 16);
+HIGHBD_SAD_SKIP_MxN(16, 32);
+
+HIGHBD_SAD_SKIP_MxN(32, 16);
+HIGHBD_SAD_SKIP_MxN(32, 32);
+HIGHBD_SAD_SKIP_MxN(32, 64);
+
+HIGHBD_SAD_SKIP_MxN(64, 32);
+HIGHBD_SAD_SKIP_MxN(64, 64);
+
 // AVG -------------------------------------------------------------------------
 static VPX_FORCE_INLINE void highbd_sad64xH_avg(__m256i *sums_16,
                                                 const uint16_t *src,
