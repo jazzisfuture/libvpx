@@ -399,3 +399,26 @@ void vpx_highbd_sad16x8x4d_avx2(const uint8_t *src_ptr, int src_stride,
     calc_final_4(sums_32, sad_array);
   }
 }
+
+#define HIGHBD_SAD_SKIP_MxNx4D(m, n)                                         \
+  void vpx_highbd_sad_skip_##m##x##n##x4d_avx2(                              \
+      const uint8_t *src, int src_stride, const uint8_t *const ref_array[4], \
+      int ref_stride, uint32_t sad_array[4]) {                               \
+    vpx_highbd_sad##m##x##n##x4d_avx2(src, 2 * src_stride, ref_array,        \
+                                      2 * ref_stride, sad_array);            \
+    sad_array[0] <<= 1;                                                      \
+    sad_array[1] <<= 1;                                                      \
+    sad_array[2] <<= 1;                                                      \
+    sad_array[3] <<= 1;                                                      \
+  }
+
+HIGHBD_SAD_SKIP_MxNx4D(16, 8);
+HIGHBD_SAD_SKIP_MxNx4D(16, 16);
+HIGHBD_SAD_SKIP_MxNx4D(16, 32);
+
+HIGHBD_SAD_SKIP_MxNx4D(32, 16);
+HIGHBD_SAD_SKIP_MxNx4D(32, 32);
+HIGHBD_SAD_SKIP_MxNx4D(32, 64);
+
+HIGHBD_SAD_SKIP_MxNx4D(64, 32);
+HIGHBD_SAD_SKIP_MxNx4D(64, 64);
