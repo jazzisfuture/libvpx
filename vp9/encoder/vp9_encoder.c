@@ -2465,7 +2465,6 @@ VP9_COMP *vp9_create_compressor(const VP9EncoderConfig *oxcf,
         cpi->svc.number_temporal_layers > 1) {
       FIRSTPASS_STATS *const stats = oxcf->two_pass_stats_in.buf;
       FIRSTPASS_STATS *stats_copy[VPX_SS_MAX_LAYERS] = { 0 };
-      int i;
 
       for (i = 0; i < oxcf->ss_number_layers; ++i) {
         FIRSTPASS_STATS *const last_packet_for_layer =
