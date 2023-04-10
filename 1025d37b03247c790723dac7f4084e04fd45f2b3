@@ -105,6 +105,24 @@
       "parentUuid": "97b5e9a9_5d0c3b3b",
       "revId": "1025d37b03247c790723dac7f4084e04fd45f2b3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "776795d0_77828e80",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-04-10T17:33:35Z",
+      "side": 1,
+      "message": "Is it ok to add an assertion in the function to ensure the logic works correctly as you explained above (so others won\u0027t break the logic.)?",
+      "parentUuid": "55d797ce_94b47ec7",
+      "revId": "1025d37b03247c790723dac7f4084e04fd45f2b3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
