@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9cabcb59_904d569d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-04-11T13:32:57Z",
+      "side": 1,
+      "message": "In this CL, SAD computation during motion search is downsampled by a factor of 2, if the SAD deviation of the even rows to odd rows is small. Also, if there is a large discrepancy between skipping rows and not skipping, motion search is redone without skipping rows. The parent of this CL is \u0027Avoid redundant start MV SAD calculation\u0027 https://chromium-review.googlesource.com/c/webm/libvpx/+/4403003.\n\nThe combined impact of this CL and its parent w.r.t. its ref commit is:\n```\n                 Instruction Count        BD-Rate Loss(%)       \ncpu   Resolution   Reduction(%)    avg.psnr   ovr.psnr    ssim  \n 0       LOWRES2      1.120         0.0204     0.0095    0.0275\n 0       MIDRES2      2.137        -0.0636     0.0032    0.0247\n 0        HDRES2      3.194         0.0434     0.0345    0.0686\n 0       Average      2.150         0.0000     0.0157    0.0403    \n```\nThe instruction count reduction specified has been measured using command:\n$ perf stat -e instructions:u ./aomenc",
+      "revId": "2b9bd957ab126fb56d3887127c3ec6667f2f4e96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
