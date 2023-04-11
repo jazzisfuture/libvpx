@@ -16,6 +16,24 @@
       "message": "This CL avoids repeated start MV SAD calculation and also facilitates the changes in \u0027Downsample sad computation in motion search\u0027  https://chromium-review.googlesource.com/c/webm/libvpx/+/4403008. This is a bit-exact change. \n\n \n\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./aomenc\n```",
       "revId": "987ed6937bf27ec5a4e4cb136aa653104adfb068",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a6e70fb_1a3aa4b2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-04-11T18:31:20Z",
+      "side": 1,
+      "message": "Sounds good. Just need to remember clamping start_mv outside mv search function. Also, it is much clear to separate this from the following SAD change. Thanks.",
+      "parentUuid": "215e3637_94052c56",
+      "revId": "987ed6937bf27ec5a4e4cb136aa653104adfb068",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
