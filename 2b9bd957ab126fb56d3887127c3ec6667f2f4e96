@@ -34,6 +34,24 @@
       "parentUuid": "9cabcb59_904d569d",
       "revId": "2b9bd957ab126fb56d3887127c3ec6667f2f4e96",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b32dfea_37fea592",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-04-12T16:59:22Z",
+      "side": 1,
+      "message": "The worst quality drop clips from each set are as follows:\n```\n                                              Instruction Count  BD-Rate Loss(%)\ncpu  Resolution            Content               Reduction(%)      avg.psnr\n 0   LOWRES2     netflix_rollercoaster_512x270      1.6             0.3157\n 0   MIDRES2     Keiba_832x480_30                   4.2             0.3015\n 0   HDRES2      TrafficFlow_1280x720_30fps_8bit    3.3             0.3905\n ```",
+      "parentUuid": "0add70e5_0056f762",
+      "revId": "2b9bd957ab126fb56d3887127c3ec6667f2f4e96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
