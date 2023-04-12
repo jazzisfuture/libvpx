@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc8fec83_93fdfb8b",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 591,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-04-12T20:18:28Z",
+      "side": 1,
+      "message": "better naming suggestion welcome.",
+      "revId": "78eaeb8720b78e8117f469a0681ccc7b85bc22f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82bd9c39_88f9481c",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2071,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-04-12T20:18:28Z",
+      "side": 1,
+      "message": "this is used elsewhere in the file",
+      "range": {
+        "startLine": 2071,
+        "startChar": 40,
+        "endLine": 2071,
+        "endChar": 54
+      },
+      "revId": "78eaeb8720b78e8117f469a0681ccc7b85bc22f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "004713a0_a7cda5b8",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2129,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-04-12T20:18:28Z",
+      "side": 1,
+      "message": "`best_rd` was shadowed here. Apart from the length of the function this and `i` made this hard to parse.",
+      "revId": "78eaeb8720b78e8117f469a0681ccc7b85bc22f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
