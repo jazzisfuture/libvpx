@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "19c02bbd_860eb7c6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-04-13T18:34:06Z",
+      "side": 1,
+      "message": "I forgot to post my draft...",
+      "revId": "2513f6d5f4c9af6e3d715acf83c0e25d1560398e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f292977_bd6eba06",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 801,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-04-13T18:34:06Z",
+      "side": 1,
+      "message": "I wasn\u0027t being very creative here with the name. This could reuse the global `lc`, but using something with such a large scope seems like it could be fragile here.",
+      "range": {
+        "startLine": 801,
+        "startChar": 29,
+        "endLine": 801,
+        "endChar": 34
+      },
+      "revId": "2513f6d5f4c9af6e3d715acf83c0e25d1560398e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
