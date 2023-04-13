@@ -16,6 +16,23 @@
       "message": "Hi Hiro,\n\nCan you test this CL to see if it fixes the bug?\n\nThanks.",
       "revId": "ef09276a732ee985be3bc2ff71cefadb1737b342",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ad3da19_e36f3545",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-04-13T21:01:18Z",
+      "side": 1,
+      "message": "should this be QVGA",
+      "revId": "ef09276a732ee985be3bc2ff71cefadb1737b342",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
