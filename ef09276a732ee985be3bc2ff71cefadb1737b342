@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "88bb3b29_b9b31c7a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-04-13T20:57:44Z",
+      "side": 1,
+      "message": "Hi Hiro,\n\nCan you test this CL to see if it fixes the bug?\n\nThanks.",
+      "revId": "ef09276a732ee985be3bc2ff71cefadb1737b342",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
