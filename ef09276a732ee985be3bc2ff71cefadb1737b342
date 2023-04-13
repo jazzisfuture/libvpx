@@ -68,6 +68,24 @@
       "message": "why not use qp here?",
       "revId": "ef09276a732ee985be3bc2ff71cefadb1737b342",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1bb8a672_cf075935",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 312,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-04-13T21:04:51Z",
+      "side": 1,
+      "message": "I don\u0027t want to compare a double to an int here. double is needed to preserve the precision when calculating ```cm-\u003efilter_level```.",
+      "parentUuid": "2ee535f0_1febe768",
+      "revId": "ef09276a732ee985be3bc2ff71cefadb1737b342",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
