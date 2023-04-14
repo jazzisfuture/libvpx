@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "80d2c7b3_c970ebee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1557258
+      },
+      "writtenOn": "2023-04-14T10:42:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "35dbeeed_8b8a83f9",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 4
+      },
+      "revId": "2917bf5787391575ae5473763f1fa4a5f343d908",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "50614f74_ebc7d8cd",
@@ -37,6 +61,24 @@
       "writtenOn": "2023-04-11T02:07:42Z",
       "side": 1,
       "message": "Can you wrap this line at 72 columns please?\n\nhttps://git-scm.com/book/en/v2/Distributed-Git-Contributing-to-a-Project#_commit_guidelines",
+      "revId": "2917bf5787391575ae5473763f1fa4a5f343d908",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "22119849_73a6b379",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1557258
+      },
+      "writtenOn": "2023-04-14T10:42:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "50614f74_ebc7d8cd",
       "revId": "2917bf5787391575ae5473763f1fa4a5f343d908",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
