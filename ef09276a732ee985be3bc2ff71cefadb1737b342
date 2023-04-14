@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "201d92d7_dc366666",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2023-04-14T04:54:16Z",
+      "side": 1,
+      "message": "Verified the issue was fixed with this patch!",
+      "parentUuid": "88bb3b29_b9b31c7a",
+      "revId": "ef09276a732ee985be3bc2ff71cefadb1737b342",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7ad3da19_e36f3545",
