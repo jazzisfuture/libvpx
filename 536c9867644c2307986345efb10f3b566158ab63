@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "82220c5d_960d1138",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2023-04-14T15:26:36Z",
+      "side": 1,
+      "message": "Ack.",
+      "parentUuid": "befe7aa3_56233863",
+      "revId": "536c9867644c2307986345efb10f3b566158ab63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b2aaf859_faf93db8",
@@ -90,6 +108,30 @@
       "side": 1,
       "message": "qp is double, I think the compiler will complain if we compare qp with integers without an explicit conversion.",
       "parentUuid": "b2aaf859_faf93db8",
+      "range": {
+        "startLine": 312,
+        "startChar": 2,
+        "endLine": 316,
+        "endChar": 3
+      },
+      "revId": "536c9867644c2307986345efb10f3b566158ab63",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2238b17e_1bc59dd7",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1196199
+      },
+      "writtenOn": "2023-04-14T15:26:36Z",
+      "side": 1,
+      "message": "Ack.",
+      "parentUuid": "7be354b7_1df7d32c",
       "range": {
         "startLine": 312,
         "startChar": 2,
