@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03e23b9c_b86b6ad6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-04-17T11:46:49Z",
+      "side": 1,
+      "message": "Introduced AVX2 intrinsic for vpx_fdct16x16() function. This is a bit-exact change.\nThe Borg test results of good encoding mode:\n```\n                 Instruction Count\ncpu   Resolution   Reduction(%)\n0       LOWRES2      0.842\n0       MIDRES2      1.133\n0        HDRES2      1.277\n0       Average      1.084\n```\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./vpxenc …\n```",
+      "revId": "e15c2e34451b4177e4119cce47bf73dac9864de8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
