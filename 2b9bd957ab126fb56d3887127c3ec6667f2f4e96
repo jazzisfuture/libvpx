@@ -52,6 +52,24 @@
       "parentUuid": "0add70e5_0056f762",
       "revId": "2b9bd957ab126fb56d3887127c3ec6667f2f4e96",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd56b109_f840d922",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-04-18T16:10:45Z",
+      "side": 1,
+      "message": "Thanks Deepa for the testing! On a separate note, Deepa also reported that \u003c0.2% coding loss and no artifacts were seen while testing with Chi Yo\u0027s test clips. This CL look good.",
+      "parentUuid": "2b32dfea_37fea592",
+      "revId": "2b9bd957ab126fb56d3887127c3ec6667f2f4e96",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
