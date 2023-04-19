@@ -34,6 +34,24 @@
       "parentUuid": "5e72c581_4b209add",
       "revId": "7b7f84fe148168532bbf9add7b738d125588c926",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f75ed835_fa739a5d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-04-19T19:35:59Z",
+      "side": 1,
+      "message": "\u003e \u003e The testing failure looks rather odd here (and doesn\u0027t appear to be related to the patch) - could you take a look?\n\u003e \n\u003e These all seem related to highbd_subpel_variance_neon.c:\n\u003e \n\u003e `stack frame size of 68288 bytes in function \u0027vpx_highbd_8_sub_pixel_variance64x64_neon\u0027`\n\u003e \n\u003e We try to keep the stack size down for environments that have small thread stack defaults. I\u0027m not sure why these didn\u0027t come up earlier. Given it\u0027s an ASan build I think we can relax this.\n\nIt also looks like there were disk space issues:\nfatal error: error in backend: IO failure on output stream: No space left on device\n\nThis can happen with concurrent builds. Maybe we underestimate the disk size a little.",
+      "parentUuid": "c971ebde_fd38c0dc",
+      "revId": "7b7f84fe148168532bbf9add7b738d125588c926",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
