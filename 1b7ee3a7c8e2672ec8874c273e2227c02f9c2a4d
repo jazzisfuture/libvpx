@@ -16,6 +16,24 @@
       "message": "This CL sets the number of iterations of joint motion search based on block size by modifying the existing sf \u0027comp_inter_joint_search_thresh.\u0027 The sf is renamed as \u0027comp_inter_joint_search_iter_level\u0027 which contains 4 levels: 0 to 3 with increasing aggressiveness.\n\nThe sf levels for various settings are summarized below:\n```\nPreset setting     Resolution  sf-level\n--best                ALL          0\n--good cpu 0,1      LOWRES         1   \n--good cpu 0,1   MIDRES/HDRES      2   \n--good cpu \u003e\u003d2        All          3  \n```\n \nThis CL affects only cpu 0, 1 of --good encoding. The Borg test result of cpu 1:\n```\ncpu Testset  Instr. Cnt      BD Rate loss (%)\n               Red (%)   avg. psnr  ovr.psnr   ssim\n 1  Average    2.374     0.0227     0.0647    0.0173\n``` \nFor cpu \u003e\u003d2 it is bit-exact, since it disables the joint search for all blocks, same as in the parent commit.\n\nThe worst case results for cpu 0:\n```\n                               BD-Rate Loss(%)        Instr Count\ncpu      Content        avg.psnr   ovr.psnr    ssim   Reduction(%) \n 0   aspen_1080p420      0.6117     0.6499    0.3831    3.357\n 0   soccer_4cif_30fps   0.4528     0.3250    0.5084    3.486\n 0   mobile_cif          0.4478     0.4425    0.4150    8.244\n```\n\nIf cpu 0 LOWRES uses sf-level \u003d 2 (same as MID/HD RES), this gives better speed-up, but the trade-off (0.021) is slightly away:\n```\ncpu Testset  Instr. Cnt      BD Rate loss (%)\n               Red (%)   avg. psnr  ovr.psnr    ssim    \n 0  LOWRES2    6.057      0.1287     0.1403    0.0765\n```\nIn the CL, a conservative level \u003d 1 is used, which enables 4 (max) iterations for 16X16 \u003c bsize \u003c\u003d 32X32, instead of limiting to 2 for these blocks. This offers more mv refinement for the LOWRES blocks (e.g. 32x32) that roughly represent a similar spatial region as that of MIDRES blocks (e.g. 64x64).\n\nExperiments to limit the iterations based on block statistics such as source_var or higher magnitude of single mv\u0027s are found not to be effective in this case.\n\nNote that the CL is verified to be bit-exact for --best and --rt settings.\n\nThe instruction count reduction specified has been measured using command:\n``` \n$ perf stat -e instructions:u ./vpxenc\n```",
       "revId": "1b7ee3a7c8e2672ec8874c273e2227c02f9c2a4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "328148fb_c3157b5e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-04-19T21:08:49Z",
+      "side": 1,
+      "message": "The speedup is really good. The overall tradeoff is fine. Thanks for checking speed 1 performance, which looks good. I think it makes sense to use less aggressive level for lowres.\nThe worst case loss is kind of large. Is there any correlation between the loss and motion search skipping for some specific block size? Also, are the loss seen more at high bit rate side since block sizes are smaller there? If so, maybe this feature can be qp based to restore some loss?",
+      "parentUuid": "f49c2178_a6cc5492",
+      "revId": "1b7ee3a7c8e2672ec8874c273e2227c02f9c2a4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
