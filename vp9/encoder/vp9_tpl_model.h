@@ -11,6 +11,8 @@
 #ifndef VPX_VP9_ENCODER_VP9_TPL_MODEL_H_
 #define VPX_VP9_ENCODER_VP9_TPL_MODEL_H_
 
+#include "vp9/common/vp9_mv.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
