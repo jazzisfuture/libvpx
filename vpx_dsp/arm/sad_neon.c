@@ -250,6 +250,32 @@ SAD_WXH_NEON(32, 64)
 SAD_WXH_NEON(64, 32)
 SAD_WXH_NEON(64, 64)
 
+#define SAD_SKIP_WXH_NEON(w, h)                                                \
+  unsigned int vpx_sad_skip_##w##x##h##_neon(                                  \
+      const uint8_t *src, int src_stride, const uint8_t *ref,                  \
+      int ref_stride) {                                                        \
+    return 2 *                                                                 \
+           sad##w##xh_neon(src, src_stride * 2, ref, ref_stride * 2, (h / 2)); \
+  }
+
+SAD_SKIP_WXH_NEON(4, 4)
+SAD_SKIP_WXH_NEON(4, 8)
+
+SAD_SKIP_WXH_NEON(8, 4)
+SAD_SKIP_WXH_NEON(8, 8)
+SAD_SKIP_WXH_NEON(8, 16)
+
+SAD_SKIP_WXH_NEON(16, 8)
+SAD_SKIP_WXH_NEON(16, 16)
+SAD_SKIP_WXH_NEON(16, 32)
+
+SAD_SKIP_WXH_NEON(32, 16)
+SAD_SKIP_WXH_NEON(32, 32)
+SAD_SKIP_WXH_NEON(32, 64)
+
+SAD_SKIP_WXH_NEON(64, 32)
+SAD_SKIP_WXH_NEON(64, 64)
+
 #if defined(__ARM_FEATURE_DOTPROD)
 
 static INLINE unsigned int sadwxh_avg_neon(const uint8_t *src_ptr,
