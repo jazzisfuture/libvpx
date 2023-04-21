@@ -22,6 +22,30 @@
       },
       "revId": "3c59378e4eac2d241fba8b26e660318b850e5773",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "730d3dbb_1e360bba",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-04-21T17:33:26Z",
+      "side": 1,
+      "message": "In libaom, only recon_error is scaled up:\nhttps://aomedia.googlesource.com/aom/+/refs/heads/main/av1/encoder/tpl_model.c#944\n\nI have two questions here actually:\n\n - If we also scale up rate_cost for vp9, there\u0027ll be different from av1, and we can\u0027t re-use any of the current qmode RC code?\n\n - I actually don\u0027t understand why it needs to be scaled up?",
+      "parentUuid": "6fa40387_5bc5b415",
+      "range": {
+        "startLine": 379,
+        "startChar": 0,
+        "endLine": 379,
+        "endChar": 50
+      },
+      "revId": "3c59378e4eac2d241fba8b26e660318b850e5773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
