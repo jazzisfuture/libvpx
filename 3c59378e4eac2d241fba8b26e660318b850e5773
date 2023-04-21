@@ -1,5 +1,29 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6fa40387_5bc5b415",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-04-21T17:29:43Z",
+      "side": 1,
+      "message": "I recommend scale up both recon_error and rate_cost.",
+      "range": {
+        "startLine": 379,
+        "startChar": 0,
+        "endLine": 379,
+        "endChar": 50
+      },
+      "revId": "3c59378e4eac2d241fba8b26e660318b850e5773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
