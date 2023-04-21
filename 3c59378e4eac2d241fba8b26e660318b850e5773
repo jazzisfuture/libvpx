@@ -46,6 +46,53 @@
       },
       "revId": "3c59378e4eac2d241fba8b26e660318b850e5773",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7cfffb76_abf92deb",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-04-21T17:42:36Z",
+      "side": 1,
+      "message": "They scale up because they want to do division later. (overlapping area)\nThe original version is scale up for both.\nThey remove the scale up of rate_cost for optimization.",
+      "parentUuid": "730d3dbb_1e360bba",
+      "range": {
+        "startLine": 379,
+        "startChar": 0,
+        "endLine": 379,
+        "endChar": 50
+      },
+      "revId": "3c59378e4eac2d241fba8b26e660318b850e5773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6c9c4400_09167c63",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 685,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-04-21T17:42:36Z",
+      "side": 1,
+      "message": "This part doesn\u0027t look right.\nThis for loop is finding the best reference frame.\nWe shouldn\u0027t sum them up.\nAlso this change might change the coding stats of the existing code.",
+      "range": {
+        "startLine": 679,
+        "startChar": 1,
+        "endLine": 685,
+        "endChar": 0
+      },
+      "revId": "3c59378e4eac2d241fba8b26e660318b850e5773",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
