@@ -34,6 +34,24 @@
       "parentUuid": "f49c2178_a6cc5492",
       "revId": "1b7ee3a7c8e2672ec8874c273e2227c02f9c2a4d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0be4fef0_1c1e3715",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1572272
+      },
+      "writtenOn": "2023-04-24T08:56:39Z",
+      "side": 1,
+      "message": "Thanks for reviewing. As per our study, there is no significant correlation between the BD Rate loss and QP i.e. the loss is nearly uniform across low/high bitrates. Also, the loss is not well-separated with respect to low/high (single MV) motion or source variance (spatial complexity). \n\nHowever, there is a marked correlation between the loss and prediction block-size. If MID/HDRES also use the conservative setting used for LOWRES (level 1), the trade-off is considerably improved and the worst-case loss is contained below 0.5. The latest patchset (patchset 6) uses this conservative setting (level 1) for all resolutions of cpu 0,1. Here, the worst-case loss is:\n```\n                               BD-Rate Loss(%)        Instr Count\ncpu      Content       avg.psnr   ovr.psnr    ssim    Reduction(%) \n 0   sunflower_720p25   0.4485     0.3753    0.1617      0.697\n 0         mobile_cif   0.4478     0.4425    0.4150      8.262\n 0           news_cif   0.4273     0.5626    0.3163      4.657\n```\n\nWe did a side-by-side framewise visual test: sunflower_720p25 (200 kbps), mobile_cif (800 kbps) and news_cif (100 kbps). Visually there is no noticeable difference. \n\nThe cpu 1 Borg result:\n```\ncpu Testset  Instr. Cnt      BD Rate loss (%)\n               Red (%)   avg. psnr  ovr.psnr    ssim    \n 1  Average     1.663     0.0253     0.0435    0.0099\n```",
+      "parentUuid": "328148fb_c3157b5e",
+      "revId": "1b7ee3a7c8e2672ec8874c273e2227c02f9c2a4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
