@@ -22,6 +22,30 @@
       },
       "revId": "b27cf67c30eee263d1d41a5953e63c976fd82365",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aec346bc_7bdab7fb",
+        "filename": "test/register_state_check.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 190,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-04-25T20:32:27Z",
+      "side": 1,
+      "message": "\u003e is this shadowing the declaration at line 132?\n\nRight.",
+      "parentUuid": "10c7862a_902e5611",
+      "range": {
+        "startLine": 190,
+        "startChar": 41,
+        "endLine": 190,
+        "endChar": 54
+      },
+      "revId": "b27cf67c30eee263d1d41a5953e63c976fd82365",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
