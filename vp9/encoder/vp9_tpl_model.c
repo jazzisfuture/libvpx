@@ -161,9 +161,8 @@ static void init_tpl_stats(VP9_COMP *cpi) {
     memset(tpl_frame->tpl_stats_ptr, 0,
            tpl_frame->height * tpl_frame->width *
                sizeof(*tpl_frame->tpl_stats_ptr));
-    memset(tpl_frame_stats->block_stats_list, 0,
-           tpl_frame->height * tpl_frame->width *
-               sizeof(*tpl_frame_stats->block_stats_list));
+    memset(tpl_frame_stats, 0,
+           tpl_frame->height * tpl_frame->width * sizeof(*tpl_frame_stats));
     tpl_frame->is_valid = 0;
   }
 }
@@ -363,7 +362,8 @@ static void tpl_store_before_propagation(TplBlockStats *tpl_block_stats,
                                          TplDepStats *tpl_stats, int mi_row,
                                          int mi_col, BLOCK_SIZE bsize,
                                          int stride, int64_t recon_error,
-                                         int64_t rate_cost) {
+                                         int64_t rate_cost, int frame_width,
+                                         int frame_height) {
   const int mi_height = num_8x8_blocks_high_lookup[bsize];
   const int mi_width = num_8x8_blocks_wide_lookup[bsize];
   const TplDepStats *src_stats = &tpl_stats[mi_row * stride + mi_col];
@@ -373,11 +373,14 @@ static void tpl_store_before_propagation(TplBlockStats *tpl_block_stats,
     for (idx = 0; idx < mi_width; ++idx) {
       TplBlockStats *tpl_block_stats_ptr =
           &tpl_block_stats[(mi_row + idy) * stride + mi_col + idx];
+      tpl_block_stats_ptr->frame_width = frame_width;
+      tpl_block_stats_ptr->frame_height = frame_height;
       tpl_block_stats_ptr->inter_cost = src_stats->inter_cost;
       tpl_block_stats_ptr->intra_cost = src_stats->intra_cost;
       tpl_block_stats_ptr->recrf_dist = recon_error << TPL_DEP_COST_SCALE_LOG2;
       tpl_block_stats_ptr->recrf_rate = rate_cost << TPL_DEP_COST_SCALE_LOG2;
-      tpl_block_stats_ptr->mv = src_stats->mv;
+      tpl_block_stats_ptr->mv_r = src_stats->mv.as_mv.row;
+      tpl_block_stats_ptr->mv_c = src_stats->mv.as_mv.row;
       tpl_block_stats_ptr->ref_frame_index = src_stats->ref_frame_index;
     }
   }
@@ -1107,8 +1110,8 @@ static void build_motion_field(
 static void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture,
                               int frame_idx, BLOCK_SIZE bsize) {
   TplDepFrame *tpl_frame = &cpi->tpl_stats[frame_idx];
-  TplFrameStats *tpl_frame_stats_before_propagation =
-      &cpi->tpl_frame_stats[frame_idx];
+  TplFrameStats tpl_frame_stats_before_propagation =
+      cpi->tpl_frame_stats[frame_idx];
   YV12_BUFFER_CONFIG *this_frame = gf_picture[frame_idx].frame;
   YV12_BUFFER_CONFIG *ref_frame[MAX_INTER_REF_FRAMES] = { NULL, NULL, NULL };
 
@@ -1208,10 +1211,10 @@ static void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture,
       tpl_model_store(tpl_frame->tpl_stats_ptr, mi_row, mi_col, bsize,
                       tpl_frame->stride);
 
-      tpl_store_before_propagation(
-          tpl_frame_stats_before_propagation->block_stats_list,
-          tpl_frame->tpl_stats_ptr, mi_row, mi_col, bsize, tpl_frame->stride,
-          recon_error, rate_cost);
+      tpl_store_before_propagation(tpl_frame_stats_before_propagation,
+                                   tpl_frame->tpl_stats_ptr, mi_row, mi_col,
+                                   bsize, tpl_frame->stride, recon_error,
+                                   rate_cost, cm->width, cm->height);
 
       tpl_model_update(cpi->tpl_stats, tpl_frame->tpl_stats_ptr, mi_row, mi_col,
                        bsize);
@@ -1349,11 +1352,10 @@ void vp9_init_tpl_buffer(VP9_COMP *cpi) {
     CHECK_MEM_ERROR(cm, cpi->tpl_stats[frame].tpl_stats_ptr,
                     vpx_calloc(mi_rows * mi_cols,
                                sizeof(*cpi->tpl_stats[frame].tpl_stats_ptr)));
-    vpx_free(cpi->tpl_frame_stats[frame].block_stats_list);
+    vpx_free(cpi->tpl_frame_stats[frame]);
     CHECK_MEM_ERROR(
-        cm, cpi->tpl_frame_stats[frame].block_stats_list,
-        vpx_calloc(mi_rows * mi_cols,
-                   sizeof(*cpi->tpl_frame_stats[frame].block_stats_list)));
+        cm, cpi->tpl_frame_stats[frame],
+        vpx_calloc(mi_rows * mi_cols, sizeof(*cpi->tpl_frame_stats[frame])));
     cpi->tpl_stats[frame].is_valid = 0;
     cpi->tpl_stats[frame].width = mi_cols;
     cpi->tpl_stats[frame].height = mi_rows;
@@ -1384,7 +1386,7 @@ void vp9_free_tpl_buffer(VP9_COMP *cpi) {
 #endif
     vpx_free(cpi->tpl_stats[frame].tpl_stats_ptr);
     cpi->tpl_stats[frame].is_valid = 0;
-    vpx_free(cpi->tpl_frame_stats[frame].block_stats_list);
+    vpx_free(cpi->tpl_frame_stats[frame]);
   }
 }
 

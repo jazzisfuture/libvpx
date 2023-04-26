@@ -326,19 +326,18 @@ typedef struct TplDepFrame {
 
 // Used to store the stats before propagation.
 typedef struct TplBlockStats {
+  int frame_width;
+  int frame_height;
   int64_t intra_cost;
   int64_t inter_cost;
-  int_mv mv;
+  int16_t mv_r;  // MV row
+  int16_t mv_c;  // MV col
   int64_t recrf_rate;
   int64_t recrf_dist;
   int ref_frame_index;
 } TplBlockStats;
 
-typedef struct TplFrameStats {
-  int frame_width;
-  int frame_height;
-  TplBlockStats *block_stats_list;
-} TplFrameStats;
+typedef TplBlockStats *TplFrameStats;
 
 #define TPL_DEP_COST_SCALE_LOG2 4
 

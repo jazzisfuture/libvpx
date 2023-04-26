@@ -1280,6 +1280,15 @@ get_first_pass_stats_pkt(FIRSTPASS_STATS *stats) {
   pkt.data.twopass_stats.sz = sizeof(*stats);
   return pkt;
 }
+
+static vpx_codec_cx_pkt_t get_tpl_stats_pkt(TplFrameStats *stats) {
+  vpx_codec_cx_pkt_t pkt;
+  pkt.kind = VPX_CODEC_STATS_PKT;
+  pkt.data.twopass_stats.buf = stats;
+  pkt.data.twopass_stats.sz = sizeof(*stats);
+  return pkt;
+}
+
 #endif
 
 const size_t kMinCompressedSize = 8192;

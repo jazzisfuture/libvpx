@@ -1321,6 +1321,7 @@ static void setup_pass(struct stream_state *stream,
   stream->config.cfg.g_pass = global->passes == 2
                                   ? pass ? VPX_RC_LAST_PASS : VPX_RC_FIRST_PASS
                                   : VPX_RC_ONE_PASS;
+
   if (pass) {
     stream->config.cfg.rc_twopass_stats_in = stats_get(&stream->stats);
   }
