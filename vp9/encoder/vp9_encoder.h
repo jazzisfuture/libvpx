@@ -326,19 +326,16 @@ typedef struct TplDepFrame {
 
 // Used to store the stats before propagation.
 typedef struct TplBlockStats {
+  int frame_width;
+  int frame_height;
   int64_t intra_cost;
   int64_t inter_cost;
-  int_mv mv;
+  int16_t mv_r;  // MV row
+  int16_t mv_c;  // MV col
   int64_t recrf_rate;
   int64_t recrf_dist;
   int ref_frame_index;
 } TplBlockStats;
-
-typedef struct TplFrameStats {
-  int frame_width;
-  int frame_height;
-  TplBlockStats *block_stats_list;
-} TplFrameStats;
 
 #define TPL_DEP_COST_SCALE_LOG2 4
 
@@ -760,7 +757,7 @@ typedef struct VP9_COMP {
   BLOCK_SIZE tpl_bsize;
   TplDepFrame tpl_stats[MAX_ARF_GOP_SIZE];
   // Used to store TPL stats before propagation
-  TplFrameStats tpl_frame_stats[MAX_ARF_GOP_SIZE];
+  TplBlockStats *tpl_frame_stats[MAX_ARF_GOP_SIZE];
   YV12_BUFFER_CONFIG *tpl_recon_frames[REF_FRAMES];
   EncFrameBuf enc_frame_buf[REF_FRAMES];
 #if CONFIG_MULTITHREAD
