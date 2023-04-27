@@ -16,6 +16,24 @@
       "message": "I guess I don\u0027t understand how these will be serialized and deserialized, but is it really worth increasing the size by ~30%? Would an alternative approach be much more complicated?",
       "revId": "217694ade1a28483e8b698a471d7597b55fe786c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9fc2740c_7abbe128",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-04-27T14:23:01Z",
+      "side": 1,
+      "message": "Currently only ```FIRSTPASS_STATS``` uses this kind of packet, and it\u0027s all primitive types, so it can be serialized and deserialized pretty easily, i.e. the buffer can be written and read (and casted) directly without anything else. This CL tries to make TPL stats similar to that.\n\nAnother approach is to keep the ```TplFrameStats``` and add the size of the list of ```TplBlockStats``` in it. Then formatted input/output needs to be used, i.e. ```fscanf```.",
+      "parentUuid": "7a005171_58c00531",
+      "revId": "217694ade1a28483e8b698a471d7597b55fe786c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
