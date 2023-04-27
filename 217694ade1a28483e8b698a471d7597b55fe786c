@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a005171_58c00531",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1119205
+      },
+      "writtenOn": "2023-04-27T14:06:31Z",
+      "side": 1,
+      "message": "I guess I don\u0027t understand how these will be serialized and deserialized, but is it really worth increasing the size by ~30%? Would an alternative approach be much more complicated?",
+      "revId": "217694ade1a28483e8b698a471d7597b55fe786c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
