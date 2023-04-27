@@ -252,6 +252,23 @@ enum vpx_kf_mode {
   VPX_KF_DISABLED = 0 /**< Encoder does not place keyframes. */
 };
 
+// Used to store the stats before propagation.
+typedef struct TplBlockStats {
+  int64_t intra_cost;
+  int64_t inter_cost;
+  int16_t mv_r;
+  int16_t mv_c;
+  int64_t recrf_rate;
+  int64_t recrf_dist;
+  int ref_frame_index;
+} TplBlockStats;
+
+typedef struct TplFrameStats {
+  int frame_width;
+  int frame_height;
+  TplBlockStats *block_stats_list;
+} TplFrameStats;
+
 /*!\brief Encoded Frame Flags
  *
  * This type indicates a bitfield to be passed to vpx_codec_encode(), defining
