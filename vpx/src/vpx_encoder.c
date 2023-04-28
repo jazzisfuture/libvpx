@@ -22,6 +22,18 @@
 
 #define SAVE_STATUS(ctx, var) ((ctx) ? ((ctx)->err = (var)) : (var))
 
+vpx_codec_err_t vpx_allocate_tpl_frame_stats_list(TplFrameStats **data) {
+  *data = calloc(50, sizeof(TplFrameStats));
+  if (*data == NULL) return VPX_CODEC_MEM_ERROR;
+
+  return VPX_CODEC_OK;
+}
+
+vpx_codec_err_t vpx_free_tpl_frame_stats_list(TplFrameStats *data) {
+  free(data);
+  return VPX_CODEC_OK;
+}
+
 static vpx_codec_alg_priv_t *get_alg_priv(vpx_codec_ctx_t *ctx) {
   return (vpx_codec_alg_priv_t *)ctx->priv;
 }
