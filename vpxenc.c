@@ -161,6 +161,8 @@ static const arg_def_t disable_warnings =
 static const arg_def_t disable_warning_prompt =
     ARG_DEF("y", "disable-warning-prompt", 0,
             "Display warnings, but do not prompt user to continue.");
+static const arg_def_t export_tpl_stats =
+    ARG_DEF(NULL, "export-tpl-stats", 0, "Export TPL stats of vp9 encoder");
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static const arg_def_t test16bitinternalarg = ARG_DEF(
@@ -191,6 +193,7 @@ static const arg_def_t *main_args[] = { &help,
                                         &disable_warnings,
                                         &disable_warning_prompt,
                                         &recontest,
+                                        &export_tpl_stats,
                                         NULL };
 
 static const arg_def_t usage =
@@ -531,9 +534,7 @@ static const arg_def_t disable_loopfilter =
             "1: Loopfilter off for non reference frames\n"
             "                                          "
             "2: Loopfilter off for all frames");
-#endif
 
-#if CONFIG_VP9_ENCODER
 static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &auto_altref_vp9,
                                        &sharpness,
@@ -804,6 +805,8 @@ static void parse_global_config(struct VpxEncoderConfig *global, char **argv) {
       global->disable_warnings = 1;
     else if (arg_match(&arg, &disable_warning_prompt, argi))
       global->disable_warning_prompt = 1;
+    else if (arg_match(&arg, &export_tpl_stats, argi))
+      global->export_tpl_stats = 1;
     else
       argj++;
   }
@@ -1654,6 +1657,16 @@ static void test_decode(struct stream_state *stream,
   vpx_img_free(&dec_img);
 }
 
+static void get_tpl_stats(struct stream_state *stream) {
+  TplFrameStats *tpl_stats = NULL;
+  vpx_codec_err_t error;
+  vpx_allocate_tpl_frame_stats_list(&tpl_stats);
+  error = vpx_codec_control(&stream->encoder, VP9E_GET_TPL_STATS, tpl_stats);
+  if (error) fprintf(stderr, "Failed to get tpl stats.\n");
+  // Free the memory right away now as this is only a test.
+  vpx_free_tpl_frame_stats_list(tpl_stats);
+}
+
 static void print_time(const char *label, int64_t etl) {
   int64_t hours;
   int64_t mins;
@@ -1982,6 +1995,12 @@ int main(int argc, const char **argv_) {
 
         if (got_data && global.test_decode != TEST_DECODE_OFF)
           FOREACH_STREAM(test_decode(stream, global.test_decode, global.codec));
+
+#if CONFIG_VP9_ENCODER
+        if (got_data && global.export_tpl_stats) {
+          FOREACH_STREAM(get_tpl_stats(stream));
+        }
+#endif
       }
 
       fflush(stdout);
