@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6db29e78_e6047ceb",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-04-28T18:02:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51cae352_2ef1546e",
+      "revId": "503fc838e9827e7d984f9c8f76a146d1e746153d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0ecfd276_19a632ac",
@@ -31,6 +49,30 @@
       "writtenOn": "2023-04-28T17:44:06Z",
       "side": 1,
       "message": "Is \u0027Tpl\u0027 defined anywhere in the public headers? Better to expand this abbreviation.",
+      "range": {
+        "startLine": 255,
+        "startChar": 10,
+        "endLine": 255,
+        "endChar": 13
+      },
+      "revId": "503fc838e9827e7d984f9c8f76a146d1e746153d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "452cb9d6_5cffbd9f",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-04-28T18:02:21Z",
+      "side": 1,
+      "message": "We have a codec control VP9E_SET_TPL to enable it. It\u0027s still better to expand this here too.",
+      "parentUuid": "0ecfd276_19a632ac",
       "range": {
         "startLine": 255,
         "startChar": 10,
