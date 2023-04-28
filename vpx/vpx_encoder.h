@@ -875,6 +875,29 @@ typedef struct vpx_svc_parameters {
   int loopfilter_ctrl[VPX_MAX_LAYERS];    /**< Loopfilter ctrl for each sl */
 } vpx_svc_extra_cfg_t;
 
+/*!\brief Allocate the memory for the list of TPL frame stats.
+ *
+ * This will allocate a list of 50 TplFrameStats, which is the maximum number of
+ * frames allowed.
+ *
+ * \param[in]    data    Pointer to the list.
+ *
+ * \retval #VPX_CODEC_OK
+ *     The allocation is successful.
+ * \retval #VPX_CODEC_MEM_ERROR
+ *     The allocation fails.
+ */
+vpx_codec_err_t vpx_allocate_tpl_frame_stats_list(TplFrameStats **data);
+
+/*!\brief Free the memory for the list of TPL frame stats.
+ *
+ * \param[in]    data    Pointer to the list.
+ *
+ * \retval #VPX_CODEC_OK
+ *     Successfully free the memory.
+ */
+vpx_codec_err_t vpx_free_tpl_frame_stats_list(TplFrameStats *data);
+
 /*!\brief Initialize an encoder instance
  *
  * Initializes a encoder context using the given interface. Applications
