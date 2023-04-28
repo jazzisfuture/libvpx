@@ -1,3 +1,5 @@
+text vpx_allocate_tpl_frame_stats_list
+text vpx_free_tpl_frame_stats_list
 text vpx_codec_enc_config_default
 text vpx_codec_enc_config_set
 text vpx_codec_enc_init_multi_ver
