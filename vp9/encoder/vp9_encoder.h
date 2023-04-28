@@ -505,6 +505,8 @@ typedef struct EncFrameBuf {
 } EncFrameBuf;
 
 // Maximum operating frame buffer size needed for a GOP using ARF reference.
+// This is used to allocate the memory for TPL stats for a GOP in
+// vpx_allocate_tpl_frame_stats_list().
 #define MAX_ARF_GOP_SIZE (2 * MAX_LAG_BUFFERS)
 #define MAX_KMEANS_GROUPS 8
 
