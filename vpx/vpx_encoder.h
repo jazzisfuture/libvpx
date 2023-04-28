@@ -875,6 +875,9 @@ typedef struct vpx_svc_parameters {
   int loopfilter_ctrl[VPX_MAX_LAYERS];    /**< Loopfilter ctrl for each sl */
 } vpx_svc_extra_cfg_t;
 
+vpx_codec_err_t vpx_allocate_tpl_frame_stats_list(TplFrameStats **data);
+vpx_codec_err_t vpx_free_tpl_frame_stats_list(TplFrameStats *data);
+
 /*!\brief Initialize an encoder instance
  *
  * Initializes a encoder context using the given interface. Applications
