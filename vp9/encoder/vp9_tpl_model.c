@@ -471,18 +471,24 @@ static void get_quantize_error(MACROBLOCK *x, int plane, tran_low_t *coeff,
     vp9_highbd_quantize_fp_32x32(coeff, pix_num, p->round_fp, p->quant_fp,
                                  qcoeff, dqcoeff, pd->dequant, eob,
                                  scan_order->scan, scan_order->iscan);
+
+    *recon_error =
+        vp9_highbd_block_error(coeff, dqcoeff, pix_num, sse, xd->bd) >> shift;
   } else {
     vp9_quantize_fp_32x32(coeff, pix_num, p->round_fp, p->quant_fp, qcoeff,
                           dqcoeff, pd->dequant, eob, scan_order->scan,
                           scan_order->iscan);
+
+    *recon_error = vp9_block_error(coeff, dqcoeff, pix_num, sse) >> shift;
   }
 #else
   vp9_quantize_fp_32x32(coeff, pix_num, p->round_fp, p->quant_fp, qcoeff,
                         dqcoeff, pd->dequant, eob, scan_order->scan,
                         scan_order->iscan);
-#endif  // CONFIG_VP9_HIGHBITDEPTH
 
   *recon_error = vp9_block_error(coeff, dqcoeff, pix_num, sse) >> shift;
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
   *recon_error = VPXMAX(*recon_error, 1);
 
   *sse = (*sse) >> shift;
