@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7694fb8f_d35f914b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2023-04-29T06:33:07Z",
+      "side": 1,
+      "message": "Highbd code was added here: https://chromium-review.googlesource.com/c/webm/libvpx/+/1303193/10/vp9/encoder/vp9_encoder.c#5792\n\nJingning, would this have an effect on the calculation?",
+      "revId": "1976089b35415ed9a46bf1469837995eafe31a79",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
