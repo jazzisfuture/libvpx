@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c52198e_f998623f",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 14
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-02T21:51:19Z",
+      "side": 1,
+      "message": "since this is new code in a file without any other classes let\u0027s use `override` instead of `virtual`.",
+      "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "02d972e3_6f18004f",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 14
+      },
+      "lineNbr": 899,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-02T21:51:19Z",
+      "side": 1,
+      "message": "if we\u0027re going to modify the api then maybe something more generic would be useful:\n\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/libwebp/src/src/webp/types.h;l\u003d60;drc\u003d639619ce725da4ee1124863634c32fb89ce69081",
+      "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
