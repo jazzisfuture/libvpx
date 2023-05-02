@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a2d6f607_e17b721a",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 14
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-02T22:36:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9c52198e_f998623f",
+      "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "02d972e3_6f18004f",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-05-02T21:51:19Z",
       "side": 1,
       "message": "if we\u0027re going to modify the api then maybe something more generic would be useful:\n\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/libwebp/src/src/webp/types.h;l\u003d60;drc\u003d639619ce725da4ee1124863634c32fb89ce69081",
+      "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9fb43c3c_fbea3463",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 14
+      },
+      "lineNbr": 899,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-02T22:36:45Z",
+      "side": 1,
+      "message": "Should we make ```vpx_free()``` and ```vpx_calloc()``` public then?\n\nMy intention for these dedicated helpers was to make it clear and easier to understand how to use the new codec control.\n\nIf that\u0027s less of a concern, I could\n - Remove these helpers and just allocate the memory in the test / applications with ```calloc()``` and ```free()```, or\n - Make ```vpx_free()``` and ```vpx_calloc()``` public and use that instead.\n \nI\u0027m open to either option.",
+      "parentUuid": "02d972e3_6f18004f",
       "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
