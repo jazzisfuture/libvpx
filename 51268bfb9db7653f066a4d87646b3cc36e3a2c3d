@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8de0accc_9970c354",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-05-02T11:26:08Z",
+      "side": 1,
+      "message": "This CL introduced AVX2 intrinsics for the following functions:\n\n1. vpx_idct16x16_256_add\n2. vpx_idct32x32_1024_add\n3. vpx_idct32x32_135_add\n\nThe Borg test results of good encoding mode:\n```\n                 Instruction Count\ncpu   Resolution   Reduction(%)\n 0       LOWRES2      0.846\n 0       MIDRES2      0.844\n 0        HDRES2      0.747\n 0       Average      0.812\n```\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./vpxenc …\n```\nThis is a bit-exact change.",
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
