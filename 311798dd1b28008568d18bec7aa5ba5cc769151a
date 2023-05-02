@@ -16,6 +16,24 @@
       "message": "Thinking about this a little more, why clutter the command line app with something that\u0027s non-functional? Why not add a test to `encode_api_test.cc` or another test?",
       "revId": "311798dd1b28008568d18bec7aa5ba5cc769151a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e3b9b58d_197aae7f",
+        "filename": "vpxenc.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-02T17:30:32Z",
+      "side": 1,
+      "message": "That\u0027s a good point.\n\nFor testing purposes it\u0027s better to add to unit tests. But I\u0027ll need to add to vpxenc eventually to be able to verify the tpl stats without running a 3rd party application.\n\nI\u0027ll leave vpxenc alone and add to the test in this CL.",
+      "parentUuid": "e081c799_de9a4c26",
+      "revId": "311798dd1b28008568d18bec7aa5ba5cc769151a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
