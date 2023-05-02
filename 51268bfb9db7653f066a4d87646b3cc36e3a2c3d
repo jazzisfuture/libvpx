@@ -16,6 +16,70 @@
       "message": "This CL introduced AVX2 intrinsics for the following functions:\n\n1. vpx_idct16x16_256_add\n2. vpx_idct32x32_1024_add\n3. vpx_idct32x32_135_add\n\nThe Borg test results of good encoding mode:\n```\n                 Instruction Count\ncpu   Resolution   Reduction(%)\n 0       LOWRES2      0.846\n 0       MIDRES2      0.844\n 0        HDRES2      0.747\n 0       Average      0.812\n```\nThe instruction count reduction specified has been measured using command:\n```\n$ perf stat -e instructions:u ./vpxenc …\n```\nThis is a bit-exact change.",
       "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f69e9ab2_3884e811",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-05-02T20:47:59Z",
+      "side": 1,
+      "message": "Nice speedup for the encoder.",
+      "parentUuid": "8de0accc_9970c354",
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "27a6b18e_ae1e7ed8",
+        "filename": "test/dct16x16_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 595,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-05-02T20:47:59Z",
+      "side": 1,
+      "message": "Is aligned to 32 also guaranteed in libaom?",
+      "range": {
+        "startLine": 595,
+        "startChar": 20,
+        "endLine": 595,
+        "endChar": 22
+      },
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "61c80a4f_73c2ff2b",
+        "filename": "vpx_dsp/x86/inv_txfm_avx2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-05-02T20:47:59Z",
+      "side": 1,
+      "message": "Can you confirm that passing in 3 __m256i parameters is fine?",
+      "range": {
+        "startLine": 55,
+        "startChar": 45,
+        "endLine": 56,
+        "endChar": 54
+      },
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
