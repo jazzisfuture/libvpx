@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d8e02dcf_239bcc45",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1796,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-02T02:02:20Z",
+      "side": 1,
+      "message": "This allocation should be checked, but see my other comment.",
+      "revId": "5086f92cb84a00c4200c2868148a5b449a40c89d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c710fe1e_b399f1b8",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 774,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-02T02:02:20Z",
+      "side": 1,
+      "message": "That\u0027s sometimes difficult when working with language bindings. The application should probably supply the allocation or a way to deallocate in the library provided.",
+      "range": {
+        "startLine": 774,
+        "startChar": 25,
+        "endLine": 774,
+        "endChar": 73
+      },
+      "revId": "5086f92cb84a00c4200c2868148a5b449a40c89d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "586dad30_8ac7c946",
+        "filename": "vpxenc.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1994,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-02T02:02:20Z",
+      "side": 1,
+      "message": "Since this is freed immediately, it\u0027s just for testing purposes. A comment would be good and checking the return value from vpx_codec_control.",
+      "revId": "5086f92cb84a00c4200c2868148a5b449a40c89d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
