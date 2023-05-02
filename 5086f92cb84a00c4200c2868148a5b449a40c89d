@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "da057c20_be8a9752",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1796,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-02T15:16:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8e02dcf_239bcc45",
+      "revId": "5086f92cb84a00c4200c2868148a5b449a40c89d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c710fe1e_b399f1b8",
@@ -41,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6c67c516_eb345109",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 774,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-02T15:16:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c710fe1e_b399f1b8",
+      "range": {
+        "startLine": 774,
+        "startChar": 25,
+        "endLine": 774,
+        "endChar": 73
+      },
+      "revId": "5086f92cb84a00c4200c2868148a5b449a40c89d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "586dad30_8ac7c946",
@@ -54,6 +96,24 @@
       "writtenOn": "2023-05-02T02:02:20Z",
       "side": 1,
       "message": "Since this is freed immediately, it\u0027s just for testing purposes. A comment would be good and checking the return value from vpx_codec_control.",
+      "revId": "5086f92cb84a00c4200c2868148a5b449a40c89d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "612dc49d_8566c6ec",
+        "filename": "vpxenc.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1994,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-02T15:16:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "586dad30_8ac7c946",
       "revId": "5086f92cb84a00c4200c2868148a5b449a40c89d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
