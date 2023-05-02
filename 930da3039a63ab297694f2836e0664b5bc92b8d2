@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6bda9f5b_06f59d7a",
+        "filename": "vpx/src/vpx_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-02T16:17:57Z",
+      "side": 1,
+      "message": "This is MAX_ARF_GOP_SIZE, which is defined in vp9_encoder.h which shouldn\u0027t be exposed.\n\nI wonder what\u0027s the better way to do this?",
+      "range": {
+        "startLine": 26,
+        "startChar": 17,
+        "endLine": 26,
+        "endChar": 19
+      },
+      "revId": "930da3039a63ab297694f2836e0664b5bc92b8d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
