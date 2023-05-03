@@ -87,6 +87,24 @@
       "parentUuid": "9fb43c3c_fbea3463",
       "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6aa20e10_39ab81da",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 14
+      },
+      "lineNbr": 899,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-03T19:32:57Z",
+      "side": 1,
+      "message": "Per offline discussion, the size of the list of TplFrameStats should be consistent and synced between libvpx and applications / rate control libraries.",
+      "parentUuid": "8e6de415_618ce53c",
+      "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
