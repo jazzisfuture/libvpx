@@ -69,6 +69,24 @@
       "parentUuid": "02d972e3_6f18004f",
       "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8e6de415_618ce53c",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 14
+      },
+      "lineNbr": 899,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-03T17:27:40Z",
+      "side": 1,
+      "message": "\u003e Should we make ```vpx_free()``` and ```vpx_calloc()``` public then?\n\u003e \n\u003e My intention for these dedicated helpers was to make it clear and easier to understand how to use the new codec control.\n\u003e \n\nIt\u0027s somewhat disjointed now with 2 helper calls an one control. If we\u0027re extending the API then why not provide all the functionality like the external frame buffers. The other option for compatibility would be to fully use the control mechanism, do the allocate in one control and free in another.\n\n\u003e If that\u0027s less of a concern, I could\n\u003e  - Remove these helpers and just allocate the memory in the test / applications with ```calloc()``` and ```free()```, or\n\u003e  - Make ```vpx_free()``` and ```vpx_calloc()``` public and use that instead.\n\u003e  \n\u003e I\u0027m open to either option.",
+      "parentUuid": "9fb43c3c_fbea3463",
+      "revId": "deefed379027fb0a955921ec3912c37361a19e3e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
