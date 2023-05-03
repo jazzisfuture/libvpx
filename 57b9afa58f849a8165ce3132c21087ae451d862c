@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c6342b4a_bb671655",
+        "filename": "vp8/encoder/arm/neon/fastquantizeb_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-03T18:35:22Z",
+      "side": 1,
+      "message": "The advantage of this method, rather than defining `__aarch64__` for Windows Arm64, is we can catch uses where the config header hasn\u0027t been included with `-Wundef`. I did something similar in libwebp and will carry this over to libaom.",
+      "revId": "57b9afa58f849a8165ce3132c21087ae451d862c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
