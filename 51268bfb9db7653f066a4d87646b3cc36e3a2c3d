@@ -85,6 +85,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "14280416_64b302ef",
+        "filename": "test/dct16x16_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 595,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-05-03T16:02:50Z",
+      "side": 1,
+      "message": "Oh, yes, this is libvpx. Good to fix it. Also, if aligning some libvpx buffers to 32 helps the optimization performance, we can do it. Could you check if this applies to this cl?",
+      "parentUuid": "696c1f28_5a27f200",
+      "range": {
+        "startLine": 595,
+        "startChar": 20,
+        "endLine": 595,
+        "endChar": 22
+      },
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "61c80a4f_73c2ff2b",
         "filename": "vpx_dsp/x86/inv_txfm_avx2.c",
         "patchSetId": 5
@@ -120,6 +144,30 @@
       "side": 1,
       "message": "If the arguments are more than 3, it is preferred to pass them as pointers rather than as values. Hence, we have made the necessary changes accordingly.",
       "parentUuid": "61c80a4f_73c2ff2b",
+      "range": {
+        "startLine": 55,
+        "startChar": 45,
+        "endLine": 56,
+        "endChar": 54
+      },
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad60cfb2_84407cea",
+        "filename": "vpx_dsp/x86/inv_txfm_avx2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-05-03T16:02:50Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "174cd0e1_81f3af4f",
       "range": {
         "startLine": 55,
         "startChar": 45,
