@@ -61,6 +61,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "696c1f28_5a27f200",
+        "filename": "test/dct16x16_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 595,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-05-03T12:08:39Z",
+      "side": 1,
+      "message": "In libvpx, we conducted an experiment to verify alignment of input and output pointers. The pointers are not guaranteed to be 32-byte aligned. Hence, we have updated the CL with below changes,\n\n* Reverted alignment changes made for the input and output buffers of unit test\n\n* Replaced load/store instructions with unaligned load/store",
+      "parentUuid": "27a6b18e_ae1e7ed8",
+      "range": {
+        "startLine": 595,
+        "startChar": 20,
+        "endLine": 595,
+        "endChar": 22
+      },
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "61c80a4f_73c2ff2b",
         "filename": "vpx_dsp/x86/inv_txfm_avx2.c",
         "patchSetId": 5
@@ -72,6 +96,30 @@
       "writtenOn": "2023-05-02T20:47:59Z",
       "side": 1,
       "message": "Can you confirm that passing in 3 __m256i parameters is fine?",
+      "range": {
+        "startLine": 55,
+        "startChar": 45,
+        "endLine": 56,
+        "endChar": 54
+      },
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "174cd0e1_81f3af4f",
+        "filename": "vpx_dsp/x86/inv_txfm_avx2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-05-03T12:08:39Z",
+      "side": 1,
+      "message": "If the arguments are more than 3, it is preferred to pass them as pointers rather than as values. Hence, we have made the necessary changes accordingly.",
+      "parentUuid": "61c80a4f_73c2ff2b",
       "range": {
         "startLine": 55,
         "startChar": 45,

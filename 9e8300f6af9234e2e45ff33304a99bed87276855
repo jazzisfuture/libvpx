@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8226b8be_9038053c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-05-03T12:08:39Z",
+      "side": 1,
+      "message": "Thanks for the suggestion. We have taken care of your suggestions in the latest patchset. However, speed impact for this change is negligible.",
+      "revId": "9e8300f6af9234e2e45ff33304a99bed87276855",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
