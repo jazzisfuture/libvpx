@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "00f068c4_b6eef34b",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 18
+      },
+      "lineNbr": 773,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-03T22:36:00Z",
+      "side": 1,
+      "message": "maybe add (50) since `MAX_ARF_GOP_SIZE` isn\u0027t a public define.",
+      "range": {
+        "startLine": 773,
+        "startChar": 43,
+        "endLine": 773,
+        "endChar": 59
+      },
+      "revId": "0b814607c0d4811a779ce771d62ff6fee8111697",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "45a2a8c0_719cda82",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 18
+      },
+      "lineNbr": 776,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-03T22:36:00Z",
+      "side": 1,
+      "message": "maybe this should be `VPX_CODEC_INVALID_PARAM` and note it gets returned if data is NULL.",
+      "range": {
+        "startLine": 776,
+        "startChar": 5,
+        "endLine": 776,
+        "endChar": 24
+      },
+      "revId": "0b814607c0d4811a779ce771d62ff6fee8111697",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
