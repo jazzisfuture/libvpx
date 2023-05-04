@@ -396,10 +396,12 @@ static void tpl_store_before_propagation(VpxTplBlockStats *tpl_block_stats,
     for (idx = 0; idx < mi_width; ++idx) {
       VpxTplBlockStats *tpl_block_stats_ptr =
           &tpl_block_stats[(mi_row + idy) * stride + mi_col + idx];
-      tpl_block_stats_ptr->inter_cost = src_stats->inter_cost;
-      tpl_block_stats_ptr->intra_cost = src_stats->intra_cost;
-      tpl_block_stats_ptr->recrf_dist = recon_error << TPL_DEP_COST_SCALE_LOG2;
-      tpl_block_stats_ptr->recrf_rate = rate_cost << TPL_DEP_COST_SCALE_LOG2;
+      tpl_block_stats_ptr->inter_cost = (long)src_stats->inter_cost;
+      tpl_block_stats_ptr->intra_cost = (long)src_stats->intra_cost;
+      tpl_block_stats_ptr->recrf_dist =
+          (long)(recon_error << TPL_DEP_COST_SCALE_LOG2);
+      tpl_block_stats_ptr->recrf_rate =
+          (long)(rate_cost << TPL_DEP_COST_SCALE_LOG2);
       tpl_block_stats_ptr->mv_r = src_stats->mv.as_mv.row;
       tpl_block_stats_ptr->mv_c = src_stats->mv.as_mv.col;
       tpl_block_stats_ptr->ref_frame_index = src_stats->ref_frame_index;

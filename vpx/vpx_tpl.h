@@ -15,6 +15,8 @@
 #ifndef VPX_VPX_VPX_TPL_H_
 #define VPX_VPX_VPX_TPL_H_
 
+#include <stdio.h>
+
 #include "./vpx_integer.h"
 
 #ifdef __cplusplus
@@ -29,16 +31,16 @@ extern "C" {
  * types, removing or reassigning enums, adding/removing/rearranging
  * fields to structures
  */
-#define VPX_TPL_ABI_VERSION (0) /**<\hideinitializer*/
+#define VPX_TPL_ABI_VERSION (1) /**<\hideinitializer*/
 
 /*!\brief Temporal dependency model stats for each block before propagation */
 typedef struct VpxTplBlockStats {
-  int64_t intra_cost;  /**< Intra cost */
-  int64_t inter_cost;  /**< Inter cost */
-  int16_t mv_r;        /**< Motion vector row */
-  int16_t mv_c;        /**< Motion vector col */
-  int64_t recrf_rate;  /**< Rate from reconstructed ref frame */
-  int64_t recrf_dist;  /**< Distortion from reconstructed ref frame */
+  long intra_cost;     /**< Intra cost */
+  long inter_cost;     /**< Inter cost */
+  int mv_r;            /**< Motion vector row */
+  int mv_c;            /**< Motion vector col */
+  long recrf_rate;     /**< Rate from reconstructed ref frame */
+  long recrf_dist;     /**< Distortion from reconstructed ref frame */
   int ref_frame_index; /**< Ref frame index */
 } VpxTplBlockStats;
 
@@ -55,6 +57,33 @@ typedef struct VpxTplGopStats {
   int size; /**< GOP size, also the size of frame_stats_list. */
   VpxTplFrameStats *frame_stats_list; /**< List of tpl stats for each frame */
 } VpxTplGopStats;
+
+/*!\brief Write VpxTplGopStats to file
+ *
+ * Opens a file and write VpxTplGopStats.
+ *
+ * \param[in]    tpl_file       A FILE pointer that's already been opened.
+ * \param[in]    tpl_gop_stats  VpxTplGopStats that contains TPL stats for the
+ * whole GOP.
+ *
+ * \return VPX_CODEC_OK if TPL stats are successfully written.
+ */
+vpx_codec_err_t vpx_write_tpl_stats(FILE *tpl_file,
+                                    VpxTplGopStats *tpl_gop_stats);
+
+/*!\brief Read VpxTplGopStats from file
+ *
+ * Opens a file and read TPL stats and store into VpxTplGopStats. Allocates
+ * memory for TPL stats.
+ *
+ * \param[in]    tpl_file       A FILE pointer that's already been opened.
+ * \param[in]    tpl_gop_stats  VpxTplGopStats that contains TPL stats for the
+ * whole GOP.
+ *
+ * \return VPX_CODEC_OK if TPL stats are successfully read from file.
+ */
+vpx_codec_err_t vpx_alloc_and_read_tpl_stats(FILE *tpl_file,
+                                             VpxTplGopStats *tpl_gop_stats);
 
 #ifdef __cplusplus
 }  // extern "C"
