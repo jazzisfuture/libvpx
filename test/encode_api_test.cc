@@ -21,6 +21,7 @@
 #include "./vpx_config.h"
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
+#include "vpx_util/vpx_write_tpl_stats.h"
 
 namespace {
 
@@ -368,7 +369,7 @@ class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
       public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
  public:
-  EncodeApiGetTplStatsTest() : EncoderTest(GetParam()) {}
+  EncodeApiGetTplStatsTest() : EncoderTest(GetParam()), test_io_(false) {}
   ~EncodeApiGetTplStatsTest() override {}
 
  protected:
@@ -396,6 +397,35 @@ class EncodeApiGetTplStatsTest
     return VPX_CODEC_OK;
   }
 
+  void CompareTplGopStats(const VpxTplGopStats &ref_gop_stats,
+                          const VpxTplGopStats &test_gop_stats) {
+    ASSERT_EQ(ref_gop_stats.size, test_gop_stats.size);
+    for (int frame = 0; frame < ref_gop_stats.size; frame++) {
+      std::cout << "frame " << frame << std::endl;
+      const VpxTplFrameStats &ref_frame_stats =
+          ref_gop_stats.frame_stats_list[frame];
+      const VpxTplFrameStats &test_frame_stats =
+          test_gop_stats.frame_stats_list[frame];
+      ASSERT_EQ(ref_frame_stats.num_blocks, test_frame_stats.num_blocks);
+      ASSERT_EQ(ref_frame_stats.frame_width, test_frame_stats.frame_width);
+      ASSERT_EQ(ref_frame_stats.frame_height, test_frame_stats.frame_height);
+      for (int block = 0; block < ref_frame_stats.num_blocks; block++) {
+        const VpxTplBlockStats &ref_block_stats =
+            ref_frame_stats.block_stats_list[block];
+        const VpxTplBlockStats &test_block_stats =
+            test_frame_stats.block_stats_list[block];
+        ASSERT_EQ(ref_block_stats.inter_cost, test_block_stats.inter_cost);
+        ASSERT_EQ(ref_block_stats.intra_cost, test_block_stats.intra_cost);
+        ASSERT_EQ(ref_block_stats.mv_c, test_block_stats.mv_c);
+        ASSERT_EQ(ref_block_stats.mv_r, test_block_stats.mv_r);
+        ASSERT_EQ(ref_block_stats.recrf_dist, test_block_stats.recrf_dist);
+        ASSERT_EQ(ref_block_stats.recrf_rate, test_block_stats.recrf_rate);
+        ASSERT_EQ(ref_block_stats.ref_frame_index,
+                  test_block_stats.ref_frame_index);
+      }
+    }
+  }
+
   void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) override {
     ::libvpx_test::CxDataIterator iter = encoder->GetCxData();
     while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
@@ -416,8 +446,7 @@ class EncodeApiGetTplStatsTest
             }
           }
           ASSERT_TRUE(stats_not_all_zero);
-          // Free the memory right away now as this is only a test.
-          free(tpl_stats.frame_stats_list);
+          tpl_gop_stats_list_.push_back(tpl_stats);
           break;
         }
         default: break;
@@ -425,14 +454,43 @@ class EncodeApiGetTplStatsTest
     }
   }
 
+  void EndPassHook() override {
+    if (test_io_ && tpl_gop_stats_list_.size() > 0) {
+      FILE *tpl_file = fopen("/tmp/tpl_test", "aw");
+      ASSERT_NE(tpl_file, nullptr);
+      for (auto &gop_stats : tpl_gop_stats_list_) {
+        vpx_write_tpl_stats(tpl_file, &gop_stats);
+      }
+      fclose(tpl_file);
+      tpl_file = fopen("/tmp/tpl_test", "r");
+      for (size_t gop = 0; gop < tpl_gop_stats_list_.size(); gop++) {
+        VpxTplGopStats gop_stats;
+        vpx_read_tpl_stats(tpl_file, &gop_stats);
+        CompareTplGopStats(gop_stats, tpl_gop_stats_list_[gop]);
+      }
+    }
+  }
+
   int width_;
   int height_;
+  bool test_io_;
+  std::vector<VpxTplGopStats> tpl_gop_stats_list_;
 };
 
 TEST_P(EncodeApiGetTplStatsTest, GetTplStats) {
   cfg_.g_lag_in_frames = 25;
   width_ = 352;
   height_ = 288;
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", width_,
+                                       height_, 30, 1, 0, 50);
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+
+TEST_P(EncodeApiGetTplStatsTest, GetTplStatsIO) {
+  cfg_.g_lag_in_frames = 25;
+  width_ = 352;
+  height_ = 288;
+  test_io_ = true;
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", width_,
                                        height_, 30, 1, 0, 50);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
