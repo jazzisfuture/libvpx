@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b24e7d87_608ab27e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-04T01:43:11Z",
+      "side": 1,
+      "message": "It\u0027s good to normalize these first. Later we might consider giving some of the parameters better names.",
+      "revId": "8782fd070df84baaa1a7eafc2848de5ddd513078",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
