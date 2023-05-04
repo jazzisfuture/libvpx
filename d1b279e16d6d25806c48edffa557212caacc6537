@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "320d9da3_50eae546",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-04T23:01:22Z",
+      "side": 1,
+      "message": "Can we use MAX_ARF_GOP_SIZE directly here?",
+      "range": {
+        "startLine": 392,
+        "startChar": 17,
+        "endLine": 392,
+        "endChar": 19
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47de55d3_1640f007",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-04T23:01:22Z",
+      "side": 1,
+      "message": "I would recommend write a new MACRO like the following and use it here.\n\n#define CHECK_MEM_ERROR_NEW(error, lval, expr)                              \\\n  do {                                                                      \\\n    assert(error-\u003esetjmp);                                                  \\ \n    (lval) \u003d (expr);                                                        \\\n    if (!(lval))                                                            \\\n      vpx_internal_error(error, VPX_CODEC_MEM_ERROR,                        \\\n                         \"Failed to allocate \" #lval \" at %s:%d\", __FILE__, \\\n                         __LINE__);                                         \\\n  } while (0)\n#else\n#define CHECK_MEM_ERROR_NEW(error, lval, expr)              \\\n  do {                                                      \\\n    assert(error-\u003esetjmp);                                  \\\n    (lval) \u003d (expr);                                        \\\n    if (!(lval))                                            \\\n      vpx_internal_error(error, VPX_CODEC_MEM_ERROR,        \\\n                         \"Failed to allocate \" #lval);      \\\n  } while (0)\n#endif\n\nThis way, you don\u0027t have to pass in cpi.\nYou only need to pass in error and tpl_gop_stats, like\ninit_tpl_stats_before_propagation(*cpi-\u003ecommon.error, cpi-\u003etpl_gop_stats, tpl_gop_frames)\nThe parameters reflect the scope of this function better.",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9f2f09c_870ca297",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1414,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-04T23:01:22Z",
+      "side": 1,
+      "message": "Use free_tpl_frame_stats_list here?",
+      "range": {
+        "startLine": 1411,
+        "startChar": 0,
+        "endLine": 1414,
+        "endChar": 48
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8491b8fa_c17f1d9f",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1470,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-04T23:01:22Z",
+      "side": 1,
+      "message": "Can we combine this function with init_tpl_stats()?",
+      "range": {
+        "startLine": 1470,
+        "startChar": 2,
+        "endLine": 1470,
+        "endChar": 35
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c36d377_beabb1de",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1807,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-04T23:01:22Z",
+      "side": 1,
+      "message": "Can we do\n\"data-\u003eframe_stats_list[i] \u003d frame_stats_list[i]\" here?",
+      "range": {
+        "startLine": 1803,
+        "startChar": 4,
+        "endLine": 1807,
+        "endChar": 45
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
