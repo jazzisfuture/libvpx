@@ -154,14 +154,41 @@ static void init_tpl_stats(VP9_COMP *cpi) {
   int frame_idx;
   for (frame_idx = 0; frame_idx < MAX_ARF_GOP_SIZE; ++frame_idx) {
     TplDepFrame *tpl_frame = &cpi->tpl_stats[frame_idx];
-    VpxTplFrameStats *tpl_frame_stats = &cpi->tpl_frame_stats[frame_idx];
     memset(tpl_frame->tpl_stats_ptr, 0,
            tpl_frame->height * tpl_frame->width *
                sizeof(*tpl_frame->tpl_stats_ptr));
-    memset(tpl_frame_stats->block_stats_list, 0,
-           tpl_frame->height * tpl_frame->width *
-               sizeof(*tpl_frame_stats->block_stats_list));
     tpl_frame->is_valid = 0;
+  }
+}
+
+static void free_tpl_frame_stats_list(VpxTplGopStats *tpl_gop_stats) {
+  int frame_idx;
+  for (frame_idx = 0; frame_idx < tpl_gop_stats->size; ++frame_idx) {
+    vpx_free(tpl_gop_stats->frame_stats_list[frame_idx].block_stats_list);
+  }
+  vpx_free(tpl_gop_stats->frame_stats_list);
+}
+
+static void init_tpl_stats_before_propagation(VP9_COMP *cpi,
+                                              int tpl_gop_frames) {
+  int frame_idx;
+  VP9_COMMON *const cm = &cpi->common;
+  free_tpl_frame_stats_list(&cpi->tpl_gop_stats);
+  CHECK_MEM_ERROR(
+      &cpi->common, cpi->tpl_gop_stats.frame_stats_list,
+      vpx_calloc(tpl_gop_frames, sizeof(*cpi->tpl_gop_stats.frame_stats_list)));
+  cpi->tpl_gop_stats.size = tpl_gop_frames;
+  for (frame_idx = 0; frame_idx < tpl_gop_frames; ++frame_idx) {
+    TplDepFrame *tpl_frame = &cpi->tpl_stats[frame_idx];
+    const int mi_rows = tpl_frame->height;
+    const int mi_cols = tpl_frame->width;
+    CHECK_MEM_ERROR(
+        cm, cpi->tpl_gop_stats.frame_stats_list[frame_idx].block_stats_list,
+        vpx_calloc(mi_rows * mi_cols,
+                   sizeof(*cpi->tpl_gop_stats.frame_stats_list[frame_idx]
+                               .block_stats_list)));
+    cpi->tpl_gop_stats.frame_stats_list[frame_idx].num_blocks =
+        mi_rows * mi_cols;
   }
 }
 
@@ -1106,7 +1133,7 @@ static void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture,
                               int frame_idx, BLOCK_SIZE bsize) {
   TplDepFrame *tpl_frame = &cpi->tpl_stats[frame_idx];
   VpxTplFrameStats *tpl_frame_stats_before_propagation =
-      &cpi->tpl_frame_stats[frame_idx];
+      &cpi->tpl_gop_stats.frame_stats_list[frame_idx];
   YV12_BUFFER_CONFIG *this_frame = gf_picture[frame_idx].frame;
   YV12_BUFFER_CONFIG *ref_frame[MAX_INTER_REF_FRAMES] = { NULL, NULL, NULL };
 
@@ -1349,12 +1376,6 @@ void vp9_init_tpl_buffer(VP9_COMP *cpi) {
     CHECK_MEM_ERROR(cm, cpi->tpl_stats[frame].tpl_stats_ptr,
                     vpx_calloc(mi_rows * mi_cols,
                                sizeof(*cpi->tpl_stats[frame].tpl_stats_ptr)));
-    vpx_free(cpi->tpl_frame_stats[frame].block_stats_list);
-    CHECK_MEM_ERROR(
-        cm, cpi->tpl_frame_stats[frame].block_stats_list,
-        vpx_calloc(mi_rows * mi_cols,
-                   sizeof(*cpi->tpl_frame_stats[frame].block_stats_list)));
-    cpi->tpl_frame_stats[frame].num_blocks = mi_rows * mi_cols;
     cpi->tpl_stats[frame].is_valid = 0;
     cpi->tpl_stats[frame].width = mi_cols;
     cpi->tpl_stats[frame].height = mi_rows;
@@ -1385,8 +1406,12 @@ void vp9_free_tpl_buffer(VP9_COMP *cpi) {
 #endif
     vpx_free(cpi->tpl_stats[frame].tpl_stats_ptr);
     cpi->tpl_stats[frame].is_valid = 0;
-    vpx_free(cpi->tpl_frame_stats[frame].block_stats_list);
   }
+
+  for (frame = 0; frame < cpi->tpl_gop_stats.size; ++frame) {
+    vpx_free(cpi->tpl_gop_stats.frame_stats_list[frame].block_stats_list);
+  }
+  vpx_free(cpi->tpl_gop_stats.frame_stats_list);
 }
 
 #if CONFIG_RATE_CTRL
@@ -1441,6 +1466,8 @@ void vp9_setup_tpl_stats(VP9_COMP *cpi) {
   init_gop_frames(cpi, gf_picture, gf_group, &tpl_group_frames);
 
   init_tpl_stats(cpi);
+
+  init_tpl_stats_before_propagation(cpi, tpl_group_frames);
 
   // Backward propagation from tpl_group_frames to 1.
   for (frame_idx = tpl_group_frames - 1; frame_idx > 0; --frame_idx) {
