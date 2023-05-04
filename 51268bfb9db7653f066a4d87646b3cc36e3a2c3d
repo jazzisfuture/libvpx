@@ -109,6 +109,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "154557e2_08678d82",
+        "filename": "test/dct16x16_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 595,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-05-04T22:21:05Z",
+      "side": 1,
+      "message": "Hopefully I made myself clear. This would work if we want to use 32-byte alignment and the libvpx buffers can be allocated to 32-byte aligned.",
+      "parentUuid": "14280416_64b302ef",
+      "range": {
+        "startLine": 595,
+        "startChar": 20,
+        "endLine": 595,
+        "endChar": 22
+      },
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "61c80a4f_73c2ff2b",
         "filename": "vpx_dsp/x86/inv_txfm_avx2.c",
         "patchSetId": 5
