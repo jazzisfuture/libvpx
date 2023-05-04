@@ -368,7 +368,7 @@ class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
       public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
  public:
-  EncodeApiGetTplStatsTest() : EncoderTest(GetParam()) {}
+  EncodeApiGetTplStatsTest() : EncoderTest(GetParam()), test_io_(false) {}
   ~EncodeApiGetTplStatsTest() override {}
 
  protected:
@@ -396,6 +396,41 @@ class EncodeApiGetTplStatsTest
     return VPX_CODEC_OK;
   }
 
+  void FreeTplList(VpxTplGopStats *data) {
+    for (int frame = 0; frame < data->size; frame++) {
+      free(data->frame_stats_list[frame].block_stats_list);
+    }
+    free(data->frame_stats_list);
+  }
+
+  void CompareTplGopStats(const VpxTplGopStats &ref_gop_stats,
+                          const VpxTplGopStats &test_gop_stats) {
+    EXPECT_EQ(ref_gop_stats.size, test_gop_stats.size);
+    for (int frame = 0; frame < ref_gop_stats.size; frame++) {
+      const VpxTplFrameStats &ref_frame_stats =
+          ref_gop_stats.frame_stats_list[frame];
+      const VpxTplFrameStats &test_frame_stats =
+          test_gop_stats.frame_stats_list[frame];
+      EXPECT_EQ(ref_frame_stats.num_blocks, test_frame_stats.num_blocks);
+      EXPECT_EQ(ref_frame_stats.frame_width, test_frame_stats.frame_width);
+      EXPECT_EQ(ref_frame_stats.frame_height, test_frame_stats.frame_height);
+      for (int block = 0; block < ref_frame_stats.num_blocks; block++) {
+        const VpxTplBlockStats &ref_block_stats =
+            ref_frame_stats.block_stats_list[block];
+        const VpxTplBlockStats &test_block_stats =
+            test_frame_stats.block_stats_list[block];
+        EXPECT_EQ(ref_block_stats.inter_cost, test_block_stats.inter_cost);
+        EXPECT_EQ(ref_block_stats.intra_cost, test_block_stats.intra_cost);
+        EXPECT_EQ(ref_block_stats.mv_c, test_block_stats.mv_c);
+        EXPECT_EQ(ref_block_stats.mv_r, test_block_stats.mv_r);
+        EXPECT_EQ(ref_block_stats.recrf_dist, test_block_stats.recrf_dist);
+        EXPECT_EQ(ref_block_stats.recrf_rate, test_block_stats.recrf_rate);
+        EXPECT_EQ(ref_block_stats.ref_frame_index,
+                  test_block_stats.ref_frame_index);
+      }
+    }
+  }
+
   void PostEncodeFrameHook(::libvpx_test::Encoder *encoder) override {
     ::libvpx_test::CxDataIterator iter = encoder->GetCxData();
     while (const vpx_codec_cx_pkt_t *pkt = iter.Next()) {
@@ -408,15 +443,27 @@ class EncodeApiGetTplStatsTest
           for (int i = 0; i < tpl_stats.size; i++) {
             VpxTplFrameStats *frame_stats_list = tpl_stats.frame_stats_list;
             if (frame_stats_list[i].frame_width != 0) {
-              ASSERT_EQ(frame_stats_list[i].frame_width, width_);
-              ASSERT_EQ(frame_stats_list[i].frame_height, height_);
-              ASSERT_GT(frame_stats_list[i].num_blocks, 0);
-              ASSERT_NE(frame_stats_list[i].block_stats_list, nullptr);
+              EXPECT_EQ(frame_stats_list[i].frame_width, width_);
+              EXPECT_EQ(frame_stats_list[i].frame_height, height_);
+              EXPECT_GT(frame_stats_list[i].num_blocks, 0);
+              EXPECT_NE(frame_stats_list[i].block_stats_list, nullptr);
               stats_not_all_zero = true;
             }
           }
           ASSERT_TRUE(stats_not_all_zero);
-          // Free the memory right away now as this is only a test.
+          if (test_io_ && tpl_stats.size > 0) {
+            FILE *tpl_file = fopen("/tmp/tpl_io_test", "w");
+            ASSERT_NE(tpl_file, nullptr);
+            vpx_write_tpl_stats(tpl_file, &tpl_stats);
+            fclose(tpl_file);
+            tpl_file = fopen("/tmp/tpl_io_test", "r");
+            ASSERT_NE(tpl_file, nullptr);
+            VpxTplGopStats gop_stats_io;
+            vpx_alloc_and_read_tpl_stats(tpl_file, &gop_stats_io);
+            CompareTplGopStats(gop_stats_io, tpl_stats);
+            fclose(tpl_file);
+            FreeTplList(&gop_stats_io);
+          }
           free(tpl_stats.frame_stats_list);
           break;
         }
@@ -427,12 +474,24 @@ class EncodeApiGetTplStatsTest
 
   int width_;
   int height_;
+  bool test_io_;
+  // std::vector<VpxTplGopStats> tpl_gop_stats_list_;
 };
 
 TEST_P(EncodeApiGetTplStatsTest, GetTplStats) {
   cfg_.g_lag_in_frames = 25;
   width_ = 352;
   height_ = 288;
+  ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", width_,
+                                       height_, 30, 1, 0, 50);
+  ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+}
+
+TEST_P(EncodeApiGetTplStatsTest, GetTplStatsIO) {
+  cfg_.g_lag_in_frames = 25;
+  width_ = 352;
+  height_ = 288;
+  test_io_ = true;
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", width_,
                                        height_, 30, 1, 0, 50);
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
