@@ -15,6 +15,8 @@
 #ifndef VPX_VPX_VPX_TPL_H_
 #define VPX_VPX_VPX_TPL_H_
 
+#include <stdio.h>
+
 #include "./vpx_integer.h"
 
 #ifdef __cplusplus
@@ -55,6 +57,33 @@ typedef struct VpxTplGopStats {
   int size; /**< GOP size, also the size of frame_stats_list. */
   VpxTplFrameStats *frame_stats_list; /**< List of tpl stats for each frame */
 } VpxTplGopStats;
+
+/*!\brief Write VpxTplGopStats to file
+ *
+ * Opens a file and write VpxTplGopStats.
+ *
+ * \param[in]    tpl_file       A FILE pointer that's already been opened.
+ * \param[in]    tpl_gop_stats  VpxTplGopStats that contains TPL stats for the
+ * whole GOP.
+ *
+ * \return VPX_CODEC_OK if TPL stats are successfully written.
+ */
+vpx_codec_err_t vpx_write_tpl_stats(FILE *tpl_file,
+                                    VpxTplGopStats *tpl_gop_stats);
+
+/*!\brief Read VpxTplGopStats from file
+ *
+ * Opens a file and read TPL stats and store into VpxTplGopStats. Allocates
+ * memory for TPL stats.
+ *
+ * \param[in]    tpl_file       A FILE pointer that's already been opened.
+ * \param[in]    tpl_gop_stats  VpxTplGopStats that contains TPL stats for the
+ * whole GOP.
+ *
+ * \return VPX_CODEC_OK if TPL stats are successfully read from file.
+ */
+vpx_codec_err_t vpx_alloc_and_read_tpl_stats(FILE *tpl_file,
+                                             VpxTplGopStats *tpl_gop_stats);
 
 #ifdef __cplusplus
 }  // extern "C"
