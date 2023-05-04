@@ -15,6 +15,8 @@
 #ifndef VPX_VPX_VPX_TPL_H_
 #define VPX_VPX_VPX_TPL_H_
 
+#include <stdio.h>
+
 #include "./vpx_integer.h"
 
 #ifdef __cplusplus
@@ -55,6 +57,12 @@ typedef struct VpxTplGopStats {
   int size; /**< GOP size, also the size of frame_stats_list. */
   VpxTplFrameStats *frame_stats_list; /**< List of tpl stats for each frame */
 } VpxTplGopStats;
+
+vpx_codec_err_t vpx_write_tpl_stats(FILE *tpl_file,
+                                    VpxTplGopStats *tpl_gop_stats);
+
+vpx_codec_err_t vpx_read_tpl_stats(FILE *tpl_file,
+                                   VpxTplGopStats *tpl_gop_stats);
 
 #ifdef __cplusplus
 }  // extern "C"
