@@ -34,6 +34,24 @@
       "parentUuid": "f9766e51_67d29391",
       "revId": "8e47341b0ea4bf2a37f968cf260d6dbfd1f0062a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ec3e3fb_a64ae13a",
+        "filename": "vpx/src/vpx_codec.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T22:48:13Z",
+      "side": 1,
+      "message": "\u003e Thanks for looking. I reviewed the entire aom_codec.h file when I worked on the libaom version of this CL.\n\u003e \n\u003e The `vpx_codec_iface_t` type alias is defined as a const struct:\n\u003e \n\u003e ```\n\u003e typedef const struct vpx_codec_iface vpx_codec_iface_t;\n\u003e ```\n\nThanks, I forgot about that oddity.\n\n\u003e \n\u003e So we can\u0027t say `const vpx_codec_iface_t *iface`.\n\u003e \n\u003e If libavm is going to be a permanent fork of libaom, we should remove the \"const\" from its `aom_codec_iface_t` type alias.",
+      "parentUuid": "fb9359b1_84609c01",
+      "revId": "8e47341b0ea4bf2a37f968cf260d6dbfd1f0062a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
