@@ -143,6 +143,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "648de800_d5268334",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-05T17:31:03Z",
+      "side": 1,
+      "message": "I didn\u0027t meant to make you change everything. But, it\u0027s a good change.\nThanks!",
+      "parentUuid": "1a789fb1_45f7d930",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c9f2f09c_870ca297",
@@ -227,6 +251,30 @@
       "side": 1,
       "message": "Hmm, I can combine them, but I actually split it into a new function on purpose, since the stats here serve a different purpose, like what I did for ```tpl_store_before_propagation```, also to be consistent.\n\nDo you think it\u0027s better to combine them?",
       "parentUuid": "8491b8fa_c17f1d9f",
+      "range": {
+        "startLine": 1470,
+        "startChar": 2,
+        "endLine": 1470,
+        "endChar": 35
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ac90b5c_4b9b47af",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1470,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-05T17:31:03Z",
+      "side": 1,
+      "message": "Okay, make sense.\nWe can keep it he way it is.",
+      "parentUuid": "0be45605_e5c8575b",
       "range": {
         "startLine": 1470,
         "startChar": 2,
