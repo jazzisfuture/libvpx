@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "54655aaa_526e4598",
+        "filename": "vp8/common/mips/msa/sixtap_filter_msa.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T19:26:47Z",
+      "side": 1,
+      "message": "\u003e those are in a pattern of HORIZ_*_FILT\n\u003e \n\u003e so it\u0027s not necessary to put horiz_ and _filt. it\u0027ll be a little more readable.\n\nThat\u0027s fine. It was easier to copy the name and lowercase it in the search and replace.",
+      "parentUuid": "474730f5_ceeb149e",
+      "range": {
+        "startLine": 38,
+        "startChar": 10,
+        "endLine": 38,
+        "endChar": 32
+      },
+      "revId": "6eeabc61528fb6c74a63819c39fb359fe861cd82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "15bf62ab_d29135dd",
@@ -37,6 +61,30 @@
       "writtenOn": "2023-05-05T18:05:51Z",
       "side": 1,
       "message": "I think `_4vecs_` can be removed too. so this could be renamed as `6tap_4wid_vec0_m`",
+      "range": {
+        "startLine": 59,
+        "startChar": 10,
+        "endLine": 59,
+        "endChar": 43
+      },
+      "revId": "6eeabc61528fb6c74a63819c39fb359fe861cd82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "343b10b6_aa62dc9f",
+        "filename": "vp8/common/mips/msa/sixtap_filter_msa.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T19:26:47Z",
+      "side": 1,
+      "message": "\u003e I think `_4vecs_` can be removed too. so this could be renamed as `6tap_4wid_vec0_m`\n\nWe\u0027ll have to call it `sixtap` or `_6tap` to make it a valid variable name",
+      "parentUuid": "15bf62ab_d29135dd",
       "range": {
         "startLine": 59,
         "startChar": 10,
@@ -70,6 +118,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e3d021d_21f511a6",
+        "filename": "vp8/common/mips/msa/sixtap_filter_msa.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 85,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T19:26:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "991aedb5_c8750061",
+      "range": {
+        "startLine": 85,
+        "startChar": 10,
+        "endLine": 85,
+        "endChar": 43
+      },
+      "revId": "6eeabc61528fb6c74a63819c39fb359fe861cd82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cbf13911_5a335aa8",
@@ -83,6 +155,30 @@
       "writtenOn": "2023-05-05T18:05:51Z",
       "side": 1,
       "message": "these can be `4tap_dpadd_tmp0`",
+      "range": {
+        "startLine": 125,
+        "startChar": 10,
+        "endLine": 125,
+        "endChar": 34
+      },
+      "revId": "6eeabc61528fb6c74a63819c39fb359fe861cd82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f67b6673_06dd7703",
+        "filename": "vp8/common/mips/msa/sixtap_filter_msa.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T19:26:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cbf13911_5a335aa8",
       "range": {
         "startLine": 125,
         "startChar": 10,
@@ -116,6 +212,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c1575479_6f957a42",
+        "filename": "vp8/common/mips/msa/sixtap_filter_msa.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T19:26:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "59f09e43_973f123b",
+      "range": {
+        "startLine": 136,
+        "startChar": 10,
+        "endLine": 136,
+        "endChar": 32
+      },
+      "revId": "6eeabc61528fb6c74a63819c39fb359fe861cd82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "80772db4_0329e993",
@@ -139,6 +259,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "52fc53cd_f9c2cb4a",
+        "filename": "vp8/common/mips/msa/sixtap_filter_msa.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T19:26:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "80772db4_0329e993",
+      "range": {
+        "startLine": 154,
+        "startChar": 10,
+        "endLine": 154,
+        "endChar": 43
+      },
+      "revId": "6eeabc61528fb6c74a63819c39fb359fe861cd82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fac2bbe6_da18c42c",
@@ -152,6 +296,30 @@
       "writtenOn": "2023-05-05T18:05:51Z",
       "side": 1,
       "message": "`4tap_8wid_vec0_m`",
+      "range": {
+        "startLine": 173,
+        "startChar": 10,
+        "endLine": 173,
+        "endChar": 43
+      },
+      "revId": "6eeabc61528fb6c74a63819c39fb359fe861cd82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5628c40_0f956a60",
+        "filename": "vp8/common/mips/msa/sixtap_filter_msa.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 173,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T19:26:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fac2bbe6_da18c42c",
       "range": {
         "startLine": 173,
         "startChar": 10,
