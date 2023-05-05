@@ -49,6 +49,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d7f8878c_03717ca2",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T00:31:07Z",
+      "side": 1,
+      "message": "\u003e I would recommend write a new MACRO like the following and use it here.\n\u003e \n\u003e #define CHECK_MEM_ERROR_NEW(error, lval, expr)                              \\\n\u003e   do {                                                                      \\\n\u003e     assert(error-\u003esetjmp);                                                  \\ \n\u003e     (lval) \u003d (expr);                                                        \\\n\u003e     if (!(lval))                                                            \\\n\u003e       vpx_internal_error(error, VPX_CODEC_MEM_ERROR,                        \\\n\u003e                          \"Failed to allocate \" #lval \" at %s:%d\", __FILE__, \\\n\u003e                          __LINE__);                                         \\\n\u003e   } while (0)\n\u003e #else\n\u003e #define CHECK_MEM_ERROR_NEW(error, lval, expr)              \\\n\u003e   do {                                                      \\\n\u003e     assert(error-\u003esetjmp);                                  \\\n\u003e     (lval) \u003d (expr);                                        \\\n\u003e     if (!(lval))                                            \\\n\u003e       vpx_internal_error(error, VPX_CODEC_MEM_ERROR,        \\\n\u003e                          \"Failed to allocate \" #lval);      \\\n\u003e   } while (0)\n\u003e #endif\n\u003e \n\u003e This way, you don\u0027t have to pass in cpi.\n\u003e You only need to pass in error and tpl_gop_stats, like\n\u003e init_tpl_stats_before_propagation(*cpi-\u003ecommon.error, cpi-\u003etpl_gop_stats, tpl_gop_frames)\n\u003e The parameters reflect the scope of this function better.\n\nThere are actually 3 defines for this in the codebase, gathering them could be done in a separate change.\n\nhttps://chromium.googlesource.com/webm/libvpx/+/3580bc559a223818a29c263e8b59d72ce56dddd5/vp9/common/vp9_common.h#50\nhttps://chromium.googlesource.com/webm/libvpx/+/3580bc559a223818a29c263e8b59d72ce56dddd5/vp8/encoder/onyx_int.h#735\nhttps://chromium.googlesource.com/webm/libvpx/+/3580bc559a223818a29c263e8b59d72ce56dddd5/vp8/decoder/onyxd_int.h#139",
+      "parentUuid": "47de55d3_1640f007",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c9f2f09c_870ca297",
         "filename": "vp9/encoder/vp9_tpl_model.c",
         "patchSetId": 2
