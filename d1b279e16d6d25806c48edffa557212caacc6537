@@ -167,6 +167,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e95829cf_c3c7050c",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T17:44:28Z",
+      "side": 1,
+      "message": "I actually didn\u0027t know there were multiple definitions for `CHECK_MEM_ERROR` across the library. Thanks for bringing it to my attention.\n\nThere\u0027s a fix to the RTC RC library `ratectrl_rtc.cc` which is related to the macro. I\u0027ll rebase everything on top of that.",
+      "parentUuid": "648de800_d5268334",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c9f2f09c_870ca297",
