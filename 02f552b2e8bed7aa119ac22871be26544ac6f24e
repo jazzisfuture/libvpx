@@ -87,6 +87,54 @@
       },
       "revId": "02f552b2e8bed7aa119ac22871be26544ac6f24e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5080b823_008998be",
+        "filename": "vpx/internal/vpx_codec_internal.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T23:06:50Z",
+      "side": 1,
+      "message": "Fixed in",
+      "parentUuid": "8752a432_a0f10eb1",
+      "range": {
+        "startLine": 435,
+        "startChar": 11,
+        "endLine": 435,
+        "endChar": 27
+      },
+      "revId": "02f552b2e8bed7aa119ac22871be26544ac6f24e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e96ae5b_16867138",
+        "filename": "vpx/internal/vpx_codec_internal.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T23:06:50Z",
+      "side": 1,
+      "message": "Fixed in https://chromium-review.googlesource.com/c/webm/libvpx/+/4509478 and rebased.",
+      "parentUuid": "8752a432_a0f10eb1",
+      "range": {
+        "startLine": 435,
+        "startChar": 11,
+        "endLine": 435,
+        "endChar": 27
+      },
+      "revId": "02f552b2e8bed7aa119ac22871be26544ac6f24e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
