@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab54ab14_9aa824d5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T16:56:23Z",
+      "side": 1,
+      "message": "Looks like this needs a rebase, the ui is reporting a merge conflict.",
+      "revId": "02f552b2e8bed7aa119ac22871be26544ac6f24e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5d722284_fec2db36",
+        "filename": "vpx/internal/vpx_codec_internal.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 435,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T16:56:23Z",
+      "side": 1,
+      "message": "these asserts are wrong given you\u0027re passing a pointer, they should be `(error)-\u003esetjmp`, no?",
+      "range": {
+        "startLine": 435,
+        "startChar": 11,
+        "endLine": 435,
+        "endChar": 27
+      },
+      "revId": "02f552b2e8bed7aa119ac22871be26544ac6f24e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
