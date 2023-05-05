@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "90c443dd_3c6f3223",
+        "filename": "vpx_dsp/mips/macros_msa.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 779,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-05T17:41:57Z",
+      "side": 1,
+      "message": "some of these macros are used within other ones, so I chose to use the macro name as a prefix even though it\u0027s kind of long.",
+      "range": {
+        "startLine": 779,
+        "startChar": 10,
+        "endLine": 779,
+        "endChar": 22
+      },
+      "revId": "c85b7331a5960bbb4074658641482bb40c902354",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
