@@ -28,9 +28,16 @@ std::unique_ptr<VP9RateControlRTC> VP9RateControlRTC::Create(
   if (!rc_api->cpi_) return nullptr;
   vp9_zero(*rc_api->cpi_);
 
+  VP9_COMP *const cpi = rc_api->cpi_;
+  if (setjmp(cpi->common.error.jmp)) {
+    cpi->common.error.setjmp = 0;
+    vpx_clear_system_state();
+    return nullptr;
+  }
+  rc_api->cpi_->common.error.setjmp = 1;
+
   if (!rc_api->InitRateControl(cfg)) return nullptr;
   if (cfg.aq_mode) {
-    VP9_COMP *const cpi = rc_api->cpi_;
     cpi->segmentation_map = static_cast<uint8_t *>(
         vpx_calloc(cpi->common.mi_rows * cpi->common.mi_cols,
                    sizeof(*cpi->segmentation_map)));
