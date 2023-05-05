@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "94b4d88c_2f0e7752",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T01:45:03Z",
+      "side": 1,
+      "message": "```MAX_ARF_GOP_SIZE``` is defined in vp9_encoder.h, which is an internal header. It should be only used inside the codec library.\n\nWe could make another macro in the public header, i.e. ```VPX_MAX_ARF_GOP_SIZE```. But since it\u0027s fixed and it\u0027s not going to change, after some discussion with James in the previous CLs, we think it\u0027s ok to ust \"50\" and add a note here.",
+      "parentUuid": "320d9da3_50eae546",
+      "range": {
+        "startLine": 392,
+        "startChar": 17,
+        "endLine": 392,
+        "endChar": 19
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "47de55d3_1640f007",
@@ -73,6 +97,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "a093b297_0b740c9a",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T01:45:03Z",
+      "side": 1,
+      "message": "They just need ```error``` and ```lval``` and ```expr```, and the type of ```error``` is the same across vp8 and vp9. So we can just make one macro accepting ```error``` and use it across the library.\n\nI\u0027ll make a separate change on that.",
+      "parentUuid": "d7f8878c_03717ca2",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "c9f2f09c_870ca297",
         "filename": "vp9/encoder/vp9_tpl_model.c",
         "patchSetId": 2
@@ -84,6 +132,30 @@
       "writtenOn": "2023-05-04T23:01:22Z",
       "side": 1,
       "message": "Use free_tpl_frame_stats_list here?",
+      "range": {
+        "startLine": 1411,
+        "startChar": 0,
+        "endLine": 1414,
+        "endChar": 48
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "842b9287_71cf7cf0",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1414,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T01:45:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c9f2f09c_870ca297",
       "range": {
         "startLine": 1411,
         "startChar": 0,
@@ -119,6 +191,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "0be45605_e5c8575b",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1470,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T01:45:03Z",
+      "side": 1,
+      "message": "Hmm, I can combine them, but I actually split it into a new function on purpose, since the stats here serve a different purpose, like what I did for ```tpl_store_before_propagation```, also to be consistent.\n\nDo you think it\u0027s better to combine them?",
+      "parentUuid": "8491b8fa_c17f1d9f",
+      "range": {
+        "startLine": 1470,
+        "startChar": 2,
+        "endLine": 1470,
+        "endChar": 35
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4c36d377_beabb1de",
         "filename": "vp9/vp9_cx_iface.c",
         "patchSetId": 2
@@ -130,6 +226,30 @@
       "writtenOn": "2023-05-04T23:01:22Z",
       "side": 1,
       "message": "Can we do\n\"data-\u003eframe_stats_list[i] \u003d frame_stats_list[i]\" here?",
+      "range": {
+        "startLine": 1803,
+        "startChar": 4,
+        "endLine": 1807,
+        "endChar": 45
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "13b975c1_f1b0be15",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1807,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T01:45:03Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4c36d377_beabb1de",
       "range": {
         "startLine": 1803,
         "startChar": 4,
