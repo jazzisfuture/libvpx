@@ -52,6 +52,24 @@
       "parentUuid": "fb9359b1_84609c01",
       "revId": "8e47341b0ea4bf2a37f968cf260d6dbfd1f0062a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b685e31d_906355ce",
+        "filename": "vpx/src/vpx_codec.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-05-05T23:24:10Z",
+      "side": 1,
+      "message": "I took a stab at removing the \"const\" from the `aom_codec_iface_t` typedef in libavm and quickly realized that a lot of files need to be modified. So it\u0027s not an undertaking suitable for 4:30 pm on a Friday.",
+      "parentUuid": "6ec3e3fb_a64ae13a",
+      "revId": "8e47341b0ea4bf2a37f968cf260d6dbfd1f0062a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
