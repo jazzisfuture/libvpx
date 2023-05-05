@@ -133,6 +133,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cdac37fe_7154eed9",
+        "filename": "test/dct16x16_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 595,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-05-05T12:12:03Z",
+      "side": 1,
+      "message": "We confirmed the alignment of input and output buffers used in idct functions. The input buffer `dqcoeff` is assured to be 32-byte aligned in the encoder but not in the decoder. Whereas the output buffer `pd-\u003edst.buf` is not assured to be 32-byte aligned for chroma planes. Since chroma planes use frame borders as 80 pixels for 4:2:0 subsampling, 32-byte alignment is not guaranteed.\n\nTherefore, we have updated the CL with below changes for the input buffer.\n- Buffer alignment of `dqcoeff` in `TileWorkerData` and `RowMTWorkerData` is modified to 32-bytes in decoder.\n- Unaligned load instruction is replaced with an aligned instruction for low-bd intrinsics.\n- Assertions added to ensure 32-byte alignment in the intrinsic functions.\n- Alignment of input buffers declared in unit test is modified to 32-bytes.\nPlease note that for high-bd, still unaligned load instructions are used since load operation could read data from unaligned address.\nFor this change observed a negligible impact on module level gain.",
+      "parentUuid": "154557e2_08678d82",
+      "range": {
+        "startLine": 595,
+        "startChar": 20,
+        "endLine": 595,
+        "endChar": 22
+      },
+      "revId": "51268bfb9db7653f066a4d87646b3cc36e3a2c3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "61c80a4f_73c2ff2b",
         "filename": "vpx_dsp/x86/inv_txfm_avx2.c",
         "patchSetId": 5
