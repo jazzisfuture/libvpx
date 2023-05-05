@@ -119,6 +119,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a789fb1_45f7d930",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-05T02:28:38Z",
+      "side": 1,
+      "message": "https://chromium-review.googlesource.com/c/webm/libvpx/+/4508024",
+      "parentUuid": "a093b297_0b740c9a",
+      "range": {
+        "startLine": 177,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 80
+      },
+      "revId": "d1b279e16d6d25806c48edffa557212caacc6537",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c9f2f09c_870ca297",
