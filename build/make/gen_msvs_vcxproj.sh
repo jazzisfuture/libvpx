@@ -270,6 +270,9 @@ case "$target" in
     ;;
     arm64*)
         platforms[0]="ARM64"
+        if [ "$vs_ver" -ge 17 ]; then
+            platforms[1]="ARM64EC"
+        fi
         asm_Debug_cmdline="armasm64 -nologo -oldit &quot;%(FullPath)&quot;"
         asm_Release_cmdline="armasm64 -nologo -oldit &quot;%(FullPath)&quot;"
     ;;
