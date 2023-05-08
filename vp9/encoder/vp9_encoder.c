@@ -692,6 +692,13 @@ int vp9_set_roi_map(VP9_COMP *cpi, unsigned char *map, unsigned int rows,
   const int frame_rows = cpi->common.mi_rows;
   const int frame_cols = cpi->common.mi_cols;
 
+  if (setjmp(cm->error.jmp)) {
+    cm->error.setjmp = 0;
+    vpx_clear_system_state();
+    return 1;
+  }
+  cm->error.setjmp = 1;
+
   // Check number of rows and columns match
   if (frame_rows != (int)rows || frame_cols != (int)cols) {
     return -1;
