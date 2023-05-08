@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b43d4c1_024d8406",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 723,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-08T17:46:02Z",
+      "side": 1,
+      "message": "This could be removed given the next line. So could `if (roi-\u003eroi_map)` since `vpx_free` checks this, but that could be left for another commit.",
+      "revId": "75f9551efbef322b85534e91dd0b26c0c3bf18f4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
