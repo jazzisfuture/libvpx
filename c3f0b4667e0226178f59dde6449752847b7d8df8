@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "8b02ea98_9cde3a9c",
+        "filename": "vpx_util/vpx_write_tpl_stats.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-08T17:37:40Z",
+      "side": 1,
+      "message": "Hi Angie,\n\nThanks for reviewing. I haven\u0027t finished this CL yet. I\u0027ll add helper function to read tpl stats as well.\n\nI will also put in some unit tests too.\n\nI\u0027ll send it out for review again once they\u0027re ready.",
+      "parentUuid": "22d7f1cf_a998c3c2",
+      "range": {
+        "startLine": 23,
+        "startChar": 7,
+        "endLine": 23,
+        "endChar": 8
+      },
+      "revId": "c3f0b4667e0226178f59dde6449752847b7d8df8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e2ccd563_4e35c3ed",
         "filename": "vpx_util/vpx_write_tpl_stats.h",
         "patchSetId": 3
