@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "66d149be_5a60987d",
+        "filename": "build/make/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 313,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-10T22:58:20Z",
+      "side": 1,
+      "message": "\u003e Optional: The equivalent linker flag `-Wl,-z,defs` may be more portable. I remember `-z defs` comes from the Solaris linker and `--no-undefined` is a synonym in the GNU ld.\n\u003e \n\u003e For example, in CMake\u0027s documentation, `-Wl,-z,defs` is used as an example:\n\u003e https://cmake.org/cmake/help/latest/command/add_link_options.html\n\nI\u0027ll make the change. It\u0027s been like this for quite some time.",
+      "parentUuid": "ff5bbc8d_751e0df2",
+      "revId": "89f8bdc92647c5b5f11c7732766cbd124ee366d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "faffdb85_9d9d3645",
@@ -48,6 +66,24 @@
       "writtenOn": "2023-05-10T21:09:41Z",
       "side": 1,
       "message": "The `strip` function doesn\u0027t seem necessary because of the way the `filter` function works.",
+      "revId": "89f8bdc92647c5b5f11c7732766cbd124ee366d1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57ce6295_e4d42839",
+        "filename": "build/make/Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 315,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-10T22:58:20Z",
+      "side": 1,
+      "message": "\u003e The `strip` function doesn\u0027t seem necessary because of the way the `filter` function works.\n\nYou\u0027re right, just a habit when I first started writing the check. I removed another case, but missed this one.",
+      "parentUuid": "faffdb85_9d9d3645",
       "revId": "89f8bdc92647c5b5f11c7732766cbd124ee366d1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
