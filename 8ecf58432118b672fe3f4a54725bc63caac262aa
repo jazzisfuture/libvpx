@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1adeeaca_a23c6764",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-13T02:50:54Z",
+      "side": 1,
+      "message": "These are fairly small, but together they make for a large change. Next time if you find yourself making a list like this, please split the commits. There\u0027s less risk of losing cosmetic changes if a functional change needs to be reverted.",
+      "revId": "8ecf58432118b672fe3f4a54725bc63caac262aa",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
