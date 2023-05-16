@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "75ef4179_88989829",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-16T17:59:15Z",
+      "side": 1,
+      "message": "It seems like functions in `vpx_util` aren\u0027t supposed to be public.\n\nLike `vpx_image.c/h`, it\u0027s better to put TPL related public structures/functions to be in `vpx_tpl.c/h`.\n\nI\u0027ll put a new CL to address that. and rebase this one on top of the new CL.",
+      "revId": "2e642cae99c7bcaf6436ad2fd1b5e16a31248054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4ceb030e_4d58cfd7",
         "filename": "test/encode_api_test.cc",
         "patchSetId": 8
