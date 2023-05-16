@@ -119,6 +119,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c9261d84_fc04fd7a",
+        "filename": "vpx_util/vpx_write_tpl_stats.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-16T17:37:28Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "c4f80f14_541f51ef",
+      "range": {
+        "startLine": 28,
+        "startChar": 38,
+        "endLine": 28,
+        "endChar": 48
+      },
+      "revId": "c3f0b4667e0226178f59dde6449752847b7d8df8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "55216525_6642a0f3",
