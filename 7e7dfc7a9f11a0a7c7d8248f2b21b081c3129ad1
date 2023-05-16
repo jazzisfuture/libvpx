@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a81a1d92_fd91867b",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-16T22:13:49Z",
+      "side": 1,
+      "message": "you\u0027ll probably want to add the include here...",
+      "revId": "7e7dfc7a9f11a0a7c7d8248f2b21b081c3129ad1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0518b3f_e8345c87",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-16T22:13:49Z",
+      "side": 1,
+      "message": "...and add the ABI version here.",
+      "revId": "7e7dfc7a9f11a0a7c7d8248f2b21b081c3129ad1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b03ce158_ebf9e3f9",
+        "filename": "vpx/vpx_tpl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-16T22:13:49Z",
+      "side": 1,
+      "message": "`./vpx_integer.h` should be used.",
+      "revId": "7e7dfc7a9f11a0a7c7d8248f2b21b081c3129ad1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
