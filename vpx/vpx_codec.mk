@@ -42,3 +42,4 @@ API_SRCS-yes += vpx_frame_buffer.h
 API_SRCS-yes += vpx_image.h
 API_SRCS-yes += vpx_integer.h
 API_SRCS-yes += vpx_ext_ratectrl.h
+API_SRCS-yes += vpx_tpl.h
