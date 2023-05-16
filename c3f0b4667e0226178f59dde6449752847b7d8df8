@@ -48,6 +48,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2f75e019_99d338b5",
+        "filename": "vpx_util/vpx_write_tpl_stats.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-16T17:07:47Z",
+      "side": 1,
+      "message": "libvpx doesn\u0027t support that:\n\n```\nerror: ‘for’ loop initial declarations are only allowed in C99 or C11 mode\n   19 |   for (int i \u003d 0; i \u003c tpl_gop_stats-\u003esize; i++) {\n      |   ^~~\nvpx_util/vpx_tpl_stats_io.c:19:3: note: use option ‘-std\u003dc99’, ‘-std\u003dgnu99’, ‘-std\u003dc11’ or ‘-std\u003dgnu11’ to compile your code\n```",
+      "parentUuid": "8b02ea98_9cde3a9c",
+      "range": {
+        "startLine": 23,
+        "startChar": 7,
+        "endLine": 23,
+        "endChar": 8
+      },
+      "revId": "c3f0b4667e0226178f59dde6449752847b7d8df8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e2ccd563_4e35c3ed",
@@ -73,6 +97,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "c4f80f14_541f51ef",
+        "filename": "vpx_util/vpx_write_tpl_stats.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-16T17:07:47Z",
+      "side": 1,
+      "message": "I\u0027ll have a separate CL to add row/col counts.\n\nRe block size: the block size in vp9 tpl is fixed right? in that case is it still useful to write block size in the tpl stats?",
+      "parentUuid": "e2ccd563_4e35c3ed",
+      "range": {
+        "startLine": 28,
+        "startChar": 38,
+        "endLine": 28,
+        "endChar": 48
+      },
+      "revId": "c3f0b4667e0226178f59dde6449752847b7d8df8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "55216525_6642a0f3",
         "filename": "vpx_util/vpx_write_tpl_stats.h",
         "patchSetId": 3
@@ -84,6 +132,30 @@
       "writtenOn": "2023-05-08T17:20:32Z",
       "side": 1,
       "message": "Can we \"int block\" here.",
+      "range": {
+        "startLine": 29,
+        "startChar": 9,
+        "endLine": 29,
+        "endChar": 14
+      },
+      "revId": "c3f0b4667e0226178f59dde6449752847b7d8df8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01d10a79_63bbe45e",
+        "filename": "vpx_util/vpx_write_tpl_stats.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-16T17:07:47Z",
+      "side": 1,
+      "message": "Same reason as `int i` in for loop.",
+      "parentUuid": "55216525_6642a0f3",
       "range": {
         "startLine": 29,
         "startChar": 9,
