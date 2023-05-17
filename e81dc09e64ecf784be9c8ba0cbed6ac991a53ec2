@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc6fbbdd_842f119f",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 14
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-17T17:16:29Z",
+      "side": 1,
+      "message": "This function actually allocate memory and read tpl stats,\nLet\u0027s make our naming reflect that.\nvpx_alloc_read_tpl_stats()\n\nYou will probably add\nvpx_free_tpl_stats later right?",
+      "range": {
+        "startLine": 40,
+        "startChar": 16,
+        "endLine": 40,
+        "endChar": 34
+      },
+      "revId": "e81dc09e64ecf784be9c8ba0cbed6ac991a53ec2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
