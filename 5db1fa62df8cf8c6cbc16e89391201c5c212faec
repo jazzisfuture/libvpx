@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0af2c383_520274e1",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-17T18:17:24Z",
+      "side": 1,
+      "message": "Not sure what\u0027s happening here with `int64_t`.\n\nIn the last build where it failed, it says (for x86):\n\n```\n12:02:08 ../libvpx/vpx/src/vpx_tpl.c: In function ‘vpx_write_tpl_stats’:\n12:02:08 ../libvpx/vpx/src/vpx_tpl.c:30:28: warning: format ‘%ld’ expects argument of type ‘long int’, but argument 3 has type ‘int64_t’ {aka ‘long long int’} [-Wformat\u003d]\n12:02:08    30 |       fprintf(tpl_file, \"%ld %ld %hd %hd %ld %ld %d\\n\", block_stats.inter_cost,\n12:02:08       |                          ~~^                            ~~~~~~~~~~~~~~~~~~~~~~\n12:02:08       |                            |                                       |\n12:02:08       |                            long int                                int64_t {aka long long int}\n12:02:08       |                          %lld\n```\n\nSo I changed it to `%lld`, and then it complains (for generic):\n\n```\n13:56:57 ../libvpx/vpx/src/vpx_tpl.c: In function ‘vpx_write_tpl_stats’:\n13:56:57 ../libvpx/vpx/src/vpx_tpl.c:30:29: warning: format ‘%lld’ expects argument of type ‘long long int’, but argument 3 has type ‘int64_t’ {aka ‘long int’} [-Wformat\u003d]\n13:56:57    30 |       fprintf(tpl_file, \"%lld %lld %hd %hd %lld %lld %d\\n\",\n13:56:57       |                          ~~~^\n13:56:57       |                             |\n13:56:57       |                             long long int\n13:56:57       |                          %ld\n13:56:57    31 |               block_stats.inter_cost, block_stats.intra_cost, block_stats.mv_c,\n13:56:57       |               ~~~~~~~~~~~~~~~~~~~~~~\n13:56:57       |                          |\n13:56:57       |                          int64_t {aka long int}\n```\n\nI think I probably try using this:\n\n```\nprintf(\"%\" PRId64 \"\\n\", t);\n```",
+      "range": {
+        "startLine": 30,
+        "startChar": 25,
+        "endLine": 30,
+        "endChar": 29
+      },
+      "revId": "5db1fa62df8cf8c6cbc16e89391201c5c212faec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
