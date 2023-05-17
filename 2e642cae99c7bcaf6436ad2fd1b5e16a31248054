@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "82c0f54a_4519a723",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-17T15:36:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "75ef4179_88989829",
+      "revId": "2e642cae99c7bcaf6436ad2fd1b5e16a31248054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4ceb030e_4d58cfd7",
@@ -41,6 +59,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "03e841e6_576b8964",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 402,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-17T15:36:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4ceb030e_4d58cfd7",
+      "range": {
+        "startLine": 402,
+        "startChar": 4,
+        "endLine": 402,
+        "endChar": 13
+      },
+      "revId": "2e642cae99c7bcaf6436ad2fd1b5e16a31248054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "133b0ce8_e34a4766",
@@ -54,6 +96,30 @@
       "writtenOn": "2023-05-16T17:37:28Z",
       "side": 1,
       "message": "I notice we allocate memory of frame_stats_list at AllocateTplList(), but didn\u0027t see we allocate memory for block_stats_list()\nIt might be also good to put this part into a function like FreeTplList()",
+      "range": {
+        "startLine": 459,
+        "startChar": 0,
+        "endLine": 463,
+        "endChar": 48
+      },
+      "revId": "2e642cae99c7bcaf6436ad2fd1b5e16a31248054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ec8671b_dfbd90e0",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 463,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-17T15:36:27Z",
+      "side": 1,
+      "message": "The allocation/free for `block_stats_list` is in `init_tpl_stats_before_propagation()` in vp9_tpl_model.c.",
+      "parentUuid": "133b0ce8_e34a4766",
       "range": {
         "startLine": 459,
         "startChar": 0,
