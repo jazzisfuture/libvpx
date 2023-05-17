@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0d57c808_82a5e170",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-17T15:17:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a81a1d92_fd91867b",
+      "revId": "7e7dfc7a9f11a0a7c7d8248f2b21b081c3129ad1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f0518b3f_e8345c87",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c9c39c4_11cb071a",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-17T15:17:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f0518b3f_e8345c87",
+      "revId": "7e7dfc7a9f11a0a7c7d8248f2b21b081c3129ad1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b03ce158_ebf9e3f9",
@@ -48,6 +84,24 @@
       "writtenOn": "2023-05-16T22:13:49Z",
       "side": 1,
       "message": "`./vpx_integer.h` should be used.",
+      "revId": "7e7dfc7a9f11a0a7c7d8248f2b21b081c3129ad1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "23e8937e_9a8689c7",
+        "filename": "vpx/vpx_tpl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-17T15:17:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b03ce158_ebf9e3f9",
       "revId": "7e7dfc7a9f11a0a7c7d8248f2b21b081c3129ad1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
