@@ -16,6 +16,24 @@
       "message": "should this be `INSTALL-LIBS-$(CONFIG_ENCODERS)`?",
       "revId": "4403dc05b9000f5833389f09055751c9f6072916",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c71fbe5_fab743bf",
+        "filename": "libs.mk",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-18T00:45:25Z",
+      "side": 1,
+      "message": "since TPL is only relevant with VP9 encoder, I changed to `INSTALL-LIBS-$(CONFIG_VP9_ENCODER)`",
+      "parentUuid": "ea35ec10_885902f5",
+      "revId": "4403dc05b9000f5833389f09055751c9f6072916",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
