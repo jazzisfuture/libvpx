@@ -34,6 +34,24 @@
       "parentUuid": "ea35ec10_885902f5",
       "revId": "4403dc05b9000f5833389f09055751c9f6072916",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07c029b9_dfe621ea",
+        "filename": "libs.mk",
+        "patchSetId": 3
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-18T20:16:04Z",
+      "side": 1,
+      "message": "\u003e since TPL is only relevant with VP9 encoder, I changed to `INSTALL-LIBS-$(CONFIG_VP9_ENCODER)`\n\nExcept it\u0027s included from a general header, so builds would fail if only vp8 support was configured.",
+      "parentUuid": "9c71fbe5_fab743bf",
+      "revId": "4403dc05b9000f5833389f09055751c9f6072916",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
