@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2c08604d_a36d86c9",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 24
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-19T05:31:31Z",
+      "side": 1,
+      "message": "This isn\u0027t unique. If multiple instances of the test run concurrently one may overwrite the file while the other is reading. Use `GetTempOutFile()` and remove the file on exit.",
+      "revId": "9d547049a363ac45f38040f5ea7a2b7d08628da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "85244875_2d98af15",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 24
+      },
+      "lineNbr": 462,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-19T05:31:31Z",
+      "side": 1,
+      "message": "check this return",
+      "range": {
+        "startLine": 462,
+        "startChar": 12,
+        "endLine": 462,
+        "endChar": 40
+      },
+      "revId": "9d547049a363ac45f38040f5ea7a2b7d08628da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6dc5efa7_f83a3078",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 24
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-19T05:31:31Z",
+      "side": 1,
+      "message": "check the returns from `fprintf` and `fscanf`",
+      "revId": "9d547049a363ac45f38040f5ea7a2b7d08628da1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
