@@ -83,6 +83,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8fa3827b_779cd8a3",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 402,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-19T02:50:20Z",
+      "side": 1,
+      "message": "Angie, I changed it back to ASSERT_ because the log is too huge to be opened in Chrome (it could crash a chrome tab) if the test fails.",
+      "parentUuid": "03e841e6_576b8964",
+      "range": {
+        "startLine": 402,
+        "startChar": 4,
+        "endLine": 402,
+        "endChar": 13
+      },
+      "revId": "2e642cae99c7bcaf6436ad2fd1b5e16a31248054",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "133b0ce8_e34a4766",
