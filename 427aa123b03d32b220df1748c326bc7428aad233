@@ -16,6 +16,24 @@
       "message": "check this allocation and prefer `sizeof(frame_stats-\u003eblock_stats_list[0])`.",
       "revId": "427aa123b03d32b220df1748c326bc7428aad233",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f03945c9_de3eb0e6",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 23
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-19T02:46:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8ccd5909_708e62c7",
+      "revId": "427aa123b03d32b220df1748c326bc7428aad233",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
