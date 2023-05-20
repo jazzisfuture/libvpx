@@ -1,0 +1,146 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ed728d9b_dd0ff5d4",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 25
+      },
+      "lineNbr": 447,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-20T02:14:34Z",
+      "side": 1,
+      "message": "this will generate a lot of error logging if these fail. They could stay as ASSERT_* or you could test `::testing::Test::HasFailure()` if you think it\u0027s meaningful to have all the EXPECT_* failure output.",
+      "revId": "7caa76871dd97d8c242e482a73db52d617ea3b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10b67689_a2bbc0b5",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 25
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-20T02:14:34Z",
+      "side": 1,
+      "message": "Add `#include \u003cnew\u003e` and use `(std::nothrow)`.\n\nDoes it need to be a member variable since it\u0027s only used in this block? I could also see the possibility of this generating a warning that would recommend std::unique_ptr (or make_unique, but that\u0027s c++14).",
+      "revId": "7caa76871dd97d8c242e482a73db52d617ea3b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a0cd58cc_aaab1fbd",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 25
+      },
+      "lineNbr": 459,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-20T02:14:34Z",
+      "side": 1,
+      "message": "you can just `rewind(temp_out_file-\u003efile())`; you opened it for reading and writing.",
+      "revId": "7caa76871dd97d8c242e482a73db52d617ea3b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ddd9c8b3_607c1014",
+        "filename": "test/video_source.h",
+        "patchSetId": 25
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-20T02:14:34Z",
+      "side": 1,
+      "message": "this can be `const char*`",
+      "revId": "7caa76871dd97d8c242e482a73db52d617ea3b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7bd2459_48ffb85e",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-20T02:14:34Z",
+      "side": 1,
+      "message": "We generally don\u0027t output error messages from the library. You could put this under `CONFIG_DEBUG`.",
+      "revId": "7caa76871dd97d8c242e482a73db52d617ea3b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e3739a03_0be4785a",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-20T02:14:34Z",
+      "side": 1,
+      "message": "maybe `CHECK_FSCANF_ERROR` which matches some other naming of CHECK_* macros",
+      "range": {
+        "startLine": 63,
+        "startChar": 2,
+        "endLine": 63,
+        "endChar": 17
+      },
+      "revId": "7caa76871dd97d8c242e482a73db52d617ea3b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "adacaf54_70950295",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-20T02:14:34Z",
+      "side": 1,
+      "message": "Any reason not to do that in this change?",
+      "revId": "7caa76871dd97d8c242e482a73db52d617ea3b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ede73aaf_4701924b",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 25
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-20T02:14:34Z",
+      "side": 1,
+      "message": "`tpl_gop_stats-\u003eframe_stats_list` will leak here",
+      "revId": "7caa76871dd97d8c242e482a73db52d617ea3b41",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
