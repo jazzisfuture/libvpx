@@ -1,0 +1,101 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "74900406_40c45641",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 29
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T00:57:17Z",
+      "side": 1,
+      "message": "This is unused.",
+      "revId": "98e537dd46e811acf06f353aaec534a53021bd2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b9846685_45d10633",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 29
+      },
+      "lineNbr": 457,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T00:57:17Z",
+      "side": 1,
+      "message": "Check this allocation.",
+      "revId": "98e537dd46e811acf06f353aaec534a53021bd2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "525e34a5_51aa809a",
+        "filename": "test/video_source.h",
+        "patchSetId": 29
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T00:57:17Z",
+      "side": 1,
+      "message": "this could be `const char *` too.",
+      "range": {
+        "startLine": 104,
+        "startChar": 14,
+        "endLine": 104,
+        "endChar": 40
+      },
+      "revId": "98e537dd46e811acf06f353aaec534a53021bd2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa455d02_bdc920da",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 29
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T00:57:17Z",
+      "side": 1,
+      "message": "can this be replaced with a call to the API function?",
+      "revId": "98e537dd46e811acf06f353aaec534a53021bd2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3b093fd_aa8bd7d7",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 29
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T00:57:17Z",
+      "side": 1,
+      "message": "Check whether data is NULL",
+      "range": {
+        "startLine": 106,
+        "startChar": 55,
+        "endLine": 106,
+        "endChar": 59
+      },
+      "revId": "98e537dd46e811acf06f353aaec534a53021bd2e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
