@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cd4a74d3_2c350e7f",
+        "filename": "vpx/exports_com",
+        "patchSetId": 32
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T20:36:37Z",
+      "side": 1,
+      "message": "for consistency should this be `vpx_free_tpl_stats`? or should `gop` be added to the other two?",
+      "revId": "600e3e73e3884c1987d03c7a6d5e8a177bff6641",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7c3dd77_3618391f",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 32
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T20:36:37Z",
+      "side": 1,
+      "message": "check `tpl_gop_stats` here too",
+      "revId": "600e3e73e3884c1987d03c7a6d5e8a177bff6641",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48c88e55_9b8bb499",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 32
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T20:36:37Z",
+      "side": 1,
+      "message": "I would clear these pointers to avoid any potential double frees by misuse of the api.",
+      "revId": "600e3e73e3884c1987d03c7a6d5e8a177bff6641",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d928a946_278005c2",
+        "filename": "vpx/vpx_tpl.h",
+        "patchSetId": 32
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T20:36:37Z",
+      "side": 1,
+      "message": "this function takes an open file",
+      "range": {
+        "startLine": 63,
+        "startChar": 3,
+        "endLine": 63,
+        "endChar": 15
+      },
+      "revId": "600e3e73e3884c1987d03c7a6d5e8a177bff6641",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e4fe6d24_78e68c0a",
+        "filename": "vpx/vpx_tpl.h",
+        "patchSetId": 32
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T20:36:37Z",
+      "side": 1,
+      "message": "this indent could be updated too",
+      "revId": "600e3e73e3884c1987d03c7a6d5e8a177bff6641",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a492bfcf_651af5a5",
+        "filename": "vpx/vpx_tpl.h",
+        "patchSetId": 32
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-23T20:36:37Z",
+      "side": 1,
+      "message": "maybe \u0027Accepts an opened file handle, reads TPL stats from it and stores them into \\p tpl_gop_stats\u0027?",
+      "revId": "600e3e73e3884c1987d03c7a6d5e8a177bff6641",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
