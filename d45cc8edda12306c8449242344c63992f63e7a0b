@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29f47879_8f94a533",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 34
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-24T16:27:16Z",
+      "side": 1,
+      "message": "I\u0027m submitting this CL since it has +2 from both reviewers. I\u0027ll address any cosmetic comments in the follow-ups.",
+      "revId": "d45cc8edda12306c8449242344c63992f63e7a0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
