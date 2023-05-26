@@ -161,6 +161,8 @@ static const arg_def_t disable_warnings =
 static const arg_def_t disable_warning_prompt =
     ARG_DEF("y", "disable-warning-prompt", 0,
             "Display warnings, but do not prompt user to continue.");
+static const arg_def_t write_tpl_stats = ARG_DEF(
+    NULL, "write-tpl-stats", 1, "Write TPL stats of vp9 encoder to file");
 
 #if CONFIG_VP9_HIGHBITDEPTH
 static const arg_def_t test16bitinternalarg = ARG_DEF(
@@ -531,9 +533,7 @@ static const arg_def_t disable_loopfilter =
             "1: Loopfilter off for non reference frames\n"
             "                                          "
             "2: Loopfilter off for all frames");
-#endif
 
-#if CONFIG_VP9_ENCODER
 static const arg_def_t *vp9_args[] = { &cpu_used_vp9,
                                        &auto_altref_vp9,
                                        &sharpness,
@@ -674,7 +674,11 @@ struct WebmOutputContext {
 struct stream_config {
   struct vpx_codec_enc_cfg cfg;
   const char *out_fn;
-  const char *stats_fn;
+  // First pass stats file name
+  const char *fp_stats_fn;
+  // TPL stats file name
+  const char *tpl_stats_fn;
+  FILE *tpl_stats_file;
   stereo_format_t stereo_fmt;
   int arg_ctrls[ARG_CTRL_CNT_MAX][2];
   int arg_ctrl_cnt;
@@ -937,7 +941,9 @@ static int parse_stream_params(struct VpxEncoderConfig *global,
     if (arg_match(&arg, &outputfile, argi)) {
       config->out_fn = arg.val;
     } else if (arg_match(&arg, &fpf_name, argi)) {
-      config->stats_fn = arg.val;
+      config->fp_stats_fn = arg.val;
+    } else if (arg_match(&arg, &write_tpl_stats, argi)) {
+      config->tpl_stats_fn = arg.val;
     } else if (arg_match(&arg, &use_webm, argi)) {
 #if CONFIG_WEBM_IO
       config->write_webm = 1;
@@ -1154,8 +1160,8 @@ static void validate_stream_config(const struct stream_state *stream,
 
     /* Check for two streams sharing a stats file. */
     if (streami != stream) {
-      const char *a = stream->config.stats_fn;
-      const char *b = streami->config.stats_fn;
+      const char *a = stream->config.fp_stats_fn;
+      const char *b = streami->config.fp_stats_fn;
       if (a && b && !strcmp(a, b))
         fatal("Stream %d: duplicate stats file (from stream %d)",
               streami->index, stream->index);
@@ -1310,8 +1316,8 @@ static void close_output_file(struct stream_state *stream,
 
 static void setup_pass(struct stream_state *stream,
                        struct VpxEncoderConfig *global, int pass) {
-  if (stream->config.stats_fn) {
-    if (!stats_open_file(&stream->stats, stream->config.stats_fn, pass))
+  if (stream->config.fp_stats_fn) {
+    if (!stats_open_file(&stream->stats, stream->config.fp_stats_fn, pass))
       fatal("Failed to open statistics store");
   } else {
     if (!stats_open_mem(&stream->stats, pass))
@@ -1323,6 +1329,12 @@ static void setup_pass(struct stream_state *stream,
                                   : VPX_RC_ONE_PASS;
   if (pass) {
     stream->config.cfg.rc_twopass_stats_in = stats_get(&stream->stats);
+  }
+
+  if (pass && stream->config.tpl_stats_fn) {
+    stream->config.tpl_stats_file = fopen(stream->config.tpl_stats_fn, "w");
+    if (stream->config.tpl_stats_file == NULL)
+      fatal("Failed to open TPL stats file");
   }
 
   stream->cx_time = 0;
@@ -1673,6 +1685,30 @@ static void print_time(const char *label, int64_t etl) {
   }
 }
 
+static void write_tpl_stats_file(struct stream_state *stream) {
+  const vpx_codec_cx_pkt_t *pkt;
+  vpx_codec_iter_t iter = NULL;
+  if (!stream->config.tpl_stats_fn || !stream->config.tpl_stats_fn) return;
+  while ((pkt = vpx_codec_get_cx_data(&stream->encoder, &iter))) {
+    switch (pkt->kind) {
+      case VPX_CODEC_CX_FRAME_PKT:
+        VpxTplGopStats gop_stats;
+        vpx_codec_err_t error;
+        gop_stats.size = 50;
+        gop_stats.frame_stats_list =
+            (VpxTplFrameStats *)calloc(50, sizeof(VpxTplFrameStats));
+        if (gop_stats.frame_stats_list == NULL)
+          fatal("Failed to allocate memory for TPL stats.\n");
+        error =
+            vpx_codec_control(&stream->encoder, VP9E_GET_TPL_STATS, &gop_stats);
+        if (error != VPX_CODEC_OK) fatal("Failed to get TPL stats.\n");
+        vpx_write_tpl_gop_stats(stream->config.tpl_stats_file, &gop_stats);
+        break;
+      default: break;
+    }
+  }
+}
+
 int main(int argc, const char **argv_) {
   int pass;
   vpx_image_t raw;
@@ -1811,7 +1847,7 @@ int main(int argc, const char **argv_) {
      */
     if (global.pass && global.passes == 2)
       FOREACH_STREAM({
-        if (!stream->config.stats_fn)
+        if (!stream->config.fp_stats_fn)
           die("Stream %d: Must specify --fpf when --pass=%d"
               " and --passes=2\n",
               stream->index, global.pass);
@@ -1982,6 +2018,8 @@ int main(int argc, const char **argv_) {
 
         if (got_data && global.test_decode != TEST_DECODE_OFF)
           FOREACH_STREAM(test_decode(stream, global.test_decode, global.codec));
+
+        if (got_data) FOREACH_STREAM(write_tpl_stats_file(stream));
       }
 
       fflush(stdout);
