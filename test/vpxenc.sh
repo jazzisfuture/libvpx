@@ -348,6 +348,30 @@ vpxenc_vp9_webm_2pass() {
   fi
 }
 
+vpxenc_vp9_2pass_write_tpl() {
+  if [ "$(vpxenc_can_encode_vp9)" = "yes" ]; then
+    local output="${VPX_TEST_OUTPUT_DIR}/vp9_tpl"
+    local tpl_file="${VPX_TEST_OUTPUT_DIR}/vp9_tpl_stats"
+    vpxenc $(yuv_input_hantro_collage) \
+      --codec=vp9 \
+      --limit="${TEST_FRAMES}" \
+      --output="${output}" \
+      --passes=2 \
+      --ivf \
+      --tpl_stats_file="${tpl_file}" || return 1
+
+    if [ ! -e "${output}" ]; then
+      elog "Output file does not exist."
+      return 1
+    fi
+
+    if [ ! -s "${tpl_file}" ]; then
+      elog "TPL stats file does not exist."
+      return 1
+    fi
+  fi
+}
+
 vpxenc_vp9_ivf_lossless() {
   if [ "$(vpxenc_can_encode_vp9)" = "yes" ]; then
     local output="${VPX_TEST_OUTPUT_DIR}/vp9_lossless.ivf"
@@ -483,6 +507,7 @@ if [ "$(vpx_config_option_enabled CONFIG_REALTIME_ONLY)" != "yes" ]; then
   vpxenc_tests="$vpxenc_tests
                 vpxenc_vp8_webm_2pass
                 vpxenc_vp8_webm_lag10_frames20
+                vpxenc_vp9_2pass_write_tpl
                 vpxenc_vp9_webm_2pass"
 fi
 
