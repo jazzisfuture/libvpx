@@ -20,8 +20,8 @@
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_tpl_model.h"
 
-static void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
-                            const GF_GROUP *gf_group, int *tpl_group_frames) {
+static int init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
+                           const GF_GROUP *gf_group, int *tpl_group_frames) {
   VP9_COMMON *cm = &cpi->common;
   int frame_idx = 0;
   int i;
@@ -148,6 +148,8 @@ static void init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
     ++extend_frame_count;
     ++frame_gop_offset;
   }
+
+  return extend_frame_count;
 }
 
 static void init_tpl_stats(VP9_COMP *cpi) {
@@ -1245,6 +1247,19 @@ static void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   }
 }
 
+static void trim_tpl_stats(VpxTplGopStats *tpl_gop_stats,
+                           const int extra_frames) {
+  int i;
+  if (tpl_gop_stats->size <= extra_frames) return;
+  for (i = 0; i < extra_frames; i++) {
+    VpxTplFrameStats *frame_stats =
+        &tpl_gop_stats->frame_stats_list[tpl_gop_stats->size - i - 1];
+    free(frame_stats->block_stats_list);
+    free(frame_stats);
+  }
+  tpl_gop_stats->size = tpl_gop_stats->size - extra_frames;
+}
+
 #if CONFIG_NON_GREEDY_MV
 #define DUMP_TPL_STATS 0
 #if DUMP_TPL_STATS
@@ -1456,9 +1471,11 @@ void vp9_setup_tpl_stats(VP9_COMP *cpi) {
   const GF_GROUP *gf_group = &cpi->twopass.gf_group;
   int tpl_group_frames = 0;
   int frame_idx;
+  int extended_frame_count;
   cpi->tpl_bsize = BLOCK_32X32;
 
-  init_gop_frames(cpi, gf_picture, gf_group, &tpl_group_frames);
+  extended_frame_count =
+      init_gop_frames(cpi, gf_picture, gf_group, &tpl_group_frames);
 
   init_tpl_stats(cpi);
 
@@ -1470,6 +1487,8 @@ void vp9_setup_tpl_stats(VP9_COMP *cpi) {
     if (gf_picture[frame_idx].update_type == USE_BUF_FRAME) continue;
     mc_flow_dispenser(cpi, gf_picture, frame_idx, cpi->tpl_bsize);
   }
+
+  trim_tpl_stats(&cpi->tpl_gop_stats, extended_frame_count);
 #if CONFIG_NON_GREEDY_MV
   cpi->tpl_ready = 1;
 #if DUMP_TPL_STATS
