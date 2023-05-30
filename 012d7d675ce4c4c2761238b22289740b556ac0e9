@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8468b856_c204f24a",
+        "filename": "test/vpxenc.sh",
+        "patchSetId": 7
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-30T21:01:25Z",
+      "side": 1,
+      "message": "maybe use `-s`:\n\n```\n-s FILE        True if file exists and is not empty.\n```",
+      "range": {
+        "startLine": 368,
+        "startChar": 11,
+        "endLine": 368,
+        "endChar": 13
+      },
+      "revId": "012d7d675ce4c4c2761238b22289740b556ac0e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b5ee3924_613341c3",
+        "filename": "vpxenc.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 166,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-30T21:01:25Z",
+      "side": 1,
+      "message": "\"Write VP9 TPL stats to file\" might be more concise. Also this sounds like a boolean flag, not one that takes a filename as an argument. Would `--tpl-stats-file` or `--vp9-tpl-stats-file` be better?",
+      "range": {
+        "startLine": 166,
+        "startChar": 33,
+        "endLine": 166,
+        "endChar": 71
+      },
+      "revId": "012d7d675ce4c4c2761238b22289740b556ac0e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
