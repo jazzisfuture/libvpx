@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7538bcae_127ef149",
+        "filename": "vpxenc.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1336,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-05-30T17:03:57Z",
+      "side": 1,
+      "message": "Do we do fclose() in this CL?",
+      "range": {
+        "startLine": 1336,
+        "startChar": 36,
+        "endLine": 1336,
+        "endChar": 76
+      },
+      "revId": "cfeccec310d1fad75aae4c8cee3c5ff25ae5473f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
