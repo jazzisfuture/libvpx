@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1075832_fb0b04d2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-05-31T17:25:02Z",
+      "side": 1,
+      "message": "Thinking about this a little more. Why not have the flag work like `--fpf`? Meaning in `--pass 2` it outputs the file and in `--pass 3` it reads it, if I\u0027m understanding the intended use correctly.",
+      "revId": "626deb9fb7a51cc09c504133f6330625a0522c53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
