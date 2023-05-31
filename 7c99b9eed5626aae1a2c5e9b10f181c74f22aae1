@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fdeade75_147a8016",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-31T18:28:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5bbdde61_0c2ef466",
+      "range": {
+        "startLine": 1252,
+        "startChar": 27,
+        "endLine": 1252,
+        "endChar": 32
+      },
+      "revId": "7c99b9eed5626aae1a2c5e9b10f181c74f22aae1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0517629e_e842838c",
@@ -37,6 +61,30 @@
       "writtenOn": "2023-05-31T18:05:57Z",
       "side": 1,
       "message": "I will assert here so that we know there is an error.",
+      "range": {
+        "startLine": 1256,
+        "startChar": 2,
+        "endLine": 1256,
+        "endChar": 50
+      },
+      "revId": "7c99b9eed5626aae1a2c5e9b10f181c74f22aae1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "473410cb_7a581248",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1256,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-31T18:28:02Z",
+      "side": 1,
+      "message": "I used `vpx_internal_error` so it\u0027ll halt the encoder and print out an error message.",
+      "parentUuid": "0517629e_e842838c",
       "range": {
         "startLine": 1256,
         "startChar": 2,
