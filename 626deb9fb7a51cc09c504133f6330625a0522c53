@@ -16,6 +16,24 @@
       "message": "Thinking about this a little more. Why not have the flag work like `--fpf`? Meaning in `--pass 2` it outputs the file and in `--pass 3` it reads it, if I\u0027m understanding the intended use correctly.",
       "revId": "626deb9fb7a51cc09c504133f6330625a0522c53",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c81376ae_00b7b05f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-31T18:09:28Z",
+      "side": 1,
+      "message": "Yeah that\u0027s the intended use. However, there\u0027s no implementation to consume the TPL stats that\u0027re read from the file yet.\n\nDo you prefer having that implementation before putting the flag in? Or I can put in the flag first and then add the implementation to expand this flag and consume the TPL stats?",
+      "parentUuid": "c1075832_fb0b04d2",
+      "revId": "626deb9fb7a51cc09c504133f6330625a0522c53",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
