@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bd12d62_474fe847",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1261,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-31T17:59:28Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "021db178_e5768be1",
+      "range": {
+        "startLine": 1261,
+        "startChar": 41,
+        "endLine": 1261,
+        "endChar": 68
+      },
+      "revId": "01092e22eb20b3e643c05601a50b7927a0336e2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cda5f57b_d039e46d",
@@ -37,6 +61,30 @@
       "writtenOn": "2023-05-31T17:51:18Z",
       "side": 1,
       "message": "This will affect the current q mode\u0027s performance, which should be avoid.\nWe only need to do this before writing the tpl stats into file.\nIn fact, we only need to ignore the last 2 frames\u0027 stats when writing tpl stats into file.",
+      "range": {
+        "startLine": 1506,
+        "startChar": 1,
+        "endLine": 1508,
+        "endChar": 80
+      },
+      "revId": "01092e22eb20b3e643c05601a50b7927a0336e2a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1063cd9c_6c6fad3d",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1508,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-05-31T17:59:28Z",
+      "side": 1,
+      "message": "This actually doesn\u0027t affect Qmode as it is because ```cpi-\u003etpl_gop_stats``` is the new structure purely for tpl stats before propagation. The TPL stats used for actual encoding is in ```cpi-\u003etpl_stats```.",
+      "parentUuid": "cda5f57b_d039e46d",
       "range": {
         "startLine": 1506,
         "startChar": 1,
