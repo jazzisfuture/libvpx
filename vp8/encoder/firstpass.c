@@ -822,7 +822,8 @@ void vp8_first_pass(VP8_COMP *cpi) {
   }
 
   /* use this to see what the first pass reconstruction looks like */
-  if (0) {
+#if 0
+  {
     char filename[512];
     FILE *recon_file;
     sprintf(filename, "enc%04d.yuv", (int)cm->current_video_frame);
@@ -836,6 +837,7 @@ void vp8_first_pass(VP8_COMP *cpi) {
     (void)fwrite(lst_yv12->buffer_alloc, lst_yv12->frame_size, 1, recon_file);
     fclose(recon_file);
   }
+#endif
 
   cm->current_video_frame++;
 }
@@ -1038,11 +1040,13 @@ static int estimate_cq(VP8_COMP *cpi, FIRSTPASS_STATS *fpstats,
   double clip_iifactor;
   int overhead_bits_per_mb;
 
-  if (0) {
+#if 0
+  {
     FILE *f = fopen("epmp.stt", "a");
     fprintf(f, "%10.2f\n", err_per_mb);
     fclose(f);
   }
+#endif
 
   target_norm_bits_per_mb = (section_target_bandwitdh < (1 << 20))
                                 ? (512 * section_target_bandwitdh) / num_mbs
@@ -1230,7 +1234,8 @@ static int estimate_kf_group_q(VP8_COMP *cpi, double section_err,
     Q++;
   }
 
-  if (0) {
+#if 0
+  {
     FILE *f = fopen("estkf_q.stt", "a");
     fprintf(f, "%8d %8d %8d %8.2f %8.3f %8.2f %8.3f %8.3f %8.3f %8d\n",
             cpi->common.current_video_frame, bits_per_mb_at_this_q,
@@ -1240,6 +1245,7 @@ static int estimate_kf_group_q(VP8_COMP *cpi, double section_err,
             Q);
     fclose(f);
   }
+#endif
 
   return Q;
 }
@@ -3047,7 +3053,8 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
               (int)((projected_bits_perframe - av_bits_per_frame) *
                     cpi->twopass.frames_to_key));
 
-    if (0) {
+#if 0
+    {
       FILE *f = fopen("Subsamle.stt", "a");
       fprintf(f, " %8d %8d %8d %8d %12.0f %8d %8d %8d\n",
               cpi->common.current_video_frame, kf_q, cpi->common.horiz_scale,
@@ -3056,6 +3063,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
               new_height, new_width);
       fclose(f);
     }
+#endif
 
     /* The trigger for spatial resampling depends on the various
      * parameters such as whether we are streaming (CBR) or VBR.
@@ -3121,7 +3129,8 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
         kf_q = estimate_kf_group_q(cpi, err_per_frame * effective_size_ratio,
                                    (int)bits_per_frame, group_iiratio);
 
-        if (0) {
+#if 0
+        {
           FILE *f = fopen("Subsamle.stt", "a");
           fprintf(
               f, "******** %8d %8d %8d %12.0f %8d %8d %8d\n", kf_q,
@@ -3131,6 +3140,7 @@ static void find_next_key_frame(VP8_COMP *cpi, FIRSTPASS_STATS *this_frame) {
               new_height, new_width);
           fclose(f);
         }
+#endif
       }
     }
 
