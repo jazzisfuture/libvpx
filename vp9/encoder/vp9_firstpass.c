@@ -1488,7 +1488,8 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
   }
 
   // Use this to see what the first pass reconstruction looks like.
-  if (0) {
+#if 0
+  {
     char filename[512];
     FILE *recon_file;
     snprintf(filename, sizeof(filename), "enc%04d.yuv",
@@ -1502,6 +1503,7 @@ void vp9_first_pass(VP9_COMP *cpi, const struct lookahead_entry *source) {
     (void)fwrite(lst_yv12->buffer_alloc, lst_yv12->frame_size, 1, recon_file);
     fclose(recon_file);
   }
+#endif
 
   // In the first pass, every frame is considered as a show frame.
   update_frame_indexes(cm, /*show_frame=*/1);
