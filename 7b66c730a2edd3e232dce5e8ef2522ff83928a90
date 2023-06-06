@@ -39,6 +39,30 @@
       },
       "revId": "7b66c730a2edd3e232dce5e8ef2522ff83928a90",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "91b1342d_32e6addf",
+        "filename": "vp9/encoder/x86/vp9_diamond_search_sad_avx.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2023-06-06T11:18:10Z",
+      "side": 1,
+      "message": "Addressed in https://chromium-review.googlesource.com/c/webm/libvpx/+/4593037",
+      "parentUuid": "06c9780b_e6c8d8e1",
+      "range": {
+        "startLine": 236,
+        "startChar": 10,
+        "endLine": 237,
+        "endChar": 48
+      },
+      "revId": "7b66c730a2edd3e232dce5e8ef2522ff83928a90",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
