@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "8dd56470_d51ef2fd",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2254,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-07T18:27:10Z",
+      "side": 1,
+      "message": "I guess code under #if 0 doesn\u0027t get formatted. No, need to change it in this patch.",
+      "revId": "ffb93451095809b710576194c374c84c1d36d4cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "018bfe92_e40444d0",
         "filename": "vp9/encoder/vp9_firstpass.c",
         "patchSetId": 6
