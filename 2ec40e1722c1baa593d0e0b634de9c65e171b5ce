@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fbaf4b7f_fd7f60fd",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1296,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-07T17:05:29Z",
+      "side": 1,
+      "message": "See my comment in vp9/vp9_cx_iface.c",
+      "revId": "2ec40e1722c1baa593d0e0b634de9c65e171b5ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7cf1e50c_51560747",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2088,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-07T17:05:29Z",
+      "side": 1,
+      "message": "These are still not the correct names. The correct names are:\n\n```\n  /*!\\brief Spatial resampling up watermark.\n   *\n   * This threshold is described as a percentage of the target data buffer.\n   * When the data buffer rises above this percentage of fullness, the\n   * encoder will step up to a higher resolution version of the frame.\n   */\n  unsigned int rc_resize_up_thresh;\n\n  /*!\\brief Spatial resampling down watermark.\n   *\n   * This threshold is described as a percentage of the target data buffer.\n   * When the data buffer falls below this percentage of fullness, the\n   * encoder will step down to a lower resolution version of the frame.\n   */\n  unsigned int rc_resize_down_thresh;\n```",
+      "revId": "2ec40e1722c1baa593d0e0b634de9c65e171b5ce",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
