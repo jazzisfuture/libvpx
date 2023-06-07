@@ -37,6 +37,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "d8c8e5e2_15f23f0f",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1678,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-07T18:30:18Z",
+      "side": 1,
+      "message": "I think typically i.e./e.g. are followed by a comma.",
+      "range": {
+        "startLine": 1678,
+        "startChar": 51,
+        "endLine": 1678,
+        "endChar": 55
+      },
+      "revId": "bcc9c291e7c3d8cbc1cce8825f7571333befd70e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4534c711_77abb450",
         "filename": "vp9/encoder/vp9_rdopt.c",
         "patchSetId": 6
