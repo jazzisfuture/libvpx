@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "49bd651f_6511757a",
+        "filename": "vp8/encoder/rdopt.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1024,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-06-07T19:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6d513645_1ba4ff2e",
+      "revId": "bcc9c291e7c3d8cbc1cce8825f7571333befd70e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "05295122_6636c4d7",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-06-07T17:36:47Z",
       "side": 1,
       "message": "\"referencence\" is still incorrect.",
+      "revId": "bcc9c291e7c3d8cbc1cce8825f7571333befd70e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4cb8c988_6e7c6308",
+        "filename": "vp9/decoder/vp9_decodemv.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 302,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-06-07T19:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "05295122_6636c4d7",
       "revId": "bcc9c291e7c3d8cbc1cce8825f7571333befd70e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -58,6 +94,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9dbaf058_1704f3cb",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1678,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-06-07T19:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d8c8e5e2_15f23f0f",
+      "range": {
+        "startLine": 1678,
+        "startChar": 51,
+        "endLine": 1678,
+        "endChar": 55
+      },
+      "revId": "bcc9c291e7c3d8cbc1cce8825f7571333befd70e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4534c711_77abb450",
@@ -71,6 +131,24 @@
       "writtenOn": "2023-06-07T17:36:47Z",
       "side": 1,
       "message": "Two spaces were accidentally deleted.",
+      "revId": "bcc9c291e7c3d8cbc1cce8825f7571333befd70e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e919d6e_2b53f683",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2186,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-06-07T19:46:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4534c711_77abb450",
       "revId": "bcc9c291e7c3d8cbc1cce8825f7571333befd70e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
