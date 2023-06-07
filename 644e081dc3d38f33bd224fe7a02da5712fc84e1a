@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "08341b0a_6fa7f27f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-07T16:36:03Z",
+      "side": 1,
+      "message": "Nit: You can also list\n\ndevide -\u003e divide",
+      "revId": "644e081dc3d38f33bd224fe7a02da5712fc84e1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "75f511e5_06fea50f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-07T16:36:03Z",
+      "side": 1,
+      "message": "LGTM.",
+      "revId": "644e081dc3d38f33bd224fe7a02da5712fc84e1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f3ebda0_abaa430e",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3056,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-07T16:36:03Z",
+      "side": 1,
+      "message": "SECOND_REF_USEAGE_THRESH also contains \"USEAGE\"",
+      "revId": "644e081dc3d38f33bd224fe7a02da5712fc84e1a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
