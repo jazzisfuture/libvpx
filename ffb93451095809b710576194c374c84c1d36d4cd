@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "412482a7_6b39429a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-07T17:32:48Z",
+      "side": 1,
+      "message": "LGTM.",
+      "revId": "ffb93451095809b710576194c374c84c1d36d4cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "018bfe92_e40444d0",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 613,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-07T17:32:48Z",
+      "side": 1,
+      "message": "\"impace\" is not a word. It\u0027s probably \"impact\".",
+      "revId": "ffb93451095809b710576194c374c84c1d36d4cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
