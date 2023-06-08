@@ -16,7 +16,7 @@
 
 #include "vp9/common/vp9_entropymode.h"
 #include "vp9/common/vp9_enums.h"
-#include "vp9/common/vp9_onyxc_int.h"
+// #include "vp9/common/vp9_onyxc_int.h"
 #include "vp9/vp9_iface_common.h"
 #include "vp9/encoder/vp9_aq_cyclicrefresh.h"
 #include "vp9/encoder/vp9_firstpass.h"
