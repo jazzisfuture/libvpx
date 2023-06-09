@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc4565a6_f76d1836",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-06-09T17:21:09Z",
+      "side": 1,
+      "message": "This CL resolves the issue of a bit-mismatch between the C and Intrinsic implementations of vpx_hadamard_32x32() function. The root cause of this mismatch was an integer overflow that occurred during the addition operation in the intrinsic functions. In the intrinsic function, the addition was performed at the 16-bit level, however calculating a0 + a1 resulted in a 17-bit value.\n\nTo rectify this issue, the code change addresses the 16-bit addition problem in both SSE2 and AVX2. The solution involves modifying the code to perform the addition at the 32-bit level, incorporating sign extension. Subsequently, a right shift operation is applied, and then convert the result back to the 16-bit level. By implementing this fix, consistency is achieved between the C and intrinsic implementations.\n\nFurthermore, the neon implementation was tested, and found bit-match.\n\nThe module level scaling w.r.t C function (timer based) for existing (AVX2) and fixed AVX2 intrinsic:\n```\n   AVX2\t\t    AVX2\n(existing)\t (Modified)\n  3.68x\t\t    3.26x\n```\nThe borg results of good encoding mode for cpu0:\n```\n                 Instruction Count        BD-Rate Loss(%)\ncpu   Resolution   Reduction(%)    avg.psnr   ovr.psnr    ssim\n 0       LOWRES2     -0.050        -0.0004    -0.0004   -0.0035\n 0       MIDRES2     -0.076        -0.0059    -0.0047   -0.0092\n 0        HDRES2     -0.121        -0.0094    -0.0071   -0.0049\n 0       Average     -0.082        -0.0052    -0.0041   -0.0059\n```\nThe instruction count reduction specified has been measured using command:\n`$ perf stat -e instructions:u ./vpxenc …`",
+      "revId": "8c308aefea7c58a1a979b81f4aa6d68908e379ee",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
