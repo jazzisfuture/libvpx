@@ -202,6 +202,69 @@ webm_io_available() {
   [ "$(vpx_config_option_enabled CONFIG_WEBM_IO)" = "yes" ] && echo yes
 }
 
+# Echoes good encode params for use with vpxenc.
+vpxenc_encode_test_good_params() {
+  echo "--codec=vp9 \
+  --good \
+  --test-decode=fatal \
+  --threads=1 \
+  --profile=0 \
+  --lag-in-frames=19 \
+  --min-q=0 \
+  --max-q=63 \
+  --auto-alt-ref=1 \
+  --passes=2 \
+  --kf-max-dist=160 \
+  --kf-min-dist=0 \
+  --drop-frame=0 \
+  --static-thresh=0 \
+  --bias-pct=50 \
+  --minsection-pct=0 \
+  --maxsection-pct=2000 \
+  --arnr-maxframes=7 \
+  --arnr-strength=5 \
+  --sharpness=0 \
+  --undershoot-pct=100 \
+  --overshoot-pct=100 \
+  --frame-parallel=0 \
+  --tile-columns=0 \
+  --auto-alt-ref=1 \
+  --end-usage=vbr \
+  --ivf \
+  --verbose"
+}
+
+# Echoes realtime encode params for use with vpxenc.
+vpxenc_encode_test_rt_params() {
+  echo "--codec=vp9 \
+  --test-decode=fatal \
+  --ivf \
+  --rt \
+  --profile=0 \
+  --kf-max-dist=90000 \
+  --static-thresh=0 \
+  --end-usage=cbr \
+  --min-q=2 \
+  --undershoot-pct=50 \
+  --overshoot-pct=50 \
+  --buf-sz=1000 \
+  --buf-initial-sz=500 \
+  --buf-optimal-sz=600 \
+  --max-intra-rate=300 \
+  --resize-allowed=0 \
+  --passes=1 \
+  --lag-in-frames=0 \
+  --noise-sensitivity=0 \
+  --tile-columns=0 \
+  --aq-mode=3 \
+  --tile-columns=0 \
+  --tile-rows=0 \
+  --row-mt=0 \
+  --threads=1 \
+  --max-q=58 \
+  --error-resilient=0"
+}
+
 # Filters strings from $1 using the filter specified by $2. Filter behavior
 # depends on the presence of $3. When $3 is present, strings that match the
 # filter are excluded. When $3 is omitted, strings matching the filter are
@@ -321,6 +384,36 @@ vpx_test_check_environment() {
   fi
 }
 
+# Echo vpxenc command line parameters allowing use of a raw yuv file as
+# input to vpxenc.
+yuv_raw_input() {
+  echo ""${YUV_RAW_INPUT}"
+       --width="${YUV_RAW_INPUT_WIDTH}"
+       --height="${YUV_RAW_INPUT_HEIGHT}""
+}
+
+yuv_240p_raw_input() {
+  echo ""${YUV_240P_RAW_INPUT}"
+       --width="${YUV_240P_RAW_INPUT_WIDTH}"
+       --height="${YUV_240P_RAW_INPUT_HEIGHT}""
+}
+
+yuv_480p_raw_input() {
+  echo ""${YUV_480P_RAW_INPUT}"
+       --width="${YUV_480P_RAW_INPUT_WIDTH}"
+       --height="${YUV_480P_RAW_INPUT_HEIGHT}""
+}
+
+yuv_720p_raw_input() {
+  echo ""${YUV_720P_RAW_INPUT}"
+       --width="${YUV_720P_RAW_INPUT_WIDTH}"
+       --height="${YUV_720P_RAW_INPUT_HEIGHT}""
+}
+
+y4m_720p_input() {
+  echo ${Y4M_720P_INPUT}
+}
+
 # Parse the command line.
 while [ -n "$1" ]; do
   case "$1" in
@@ -410,10 +503,22 @@ YUV_RAW_INPUT="${LIBVPX_TEST_DATA_PATH}/hantro_collage_w352h288.yuv"
 YUV_RAW_INPUT_WIDTH=352
 YUV_RAW_INPUT_HEIGHT=288
 
+YUV_240P_RAW_INPUT="${LIBVPX_TEST_DATA_PATH}/desktopqvga.320_240.yuv"
+YUV_240P_RAW_INPUT_WIDTH=320
+YUV_240P_RAW_INPUT_HEIGHT=240
+
+YUV_480P_RAW_INPUT="${LIBVPX_TEST_DATA_PATH}/niklas_640_480_30.yuv"
+YUV_480P_RAW_INPUT_WIDTH=640
+YUV_480P_RAW_INPUT_HEIGHT=480
+
+YUV_720P_RAW_INPUT="${LIBVPX_TEST_DATA_PATH}/desktop_office1.1280_720-020.yuv"
+YUV_720P_RAW_INPUT_WIDTH=1280
+YUV_720P_RAW_INPUT_HEIGHT=720
+
 Y4M_NOSQ_PAR_INPUT="${LIBVPX_TEST_DATA_PATH}/park_joy_90p_8_420_a10-1.y4m"
 Y4M_720P_INPUT="${LIBVPX_TEST_DATA_PATH}/niklas_1280_720_30.y4m"
-Y4M_720P_INPUT_WIDTH=1280
-Y4M_720P_INPUT_HEIGHT=720
+
+VPX_ENCODE_BITMATCH_TEST_FRAME_LIMIT=${VPX_ENCODE_BITMATCH_TEST_FRAME_LIMIT:-20}
 
 # Setup a trap function to clean up after tests complete.
 trap cleanup EXIT
@@ -422,6 +527,7 @@ vlog "$(basename "${0%.*}") test configuration:
   LIBVPX_BIN_PATH=${LIBVPX_BIN_PATH}
   LIBVPX_CONFIG_PATH=${LIBVPX_CONFIG_PATH}
   LIBVPX_TEST_DATA_PATH=${LIBVPX_TEST_DATA_PATH}
+  LIBVPX_SOURCE_DIR=${LIBVPX_SOURCE_DIR}
   VP8_IVF_FILE=${VP8_IVF_FILE}
   VP9_IVF_FILE=${VP9_IVF_FILE}
   VP9_WEBM_FILE=${VP9_WEBM_FILE}
@@ -437,6 +543,14 @@ vlog "$(basename "${0%.*}") test configuration:
   YUV_RAW_INPUT=${YUV_RAW_INPUT}
   YUV_RAW_INPUT_WIDTH=${YUV_RAW_INPUT_WIDTH}
   YUV_RAW_INPUT_HEIGHT=${YUV_RAW_INPUT_HEIGHT}
-  Y4M_NOSQ_PAR_INPUT=${Y4M_NOSQ_PAR_INPUT}"
+  YUV_240P_RAW_INPUT=${YUV_240P_RAW_INPUT}
+  YUV_240P_RAW_INPUT_WIDTH=${YUV_240P_RAW_INPUT_WIDTH}
+  YUV_240P_RAW_INPUT_HEIGHT=${YUV_240P_RAW_INPUT_HEIGHT}
+  YUV_720P_RAW_INPUT=${YUV_720P_RAW_INPUT}
+  YUV_720P_RAW_INPUT_WIDTH=${YUV_720P_RAW_INPUT_WIDTH}
+  YUV_720P_RAW_INPUT_HEIGHT=${YUV_720P_RAW_INPUT_HEIGHT}
+  Y4M_720P_INPUT=${Y4M_720P_INPUT}
+  Y4M_NOSQ_PAR_INPUT=${Y4M_NOSQ_PAR_INPUT}
+  VPX_ENCODE_BITMATCH_TEST_FRAME_LIMIT=${VPX_ENCODE_BITMATCH_TEST_FRAME_LIMIT}"
 
 fi  # End $VPX_TEST_TOOLS_COMMON_SH pseudo include guard.
