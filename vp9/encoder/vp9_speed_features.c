@@ -1037,7 +1037,8 @@ void vp9_set_speed_features_framesize_independent(VP9_COMP *cpi, int speed) {
     set_good_speed_feature_framesize_independent(cpi, cm, sf, speed);
 #endif
 
-  cpi->diamond_search_sad = vp9_diamond_search_sad;
+  // The avx function is disabled because of negligible speed gains
+  cpi->diamond_search_sad = vp9_diamond_search_sad_c;
 
   // Slow quant, dct and trellis not worthwhile for first pass
   // so make sure they are always turned off.
