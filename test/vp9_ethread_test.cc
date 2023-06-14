@@ -21,12 +21,12 @@
 namespace {
 // FIRSTPASS_STATS struct:
 // {
-//   25 double members;
+//   26 double members;
 //   1 int64_t member;
 // }
 // Whenever FIRSTPASS_STATS struct is modified, the following constants need to
 // be revisited.
-const int kDbl = 25;
+const int kDbl = 26;
 const int kInt = 1;
 const size_t kFirstPassStatsSz = kDbl * sizeof(double) + kInt * sizeof(int64_t);
 
@@ -128,8 +128,10 @@ static void compare_fp_stats(vpx_fixed_buf_t *fp_stats, double factor) {
     const double *frame_stats2 = reinterpret_cast<double *>(stats2);
 
     for (j = 0; j < kDbl; ++j) {
+      // new_mv_count has bigger difference
+      const double stats_factor = j == 25 ? 200.0 : factor;
       ASSERT_LE(fabs(*frame_stats1 - *frame_stats2),
-                fabs(*frame_stats1) / factor)
+                fabs(*frame_stats1) / stats_factor)
           << "First failure @ frame #" << i << " stat #" << j << " ("
           << *frame_stats1 << " vs. " << *frame_stats2 << ")";
       frame_stats1++;
