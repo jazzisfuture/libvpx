@@ -50,6 +50,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ba54ed51_2159d278",
+        "filename": "test/vp9_ethread_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2023-06-15T20:28:49Z",
+      "side": 1,
+      "message": "I think in AV1 it is normalized by num_mbs_16x16 in function `normalize_firstpass_stats` in av1/encoder/firstpass.c. Is this the one you are referring to?",
+      "parentUuid": "5ee7f22a_19d33491",
+      "range": {
+        "startLine": 132,
+        "startChar": 39,
+        "endLine": 132,
+        "endChar": 49
+      },
+      "revId": "d3ec3e296a9894f2725e967a09a25a044b5c9032",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9ea52e24_31e4a6f6",
         "filename": "vp9/encoder/vp9_encodeframe.c",
         "patchSetId": 4
