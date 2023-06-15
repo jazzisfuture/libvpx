@@ -16,6 +16,47 @@
       "message": "This CL disables the AVX intrinsic of `vp9_diamond_search_sad()` function, as it has been found to provide poor scaling w.r.t C implementation. We have confirmed this behaviour by performing a timer based profiling.\n\nThe average instruction count reduction for Good encoding mode.\n```\n      Instruction Count\ncpu   Reduction(%)\n0         -0.107\n1          0.111\n2          0.177\n3          0.315\n4          0.229\n5          0.214\n```\nFurthermore, we measured the instruction count values for the RT case and observed an insignificant change in the instruction count.\n\nThis is a bit-exact change.\n\nThe instruction count reduction specified has been measured using command:\n\n`$ perf stat -e instructions:u ./vpxenc …`",
       "revId": "75cd165e240c27e72584d9ce6d83924eea53aa31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d72eb603_08bc1efd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-06-15T16:21:00Z",
+      "side": 1,
+      "message": "Thanks for the testing. Kind of wish we did this before fixing the SIMD mismatch. Anyway, this is the right decision if the SIMD function doesn\u0027t bring gain and doesn\u0027t have unit test coverage.",
+      "parentUuid": "8c8755bb_dfaeb746",
+      "revId": "75cd165e240c27e72584d9ce6d83924eea53aa31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f3f6c67b_ea9ac197",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1041,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-06-15T16:21:00Z",
+      "side": 1,
+      "message": "Could you also remove that SIMD function and related code? Remove \"_c\" from the function name?",
+      "range": {
+        "startLine": 1041,
+        "startChar": 28,
+        "endLine": 1041,
+        "endChar": 52
+      },
+      "revId": "75cd165e240c27e72584d9ce6d83924eea53aa31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
