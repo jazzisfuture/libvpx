@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8c8755bb_dfaeb746",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-06-15T13:33:37Z",
+      "side": 1,
+      "message": "This CL disables the AVX intrinsic of `vp9_diamond_search_sad()` function, as it has been found to provide poor scaling w.r.t C implementation. We have confirmed this behaviour by performing a timer based profiling.\n\nThe average instruction count reduction for Good encoding mode.\n```\n      Instruction Count\ncpu   Reduction(%)\n0         -0.107\n1          0.111\n2          0.177\n3          0.315\n4          0.229\n5          0.214\n```\nFurthermore, we measured the instruction count values for the RT case and observed an insignificant change in the instruction count.\n\nThis is a bit-exact change.\n\nThe instruction count reduction specified has been measured using command:\n\n`$ perf stat -e instructions:u ./vpxenc …`",
+      "revId": "75cd165e240c27e72584d9ce6d83924eea53aa31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
