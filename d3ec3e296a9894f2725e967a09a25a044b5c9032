@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "5ee7f22a_19d33491",
+        "filename": "test/vp9_ethread_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-06-15T20:24:14Z",
+      "side": 1,
+      "message": "it\u0027s the index of the new field `new_mv_count` in firstpass stats.\n\nIt needs to be handled differently because it\u0027s not scaled to the number of MBs (like other MV related stats) in this CL. I didn\u0027t scale it because AV1 doesn\u0027t scale it I believe? correct me if I\u0027m wrong.\n\nSince it\u0027s not scaled, the difference between using vs not using row-mt is bigger than the other stats. \n\nMaybe I should scale it, just like others in vp9 firstpass stats.\n\nWhat do you think?",
+      "parentUuid": "0c4c8b29_2f0487b6",
+      "range": {
+        "startLine": 132,
+        "startChar": 39,
+        "endLine": 132,
+        "endChar": 49
+      },
+      "revId": "d3ec3e296a9894f2725e967a09a25a044b5c9032",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9ea52e24_31e4a6f6",
         "filename": "vp9/encoder/vp9_encodeframe.c",
         "patchSetId": 4
@@ -37,6 +61,30 @@
       "writtenOn": "2023-06-15T20:10:29Z",
       "side": 1,
       "message": "const?",
+      "range": {
+        "startLine": 5835,
+        "startChar": 8,
+        "endLine": 5835,
+        "endChar": 10
+      },
+      "revId": "d3ec3e296a9894f2725e967a09a25a044b5c9032",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59b5577e_87030565",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 5835,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-06-15T20:24:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9ea52e24_31e4a6f6",
       "range": {
         "startLine": 5835,
         "startChar": 8,
