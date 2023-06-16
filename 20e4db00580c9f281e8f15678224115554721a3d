@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d6d22554_636bda9c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-06-16T20:22:30Z",
+      "side": 1,
+      "message": "Improve",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 7
+      },
+      "revId": "20e4db00580c9f281e8f15678224115554721a3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd6e96a3_d5c3cd08",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-06-16T20:22:30Z",
+      "side": 1,
+      "message": "Are you a new contributor to libvpx? Did you complete the New Contributor Agreement yet?",
+      "revId": "20e4db00580c9f281e8f15678224115554721a3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
