@@ -24,6 +24,53 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "9c43ab98_0d5a144a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-16T22:31:57Z",
+      "side": 1,
+      "message": "\u003e Improve\n\nCan you also add where the change is being made to help when reading the history? Something like `configure.sh: Improve a comment`.",
+      "parentUuid": "d6d22554_636bda9c",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 7
+      },
+      "revId": "20e4db00580c9f281e8f15678224115554721a3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87868dbd_bc1b674f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-16T22:31:57Z",
+      "side": 1,
+      "message": "corresponding",
+      "range": {
+        "startLine": 9,
+        "startChar": 4,
+        "endLine": 9,
+        "endChar": 16
+      },
+      "revId": "20e4db00580c9f281e8f15678224115554721a3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "cd6e96a3_d5c3cd08",
@@ -37,6 +84,24 @@
       "writtenOn": "2023-06-16T20:22:30Z",
       "side": 1,
       "message": "Are you a new contributor to libvpx? Did you complete the New Contributor Agreement yet?",
+      "revId": "20e4db00580c9f281e8f15678224115554721a3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7de4683_0ee99c1f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-16T22:31:57Z",
+      "side": 1,
+      "message": "\u003e Are you a new contributor to libvpx? Did you complete the New Contributor Agreement yet?\n\nYes, the CLA check is built in to this host. It will block on upload.",
+      "parentUuid": "cd6e96a3_d5c3cd08",
       "revId": "20e4db00580c9f281e8f15678224115554721a3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
