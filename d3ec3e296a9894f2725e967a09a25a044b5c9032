@@ -96,6 +96,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "71e99a89_a7429a9e",
+        "filename": "test/vp9_ethread_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-06-16T18:18:22Z",
+      "side": 1,
+      "message": "I was wrong re why the difference of `new_mv_count` between using vs not using row-mt is bigger.\n\nScaling isn\u0027t the reason. Though I can\u0027t explain why the difference is bigger, it\u0027s expected it\u0027s not the same.",
+      "parentUuid": "e0e226c1_324ad313",
+      "range": {
+        "startLine": 132,
+        "startChar": 39,
+        "endLine": 132,
+        "endChar": 49
+      },
+      "revId": "d3ec3e296a9894f2725e967a09a25a044b5c9032",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9ea52e24_31e4a6f6",
