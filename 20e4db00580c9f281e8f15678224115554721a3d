@@ -104,6 +104,24 @@
       "parentUuid": "cd6e96a3_d5c3cd08",
       "revId": "20e4db00580c9f281e8f15678224115554721a3d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "649e531a_c532334e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1580724
+      },
+      "writtenOn": "2023-06-17T00:43:47Z",
+      "side": 1,
+      "message": "Yes, I am a new contributor to libvpx and I have completed the NCA.",
+      "parentUuid": "c7de4683_0ee99c1f",
+      "revId": "20e4db00580c9f281e8f15678224115554721a3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
