@@ -57,6 +57,30 @@
       },
       "revId": "75cd165e240c27e72584d9ce6d83924eea53aa31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f71ab3c_67efb5aa",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1041,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-06-19T13:19:04Z",
+      "side": 1,
+      "message": "We have taken care of your comment by removing the code related to AVX in the `vp9_diamond_search_sad()` function. Since the function has Neon intrinsic support \"_c\" is not removed from the function name.",
+      "parentUuid": "f3f6c67b_ea9ac197",
+      "range": {
+        "startLine": 1041,
+        "startChar": 28,
+        "endLine": 1041,
+        "endChar": 52
+      },
+      "revId": "75cd165e240c27e72584d9ce6d83924eea53aa31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
