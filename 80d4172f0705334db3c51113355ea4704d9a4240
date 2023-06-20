@@ -16,6 +16,29 @@
       "message": "Thanks for the suggestion. Patch is ready for review.",
       "revId": "80d4172f0705334db3c51113355ea4704d9a4240",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "525e26db_c55cbffe",
+        "filename": "vp9/common/vp9_rtcd_defs.pl",
+        "patchSetId": 2
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-06-20T16:34:38Z",
+      "side": 1,
+      "message": "This CL removes x86 SIMD, and looks good for now. We might need to do the same for the neon SIMD since no unit test for it as well. I will file an issue.",
+      "range": {
+        "startLine": 175,
+        "startChar": 37,
+        "endLine": 175,
+        "endChar": 41
+      },
+      "revId": "80d4172f0705334db3c51113355ea4704d9a4240",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
