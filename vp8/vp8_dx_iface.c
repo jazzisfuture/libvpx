@@ -301,6 +301,16 @@ static vpx_codec_err_t vp8_decode(vpx_codec_alg_priv_t *ctx,
   }
 
   if (!ctx->decoder_init && !ctx->si.is_kf) res = VPX_CODEC_UNSUP_BITSTREAM;
+  if (!res && ctx->decoder_init && w == 0 && h == 0 && ctx->si.h == 0 &&
+      ctx->si.w == 0) {
+    VP8D_COMP *pbi = ctx->yv12_frame_buffers.pbi[0];
+    assert(pbi != NULL);
+    assert(!pbi->common.error.setjmp);
+    res = VPX_CODEC_CORRUPT_FRAME;
+    vpx_internal_error(&pbi->common.error, res,
+                       "Keyframe / intra-only frame required to reset decoder"
+                       " state");
+  }
 
   if ((ctx->si.h != h) || (ctx->si.w != w)) resolution_change = 1;
 
