@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1edbe3e6_01ed452d",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-27T17:44:55Z",
+      "side": 1,
+      "message": "This would be null the next time through. Even though restart_threads starts as 0, this block might be better placed after the `decoder_init` block.",
+      "revId": "a166c52d3a2e72d0fe4dbc8909523c6ad8fbdfb2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
