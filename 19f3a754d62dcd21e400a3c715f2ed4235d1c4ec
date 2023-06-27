@@ -16,6 +16,23 @@
       "message": "The vpx_hadamard_32x32_neon() function was added in https://chromium-review.googlesource.com/c/webm/libvpx/+/4004626.",
       "revId": "19f3a754d62dcd21e400a3c715f2ed4235d1c4ec",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18ce962e_2577ad25",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-27T16:33:08Z",
+      "side": 1,
+      "message": "Hi Gerda: This is the libvpx version of https://aomedia-review.googlesource.com/c/aom/+/177323.\n\nIn libvpx, `tran_low_t` is defined as either `int32_t` or `int16_t` depending on the value of the compile-time option `CONFIG_VP9_HIGHBITDEPTH`, whereas in libaom `tran_low_t` is always defined as `int32_t`. In this CL I made the minimal change and only fixed the incorrect assumption that `a / 2 + b / 2 \u003d\u003d (a + b) / 2` and `a / 2 - b / 2 \u003d\u003d (a - b) / 2`.",
+      "revId": "19f3a754d62dcd21e400a3c715f2ed4235d1c4ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
