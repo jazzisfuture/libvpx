@@ -35,6 +35,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "5f0b3473_12613fab",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-06-28T11:25:33Z",
+      "side": 1,
+      "message": "Hi Wan-Teh,\nThanks for the fix! It seems that a similar issue exists in vp9_highbd_hadamard_32x32_neon().",
+      "revId": "19f3a754d62dcd21e400a3c715f2ed4235d1c4ec",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "65d5b3e3_fee5813f",
