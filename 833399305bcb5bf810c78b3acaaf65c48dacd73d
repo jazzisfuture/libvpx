@@ -33,6 +33,23 @@
       "message": "this could also be `if ((0)) {` if we wanted to allow it to be compiled.",
       "revId": "833399305bcb5bf810c78b3acaaf65c48dacd73d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "53c19fab_1be2300e",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1508,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-28T04:04:16Z",
+      "side": 1,
+      "message": "This is not equivalent to the original code. The original code is still compiled, so it is easier to be kept up to date.",
+      "revId": "833399305bcb5bf810c78b3acaaf65c48dacd73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
