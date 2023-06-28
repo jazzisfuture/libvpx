@@ -122,6 +122,24 @@
       "parentUuid": "440abce4_a8066489",
       "revId": "833399305bcb5bf810c78b3acaaf65c48dacd73d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e8c6c83_f42d5140",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1508,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-28T16:59:23Z",
+      "side": 1,
+      "message": "Sorry about that. I reviewed the CL without reading your comments last night.",
+      "parentUuid": "24cd45d1_473ed9cf",
+      "revId": "833399305bcb5bf810c78b3acaaf65c48dacd73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
