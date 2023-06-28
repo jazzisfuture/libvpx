@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3eac8d12_550672f9",
+        "filename": "test/vp9_ratectrl_rtc_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-28T02:19:21Z",
+      "side": 1,
+      "message": "I made this change for discussion. clang will note adding () will disable the code, the comment isn\u0027t necessary, but matches its output. I thought that might be more understandable to the reader than the extra ()s alone.\n\n```\ntest/vp9_ratectrl_rtc_test.cc|230 col 18| note: silence by adding parentheses to mark code as explicitly dead\n||       } else if (0 \u0026\u0026 video-\u003eframe() \u003d\u003d 280) {\n||                  ^\n||                  /* DISABLES CODE */ ( )\n\n```",
+      "revId": "833399305bcb5bf810c78b3acaaf65c48dacd73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "10f2ada8_ec1e6fd8",
+        "filename": "vp8/decoder/decodeframe.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1170,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-28T02:19:21Z",
+      "side": 1,
+      "message": "this could also be `if ((0)) {` if we wanted to allow it to be compiled.",
+      "revId": "833399305bcb5bf810c78b3acaaf65c48dacd73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
