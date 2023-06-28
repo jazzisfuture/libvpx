@@ -50,6 +50,24 @@
       "message": "This is not equivalent to the original code. The original code is still compiled, so it is easier to be kept up to date.",
       "revId": "833399305bcb5bf810c78b3acaaf65c48dacd73d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "440abce4_a8066489",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1508,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-06-28T04:45:18Z",
+      "side": 1,
+      "message": "\u003e This is not equivalent to the original code. The original code is still compiled, so it is easier to be kept up to date.\n\nYes, that was the point of my other comments. I can change this to `if (/*DISABLES CODE*/ (0))`",
+      "parentUuid": "53c19fab_1be2300e",
+      "revId": "833399305bcb5bf810c78b3acaaf65c48dacd73d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
