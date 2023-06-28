@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9bc4c2c0_b1233ae1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-28T16:43:29Z",
+      "side": 1,
+      "message": "LGTM. I suggest a simple cleanup. Also, the file logging code guarded by `if (0)` probably can be deleted now.",
+      "revId": "b09e14b8504c40641fa74e319ec63b8582d1084b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ea2d0e8_42134a73",
+        "filename": "configure",
+        "patchSetId": 4
+      },
+      "lineNbr": 655,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-28T16:43:29Z",
+      "side": 1,
+      "message": "Nit: Delete this. This is subsumed by `-Wunreachable-code-aggressive`.\n\nSee https://clang.llvm.org/docs/DiagnosticsReference.html#wunreachable-code-aggressive and https://clang.llvm.org/docs/DiagnosticsReference.html#wunreachable-code.",
+      "revId": "b09e14b8504c40641fa74e319ec63b8582d1084b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bf6e52b9_72052187",
+        "filename": "test/vp9_ratectrl_rtc_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-28T16:43:29Z",
+      "side": 1,
+      "message": "Nit: In libaom I only added the parentheses around 0 without the `/*DISABLES CODE*/` comment because I thought the intention of `0 \u0026\u0026` was clear. Adding the comment is fine by me.",
+      "revId": "b09e14b8504c40641fa74e319ec63b8582d1084b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5f86393a_26eb9039",
+        "filename": "vp8/decoder/decodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1170,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-28T16:43:29Z",
+      "side": 1,
+      "message": "We should ask the authors of these `if (0)` statements if they can be deleted now.",
+      "revId": "b09e14b8504c40641fa74e319ec63b8582d1084b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
