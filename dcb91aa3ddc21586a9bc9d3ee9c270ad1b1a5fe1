@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9ff81d4_b63a7802",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-06-29T17:10:29Z",
+      "side": 1,
+      "message": "Interesting issue. The intention is to show these two variables are only used inside the switch statement. But the location of that declaration is unusual and most programmers don\u0027t know what exactly it does.",
+      "revId": "dcb91aa3ddc21586a9bc9d3ee9c270ad1b1a5fe1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
