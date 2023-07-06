@@ -52,6 +52,23 @@
       "parentUuid": "dbffe588_9c81787b",
       "revId": "dc26707f80686031905e5f013daf37062e61f6d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a6490d5_7cc7ad48",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000899
+      },
+      "writtenOn": "2023-07-06T09:25:34Z",
+      "side": 1,
+      "message": "I agree. Go ahead and remove it. Thanks James.",
+      "revId": "dc26707f80686031905e5f013daf37062e61f6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
