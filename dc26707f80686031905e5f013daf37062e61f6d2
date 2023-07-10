@@ -69,6 +69,24 @@
       "message": "I agree. Go ahead and remove it. Thanks James.",
       "revId": "dc26707f80686031905e5f013daf37062e61f6d2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3a6a1ba_38835fb7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-07-10T17:08:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "095e776f_27096610",
+      "revId": "dc26707f80686031905e5f013daf37062e61f6d2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
