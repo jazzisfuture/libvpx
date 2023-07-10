@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df48e98b_0940f93e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-07-10T22:06:13Z",
+      "side": 1,
+      "message": "extra `0` at the end. gerrit links this correctly because it assumes 40 characters, but it might cause confusion for someone reading the git log.",
+      "range": {
+        "startLine": 9,
+        "startChar": 63,
+        "endLine": 9,
+        "endChar": 64
+      },
+      "revId": "b9b565adec42429a856fcd80c6366761c5671553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bed505c3_d552da09",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-07-10T22:06:13Z",
+      "side": 1,
+      "message": "Good catch.",
+      "revId": "b9b565adec42429a856fcd80c6366761c5671553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
