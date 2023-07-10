@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "44f2371d_822456ae",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1557258
+      },
+      "writtenOn": "2023-07-10T22:39:02Z",
+      "side": 1,
+      "message": "Oh, apologies, bad copy-paste into VSCode\u0027s terminal.",
+      "parentUuid": "df48e98b_0940f93e",
+      "range": {
+        "startLine": 9,
+        "startChar": 63,
+        "endLine": 9,
+        "endChar": 64
+      },
+      "revId": "b9b565adec42429a856fcd80c6366761c5671553",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "bed505c3_d552da09",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 1
