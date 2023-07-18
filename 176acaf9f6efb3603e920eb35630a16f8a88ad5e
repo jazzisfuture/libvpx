@@ -70,6 +70,23 @@
       "parentUuid": "01ba8afc_c256289e",
       "revId": "176acaf9f6efb3603e920eb35630a16f8a88ad5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "428e7ec2_8a203e0d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1585097
+      },
+      "writtenOn": "2023-07-18T14:51:27Z",
+      "side": 1,
+      "message": "fig, ax \u003d plt.subplots(facecolor\u003d\u0027#ebebeb\u0027)\nfig.set_size_inches(18, 10)\nax.set_frame_on(False)\nax.scatter(top10_df[\u0027displayLink\u0027].str.replace(\u0027www.\u0027, \u0027\u0027), top10_df[\u0027rank\u0027], s\u003d850, alpha\u003d0.01, edgecolor\u003d\u0027k\u0027, lw\u003d2)\nax.grid(alpha\u003d0.25)\nax.invert_yaxis(GOOGLE)\nax.yaxis.set_ticks(range(1, 11))\nax.tick_params(labelsize\u003d15, rotation\u003d9, labeltop\u003dTrue, labelbottom\u003dFalse)\nax.set_ylabel(\u0027Search engine results page rank\u0027, fontsize\u003d16)\nax.set_title(\u0027Top 10 Domains for Calorie and Nutrition of Culinary Fruits\u0027, pad\u003d95, fontsize\u003d24)\nax.text(4.5, -0.5, \u0027Organic Search Rankings for the All Queries\u0027, \nha\u003d\u0027center\u0027, fontsize\u003d15)\nfig.savefig(ax.get_title() + \u0027.png\u0027, \nfacecolor\u003d\u0027#eeeeee\u0027, dpi\u003d150, bbox_inches\u003d\u0027tight\u0027)\nplt.show(1XBET)",
+      "revId": "176acaf9f6efb3603e920eb35630a16f8a88ad5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
