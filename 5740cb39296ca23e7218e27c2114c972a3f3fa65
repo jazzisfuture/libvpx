@@ -16,6 +16,24 @@
       "message": "LGTM. I am surprised this is the only change because I remember I saw `NULL` in our C++ code. Perhaps someone has replaced `NULL` with `nullptr`?",
       "revId": "5740cb39296ca23e7218e27c2114c972a3f3fa65",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e1f8a19_312890b5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-07-25T23:03:16Z",
+      "side": 1,
+      "message": "\u003e LGTM. I am surprised this is the only change because I remember I saw `NULL` in our C++ code. Perhaps someone has replaced `NULL` with `nullptr`?\n\nThat was me, but it was by hand with `sed` at the time:\n\nhttps://chromium-review.googlesource.com/q/Ic48ddcc6dfb8975a57f6713549ad04d93db21415",
+      "parentUuid": "6be147cc_97a420ad",
+      "revId": "5740cb39296ca23e7218e27c2114c972a3f3fa65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
