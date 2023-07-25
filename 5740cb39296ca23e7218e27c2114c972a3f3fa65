@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6be147cc_97a420ad",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-07-25T22:50:18Z",
+      "side": 1,
+      "message": "LGTM. I am surprised this is the only change because I remember I saw `NULL` in our C++ code. Perhaps someone has replaced `NULL` with `nullptr`?",
+      "revId": "5740cb39296ca23e7218e27c2114c972a3f3fa65",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
