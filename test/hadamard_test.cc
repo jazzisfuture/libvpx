@@ -22,8 +22,7 @@ namespace {
 
 using ::libvpx_test::ACMRandom;
 
-typedef void (*HadamardFunc)(const int16_t *a, ptrdiff_t a_stride,
-                             tran_low_t *b);
+using HadamardFunc = void (*)(const int16_t *, ptrdiff_t, tran_low_t *);
 
 void hadamard_loop(const tran_low_t *a, tran_low_t *out) {
   tran_low_t b[8];

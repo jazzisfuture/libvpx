@@ -38,23 +38,19 @@ using libvpx_test::Buffer;
 namespace {
 const int number_of_iterations = 100;
 
-typedef void (*QuantizeFunc)(const tran_low_t *coeff, intptr_t count,
-                             const macroblock_plane *mb_plane,
-                             tran_low_t *qcoeff, tran_low_t *dqcoeff,
-                             const int16_t *dequant, uint16_t *eob,
-                             const struct ScanOrder *scan_order);
-typedef std::tuple<QuantizeFunc, QuantizeFunc, vpx_bit_depth_t,
-                   int /*max_size*/, bool /*is_fp*/>
-    QuantizeParam;
+using QuantizeFunc = void (*)(const tran_low_t *, intptr_t,
+                              const macroblock_plane *, tran_low_t *,
+                              tran_low_t *, const int16_t *, uint16_t *,
+                              const struct ScanOrder *);
+using QuantizeParam =
+    std::tuple<QuantizeFunc, QuantizeFunc, vpx_bit_depth_t, int, bool>;
 
 // Wrapper which takes a macroblock_plane.
-typedef void (*QuantizeBaseFunc)(const tran_low_t *coeff, intptr_t count,
-                                 const int16_t *zbin, const int16_t *round,
-                                 const int16_t *quant,
-                                 const int16_t *quant_shift, tran_low_t *qcoeff,
-                                 tran_low_t *dqcoeff, const int16_t *dequant,
-                                 uint16_t *eob, const int16_t *scan,
-                                 const int16_t *iscan);
+using QuantizeBaseFunc = void (*)(const tran_low_t *, intptr_t, const int16_t *,
+                                  const int16_t *, const int16_t *,
+                                  const int16_t *, tran_low_t *, tran_low_t *,
+                                  const int16_t *, uint16_t *, const int16_t *,
+                                  const int16_t *);
 
 template <QuantizeBaseFunc fn>
 void QuantWrapper(const tran_low_t *coeff, intptr_t count,
@@ -67,11 +63,10 @@ void QuantWrapper(const tran_low_t *coeff, intptr_t count,
 }
 
 // Wrapper for 32x32 version which does not use count
-typedef void (*Quantize32x32Func)(const tran_low_t *coeff,
-                                  const macroblock_plane *const mb_plane,
-                                  tran_low_t *qcoeff, tran_low_t *dqcoeff,
-                                  const int16_t *dequant, uint16_t *eob,
-                                  const struct ScanOrder *const scan_order);
+using Quantize32x32Func = void (*)(const tran_low_t *,
+                                   const macroblock_plane *const, tran_low_t *,
+                                   tran_low_t *, const int16_t *, uint16_t *,
+                                   const struct ScanOrder *const);
 
 template <Quantize32x32Func fn>
 void Quant32x32Wrapper(const tran_low_t *coeff, intptr_t count,
@@ -84,11 +79,10 @@ void Quant32x32Wrapper(const tran_low_t *coeff, intptr_t count,
 }
 
 // Wrapper for FP version which does not use zbin or quant_shift.
-typedef void (*QuantizeFPFunc)(const tran_low_t *coeff, intptr_t count,
-                               const int16_t *round, const int16_t *quant,
-                               tran_low_t *qcoeff, tran_low_t *dqcoeff,
-                               const int16_t *dequant, uint16_t *eob,
-                               const int16_t *scan, const int16_t *iscan);
+using QuantizeFPFunc = void (*)(const tran_low_t *, intptr_t, const int16_t *,
+                                const int16_t *, tran_low_t *, tran_low_t *,
+                                const int16_t *, uint16_t *, const int16_t *,
+                                const int16_t *);
 
 template <QuantizeFPFunc fn>
 void QuantFPWrapper(const tran_low_t *coeff, intptr_t count,

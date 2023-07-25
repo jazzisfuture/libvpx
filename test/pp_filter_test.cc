@@ -26,15 +26,13 @@
 using libvpx_test::ACMRandom;
 using libvpx_test::Buffer;
 
-typedef void (*VpxPostProcDownAndAcrossMbRowFunc)(
-    unsigned char *src_ptr, unsigned char *dst_ptr, int src_pixels_per_line,
-    int dst_pixels_per_line, int cols, unsigned char *flimit, int size);
+using VpxPostProcDownAndAcrossMbRowFunc = void (*)(unsigned char *,
+                                                   unsigned char *, int, int,
+                                                   int, unsigned char *, int);
 
-typedef void (*VpxMbPostProcAcrossIpFunc)(unsigned char *src, int pitch,
-                                          int rows, int cols, int flimit);
+using VpxMbPostProcAcrossIpFunc = void (*)(unsigned char *, int, int, int, int);
 
-typedef void (*VpxMbPostProcDownFunc)(unsigned char *dst, int pitch, int rows,
-                                      int cols, int flimit);
+using VpxMbPostProcDownFunc = void (*)(unsigned char *, int, int, int, int);
 
 namespace {
 // Compute the filter level used in post proc from the loop filter strength

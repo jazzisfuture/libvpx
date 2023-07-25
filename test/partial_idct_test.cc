@@ -31,10 +31,9 @@ using libvpx_test::ACMRandom;
 
 namespace {
 
-typedef void (*FwdTxfmFunc)(const int16_t *in, tran_low_t *out, int stride);
-typedef void (*InvTxfmFunc)(const tran_low_t *in, uint8_t *out, int stride);
-typedef void (*InvTxfmWithBdFunc)(const tran_low_t *in, uint8_t *out,
-                                  int stride, int bd);
+using FwdTxfmFunc = void (*)(const int16_t *, tran_low_t *, int);
+using InvTxfmFunc = void (*)(const tran_low_t *, uint8_t *, int);
+using InvTxfmWithBdFunc = void (*)(const tran_low_t *, uint8_t *, int, int);
 
 template <InvTxfmFunc fn>
 void wrapper(const tran_low_t *in, uint8_t *out, int stride, int bd) {
@@ -43,17 +42,16 @@ void wrapper(const tran_low_t *in, uint8_t *out, int stride, int bd) {
 }
 
 #if CONFIG_VP9_HIGHBITDEPTH
-typedef void (*InvTxfmHighbdFunc)(const tran_low_t *in, uint16_t *out,
-                                  int stride, int bd);
+using InvTxfmHighbdFunc = void (*)(const tran_low_t *, uint16_t *, int, int);
 template <InvTxfmHighbdFunc fn>
 void highbd_wrapper(const tran_low_t *in, uint8_t *out, int stride, int bd) {
   fn(in, CAST_TO_SHORTPTR(out), stride, bd);
 }
 #endif
 
-typedef std::tuple<FwdTxfmFunc, InvTxfmWithBdFunc, InvTxfmWithBdFunc, TX_SIZE,
-                   int, int, int>
-    PartialInvTxfmParam;
+using PartialInvTxfmParam =
+    std::tuple<FwdTxfmFunc, InvTxfmWithBdFunc, InvTxfmWithBdFunc, TX_SIZE, int,
+               int, int>;
 const int kMaxNumCoeffs = 1024;
 const int kCountTestBlock = 1000;
 
