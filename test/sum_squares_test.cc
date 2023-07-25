@@ -28,8 +28,8 @@ using libvpx_test::ACMRandom;
 namespace {
 const int kNumIterations = 10000;
 
-typedef uint64_t (*SSI16Func)(const int16_t *src, int stride, int size);
-typedef std::tuple<SSI16Func, SSI16Func> SumSquaresParam;
+using SSI16Func = uint64_t (*)(const int16_t *, int, int);
+using SumSquaresParam = std::tuple<SSI16Func, SSI16Func>;
 
 class SumSquaresTest : public ::testing::TestWithParam<SumSquaresParam> {
  public:

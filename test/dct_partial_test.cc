@@ -32,10 +32,9 @@ using std::make_tuple;
 using std::tuple;
 
 namespace {
-typedef void (*PartialFdctFunc)(const int16_t *in, tran_low_t *out, int stride);
+using PartialFdctFunc = void (*)(const int16_t *, tran_low_t *, int);
 
-typedef tuple<PartialFdctFunc, int /* size */, vpx_bit_depth_t>
-    PartialFdctParam;
+using PartialFdctParam = tuple<PartialFdctFunc, int, vpx_bit_depth_t>;
 
 tran_low_t partial_fdct_ref(const Buffer<int16_t> &in, int size) {
   int64_t sum = 0;

@@ -21,14 +21,13 @@ namespace {
 using ::libvpx_test::ACMRandom;
 using ::libvpx_test::Buffer;
 
-typedef void (*YUVTemporalFilterFunc)(
-    const uint8_t *y_src, int y_src_stride, const uint8_t *y_pre,
-    int y_pre_stride, const uint8_t *u_src, const uint8_t *v_src,
-    int uv_src_stride, const uint8_t *u_pre, const uint8_t *v_pre,
-    int uv_pre_stride, unsigned int block_width, unsigned int block_height,
-    int ss_x, int ss_y, int strength, const int *const blk_fw, int use_32x32,
-    uint32_t *y_accumulator, uint16_t *y_count, uint32_t *u_accumulator,
-    uint16_t *u_count, uint32_t *v_accumulator, uint16_t *v_count);
+using YUVTemporalFilterFunc = void (*)(const uint8_t *, int, const uint8_t *,
+                                       int, const uint8_t *, const uint8_t *,
+                                       int, const uint8_t *, const uint8_t *,
+                                       int, unsigned int, unsigned int, int,
+                                       int, int, const int *const, int,
+                                       uint32_t *, uint16_t *, uint32_t *,
+                                       uint16_t *, uint32_t *, uint16_t *);
 
 struct TemporalFilterWithBd {
   TemporalFilterWithBd(YUVTemporalFilterFunc func, int bitdepth)

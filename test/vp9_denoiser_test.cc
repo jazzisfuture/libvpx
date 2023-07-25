@@ -31,12 +31,10 @@ namespace {
 
 const int kNumPixels = 64 * 64;
 
-typedef int (*Vp9DenoiserFilterFunc)(const uint8_t *sig, int sig_stride,
-                                     const uint8_t *mc_avg, int mc_avg_stride,
-                                     uint8_t *avg, int avg_stride,
-                                     int increase_denoising, BLOCK_SIZE bs,
-                                     int motion_magnitude);
-typedef std::tuple<Vp9DenoiserFilterFunc, BLOCK_SIZE> VP9DenoiserTestParam;
+using Vp9DenoiserFilterFunc = int (*)(const uint8_t *, int, const uint8_t *,
+                                      int, uint8_t *, int, int, BLOCK_SIZE,
+                                      int);
+using VP9DenoiserTestParam = std::tuple<Vp9DenoiserFilterFunc, BLOCK_SIZE>;
 
 class VP9DenoiserTest
     : public ::testing::Test,

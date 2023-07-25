@@ -24,10 +24,8 @@
 #include "vpx_mem/vpx_mem.h"
 #include "vpx_ports/vpx_timer.h"
 
-typedef void (*SubtractFunc)(int rows, int cols, int16_t *diff_ptr,
-                             ptrdiff_t diff_stride, const uint8_t *src_ptr,
-                             ptrdiff_t src_stride, const uint8_t *pred_ptr,
-                             ptrdiff_t pred_stride);
+using SubtractFunc = void (*)(int, int, int16_t *, ptrdiff_t, const uint8_t *,
+                              ptrdiff_t, const uint8_t *, ptrdiff_t);
 
 namespace vp9 {
 
@@ -166,10 +164,9 @@ INSTANTIATE_TEST_SUITE_P(LSX, VP9SubtractBlockTest,
 
 #if CONFIG_VP9_HIGHBITDEPTH
 
-typedef void (*HBDSubtractFunc)(int rows, int cols, int16_t *diff_ptr,
-                                ptrdiff_t diff_stride, const uint8_t *src_ptr,
-                                ptrdiff_t src_stride, const uint8_t *pred_ptr,
-                                ptrdiff_t pred_stride, int bd);
+using HBDSubtractFunc = void (*)(int, int, int16_t *, ptrdiff_t,
+                                 const uint8_t *, ptrdiff_t, const uint8_t *,
+                                 ptrdiff_t, int);
 
 // <BLOCK_SIZE, bit_depth, optimized subtract func, reference subtract func>
 using Params = std::tuple<BLOCK_SIZE, int, HBDSubtractFunc, HBDSubtractFunc>;

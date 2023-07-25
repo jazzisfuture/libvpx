@@ -32,17 +32,14 @@ namespace {
 
 static const unsigned int kMaxDimension = 64;
 
-typedef void (*ConvolveFunc)(const uint8_t *src, ptrdiff_t src_stride,
-                             uint8_t *dst, ptrdiff_t dst_stride,
-                             const InterpKernel *filter, int x0_q4,
-                             int x_step_q4, int y0_q4, int y_step_q4, int w,
-                             int h);
+using ConvolveFunc = void (*)(const uint8_t *, ptrdiff_t, uint8_t *, ptrdiff_t,
+                              const InterpKernel *, int, int, int, int, int,
+                              int);
 
-typedef void (*WrapperFilterBlock2d8Func)(
-    const uint8_t *src_ptr, const unsigned int src_stride,
-    const int16_t *hfilter, const int16_t *vfilter, uint8_t *dst_ptr,
-    unsigned int dst_stride, unsigned int output_width,
-    unsigned int output_height, int use_highbd);
+using WrapperFilterBlock2d8Func = void (*)(const uint8_t *, const unsigned int,
+                                           const int16_t *, const int16_t *,
+                                           uint8_t *, unsigned int,
+                                           unsigned int, unsigned int, int);
 
 struct ConvolveFunctions {
   ConvolveFunctions(ConvolveFunc copy, ConvolveFunc avg, ConvolveFunc h8,
@@ -78,7 +75,7 @@ struct ConvolveFunctions {
   int use_highbd_;  // 0 if high bitdepth not used, else the actual bit depth.
 };
 
-typedef std::tuple<int, int, const ConvolveFunctions *> ConvolveParam;
+using ConvolveParam = std::tuple<int, int, const ConvolveFunctions *>;
 
 #define ALL_SIZES(convolve_fn)                                            \
   make_tuple(4, 4, &convolve_fn), make_tuple(8, 4, &convolve_fn),         \
