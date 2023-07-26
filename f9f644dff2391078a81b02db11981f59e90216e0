@@ -34,6 +34,24 @@
       "parentUuid": "e836cd8c_75e8eb6b",
       "revId": "f9f644dff2391078a81b02db11981f59e90216e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc20a305_a3ae163e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-07-26T17:53:32Z",
+      "side": 1,
+      "message": "\u003e It would be good to preserve the parameter names in function types. Otherwise this is not a net win.\n\nI agree. That will require some manual changes. I\u0027ll clear the rest of the changes here and in libaom and then come back to this.",
+      "parentUuid": "c7e06961_822e23cc",
+      "revId": "f9f644dff2391078a81b02db11981f59e90216e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
