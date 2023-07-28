@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f26defaf_c1249172",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2023-07-28T20:46:23Z",
+      "side": 1,
+      "message": "Too bad clang-format doesn\u0027t work on these files",
+      "revId": "22818907d2597069ffc3400e80a6d5ad4df0097d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
