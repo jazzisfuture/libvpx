@@ -39,6 +39,30 @@
       },
       "revId": "70fc7563830e9b516db903617797d7537701e8c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "66cf3c9d_f6124ce5",
+        "filename": "vpx_dsp/vpx_dsp_rtcd_defs.pl",
+        "patchSetId": 2
+      },
+      "lineNbr": 728,
+      "author": {
+        "id": 1001565
+      },
+      "writtenOn": "2023-07-28T20:46:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "55df88ec_3a9d0041",
+      "range": {
+        "startLine": 728,
+        "startChar": 103,
+        "endLine": 728,
+        "endChar": 111
+      },
+      "revId": "70fc7563830e9b516db903617797d7537701e8c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
