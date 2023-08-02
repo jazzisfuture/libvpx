@@ -22,6 +22,30 @@
       },
       "revId": "d6688b5fa0d6372b30bf4138d34ed8d1baad35eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ee18006b_f303f8d8",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 10
+      },
+      "lineNbr": 328,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-08-02T10:29:11Z",
+      "side": 1,
+      "message": "Yes, the function `vpx_sad64x64x4d` has avx512 optimization.",
+      "parentUuid": "81518c58_6b1ffcbd",
+      "range": {
+        "startLine": 328,
+        "startChar": 26,
+        "endLine": 328,
+        "endChar": 33
+      },
+      "revId": "d6688b5fa0d6372b30bf4138d34ed8d1baad35eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
