@@ -46,6 +46,30 @@
       },
       "revId": "ba11681e2c1dd1496148166e4c07d63091346f59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "40aada1c_5582672d",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 695,
+      "author": {
+        "id": 1119205
+      },
+      "writtenOn": "2023-08-03T17:27:06Z",
+      "side": 1,
+      "message": "It\u0027s not a reference type. It\u0027s a pointer type, which is a kind of scalar type. So this will correctly initialize all the pointers to `nullptr`.\n\nhttp://screen/BixzBX3739RoKXp\nhttp://screen/6FyzWYtTMfaKrQQ",
+      "parentUuid": "f01741f9_a4b1b6ac",
+      "range": {
+        "startLine": 695,
+        "startChar": 6,
+        "endLine": 695,
+        "endChar": 34
+      },
+      "revId": "ba11681e2c1dd1496148166e4c07d63091346f59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
