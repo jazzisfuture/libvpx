@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4551aac5_ef3b62fd",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 695,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2023-08-03T16:55:20Z",
+      "side": 1,
+      "message": "I think the zero-initialization intends to initialize rc_funcs.send_tpl_gop_stats to NULL.\nBut I am not sure if {} could achieve it.\n\nOn this page: https://en.cppreference.com/w/cpp/language/zero_initialization\n\nIt says {} init scalar type to 0, but does nothing if it is a reference type.\n\nPerhaps explicitly writing:\nrc_funcs.send_tpl_gop_stats \u003d NULL;\n\nWhat do you think?",
+      "range": {
+        "startLine": 695,
+        "startChar": 6,
+        "endLine": 695,
+        "endChar": 34
+      },
+      "revId": "ba11681e2c1dd1496148166e4c07d63091346f59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
