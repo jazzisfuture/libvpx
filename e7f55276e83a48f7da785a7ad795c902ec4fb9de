@@ -16,6 +16,24 @@
       "message": "This is weird, I can\u0027t reproduce the test failure from Jenkins. I\u0027ll look into this a bit more.",
       "revId": "e7f55276e83a48f7da785a7ad795c902ec4fb9de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0a9579a_1149798a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-08-03T16:33:57Z",
+      "side": 1,
+      "message": "asan can catch this.\n\nApparently I can\u0027t tell if the callback function `send_tpl_gop_stats` is registered or not with `!\u003d NULL`",
+      "parentUuid": "460293b5_dacc11fe",
+      "revId": "e7f55276e83a48f7da785a7ad795c902ec4fb9de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
