@@ -34,6 +34,29 @@
       "parentUuid": "460293b5_dacc11fe",
       "revId": "e7f55276e83a48f7da785a7ad795c902ec4fb9de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "37199a8e_fed8628c",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1119205
+      },
+      "writtenOn": "2023-08-03T16:34:39Z",
+      "side": 1,
+      "message": "There\u0027s an extra space here.",
+      "range": {
+        "startLine": 417,
+        "startChar": 75,
+        "endLine": 417,
+        "endChar": 77
+      },
+      "revId": "e7f55276e83a48f7da785a7ad795c902ec4fb9de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
