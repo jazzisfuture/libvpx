@@ -22,6 +22,30 @@
       },
       "revId": "ba11681e2c1dd1496148166e4c07d63091346f59",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f01741f9_a4b1b6ac",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 695,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-08-03T17:20:03Z",
+      "side": 1,
+      "message": "`\u003d {}` worked, I think it works for non union class types, which is `vpx_rc_funcs_t`, but I\u0027m not sure if C89 standard explicitly says that.\n\nA standard way seems to be `\u003d {0}` but it doesn\u0027t work here because of `vpx_rc_type_t`.\n\nInitializing everything to be 0 here with `memset` which is more explicit.",
+      "parentUuid": "4551aac5_ef3b62fd",
+      "range": {
+        "startLine": 695,
+        "startChar": 6,
+        "endLine": 695,
+        "endChar": 34
+      },
+      "revId": "ba11681e2c1dd1496148166e4c07d63091346f59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
