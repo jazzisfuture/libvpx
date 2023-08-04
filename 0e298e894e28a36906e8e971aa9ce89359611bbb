@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e3e67e7_91e7995f",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-08-04T20:30:54Z",
+      "side": 1,
+      "message": "Just tried and clang-tidy will give out a warning to always have include path for headers.\n\nSo I will keep this to have \"./\"",
+      "parentUuid": "b6b5cfbb_51a16cfe",
+      "revId": "0e298e894e28a36906e8e971aa9ce89359611bbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b111c7d2_8fda51a4",
