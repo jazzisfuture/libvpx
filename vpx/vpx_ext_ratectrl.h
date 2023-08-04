@@ -15,8 +15,8 @@
 extern "C" {
 #endif
 
-#include "./vpx_integer.h"
-#include "vpx/vpx_tpl.h"
+#include "vpx_integer.h"
+#include "vpx_tpl.h"
 
 /*!\brief Current ABI version number
  *
