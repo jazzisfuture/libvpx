@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6b5cfbb_51a16cfe",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-08-04T20:27:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "83488c48_621c629c",
+      "revId": "0e298e894e28a36906e8e971aa9ce89359611bbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b111c7d2_8fda51a4",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-08-04T20:21:47Z",
       "side": 1,
       "message": "Nit: Omit \"./\"",
+      "revId": "0e298e894e28a36906e8e971aa9ce89359611bbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b733295_b463c86e",
+        "filename": "vpx/vpx_tpl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-08-04T20:27:09Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b111c7d2_8fda51a4",
       "revId": "0e298e894e28a36906e8e971aa9ce89359611bbb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
