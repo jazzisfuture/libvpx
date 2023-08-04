@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c4eef7bd_0fc1a2c5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-08-04T20:19:15Z",
+      "side": 1,
+      "message": "Nit: It would be good to mention the warnings this CL fixed.",
+      "revId": "b615013eebbd8a0d8bdbb42c315de0f53e289a4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a6eafeb9_4256b839",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-08-04T20:19:15Z",
+      "side": 1,
+      "message": "LGTM.",
+      "revId": "b615013eebbd8a0d8bdbb42c315de0f53e289a4d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
