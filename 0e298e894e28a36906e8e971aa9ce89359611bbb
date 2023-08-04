@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "43a14e64_5833106e",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-08-04T20:38:38Z",
+      "side": 1,
+      "message": "Could you give me the name of the clang-tidy check and its error message? It doesn\u0027t seem to make sense for libvpx. I\u0027d like to take a look.",
+      "parentUuid": "1e3e67e7_91e7995f",
+      "revId": "0e298e894e28a36906e8e971aa9ce89359611bbb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b111c7d2_8fda51a4",
