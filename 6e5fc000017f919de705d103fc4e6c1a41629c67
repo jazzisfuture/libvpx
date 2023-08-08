@@ -16,6 +16,23 @@
       "message": "These functions are use for rtc, so it will have encode_time regression.",
       "revId": "6e5fc000017f919de705d103fc4e6c1a41629c67",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "757d8b3e_b6d0cf96",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-08-08T23:32:14Z",
+      "side": 1,
+      "message": "Hi Yunqing,\n\nwe observed 10% slow down (speed 6 and 7) on ARM64 device (Macbook M1 pro) for RTC with the following command line:\n\n```\nexamples/vpx_temporal_svc_encoder gipsrec_motion1.1280_720.yuv out vp9 1280 720 1 30 $speed 0 1 1 0 1000\n```\n\nWe need to hold off libvpx update for Chrome for now as this is too much slow down. Please keep us updated when the fix is in and this is re-enabled!\n\nThanks.",
+      "revId": "6e5fc000017f919de705d103fc4e6c1a41629c67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
