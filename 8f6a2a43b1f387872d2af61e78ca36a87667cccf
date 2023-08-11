@@ -16,6 +16,24 @@
       "message": "Thanks for the quick fix. Is it possible to improve the unit test for these functions (e.g. catch this bug, have better test coverage)?\nAlso, could you verify if this passes the end-to-end test enabled in webm issue 1800 since it hasn\u0027t been enabled in Jenkins yet?",
       "revId": "8f6a2a43b1f387872d2af61e78ca36a87667cccf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b4fa9a6_4dd9511a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-08-11T00:29:38Z",
+      "side": 1,
+      "message": "I\u0027ve added a fix for the unit tests. I\u0027ve also verified that the output files produced by the commands listed in [1] for C and Neon builds are identical. \n\nI was not able to run vp9_c_vs_simd_encode.sh as it seems to assume a very specific host system environment.\n\n[1] https://bugs.chromium.org/p/webm/issues/detail?id\u003d1809",
+      "parentUuid": "cd782393_4bccbb00",
+      "revId": "8f6a2a43b1f387872d2af61e78ca36a87667cccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
