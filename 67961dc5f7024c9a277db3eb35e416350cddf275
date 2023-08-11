@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "470af1be_de078344",
+        "filename": "vpx_dsp/arm/avg_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-08-11T00:30:37Z",
+      "side": 0,
+      "message": "Yunqing, if these had been disabled using `#if 0` it would be easier to see the difference.",
+      "revId": "67961dc5f7024c9a277db3eb35e416350cddf275",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
