@@ -70,6 +70,24 @@
       "parentUuid": "005da526_5d34ca54",
       "revId": "8f6a2a43b1f387872d2af61e78ca36a87667cccf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "52c0c0e3_fdd71178",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-08-11T18:47:19Z",
+      "side": 1,
+      "message": "FYI: here is the 10 bit issue: https://bugs.chromium.org/p/webm/issues/detail?id\u003d1811",
+      "parentUuid": "336bba19_89496619",
+      "revId": "8f6a2a43b1f387872d2af61e78ca36a87667cccf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
