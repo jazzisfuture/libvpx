@@ -16,6 +16,23 @@
       "message": "Whoops, thanks!",
       "revId": "335728c987b3164ff25c58c06d29eb49e19e21d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86756c8d_7672f8ad",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-08-14T13:32:01Z",
+      "side": 1,
+      "message": "Internal clang-tidy complains about these warnings so I fixed few of them.",
+      "revId": "335728c987b3164ff25c58c06d29eb49e19e21d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
