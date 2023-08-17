@@ -1,5 +1,29 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d57c31fa_9c12ae5f",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1968,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2023-08-17T16:17:50Z",
+      "side": 1,
+      "message": "CQ mode also needs these two parameters, as when the target bit-rate is low enough, it will become a vbr.",
+      "range": {
+        "startLine": 1967,
+        "startChar": 6,
+        "endLine": 1968,
+        "endChar": 65
+      },
+      "revId": "4b1ac3c23fba1d0eb38f0f2153017f4d13277039",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
