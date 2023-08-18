@@ -69,6 +69,24 @@
       "parentUuid": "6f6c9da5_d74f3c49",
       "revId": "401d8f36beb3fa395457d01640407ab194d457d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "970cfd35_57a78af8",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1954,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-08-18T16:24:01Z",
+      "side": 1,
+      "message": "\u003e I assume because zero is a nonsensical value for some fields, e.g., frame_width, frame_height, frame_rate_den.\n\nRight and there may be additions that would have reasonable defaults other than 0. We can go with this fix for now to stabilize the tree.",
+      "parentUuid": "1b9fc2e4_3a0fadb3",
+      "revId": "401d8f36beb3fa395457d01640407ab194d457d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
