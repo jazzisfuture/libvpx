@@ -973,10 +973,19 @@ process_common_toolchain() {
   # Process architecture variants
   case ${toolchain} in
     arm*)
-      # on arm, isa versions are supersets
+      # Arm ISA extensions are treated as supersets.
       case ${tgt_isa} in
         arm64|armv8)
           soft_enable neon
+          soft_enable neon_dotprod
+          soft_enable neon_i8mm
+          if disabled neon && enabled neon_dotprod; then
+            die "Disabling neon while keeping neon_dotprod is not supported"
+          fi
+          if disabled neon_dotprod && enabled neon_i8mm; then
+            die "Disabling neon_dotprod while keeping neon_i8mm is not supported"
+          fi
+          soft_enable runtime_cpu_detect
           ;;
         armv7|armv7s)
           soft_enable neon
@@ -986,6 +995,7 @@ process_common_toolchain() {
           if disabled neon && enabled neon_asm; then
             die "Disabling neon while keeping neon-asm is not supported"
           fi
+          soft_enable runtime_cpu_detect
           ;;
       esac
 
