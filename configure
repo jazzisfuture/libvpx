@@ -273,6 +273,8 @@ ARCH_EXT_LIST_LOONGSON="
 ARCH_EXT_LIST="
     neon
     neon_asm
+    neon_dotprod
+    neon_i8mm
 
     mips32
     dspr2
