@@ -52,6 +52,24 @@
       "parentUuid": "8680eea8_fbeb7a86",
       "revId": "bede6ef3f61f8544a2147ce21170006fe48d0f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "76c41670_aa69aee7",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2039,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-08-29T19:35:06Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "4c3c6f8f_933b0ae6",
+      "revId": "bede6ef3f61f8544a2147ce21170006fe48d0f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
