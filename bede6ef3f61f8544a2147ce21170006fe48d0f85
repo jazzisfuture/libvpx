@@ -16,6 +16,24 @@
       "message": "It seems like `avg_frame_bandwidth` already rolled over somewhere if it\u0027s equal to `-137438983` in this case. This cast will truncate any large value, so it may become a really large positive or negative int value. Will that break the clamping in the next call?",
       "revId": "bede6ef3f61f8544a2147ce21170006fe48d0f85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8680eea8_fbeb7a86",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2039,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-08-29T18:43:21Z",
+      "side": 1,
+      "message": "tracked the initial rollover, when the layer_target_bitrates[] are passed in.",
+      "parentUuid": "b1b0e74b_6e7626cf",
+      "revId": "bede6ef3f61f8544a2147ce21170006fe48d0f85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
