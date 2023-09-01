@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b153f674_d8db70c7",
+        "filename": "vpx_ports/aarch32_cpudetect.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-01T17:31:00Z",
+      "side": 1,
+      "message": "This could be `vpx_arm_cpu_caps` to match libaom. `x86_simd_caps()` doesn\u0027t follow this. It is an inline function, however.",
+      "revId": "c384824b5840a43dc57a6b55731365b7f1bba538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2205abca_9393ae60",
+        "filename": "vpx_ports/arm_cpudetect.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-01T17:31:00Z",
+      "side": 1,
+      "message": "these could be `INLINE`, though they are expected to be used by code that includes this file.",
+      "revId": "c384824b5840a43dc57a6b55731365b7f1bba538",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
