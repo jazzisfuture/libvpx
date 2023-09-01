@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8c8965d4_afbcd2f6",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 982,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-09-01T16:35:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "982d7788_b64a05f5",
+      "revId": "fcf5455be369a2d4e9c2b89a110f0d6841ea995e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1f489fd8_85b274ee",
@@ -48,6 +66,24 @@
       "writtenOn": "2023-09-01T02:25:55Z",
       "side": 1,
       "message": "Add `// Feature detection code for Armv7-A / AArch32.` to match libaom.\n\nhttps://aomedia.googlesource.com/aom/+/ed77cfff7fd5221b7317a4f07a556929090b8b97/aom_ports/aarch32_cpudetect.c#11",
+      "revId": "fcf5455be369a2d4e9c2b89a110f0d6841ea995e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "60be4e1a_b93e6b41",
+        "filename": "vpx_ports/aarch32_cpudetect.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-09-01T16:35:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1f489fd8_85b274ee",
       "revId": "fcf5455be369a2d4e9c2b89a110f0d6841ea995e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
