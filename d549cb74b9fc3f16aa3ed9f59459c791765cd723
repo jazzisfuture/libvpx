@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e9030ed_36b0b246",
+        "filename": "vp9/encoder/arm/neon/vp9_quantize_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-12T20:21:53Z",
+      "side": 1,
+      "message": "In general we use vpx/vpx_integer.h for this, though the need for that is reduced now that we assume stdint.h availability.",
+      "revId": "d549cb74b9fc3f16aa3ed9f59459c791765cd723",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
