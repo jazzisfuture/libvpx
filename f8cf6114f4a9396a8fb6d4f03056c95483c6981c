@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cf61c681_7bbe135e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-15T23:43:46Z",
+      "side": 1,
+      "message": "Good catch. I\u0027ll just adjust the commit message so it fits the size requirements.",
+      "revId": "f8cf6114f4a9396a8fb6d4f03056c95483c6981c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
