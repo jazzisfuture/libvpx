@@ -33,6 +33,24 @@
       "message": "Presumably people want this change in libaom too?",
       "revId": "26729db3ee93adb247243ef566ff1f4bea500069",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01b94b3e_347e22b0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002325
+      },
+      "writtenOn": "2023-09-16T19:06:18Z",
+      "side": 1,
+      "message": "Oh, indeed we want. Here, in libvpx, this change caused a build break for aarch64-mingw configs unless one explicitly added `--disable-runtime-cpu-detect` to the configure command line - but in libaom, build/cmake/toolchains/arm64-mingw-gcc.cmake already had \"set(CONFIG_RUNTIME_CPU_DETECT 0 CACHE STRING \"\")\".\n\nI can post the same patch there too, and remove that line at the same time.",
+      "parentUuid": "5b09d3fc_c6b38c35",
+      "revId": "26729db3ee93adb247243ef566ff1f4bea500069",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
