@@ -85,6 +85,24 @@
       "message": "The following matching code in arm_cpudetect.h should be updated to check `_WIN32` instead of `_MSC_VER`:\n\n```\n#if defined(_MSC_VER)\n#undef WIN32_LEAN_AND_MEAN\n#define WIN32_LEAN_AND_MEAN\n#undef WIN32_EXTRA_LEAN\n#define WIN32_EXTRA_LEAN\n#include \u003cwindows.h\u003e\n#endif\n```",
       "revId": "26729db3ee93adb247243ef566ff1f4bea500069",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47b86041_78a03231",
+        "filename": "vpx_ports/aarch64_cpudetect.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-18T18:57:10Z",
+      "side": 1,
+      "message": "\u003e The following matching code in arm_cpudetect.h should be updated to check `_WIN32` instead of `_MSC_VER`:\n\u003e \n\u003e ```\n\u003e #if defined(_MSC_VER)\n\u003e #undef WIN32_LEAN_AND_MEAN\n\u003e #define WIN32_LEAN_AND_MEAN\n\u003e #undef WIN32_EXTRA_LEAN\n\u003e #define WIN32_EXTRA_LEAN\n\u003e #include \u003cwindows.h\u003e\n\u003e #endif\n\u003e ```\n\nGood catch. Done.",
+      "parentUuid": "63ca291c_8900aff5",
+      "revId": "26729db3ee93adb247243ef566ff1f4bea500069",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
