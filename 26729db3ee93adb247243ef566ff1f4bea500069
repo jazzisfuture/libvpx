@@ -51,6 +51,23 @@
       "parentUuid": "5b09d3fc_c6b38c35",
       "revId": "26729db3ee93adb247243ef566ff1f4bea500069",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bb039012_d20a3cfb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-18T17:56:05Z",
+      "side": 1,
+      "message": "Adding Wan-Teh to approve since I uploaded the latest patchset making my +2 ineffective.",
+      "revId": "26729db3ee93adb247243ef566ff1f4bea500069",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
