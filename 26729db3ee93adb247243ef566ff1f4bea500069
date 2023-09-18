@@ -68,6 +68,23 @@
       "message": "Adding Wan-Teh to approve since I uploaded the latest patchset making my +2 ineffective.",
       "revId": "26729db3ee93adb247243ef566ff1f4bea500069",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "63ca291c_8900aff5",
+        "filename": "vpx_ports/aarch64_cpudetect.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-18T18:39:21Z",
+      "side": 1,
+      "message": "The following matching code in arm_cpudetect.h should be updated to check `_WIN32` instead of `_MSC_VER`:\n\n```\n#if defined(_MSC_VER)\n#undef WIN32_LEAN_AND_MEAN\n#define WIN32_LEAN_AND_MEAN\n#undef WIN32_EXTRA_LEAN\n#define WIN32_EXTRA_LEAN\n#include \u003cwindows.h\u003e\n#endif\n```",
+      "revId": "26729db3ee93adb247243ef566ff1f4bea500069",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
