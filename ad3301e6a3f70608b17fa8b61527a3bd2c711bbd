@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d0bd78e_c16cec47",
+        "filename": "vpx_ports/aarch64_cpudetect.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-18T19:00:44Z",
+      "side": 1,
+      "message": "vpx_ports/aarch32_cpudetect.c still tests the `_MSC_VER` macro, but the code in that file uses `__try` and `__except`, which I believe mingw doesn\u0027t support.",
+      "revId": "ad3301e6a3f70608b17fa8b61527a3bd2c711bbd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
