@@ -10,6 +10,8 @@
 ##
 ##  This script checks the bit exactness between C and SIMD
 ##  implementations of VP9 encoder.
+##
+. $(dirname $0)/tools_common.sh
 
 TEST_BITRATES="1600 6400"
 PRESETS="good rt"
@@ -17,7 +19,6 @@ TEST_CLIPS="yuv_raw_input y4m_360p_10bit_input yuv_480p_raw_input y4m_720p_input
 OUT_FILE_SUFFIX=".ivf"
 SCRIPT_DIR=$(dirname "$0")
 LIBVPX_SOURCE_DIR=$(cd ${SCRIPT_DIR}/..; pwd)
-devnull='> /dev/null 2>&1'
 
 # Clips used in test.
 YUV_RAW_INPUT="${LIBVPX_TEST_DATA_PATH}/hantro_collage_w352h288.yuv"
@@ -143,8 +144,7 @@ y4m_360p_10bit_input() {
 
 has_x86_isa_extn() {
   instruction_set=$1
-  grep -q "$instruction_set" /proc/cpuinfo
-  if [ $? -eq 1 ]; then
+  if ! grep -q "$instruction_set" /proc/cpuinfo; then
     return 1
   fi
 }
@@ -341,8 +341,7 @@ vp9_test_x86() {
   vp9_enc_build ${target} ${configure}
   local encoder="$(vp9_enc_tool_path "${target}")"
   for isa in $x86_isa_variants; do
-    has_x86_isa_extn $isa
-    if [ $? -eq 1 ]; then
+    if ! has_x86_isa_extn $isa; then
       echo "${isa} is not supported in this machine"
       continue
     fi
@@ -406,9 +405,4 @@ vp9_c_vs_simd_enc_test () {
 # Setup a trap function to clean up build, and output files after tests complete.
 trap cleanup EXIT
 
-vp9_c_vs_simd_enc_verify_environment
-if [ $? -eq 1 ]; then
-  echo "Environment check failed."
-  exit 1
-fi
-vp9_c_vs_simd_enc_test
+run_tests vp9_c_vs_simd_enc_verify_environment vp9_c_vs_simd_enc_test
