@@ -2504,7 +2504,7 @@ static int get_gop_coding_frame_num(
     int *use_alt_ref, const FRAME_INFO *frame_info,
     const TWO_PASS *const twopass, const RATE_CONTROL *rc,
     int gf_start_show_idx, const RANGE *active_gf_interval,
-    double gop_intra_factor, int lag_in_frames) {
+    double gop_intra_factor, int lag_in_frames, int *end_of_sequence) {
   const FIRST_PASS_INFO *first_pass_info = &twopass->first_pass_info;
   double loop_decay_rate = 1.00;
   double mv_ratio_accumulator = 0.0;
@@ -2530,6 +2530,7 @@ static int get_gop_coding_frame_num(
     next_frame = fps_get_frame_stats(first_pass_info,
                                      gf_start_show_idx + gop_coding_frames);
     if (next_frame == NULL) {
+      *end_of_sequence = (gop_coding_frames == 1);
       break;
     }
 
@@ -2720,6 +2721,8 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
   double gop_intra_factor;
   int gop_frames;
   RANGE active_gf_interval;
+  // Whether this is at the end of last GOP of this sequence.
+  int end_of_sequence;
 
   // Reset the GF group data structures unless this is a key
   // frame in which case it will already have been done.
@@ -2751,7 +2754,8 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
 
   gop_coding_frames = get_gop_coding_frame_num(
       &use_alt_ref, frame_info, twopass, rc, gf_start_show_idx,
-      &active_gf_interval, gop_intra_factor, cpi->oxcf.lag_in_frames);
+      &active_gf_interval, gop_intra_factor, cpi->oxcf.lag_in_frames,
+      &end_of_sequence);
   use_alt_ref &= allow_alt_ref;
 #if CONFIG_RATE_CTRL
   // If the external gop_command is on, we will override the decisions
@@ -2770,7 +2774,7 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
   // will be overwritten.
   if (cpi->ext_ratectrl.ready &&
       (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
-      cpi->ext_ratectrl.funcs.get_gop_decision != NULL) {
+      cpi->ext_ratectrl.funcs.get_gop_decision != NULL && !end_of_sequence) {
     vpx_codec_err_t codec_status;
     vpx_rc_gop_decision_t gop_decision;
     vpx_rc_gop_info_t gop_info;
@@ -3822,9 +3826,9 @@ int vp9_get_gop_coding_frame_count(const VP9EncoderConfig *oxcf,
     gop_intra_factor = 1.0;
   }
 
-  frame_count = get_gop_coding_frame_num(use_alt_ref, frame_info, twopass, rc,
-                                         show_idx, &active_gf_interval,
-                                         gop_intra_factor, oxcf->lag_in_frames);
+  frame_count = get_gop_coding_frame_num(
+      use_alt_ref, frame_info, twopass, rc, show_idx, &active_gf_interval,
+      gop_intra_factor, oxcf->lag_in_frames, &end_of_sequence);
   *use_alt_ref &= allow_alt_ref;
   return frame_count;
 }
