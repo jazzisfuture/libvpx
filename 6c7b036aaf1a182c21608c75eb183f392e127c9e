@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f80f2a83_e7f7d296",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-21T20:57:13Z",
+      "side": 1,
+      "message": "LGTM.",
+      "revId": "6c7b036aaf1a182c21608c75eb183f392e127c9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "765b954b_5f197721",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-21T20:57:13Z",
+      "side": 1,
+      "message": "Nit: Did you want to add an empty comment line here as you did in the libaom CL?\n\n```\n##\n```",
+      "revId": "6c7b036aaf1a182c21608c75eb183f392e127c9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
