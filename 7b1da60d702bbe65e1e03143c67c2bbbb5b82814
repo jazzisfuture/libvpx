@@ -33,6 +33,24 @@
       "message": "I don\u0027t remember if this was sufficient. I\u0027m running `sh ../test/examples.sh --bin-path ./examples --filter vp9_c_vs_simd_enc_test` locally to check.",
       "revId": "7b1da60d702bbe65e1e03143c67c2bbbb5b82814",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7776f4e6_101aa2cc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-21T23:16:23Z",
+      "side": 1,
+      "message": "\u003e I don\u0027t remember if this was sufficient. I\u0027m running `sh ../test/examples.sh --bin-path ./examples --filter vp9_c_vs_simd_enc_test` locally to check.\n\nExits with return code 2.\n\n```\nBuild for: generic-gnu\nBuilding target: generic-gnu\nDone building target: generic-gnu\nvp9 test for x86 (32 bit): Started.\nBuild for x86: x86-linux-gcc\nBuilding target: x86-linux-gcc\n\n../test/vp9_c_vs_simd_encode.sh: line 342: pop_var_context: head of shell_variables not a function context\n../test/vp9_c_vs_simd_encode.sh: line 379: pop_var_context: head of shell_variables not a function context\n../test/tools_common.sh: line 278: pop_var_context: head of shell_variables not a function context\n../test/vp9_c_vs_simd_encode.sh: line 410: pop_var_context: head of shell_variables not a function context\n```",
+      "parentUuid": "58c69dfd_bee76d02",
+      "revId": "7b1da60d702bbe65e1e03143c67c2bbbb5b82814",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
