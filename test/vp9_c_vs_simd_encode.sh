@@ -10,6 +10,8 @@
 ##
 ##  This script checks the bit exactness between C and SIMD
 ##  implementations of VP9 encoder.
+##
+. $(dirname $0)/tools_common.sh
 
 TEST_BITRATES="1600 6400"
 PRESETS="good rt"
@@ -406,9 +408,4 @@ vp9_c_vs_simd_enc_test () {
 # Setup a trap function to clean up build, and output files after tests complete.
 trap cleanup EXIT
 
-vp9_c_vs_simd_enc_verify_environment
-if [ $? -eq 1 ]; then
-  echo "Environment check failed."
-  exit 1
-fi
-vp9_c_vs_simd_enc_test
+run_tests vp9_c_vs_simd_enc_verify_environment vp9_c_vs_simd_enc_test
