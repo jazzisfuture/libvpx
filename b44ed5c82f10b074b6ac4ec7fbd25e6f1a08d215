@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "03328d75_e74551a8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1119205
+      },
+      "writtenOn": "2023-09-21T20:33:00Z",
+      "side": 1,
+      "message": "In the commit message, perhaps it should refer to \"external RC\" rather than \"WebM RC\".",
+      "revId": "b44ed5c82f10b074b6ac4ec7fbd25e6f1a08d215",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
