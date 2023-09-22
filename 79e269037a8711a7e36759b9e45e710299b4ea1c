@@ -69,6 +69,24 @@
       "parentUuid": "25476477_a6d2b37f",
       "revId": "79e269037a8711a7e36759b9e45e710299b4ea1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c748b8d_949a34ea",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-22T19:38:50Z",
+      "side": 1,
+      "message": "\u003e Are you saying when the results are different, line 243- 246 won\u0027t be executed? If a difference is seen, could you explain what happens with \"set -e\"?\n\u003e Otherwise, the current code is easy to follow IMO.\n\n`set -e` causes any \u0027simple\u0027 command that fails to exit immediately. Making it a compound command, like adding `|| false` or putting the call into the if statement, avoids this.\n\n```\n$ help set\n...\n      -e  Exit immediately if a command exits with a non-zero status.\n```\n\nFrom my local run, which failed for x86 + AVX2 the sequence of commands was:\n\n```\n++ diff /tmp/vpx_test_1981176/Out-generic-gnu-yuv_raw_input-good-1600kbps-cpu0.ivf /tmp/vpx_test_1981176/Out-x86-linux-gcc-yuv_raw_input-good-1600kbps-cpu0.ivf\n+ cleanup\n+ rm -rf /tmp/vpx_test_1981176\n```",
+      "parentUuid": "bafa437c_e04fada9",
+      "revId": "79e269037a8711a7e36759b9e45e710299b4ea1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
