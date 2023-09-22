@@ -105,6 +105,24 @@
       "parentUuid": "6a86e455_3bdd0e81",
       "revId": "7b1da60d702bbe65e1e03143c67c2bbbb5b82814",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5762feb9_c02a2649",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-22T00:23:07Z",
+      "side": 1,
+      "message": "\u003e \u003e \u003e \u003e \u003e I don\u0027t remember if this was sufficient. I\u0027m running `sh ../test/examples.sh --bin-path ./examples --filter vp9_c_vs_simd_enc_test` locally to check.\n\u003e \u003e \u003e \u003e \n\u003e \u003e \u003e \u003e Exits with return code 2.\n\u003e \u003e \u003e \u003e \n\u003e \u003e \u003e \u003e ```\n\u003e \u003e \u003e \u003e Build for: generic-gnu\n\u003e \u003e \u003e \u003e Building target: generic-gnu\n\u003e \u003e \u003e \u003e Done building target: generic-gnu\n\u003e \u003e \u003e \u003e vp9 test for x86 (32 bit): Started.\n\u003e \u003e \u003e \u003e Build for x86: x86-linux-gcc\n\u003e \u003e \u003e \u003e Building target: x86-linux-gcc\n\u003e \u003e \u003e \u003e \n\u003e \u003e \u003e \u003e ../test/vp9_c_vs_simd_encode.sh: line 342: pop_var_context: head of shell_variables not a function context\n\u003e \u003e \u003e \u003e ../test/vp9_c_vs_simd_encode.sh: line 379: pop_var_context: head of shell_variables not a function context\n\u003e \u003e \u003e \u003e ../test/tools_common.sh: line 278: pop_var_context: head of shell_variables not a function context\n\u003e \u003e \u003e \u003e ../test/vp9_c_vs_simd_encode.sh: line 410: pop_var_context: head of shell_variables not a function context\n\u003e \u003e \u003e \u003e ```\n\u003e \u003e \u003e \n\u003e \u003e \u003e Looking at a few threads, this might be noise. The error code is a problem though.\n\u003e \u003e \n\u003e \u003e Maybe my local environment is incomplete for x86. Let me run this again.\n\u003e \n\u003e I see the issue. The script expects a multilib gcc (-m32), not a setup using CROSS.\n\nThis now compiles, but fails after building:\n\n```\nBuild for: generic-gnu\nBuilding target: generic-gnu\nDone building target: generic-gnu\nvp9 test for x86 (32 bit): Started.\nBuild for x86: x86-linux-gcc\nBuilding target: x86-linux-gcc\nDone building target: x86-linux-gcc\n```\n\nSeems we could use a little more logging / error detail.",
+      "parentUuid": "df88afef_41edcd46",
+      "revId": "7b1da60d702bbe65e1e03143c67c2bbbb5b82814",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
