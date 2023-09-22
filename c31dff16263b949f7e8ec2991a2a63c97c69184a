@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5335ac5_6a65dd65",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-22T22:55:03Z",
+      "side": 1,
+      "message": "Before I remove examples/resize_util.c from libaom in https://aomedia-review.googlesource.com/c/aom/+/181621, I am porting our bug fixes back to libvpx.",
+      "revId": "c31dff16263b949f7e8ec2991a2a63c97c69184a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
