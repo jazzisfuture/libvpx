@@ -158,6 +158,40 @@
       "message": "remove this line. It will interfere with the value from tools_common.sh",
       "revId": "7b1da60d702bbe65e1e03143c67c2bbbb5b82814",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b57ec290_ed138089",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-22T01:42:03Z",
+      "side": 1,
+      "message": "make this `if ! grep -q \"$instruction_set\" /proc/cpuinfo; then` and remove the check on `$?`. tools_common.sh uses `set -e`. An alternative would be to simply do `grep -q \"$instruction_set\" /proc/cpuinfo || false`",
+      "revId": "7b1da60d702bbe65e1e03143c67c2bbbb5b82814",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5f713c3_7dcc2361",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 346,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-22T01:42:03Z",
+      "side": 1,
+      "message": "this will need to be `if ! has_...` as well.",
+      "revId": "7b1da60d702bbe65e1e03143c67c2bbbb5b82814",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
