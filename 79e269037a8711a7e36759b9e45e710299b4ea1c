@@ -33,6 +33,24 @@
       "message": "this should be \u0027if ! diff ...` if you want it to output the error. I saw a failure with x86/avx2 in my run and only diagnosed the current state with `bash -x`.",
       "revId": "79e269037a8711a7e36759b9e45e710299b4ea1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1f583659_a92653e8",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-22T19:00:35Z",
+      "side": 1,
+      "message": "\u003e this should be \u0027if ! diff ...` if you want it to output the error. I saw a failure with x86/avx2 in my run and only diagnosed the current state with `bash -x`.\n\nthis can also be `diff -q` instead of outputting to `/dev/null`.",
+      "parentUuid": "25476477_a6d2b37f",
+      "revId": "79e269037a8711a7e36759b9e45e710299b4ea1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
