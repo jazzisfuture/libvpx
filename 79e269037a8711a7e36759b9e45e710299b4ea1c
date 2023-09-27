@@ -123,6 +123,24 @@
       "parentUuid": "4c748b8d_949a34ea",
       "revId": "79e269037a8711a7e36759b9e45e710299b4ea1c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "968bfadd_35820869",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-09-27T21:57:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "77b94263_b123b430",
+      "revId": "79e269037a8711a7e36759b9e45e710299b4ea1c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

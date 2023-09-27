@@ -16,6 +16,24 @@
       "message": "These still need to be addressed or the script will exit early, not logging the failure.",
       "revId": "e4bfc2005b26e5f54701186cf3a98a46e8c3f06b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "921d70a2_a1723e83",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 5
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-09-27T21:57:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ad63bc86_1d1b3b94",
+      "revId": "e4bfc2005b26e5f54701186cf3a98a46e8c3f06b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
