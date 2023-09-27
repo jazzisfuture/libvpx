@@ -16,6 +16,24 @@
       "message": "Here is the output of my local run:\n\nb$ sh ../libvpx/test/vp9_c_vs_simd_encode.sh \nBuild for: generic-gnu\nBuilding target: generic-gnu\nDone building target: generic-gnu\nvp9 test for x86_64 (64 bit): Started.\nBuild for x86: x86_64-linux-gcc\nBuilding target: x86_64-linux-gcc\nDone building target: x86_64-linux-gcc\navx512f is not supported in this machine\nvp9 test for x86_64 (64 bit): Done, all tests passed.\nvp9_test_arm: Started.\nBuild for arm64: armv8-linux-gcc\nBuilding target: armv8-linux-gcc\nDone building target: armv8-linux-gcc\nFiles /tmp/vpx_test_331553/Out-generic-gnu-y4m_360p_10bit_input-rt-1600kbps-cpu0.ivf and /tmp/vpx_test_331553/Out-armv8-linux-gcc-y4m_360p_10bit_input-rt-1600kbps-cpu0.ivf differ\nC vs armv8-linux-gcc encode mismatches for y4m_360p_10bit_input, at 1600 kbps, speed 0, rt preset\nvp9 test for arm: Done, test failed.\nFAIL: vp9_c_vs_simd_enc_test\n\nLooks like there is a mismatch for 10-bit arm realtime build. We should see it in Jenkins when this CL is merged.\n\nFeel free to disable arm 10-bit realtime test, which may not be used much.\n\nPlease feel free to modify the script and make it suitable for Jenkins test structure.",
       "revId": "61f868bcf78d167df63ac9e792871f75b6b6e1f0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c041fc14_d2fb7e3b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-09-27T22:37:45Z",
+      "side": 1,
+      "message": "1 thing I noticed that might affect this script running in Jenkins is that:\nwe included \". $(dirname $0)/tools_common.sh\" in the script. In tools_common.sh, it assumes that the configuration is done, and check \"./config.mk\" file. This is not true or needed for this script. We should bypass that checking. This should be the cause if the following error is seen in Jenkins:\n\nawk: fatal: cannot open file `./config.mk\u0027 for reading: No such file or directory\nawk: fatal: cannot open file `./config.mk\u0027 for reading: No such file or directory",
+      "parentUuid": "134b4838_e86fa552",
+      "revId": "61f868bcf78d167df63ac9e792871f75b6b6e1f0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
