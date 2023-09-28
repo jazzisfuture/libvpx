@@ -18,7 +18,7 @@ PRESETS="good rt"
 TEST_CLIPS="yuv_raw_input y4m_360p_10bit_input yuv_480p_raw_input y4m_720p_input"
 OUT_FILE_SUFFIX=".ivf"
 SCRIPT_DIR=$(dirname "$0")
-LIBVPX_SOURCE_DIR=$(cd ${SCRIPT_DIR}/..; pwd)
+LIBVPX_SOURCE_DIR=$(cd "${SCRIPT_DIR}/.."; pwd)
 
 # Clips used in test.
 YUV_RAW_INPUT="${LIBVPX_TEST_DATA_PATH}/hantro_collage_w352h288.yuv"
@@ -214,14 +214,15 @@ vp9_encode_rt_params() {
   --error-resilient=0"
 }
 
-# Configures for the given target in VPX_TEST_OUTPUT_DIR/build_target_${target}
-# directory.
+# Configures for the given target in the
+# ${VPX_TEST_OUTPUT_DIR}/build_target_${target} directory. Note that this
+# function changes the current directory to that directory.
 vp9_enc_build() {
   local target=$1
   local configure="$2"
   local tmp_build_dir=${VPX_TEST_OUTPUT_DIR}/build_target_${target}
-  mkdir -p $tmp_build_dir
-  cd $tmp_build_dir
+  mkdir -p "$tmp_build_dir"
+  cd "$tmp_build_dir"
 
   echo "Building target: ${target}"
   local config_args="--disable-install-docs \
@@ -305,9 +306,11 @@ vp9_test_generic() {
   local target="generic-gnu"
 
   echo "Build for: ${target}"
+  local save_dir=$PWD
   vp9_enc_build ${target} ${configure}
   local encoder="$(vp9_enc_tool_path "${target}")"
   vp9_enc_test $encoder "${target}"
+  cd "${save_dir}"
 }
 
 # This function encodes VP9 bitstream by enabling SSE2, SSSE3, SSE4_1, AVX2, AVX512f as there are
@@ -345,6 +348,7 @@ vp9_test_x86() {
   local configure="$LIBVPX_SOURCE_DIR/configure"
 
   echo "Build for x86: ${target}"
+  local save_dir=$PWD
   vp9_enc_build ${target} ${configure}
   local encoder="$(vp9_enc_tool_path "${target}")"
   for isa in $x86_isa_variants; do
@@ -356,10 +360,12 @@ vp9_test_x86() {
     export VPX_SIMD_CAPS_MASK=$($isa)
     if ! vp9_enc_test $encoder ${target}; then
       # Find the mismatch
+      cd "${save_dir}"
       return 1
     fi
     unset VPX_SIMD_CAPS_MASK
   done
+  cd "${save_dir}"
 }
 
 vp9_test_arm() {
@@ -367,18 +373,19 @@ vp9_test_arm() {
   local configure="CROSS=aarch64-linux-gnu- $LIBVPX_SOURCE_DIR/configure --extra-cflags=-march=armv8.4-a \
           --extra-cxxflags=-march=armv8.4-a"
   echo "Build for arm64: ${target}"
+  local save_dir=$PWD
   vp9_enc_build ${target} "${configure}"
 
   local encoder="$(vp9_enc_tool_path "${target}")"
   if ! vp9_enc_test "qemu-aarch64 -L /usr/aarch64-linux-gnu ${encoder}" ${target}; then
     # Find the mismatch
+    cd "${save_dir}"
     return 1
   fi
+  cd "${save_dir}"
 }
 
 vp9_c_vs_simd_enc_test() {
-  local save_dir=$(pwd)
-
   # Test Generic
   vp9_test_generic
 
@@ -412,8 +419,6 @@ vp9_c_vs_simd_enc_test() {
   else
     echo "vp9 test for arm: Done, all tests passed."
   fi
-
-  cd ${save_dir}
 }
 
 # Setup a trap function to clean up build, and output files after tests complete.
