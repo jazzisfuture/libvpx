@@ -31,10 +31,15 @@ DSP_SRCS-yes += bitwriter_buffer.c
 DSP_SRCS-yes += bitwriter_buffer.h
 DSP_SRCS-yes += psnr.c
 DSP_SRCS-yes += psnr.h
+DSP_SRCS-yes += sse.c
 DSP_SRCS-$(CONFIG_INTERNAL_STATS) += ssim.c
 DSP_SRCS-$(CONFIG_INTERNAL_STATS) += ssim.h
 DSP_SRCS-$(CONFIG_INTERNAL_STATS) += psnrhvs.c
 DSP_SRCS-$(CONFIG_INTERNAL_STATS) += fastssim.c
+DSP_SRCS-$(HAVE_NEON) += arm/sse_neon.c
+DSP_SRCS-$(HAVE_NEON_DOTPROD) += arm/sse_neon_dotprod.c
+DSP_SRCS-$(HAVE_SSE4_1) += x86/sse_sse4.c
+DSP_SRCS-$(HAVE_AVX2) += x86/sse_avx2.c
 endif
 
 ifeq ($(CONFIG_DECODERS),yes)
