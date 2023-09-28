@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2d3821e5_6e024dc3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-28T23:10:00Z",
+      "side": 1,
+      "message": "Please review. Thanks.\n\nJames: I will go through the copyright of the code copied from libaom with you in person.",
+      "revId": "a945ea4fe910571d60b62ea7e953fc939ebf9be8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
