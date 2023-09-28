@@ -16,6 +16,57 @@
       "message": "This CL fixes two nightly test failures:\nhttps://build.webmproject.org/jenkins/job/libvpx__nightly_optimization-levels/2235/\nhttps://build.webmproject.org/jenkins/job/libvpx__example_test-multi-target/1824/",
       "revId": "e462a0de03fc4daca2ba32a5ba29c4182263e43c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aca0d4ed_f80cf783",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-28T18:09:21Z",
+      "side": 1,
+      "message": "This works, though each function should ideally handle the restore.",
+      "revId": "e462a0de03fc4daca2ba32a5ba29c4182263e43c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa7ee0d6_81d2fc6d",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-28T18:09:21Z",
+      "side": 1,
+      "message": "`$PWD` works too",
+      "revId": "e462a0de03fc4daca2ba32a5ba29c4182263e43c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "216c620d_d59433c4",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-28T18:09:21Z",
+      "side": 1,
+      "message": "You can quote this, though in most cases the path won\u0027t include spaces.",
+      "revId": "e462a0de03fc4daca2ba32a5ba29c4182263e43c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
