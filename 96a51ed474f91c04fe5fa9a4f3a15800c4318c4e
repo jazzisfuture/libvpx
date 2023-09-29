@@ -33,6 +33,23 @@
       "message": "This can be reviewed independent of the pending tests of the other cherry-picks.",
       "revId": "96a51ed474f91c04fe5fa9a4f3a15800c4318c4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9549f707_d6e83ca9",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:48:16Z",
+      "side": 1,
+      "message": "The previous release is v1.13.0. Is v1.13.1 ABI incompatible with v1.13.0? If so, the version number should be v1.14.0 or v2.0.0 (in the common versioning scheme).\n\nIf \"the previous release\" does not mean v1.13.0, then it is best to avoid the term. For example, we can say:\n\n```\n    This release is ABI incompatible with v1.12.0.\n```",
+      "revId": "96a51ed474f91c04fe5fa9a4f3a15800c4318c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
