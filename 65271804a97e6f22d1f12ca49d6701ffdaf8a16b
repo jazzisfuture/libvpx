@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db646ed4_cb7365b2",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-29T22:21:23Z",
+      "side": 1,
+      "message": "pushd / popd are also options.",
+      "revId": "65271804a97e6f22d1f12ca49d6701ffdaf8a16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2208b6c2_fc65dc7e",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 376,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-29T22:21:23Z",
+      "side": 1,
+      "message": "this could be `\"$PWD\"`, but there\u0027s inconsistency in quoting as it is.",
+      "revId": "65271804a97e6f22d1f12ca49d6701ffdaf8a16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
