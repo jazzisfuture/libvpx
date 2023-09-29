@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a3f079f_cbc5feb5",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2094,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T20:57:09Z",
+      "side": 1,
+      "message": "Nit/optional: In line 2089 and this line, it would be good to use the same form for the second argument (either `sizeof(*cpi-\u003efoo)` or `sizeof(cpi-\u003efoo[0])`. The first form seems more common in this file.",
+      "revId": "df9fd9d5b7325060b2b921558a1eb20ca7880937",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
