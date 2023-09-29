@@ -16,6 +16,176 @@
       "message": "This is a new version of https://chromium-review.googlesource.com/c/webm/libvpx/+/4905748 that allows people to see the changes I made to the original libaom code.\n\nPatchset 1 is the original libaom code copied to libvpx unchanged.\n\nPatchset 3 contains only the mechanical renaming changes:\n- libaom license header -\u003e libvpx license header\n- AOM -\u003e VPX\n- aom -\u003e vpx\n- AV1 -\u003e VP9\n\nPatchset 5 contains the changes needed to build the copied code in libvpx.\n\nThe most important changes to review are the diffs between patchsets 3 and 5. But you are also welcome to review the diffs between patchsets 1 and 3.",
       "revId": "3c583853372804f3993148ea817d124ba888f1d7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "67a4368f_ff25d24f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "I annotated some changes to help with the code review.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e52c2b8_6f5dd3ba",
+        "filename": "test/sum_squares_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "Note that `isHbd_` is always 0 if `CONFIG_VP9_HIGHBITDEPTH` is 0. We will depend on this fact below.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e0df2bd3_e7994545",
+        "filename": "test/sum_squares_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 238,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "In libaom, the `CONVERT_TO_BYTEPTR` macro is defined unconditionally.\n\nIn libvpx, the `CONVERT_TO_BYTEPTR` macro is defined only when `CONFIG_VP9_HIGHBITDEPTH` is equal to 1.\n\nIf `CONFIG_VP9_HIGHBITDEPTH` is 0, `isHbd_` is always 0, so the if statement is never entered. So guarding this block of code with `#if CONFIG_VP9_HIGHBITDEPTH` doesn\u0027t change the behavior whether `CONFIG_VP9_HIGHBITDEPTH` is 0 or 1.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2425f53_ecf77d09",
+        "filename": "vpx_dsp/arm/sse_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "This file has `#if CONFIG_VP9_HIGHBITDEPTH`, so I added `#include \"./vpx_config.h\"` to be safe.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8272bfc_b98f6609",
+        "filename": "vpx_dsp/arm/sse_neon.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "The libaom function `horizontal_add_u32x4` is named `horizontal_add_uint32x4` in libvpx.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dfb98c77_cbbd5aef",
+        "filename": "vpx_dsp/sse.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "This file uses `abs()` (at line 27), so it needs to include `\u003cstdlib.h\u003e`.\n\nThis file has `#if CONFIG_VP9_HIGHBITDEPTH`, so I added `#include \"./vpx_config.h\"` to be safe.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ad34b93_b761babe",
+        "filename": "vpx_dsp/x86/sse_avx2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "This file has `#if CONFIG_VP9_HIGHBITDEPTH`, so I added `#include \"./vpx_config.h\"` to be safe.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f855a377_3b00bad3",
+        "filename": "vpx_dsp/x86/sse_avx2.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "In pre-C99, we can\u0027t declare variables in the middle of the code.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "757ceb84_1310fe5e",
+        "filename": "vpx_dsp/x86/sse_sse4.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "We need to include `\"./vpx_dsp_rtcd.h\"`, which declares the `vpx_sse_sse4_1` function defined in this file. Otherwise there is a compiler warning:\n\n```\n../libvpx/vpx_dsp/x86/sse_sse4.c:75:9: warning: no previous prototype for ‘vpx_sse_sse4_1’ [-Wmissing-prototypes]\n int64_t vpx_sse_sse4_1(const uint8_t *a, int a_stride, const uint8_t *b,\n         ^~~~~~~~~~~~~~\n```\n\nI guess libaom is not compiled with `-Wmissing-prototypes`.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb5a9652_c416fb65",
+        "filename": "vpx_dsp/x86/synonyms_avx2.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:42:08Z",
+      "side": 1,
+      "message": "The addition of `const` fixes the following warnings:\n\n```\nIn file included from ../libvpx/vpx_dsp/x86/sse_avx2.c:19:\n../libvpx/vpx_dsp/x86/synonyms_avx2.h: In function ‘yy_loadu2_128’:\n../libvpx/vpx_dsp/x86/synonyms_avx2.h:39:33: warning: cast discards ‘const’ qualifier from pointer target type [-Wcast-qual]\n   __m128i mhi \u003d _mm_loadu_si128((__m128i *)(hi));\n                                 ^\n../libvpx/vpx_dsp/x86/synonyms_avx2.h:40:33: warning: cast discards ‘const’ qualifier from pointer target type [-Wcast-qual]\n   __m128i mlo \u003d _mm_loadu_si128((__m128i *)(lo));\n                                 ^\n```\n\nlibaom is not compiled with `-Wcast-qual`.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
