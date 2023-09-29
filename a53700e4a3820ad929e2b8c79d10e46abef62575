@@ -16,6 +16,24 @@
       "message": "In my experience libaom and libvpx don\u0027t do this consistently. We usually don\u0027t get into trouble because at allocation time we first check if the buffer pointer is null and then check if the buffer size is large enough. But it is good to clear allocation sizes on free consistently.",
       "revId": "a53700e4a3820ad929e2b8c79d10e46abef62575",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5f878e33_930d0b57",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-29T22:07:54Z",
+      "side": 1,
+      "message": "\u003e In my experience libaom and libvpx don\u0027t do this consistently. We usually don\u0027t get into trouble because at allocation time we first check if the buffer pointer is null and then check if the buffer size is large enough. But it is good to clear allocation sizes on free consistently.\n\nIn the case of these allocations the size was checked, so when the resolution changed they were undersized.",
+      "parentUuid": "3819f92c_a6693ce2",
+      "revId": "a53700e4a3820ad929e2b8c79d10e46abef62575",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
