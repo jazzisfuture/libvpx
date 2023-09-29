@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "3351beb5_ef2f3e24",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T22:32:37Z",
+      "side": 1,
+      "message": "I like pushd / popd better. (I am not familiar with shell scripting.)\n\nAnother idea I have is to call the `vp9_test_xxx()` functions in a subshell.\n\nWhich solution would you recommend?",
+      "parentUuid": "db646ed4_cb7365b2",
+      "revId": "65271804a97e6f22d1f12ca49d6701ffdaf8a16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2208b6c2_fc65dc7e",
         "filename": "test/vp9_c_vs_simd_encode.sh",
         "patchSetId": 2
