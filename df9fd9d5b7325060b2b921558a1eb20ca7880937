@@ -16,6 +16,24 @@
       "message": "Nit/optional: In line 2089 and this line, it would be good to use the same form for the second argument (either `sizeof(*cpi-\u003efoo)` or `sizeof(cpi-\u003efoo[0])`. The first form seems more common in this file.",
       "revId": "df9fd9d5b7325060b2b921558a1eb20ca7880937",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dc044291_83ae0cb6",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2094,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-29T22:09:24Z",
+      "side": 1,
+      "message": "\u003e Nit/optional: In line 2089 and this line, it would be good to use the same form for the second argument (either `sizeof(*cpi-\u003efoo)` or `sizeof(cpi-\u003efoo[0])`. The first form seems more common in this file.\n\nYou\u0027re right. I noticed that in the initial review, but it was submitted before I put the comment in. Let\u0027s keep the cherry-pick as is and address the code in the main branch.",
+      "parentUuid": "0a3f079f_cbc5feb5",
+      "revId": "df9fd9d5b7325060b2b921558a1eb20ca7880937",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
