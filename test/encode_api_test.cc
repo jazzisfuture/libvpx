@@ -408,6 +408,7 @@ TEST(EncodeAPI, ConfigResizeChangeThreadCount) {
   }
 }
 
+<<<<<<< HEAD   (4697b1 Update 32-bit version of horizontal_add_uint32x2)
 #if CONFIG_VP9_ENCODER
 class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
@@ -542,4 +543,6 @@ INSTANTIATE_TEST_SUITE_P(
         static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)));
 #endif  // CONFIG_VP9_ENCODER
 
+=======
+>>>>>>> BRANCH (10b949 update CHANGELOG)
 }  // namespace

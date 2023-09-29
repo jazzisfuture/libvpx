@@ -2159,12 +2159,21 @@ void vp9_change_config(struct VP9_COMP *cpi, const VP9EncoderConfig *oxcf) {
   if (last_w != cpi->oxcf.width || last_h != cpi->oxcf.height) {
     vpx_free(cpi->consec_zero_mv);
     CHECK_MEM_ERROR(
+<<<<<<< HEAD   (4697b1 Update 32-bit version of horizontal_add_uint32x2)
         &cm->error, cpi->consec_zero_mv,
         vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(*cpi->consec_zero_mv)));
 
     vpx_free(cpi->skin_map);
     CHECK_MEM_ERROR(
         &cm->error, cpi->skin_map,
+=======
+        cm, cpi->consec_zero_mv,
+        vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(*cpi->consec_zero_mv)));
+
+    vpx_free(cpi->skin_map);
+    CHECK_MEM_ERROR(
+        cm, cpi->skin_map,
+>>>>>>> BRANCH (10b949 update CHANGELOG)
         vpx_calloc(cm->mi_rows * cm->mi_cols, sizeof(cpi->skin_map[0])));
 
     free_copy_partition_data(cpi);
