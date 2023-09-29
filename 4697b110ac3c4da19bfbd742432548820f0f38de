@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dcc76c48_db243b4e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T17:38:20Z",
+      "side": 1,
+      "message": "Marco: Please review.\n\nJonathan: Please indicate your approval of contributing this code to libvpx.",
+      "revId": "4697b110ac3c4da19bfbd742432548820f0f38de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
