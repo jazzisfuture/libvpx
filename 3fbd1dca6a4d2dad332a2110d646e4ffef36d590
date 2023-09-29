@@ -16,6 +16,24 @@
       "message": "James: I am wondering if `vp8e_set_config()` should return an error if it detects an attempt to change thread counts, rather than silently ignore the thread count change.\n\nBefore this CL, an attempt to chage thread counts would result in a crash. It should be acceptable to replace a crash with a graceful error return, and applications will know that the requested change is not granted.",
       "revId": "3fbd1dca6a4d2dad332a2110d646e4ffef36d590",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5a13866d_4c8b62ef",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1453,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T23:47:34Z",
+      "side": 1,
+      "message": "After this CL, some applications may start to depend on libvpx ignoring the thread count change, and we won\u0027t be able to change `vp8e_set_config()` to return an error in the future.",
+      "parentUuid": "703e5513_4687a517",
+      "revId": "3fbd1dca6a4d2dad332a2110d646e4ffef36d590",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
