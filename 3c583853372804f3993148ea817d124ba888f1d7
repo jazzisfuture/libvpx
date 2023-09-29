@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4e4f2617_b367a09c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-29T21:17:54Z",
+      "side": 1,
+      "message": "This is a new version of https://chromium-review.googlesource.com/c/webm/libvpx/+/4905748 that allows people to see the changes I made to the original libaom code.\n\nPatchset 1 is the original libaom code copied to libvpx unchanged.\n\nPatchset 3 contains only the mechanical renaming changes:\n- libaom license header -\u003e libvpx license header\n- AOM -\u003e VPX\n- aom -\u003e vpx\n- AV1 -\u003e VP9\n\nPatchset 5 contains the changes needed to build the copied code in libvpx.\n\nThe most important changes to review are the diffs between patchsets 3 and 5. But you are also welcome to review the diffs between patchsets 1 and 3.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
