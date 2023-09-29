@@ -68,6 +68,24 @@
       "parentUuid": "9549f707_d6e83ca9",
       "revId": "96a51ed474f91c04fe5fa9a4f3a15800c4318c4e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa74e5f5_644d1d69",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-09-29T22:06:34Z",
+      "side": 1,
+      "message": "\u003e \u003e The previous release is v1.13.0. Is v1.13.1 ABI incompatible with v1.13.0? If so, the version number should be v1.14.0 or v2.0.0 (in the common versioning scheme).\n\u003e \u003e \n\u003e \u003e If \"the previous release\" does not mean v1.13.0, then it is best to avoid the term. For example, we can say:\n\u003e \u003e \n\u003e \u003e ```\n\u003e \u003e     This release is ABI incompatible with v1.12.0.\n\u003e \u003e ```\n\u003e \n\u003e Bad copy and paste. Thank you for reading through this.\n\nFixed.",
+      "parentUuid": "90a66c39_0d6c6a0c",
+      "revId": "96a51ed474f91c04fe5fa9a4f3a15800c4318c4e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
