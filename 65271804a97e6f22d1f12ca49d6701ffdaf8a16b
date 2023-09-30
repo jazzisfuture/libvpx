@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "3ac16730_c96e211b",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-09-30T17:43:06Z",
+      "side": 1,
+      "message": "I tested pushd / popd. I also found that `cd -` can also be used. But these two solutions have an annoying feature: they print the current directory stack or the current directory. So I decided to stick with the simple `cd` solution.\n\nI realized that I can have `vp9_enc_build` and `vp9_enc_test` each cd to the target directory and restore the current directory before they return. So I made that change in patchset 3.",
+      "parentUuid": "3351beb5_ef2f3e24",
+      "revId": "65271804a97e6f22d1f12ca49d6701ffdaf8a16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2208b6c2_fc65dc7e",
         "filename": "test/vp9_c_vs_simd_encode.sh",
         "patchSetId": 2
