@@ -496,6 +496,7 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi) {
     int ithread;
     int th_count = cpi->oxcf.multi_threaded - 1;
     int rc = 0;
+    int i;
 
     /* don't allocate more threads than cores available */
     if (cpi->oxcf.multi_threaded > cm->processor_core_count) {
@@ -509,6 +510,11 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi) {
     }
 
     if (th_count == 0) return 0;
+
+    CHECK_MEM_ERROR(&cpi->common.error, cpi->mt_current_mb_col,
+                    vpx_malloc(sizeof(*cpi->mt_current_mb_col) * cm->mb_rows));
+    for (i = 0; i < cm->mb_rows; ++i)
+      vpx_atomic_init(&cpi->mt_current_mb_col[i], 0);
 
     CHECK_MEM_ERROR(&cpi->common.error, cpi->h_encoding_thread,
                     vpx_malloc(sizeof(pthread_t) * th_count));
@@ -634,6 +640,8 @@ void vp8cx_remove_encoder_threads(VP8_COMP *cpi) {
     vpx_free(cpi->h_encoding_thread);
     vpx_free(cpi->mb_row_ei);
     vpx_free(cpi->en_thread_data);
+    vpx_free(cpi->mt_current_mb_col);
+    cpi->mt_current_mb_col = NULL;
   }
 }
 #endif
