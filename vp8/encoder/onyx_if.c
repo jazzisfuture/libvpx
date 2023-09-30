@@ -1225,7 +1225,7 @@ void vp8_alloc_compressor_data(VP8_COMP *cpi) {
     cpi->mt_sync_range = 16;
   }
 
-  if (cpi->oxcf.multi_threaded > 1) {
+  if (vpx_atomic_load_acquire(&cpi->b_multi_threaded)) {
     int i;
 
     vpx_free(cpi->mt_current_mb_col);
@@ -1447,11 +1447,6 @@ void vp8_change_config(VP8_COMP *cpi, VP8_CONFIG *oxcf) {
   last_h = cpi->oxcf.Height;
   prev_number_of_layers = cpi->oxcf.number_of_layers;
 
-  if (cpi->initial_width) {
-    // TODO(https://crbug.com/1486441): Allow changing thread counts; the
-    // allocation is done once in vp8_create_compressor().
-    oxcf->multi_threaded = cpi->oxcf.multi_threaded;
-  }
   cpi->oxcf = *oxcf;
 
   switch (cpi->oxcf.Mode) {
