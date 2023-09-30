@@ -629,11 +629,20 @@ void vp8cx_remove_encoder_threads(VP8_COMP *cpi) {
     sem_destroy(&cpi->h_event_start_lpf);
 
     /* free thread related resources */
+    vpx_free(cpi->mt_current_mb_col);
+    cpi->mt_current_mb_col = NULL;
+    cpi->mt_current_mb_col_size = 0;
     vpx_free(cpi->h_event_start_encoding);
+    cpi->h_event_start_encoding = NULL;
     vpx_free(cpi->h_event_end_encoding);
+    cpi->h_event_end_encoding = NULL;
     vpx_free(cpi->h_encoding_thread);
+    cpi->h_encoding_thread = NULL;
+    cpi->encoding_thread_count = 0;
     vpx_free(cpi->mb_row_ei);
+    cpi->mb_row_ei = NULL;
     vpx_free(cpi->en_thread_data);
+    cpi->en_thread_data = NULL;
   }
 }
 #endif
