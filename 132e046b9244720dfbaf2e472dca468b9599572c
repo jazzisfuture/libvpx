@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b78ff39_4caa9858",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-02T22:12:46Z",
+      "side": 1,
+      "message": "I removed the \"Bug: chromium:1486441\" line from the commit message so that people won\u0027t mistake this CL for another fix for that bug that they need. This CL is more of a feature.",
+      "revId": "132e046b9244720dfbaf2e472dca468b9599572c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "73a63149_b31581a7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-02T22:12:46Z",
+      "side": 1,
+      "message": "To make the code review easier, I can split this CL into three CLs:\n- Clean up `vp8cx_create/remove_encoder_threads()`\n- Lazy allocation of the `mt_current_mb_col` array,\n  which will work with thread count changes.\n- Allow thread count changes\n\nWould you like me to do that?",
+      "revId": "132e046b9244720dfbaf2e472dca468b9599572c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
