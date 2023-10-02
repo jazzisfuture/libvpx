@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e0d8978_59b2f3eb",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-02T01:26:23Z",
+      "side": 0,
+      "message": "Hmm... it turns out this strange indentation is the result of an old version of clang-format:\n\n```\nDebian clang-format version 11.0.1-2\n```\n\nclang-format-14 (used by a presubmit check of libavif) also formats this line with this strange indentation. I will abandon this CL.",
+      "revId": "6512f994da13e2f27e6a7bd449efee0a374b55b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
