@@ -173,6 +173,41 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "2dcd4458_ff84b91f",
+        "filename": "vpx_dsp/x86/sse_sse4.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-03T00:20:25Z",
+      "side": 1,
+      "message": "\u003e [...]\n\u003e\n\u003e I guess libaom is not compiled with `-Wmissing-prototypes`.\n\nI was trying to fix that as a part of https://crbug.com/aomedia/3416:\n\nhttps://aomedia-review.googlesource.com/c/aom/+/181581",
+      "parentUuid": "757ceb84_1310fe5e",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "24ca67c2_086b0089",
+        "filename": "vpx_dsp/x86/synonyms.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-03T00:20:25Z",
+      "side": 1,
+      "message": "I have a feeling that some of these can be replaced with functions from `vpx_dsp/x86/mem_sse2.h`.",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "eb5a9652_c416fb65",
         "filename": "vpx_dsp/x86/synonyms_avx2.h",
         "patchSetId": 5
