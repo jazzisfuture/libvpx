@@ -33,6 +33,24 @@
       "message": "I suggest the following file organizational change.\n\nThis file should just declare the `init_vpx_test()` function (which should not be static).\n\nAdd test/test_common_main.cc and move the definitions of these two functions to test/test_common_main.cc.\n\nAnd put the `init_vpx_test()` function in the `libvpx_test` namespace.",
       "revId": "cbda7f15736f75397ff619eaab36e5dcae3f350a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4817ab8d_64414bfc",
+        "filename": "test/test_common_main.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 41,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-03T17:02:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7916546b_5481a640",
+      "revId": "cbda7f15736f75397ff619eaab36e5dcae3f350a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
