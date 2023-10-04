@@ -33,6 +33,24 @@
       "message": "To make the code review easier, I can split this CL into three CLs:\n- Clean up `vp8cx_create/remove_encoder_threads()`\n- Lazy allocation of the `mt_current_mb_col` array,\n  which will work with thread count changes.\n- Allow thread count changes\n\nWould you like me to do that?",
       "revId": "132e046b9244720dfbaf2e472dca468b9599572c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dd72b6fe_883bdd78",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-04T01:45:36Z",
+      "side": 1,
+      "message": "\u003e To make the code review easier, I can split this CL into three CLs:\n\u003e - Clean up `vp8cx_create/remove_encoder_threads()`\n\u003e - Lazy allocation of the `mt_current_mb_col` array,\n\u003e   which will work with thread count changes.\n\u003e - Allow thread count changes\n\u003e \n\u003e Would you like me to do that?\n\nYes please. That way we\u0027ll be able to track behavior changes a little more easily and don\u0027t risk losing some cleanup if something needs to be reverted.",
+      "parentUuid": "73a63149_b31581a7",
+      "revId": "132e046b9244720dfbaf2e472dca468b9599572c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
