@@ -16,6 +16,63 @@
       "message": "LGTM!",
       "revId": "0a3e2b4ca1540f4a52848b79fcfad62391fcdba8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9ba1f9d_c8e50276",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-04T01:48:00Z",
+      "side": 1,
+      "message": "It\u0027s not clear why this was necessary, but breaking it out to a function is a good cleanup.",
+      "revId": "0a3e2b4ca1540f4a52848b79fcfad62391fcdba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "af88814f_d03c2754",
+        "filename": "test/init_vpx_test.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-04T01:48:00Z",
+      "side": 1,
+      "message": "`TEST_INIT_VPX_TEST_H_`",
+      "range": {
+        "startLine": 11,
+        "startChar": 8,
+        "endLine": 11,
+        "endChar": 32
+      },
+      "revId": "0a3e2b4ca1540f4a52848b79fcfad62391fcdba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9a29f5e0_d153e09b",
+        "filename": "test/init_vpx_test.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-04T01:48:00Z",
+      "side": 1,
+      "message": "`// TEST_INIT_VPX_TEST_H_`",
+      "revId": "0a3e2b4ca1540f4a52848b79fcfad62391fcdba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
