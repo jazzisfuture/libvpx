@@ -208,6 +208,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4cb1065d_062ca98c",
+        "filename": "vpx_dsp/x86/synonyms.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-04T01:20:40Z",
+      "side": 1,
+      "message": "Done. test/function_equivalence_test.h, vpx_dsp/x86/synonyms.h, and vpx_dsp/x86/synonyms_avx2.h are all gone now.",
+      "parentUuid": "24ca67c2_086b0089",
+      "revId": "3c583853372804f3993148ea817d124ba888f1d7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "eb5a9652_c416fb65",
         "filename": "vpx_dsp/x86/synonyms_avx2.h",
         "patchSetId": 5

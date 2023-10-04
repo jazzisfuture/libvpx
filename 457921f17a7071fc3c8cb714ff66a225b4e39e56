@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ab1b6de_d5180435",
+        "filename": "test/function_equivalence_test.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-04T01:20:40Z",
+      "side": 1,
+      "message": "Done in https://aomedia-review.googlesource.com/c/aom/+/182061",
+      "parentUuid": "242e9fa8_598f7923",
+      "revId": "457921f17a7071fc3c8cb714ff66a225b4e39e56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e02badfb_ff9e03f4",
@@ -48,6 +66,24 @@
       "writtenOn": "2023-10-03T00:20:25Z",
       "side": 1,
       "message": "Delete this:\n\nhttps://aomedia-review.googlesource.com/c/aom/+/182041",
+      "revId": "457921f17a7071fc3c8cb714ff66a225b4e39e56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac939582_8e277dac",
+        "filename": "test/function_equivalence_test.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-04T01:20:40Z",
+      "side": 1,
+      "message": "Done in https://aomedia-review.googlesource.com/c/aom/+/182061",
+      "parentUuid": "e02badfb_ff9e03f4",
       "revId": "457921f17a7071fc3c8cb714ff66a225b4e39e56",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -92,6 +128,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "159c37be_40b72a69",
+        "filename": "test/sum_squares_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-04T01:20:40Z",
+      "side": 1,
+      "message": "Done in https://aomedia-review.googlesource.com/c/aom/+/182062",
+      "parentUuid": "ffcfa7da_60e0a405",
+      "range": {
+        "startLine": 225,
+        "startChar": 13,
+        "endLine": 225,
+        "endChar": 17
+      },
+      "revId": "457921f17a7071fc3c8cb714ff66a225b4e39e56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "64ae4bba_41ceedfc",
@@ -109,6 +169,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "298e2cc0_71ab1a9a",
+        "filename": "vpx_dsp/arm/sse_neon.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 477,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-04T01:20:40Z",
+      "side": 1,
+      "message": "This line no longer exists after https://aomedia-review.googlesource.com/c/aom/+/181967.",
+      "parentUuid": "64ae4bba_41ceedfc",
+      "revId": "457921f17a7071fc3c8cb714ff66a225b4e39e56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "86eb3861_ab1afaea",
@@ -122,6 +200,24 @@
       "writtenOn": "2023-10-03T00:20:25Z",
       "side": 1,
       "message": "This is the square of the difference.",
+      "revId": "457921f17a7071fc3c8cb714ff66a225b4e39e56",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f01a20d_bb4228c0",
+        "filename": "vpx_dsp/sse.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-04T01:20:40Z",
+      "side": 1,
+      "message": "Done in https://aomedia-review.googlesource.com/c/aom/+/182081",
+      "parentUuid": "86eb3861_ab1afaea",
       "revId": "457921f17a7071fc3c8cb714ff66a225b4e39e56",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
