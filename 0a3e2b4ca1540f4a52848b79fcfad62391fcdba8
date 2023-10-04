@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e57c6ca_e89282de",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-04T02:02:33Z",
+      "side": 1,
+      "message": "Yeah I\u0027m not sure why.\nBut the libaom one builds successfully.",
+      "parentUuid": "b9ba1f9d_c8e50276",
+      "revId": "0a3e2b4ca1540f4a52848b79fcfad62391fcdba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "af88814f_d03c2754",
@@ -58,6 +76,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0990c303_b8c3a61d",
+        "filename": "test/init_vpx_test.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-04T02:02:33Z",
+      "side": 1,
+      "message": "Fixed here\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/4907966",
+      "parentUuid": "af88814f_d03c2754",
+      "range": {
+        "startLine": 11,
+        "startChar": 8,
+        "endLine": 11,
+        "endChar": 32
+      },
+      "revId": "0a3e2b4ca1540f4a52848b79fcfad62391fcdba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9a29f5e0_d153e09b",
@@ -71,6 +113,24 @@
       "writtenOn": "2023-10-04T01:48:00Z",
       "side": 1,
       "message": "`// TEST_INIT_VPX_TEST_H_`",
+      "revId": "0a3e2b4ca1540f4a52848b79fcfad62391fcdba8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce0095a5_cb72617e",
+        "filename": "test/init_vpx_test.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-04T02:02:33Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9a29f5e0_d153e09b",
       "revId": "0a3e2b4ca1540f4a52848b79fcfad62391fcdba8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
