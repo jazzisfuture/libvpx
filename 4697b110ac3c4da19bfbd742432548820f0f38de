@@ -16,6 +16,24 @@
       "message": "When we cast the return value of `vpx_calloc`, I think the original form is also clear, i.e.,\n\n```\n  foo \u003d (FOO *)vpx_calloc(n, sizeof(FOO));\n```",
       "revId": "4697b110ac3c4da19bfbd742432548820f0f38de",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18746b8a_347d827f",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 887,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-04T04:42:11Z",
+      "side": 0,
+      "message": "\u003e When we cast the return value of `vpx_calloc`, I think the original form is also clear, i.e.,\n\u003e \n\u003e ```\n\u003e   foo \u003d (FOO *)vpx_calloc(n, sizeof(FOO));\n\u003e ```\n\nThat is true. Though years ago there was a team decision not to cast these,  which I didn\u0027t agree with.",
+      "parentUuid": "a8a0c664_19c2ae2f",
+      "revId": "4697b110ac3c4da19bfbd742432548820f0f38de",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
