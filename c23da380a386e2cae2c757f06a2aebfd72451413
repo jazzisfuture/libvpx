@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ffea2e8_efdc60cb",
+        "filename": "vp8/encoder/onyx_int.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 529,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-04T20:17:01Z",
+      "side": 1,
+      "message": "The reason we\u0027re having problems with `mt_current_mb_col` is that its size is implicitly `cm-\u003emb_rows`. So whenever `cm-\u003emb_rows` changes, we need to reallocate `mt_current_mb_col` at the same time. But we also want to allocate `mt_current_mb_col` only when we need it (i.e., only when we are using multiple threads). It was tricky to meet both requirements.\n\nBy recording the size of `mt_current_mb_col` explicitly in this new field and by allocating `mt_current_mb_col` right before we start to use it, it is much easier to meet both requirements.",
+      "revId": "c23da380a386e2cae2c757f06a2aebfd72451413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
