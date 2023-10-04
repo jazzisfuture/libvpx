@@ -56,6 +56,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "ed0ef381_500dcd8e",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-04T01:40:11Z",
+      "side": 1,
+      "message": "\u003e I tested pushd / popd. I also found that `cd -` can also be used. But these two solutions have an annoying feature: they print the current directory stack or the current directory. So I decided to stick with the simple `cd` solution.\n\u003e \n\nThat is fine. `pushd \u003e /dev/null` works too. As for a subshell that would be fine in most cases as well. One downside is that it slows down execution on windows (forking is expensive), but that shouldn\u0027t be much of an issue here.\n\n\u003e I realized that I can have `vp9_enc_build` and `vp9_enc_test` each cd to the target directory and restore the current directory before they return. So I made that change in patchset 3.",
+      "parentUuid": "3ac16730_c96e211b",
+      "revId": "65271804a97e6f22d1f12ca49d6701ffdaf8a16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "2208b6c2_fc65dc7e",
         "filename": "test/vp9_c_vs_simd_encode.sh",
         "patchSetId": 2
