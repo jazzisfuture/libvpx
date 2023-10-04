@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a89f227_991e2e25",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-10-04T11:42:45Z",
+      "side": 1,
+      "message": "This commit adds an `emms` instruction at the end of MMX assembly for vpx_subtract_block to clear the MMX registers. With this change the mismatch between x86 build and C only build is resolved.",
+      "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
