@@ -15,7 +15,8 @@
 
 TEST_BITRATES="1600 6400"
 PRESETS="good rt"
-TEST_CLIPS="yuv_raw_input y4m_360p_10bit_input yuv_480p_raw_input y4m_720p_input"
+LOWBD_CLIPS="yuv_raw_input yuv_480p_raw_input y4m_720p_input"
+HIGHBD_CLIPS="y4m_360p_10bit_input"
 OUT_FILE_SUFFIX=".ivf"
 SCRIPT_DIR=$(dirname "$0")
 LIBVPX_SOURCE_DIR=$(cd ${SCRIPT_DIR}/..; pwd)
@@ -270,13 +271,20 @@ vp9_enc_test() {
       return 1
     fi
 
+    local test_clips="${LOWBD_CLIPS} ${HIGHBD_CLIPS}"
+
     # Enable armv8 test for real-time only
     if [ "${preset}" = "good" ] && [ "${target}" = "armv8-linux-gcc" ]; then
       continue
     fi
 
+    # Exclude 10-bit clips for armv8 real-time test
+    if [ "${preset}" = "rt" ] && [ "${target}" = "armv8-linux-gcc" ]; then
+      local test_clips="${LOWBD_CLIPS}"
+    fi
+
     for cpu in $(seq 0 $max_cpu_used); do
-      for clip in ${TEST_CLIPS}; do
+      for clip in ${test_clips}; do
         for bitrate in ${TEST_BITRATES}; do
           eval "${encoder}" $($clip) $($test_params) \
           "--limit=${VP9_ENCODE_C_VS_SIMD_TEST_FRAME_LIMIT}" \
@@ -378,16 +386,14 @@ vp9_c_vs_simd_enc_test() {
   # Test Generic
   vp9_test_generic
 
-  # TODO(webm:1816): Enable x86 test once issue 1816 is fixed.
-  # Details: https://bugs.chromium.org/p/webm/issues/detail?id=1816
   # Test x86 (32 bit)
-  # echo "vp9 test for x86 (32 bit): Started."
-  # if ! vp9_test_x86 "x86"; then
-  #   echo "vp9 test for x86 (32 bit): Done, test failed."
-  #   return 1
-  # else
-  #   echo "vp9 test for x86 (32 bit): Done, all tests passed."
-  # fi
+  echo "vp9 test for x86 (32 bit): Started."
+  if ! vp9_test_x86 "x86"; then
+    echo "vp9 test for x86 (32 bit): Done, test failed."
+    return 1
+  else
+    echo "vp9 test for x86 (32 bit): Done, all tests passed."
+  fi
 
   # Test x86_64 (64 bit)
   if [ "$(eval uname -m)" = "x86_64" ]; then
