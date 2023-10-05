@@ -16,6 +16,24 @@
       "message": "This commit adds an `emms` instruction at the end of MMX assembly for vpx_subtract_block to clear the MMX registers. With this change the mismatch between x86 build and C only build is resolved.",
       "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4fbd2945_3a993d94",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-05T18:08:19Z",
+      "side": 1,
+      "message": "\u003e This commit adds an `emms` instruction at the end of MMX assembly for vpx_subtract_block to clear the MMX registers. With this change the mismatch between x86 build and C only build is resolved.\n\nIn libvpx `vpx_clear_system_state()` is generally used to avoid the overhead between assembly calls. This suggests one is missing before some floating point operations.",
+      "parentUuid": "7a89f227_991e2e25",
+      "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
