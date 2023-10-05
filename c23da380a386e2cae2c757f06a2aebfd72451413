@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "bb748cd4_95cfc0cf",
+        "filename": "vp8/encoder/encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 753,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-05T18:05:17Z",
+      "side": 1,
+      "message": "\u003e This condition could be `cpi-\u003emt_current_mb_col_size \u003c cm-\u003emb_rows` if we just want to make sure `cpi-\u003emt_current_mb_col` is large enough rather than the exact right size.\n\nWe can only scale within the original mb_rows so in that case you would fix it at its largest possible value.",
+      "parentUuid": "db6d43c7_3fa61f4a",
+      "revId": "c23da380a386e2cae2c757f06a2aebfd72451413",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "9ffea2e8_efdc60cb",
         "filename": "vp8/encoder/onyx_int.h",
         "patchSetId": 2
