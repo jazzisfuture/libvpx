@@ -1,5 +1,40 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2a78852_a95c212d",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-06T21:08:56Z",
+      "side": 1,
+      "message": "For VP8, `cfg.g_threads` is equal to 0 here.\n\nFor VP9, `cfg.g_threads` is equal to 8 here.",
+      "revId": "b729684b059d48b6bac0750045acbe6a4a9e9a6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34b2b4b3_160d853f",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-06T21:08:56Z",
+      "side": 1,
+      "message": "In the current VP8 implementation, this test will be stuck in single-threaded mode because `cfg.g_threads` is initially 0. It would be good to add a variant of this test that sets `cfg.g_threads` to a value greater than 1 before calling `InitCodec()` at line 350.\n\nI will look into this.",
+      "revId": "b729684b059d48b6bac0750045acbe6a4a9e9a6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
