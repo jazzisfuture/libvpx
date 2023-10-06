@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea4af3d2_c3d4ff6b",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1415,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-06T21:38:35Z",
+      "side": 1,
+      "message": "This change is the main change. It helped me while I analyzed the code related to `vp8e_set_config()`.\n\nNote that this change was impossible when we were modifying the `oxcf` input parameter right before line 1434 in this function to work around bug chromium:486441:\n\n```\n  if (cpi-\u003einitial_width) {\n    // TODO(https://crbug.com/1486441): Allow changing thread counts; the\n    // allocation is done once in vp8_create_compressor().\n    oxcf-\u003emulti_threaded \u003d cpi-\u003eoxcf.multi_threaded;\n  }\n```",
+      "revId": "e6f4c52c702456cdf1b036f844c41b79a3794bbe",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
