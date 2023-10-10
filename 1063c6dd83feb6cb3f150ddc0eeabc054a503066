@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "131c2fd9_430025c9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 10
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-10T18:36:33Z",
+      "side": 1,
+      "message": "This CL is now ready for review. PTAL. Thanks.\n\nJonathan: I copied your latest vpx_dsp/arm/highbd_sse_neon.c,",
+      "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
