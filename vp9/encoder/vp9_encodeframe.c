@@ -4090,7 +4090,8 @@ static int rd_pick_partition(VP9_COMP *cpi, ThreadData *td,
     const int do_rd_ml_partition_var_pruning =
         partition_none_allowed && do_split &&
         mi_row + num_8x8_blocks_high_lookup[bsize] <= cm->mi_rows &&
-        mi_col + num_8x8_blocks_wide_lookup[bsize] <= cm->mi_cols;
+        mi_col + num_8x8_blocks_wide_lookup[bsize] <= cm->mi_cols &&
+        xd->mi[0]->ref_frame[0] != INTRA_FRAME;
     if (do_rd_ml_partition_var_pruning) {
       ml_predict_var_rd_partitioning(cpi, x, pc_tree, bsize, mi_row, mi_col,
                                      &partition_none_allowed, &do_split);
