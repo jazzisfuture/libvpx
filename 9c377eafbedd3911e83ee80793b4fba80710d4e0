@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a165d6e4_37404a35",
+        "filename": "test/init_vpx_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-10T16:35:40Z",
+      "side": 1,
+      "message": "Patchset 3 follows the prevalent curly braces style in this file.",
+      "revId": "9c377eafbedd3911e83ee80793b4fba80710d4e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
