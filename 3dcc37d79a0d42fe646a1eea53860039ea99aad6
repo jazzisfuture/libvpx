@@ -33,6 +33,24 @@
       "message": "I had thought I\u0027d done at least the first of these in this change[1], but the rest looks good.\n\n[1] https://chromium-review.googlesource.com/c/webm/libvpx/+/4833331/5/test/test_libvpx.cc",
       "revId": "3dcc37d79a0d42fe646a1eea53860039ea99aad6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "26d3797f_62448fc7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-10T14:06:12Z",
+      "side": 1,
+      "message": "Hmm... You are right. We lost your changes accidentally in https://chromium-review.googlesource.com/c/webm/libvpx/+/4907958. Sorry!\n\nI have compared my changes with yours. They are essentially the same.",
+      "parentUuid": "f7c889d8_d45ecb20",
+      "revId": "3dcc37d79a0d42fe646a1eea53860039ea99aad6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
