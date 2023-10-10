@@ -4135,6 +4135,13 @@ void vp9_rd_pick_inter_mode_sb(VP9_COMP *cpi, TileDataEnc *tile_data,
     vp9_update_rd_thresh_fact(tile_data->thresh_freq_fact,
                               sf->adaptive_rd_thresh, bsize, best_mode_index);
 
+  // If the best interp_filter is SWITCHABLE_FILTERS, it means the modes after
+  // the one where it was set are all skipped. Reset it to EIGHTTAP.
+  if (best_mbmode.interp_filter == SWITCHABLE_FILTERS) {
+    best_mbmode.interp_filter =
+        cm->interp_filter == SWITCHABLE ? EIGHTTAP : cm->interp_filter;
+  }
+
   // macroblock modes
   *mi = best_mbmode;
   x->skip |= best_skip2;
