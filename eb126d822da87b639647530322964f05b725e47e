@@ -70,6 +70,30 @@
       },
       "revId": "eb126d822da87b639647530322964f05b725e47e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bf5d312e_ff2ad751",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 4094,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2023-10-11T21:07:12Z",
+      "side": 1,
+      "message": "The encoder runs a recursive block partition search. The same position can be searched multiple times with different coding block sizes.",
+      "parentUuid": "4d823138_5bea2291",
+      "range": {
+        "startLine": 4094,
+        "startChar": 8,
+        "endLine": 4094,
+        "endChar": 31
+      },
+      "revId": "eb126d822da87b639647530322964f05b725e47e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
