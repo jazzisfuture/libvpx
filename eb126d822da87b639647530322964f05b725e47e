@@ -94,6 +94,30 @@
       },
       "revId": "eb126d822da87b639647530322964f05b725e47e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a793060a_f370ee84",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 4094,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-11T21:23:46Z",
+      "side": 1,
+      "message": "I logged out the decision at end of `rd_pick_sb_modes` and that block was only hit once in that function.\n\nIt does go into `rd_pick_sb_modes` after the ML pruning, but the `interp_filter` and `ref_frame[0]` aren\u0027t changed. Maybe it gets early termination with an illegal mode decision. I\u0027ll give it another pass to see what exactly happens there. (it takes a while to run each time since it\u0027s encoding 1080p with debug build).",
+      "parentUuid": "bf5d312e_ff2ad751",
+      "range": {
+        "startLine": 4094,
+        "startChar": 8,
+        "endLine": 4094,
+        "endChar": 31
+      },
+      "revId": "eb126d822da87b639647530322964f05b725e47e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
