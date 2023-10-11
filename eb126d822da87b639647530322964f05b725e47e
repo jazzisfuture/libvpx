@@ -22,6 +22,30 @@
       },
       "revId": "eb126d822da87b639647530322964f05b725e47e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ab0a5c0_57b28e8a",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 4094,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-11T20:38:50Z",
+      "side": 1,
+      "message": "Hmm, the same block was hit in `vp9_rd_pick_inter_mode_sb` where the `interp_filter` and `ref_frame[0]` were chosen before it hits here again.",
+      "parentUuid": "54f68b32_1c3d0d6d",
+      "range": {
+        "startLine": 4094,
+        "startChar": 8,
+        "endLine": 4094,
+        "endChar": 31
+      },
+      "revId": "eb126d822da87b639647530322964f05b725e47e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
