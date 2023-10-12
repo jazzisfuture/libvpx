@@ -88,6 +88,24 @@
       "parentUuid": "84e89ce1_99f061b6",
       "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "07c5d39e_208d6ca3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-12T19:28:13Z",
+      "side": 1,
+      "message": "\u003e We accept that the addition of `vpx_clear_system_state()` would be consistent with other changes in codebase. When we tried identifying the code areas of floating-point operations, there seem to be multiple `vpx_subtract_block()` calls due to which mis-match seems to originate (potentially multiple code areas). As we identified the actual problem in this case, we went ahead with current approach as\n\u003e \n\u003e 1) it can help in cleaning-up `vpx_clear_system_state()` from the codebase in future (similar to libaom)\n\u003e \n\nThat isn\u0027t scheduled and I\u0027d like to see performance data. It should be minor, but in several locations we can defer this across multiple calls.\n\n\u003e 2) identification of the floating point operations before which `vpx_clear_system_state()` has to be added may be time-consuming/open-ended\n\u003e \n\u003e Hence we request you to reconsider the current approach. Kindly let us know what you think.\n\nI would prefer to be consistent with the codebase and call `vpx_clear_system_state()` before any floating point calculations, not necessarily at the end of `vpx_subtract_block()` calls.",
+      "parentUuid": "2e4a954e_2286872c",
+      "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
