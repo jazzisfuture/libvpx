@@ -70,6 +70,24 @@
       "parentUuid": "1cb561b0_fc4c9ae8",
       "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e4a954e_2286872c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-10-12T13:25:29Z",
+      "side": 1,
+      "message": "We accept that the addition of `vpx_clear_system_state()` would be consistent with other changes in codebase. When we tried identifying the code areas of floating-point operations, there seem to be multiple `vpx_subtract_block()` calls due to which mis-match seems to originate (potentially multiple code areas). As we identified the actual problem in this case, we went ahead with current approach as\n\n1) it can help in cleaning-up `vpx_clear_system_state()` from the codebase in future (similar to libaom)\n\n2) identification of the floating point operations before which `vpx_clear_system_state()` has to be added may be time-consuming/open-ended\n\nHence we request you to reconsider the current approach. Kindly let us know what you think.",
+      "parentUuid": "84e89ce1_99f061b6",
+      "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
