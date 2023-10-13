@@ -54,6 +54,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a1f81eff_ea202642",
+        "filename": "test/sum_squares_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 174,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-13T23:42:42Z",
+      "side": 1,
+      "message": "Done. Also fixed in libaom: https://aomedia-review.googlesource.com/c/aom/+/182582",
+      "parentUuid": "7314e45a_1fd34b52",
+      "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "5ac271de_d8022c63",
         "filename": "test/sum_squares_test.cc",
         "patchSetId": 10
@@ -65,6 +83,30 @@
       "writtenOn": "2023-10-11T05:06:55Z",
       "side": 1,
       "message": "This could be `data16` or otherwise renamed to match the naming style.",
+      "range": {
+        "startLine": 193,
+        "startChar": 14,
+        "endLine": 193,
+        "endChar": 19
+      },
+      "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5b7741b_d1da2fd2",
+        "filename": "test/sum_squares_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-13T23:42:42Z",
+      "side": 1,
+      "message": "Done. Also fixed in libaom: https://aomedia-review.googlesource.com/c/aom/+/182582",
+      "parentUuid": "5ac271de_d8022c63",
       "range": {
         "startLine": 193,
         "startChar": 14,
@@ -94,6 +136,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7aab12c6_3c7c4d23",
+        "filename": "test/sum_squares_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-13T23:42:42Z",
+      "side": 1,
+      "message": "Done. Also fixed in libaom: https://aomedia-review.googlesource.com/c/aom/+/182582",
+      "parentUuid": "0b247a0a_3c278a65",
+      "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "7b61ef2f_dc7c582b",
         "filename": "vpx_dsp/x86/sse_avx2.c",
         "patchSetId": 10
@@ -105,6 +165,24 @@
       "writtenOn": "2023-10-11T05:06:55Z",
       "side": 1,
       "message": "these functions could use a blank line between them",
+      "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce3fc9de_59face91",
+        "filename": "vpx_dsp/x86/sse_avx2.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-13T23:42:42Z",
+      "side": 1,
+      "message": "Done. Also fixed in libaom: https://aomedia-review.googlesource.com/c/aom/+/182562",
+      "parentUuid": "7b61ef2f_dc7c582b",
       "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -128,6 +206,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "f54baaa1_249e1b37",
+        "filename": "vpx_dsp/x86/sse_sse4.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-13T23:42:42Z",
+      "side": 1,
+      "message": "\"Summary\" seems to be used as a verb here. I guess we should change \"summary\" to \"add\" or \"calculate_sum\". Any suggestions?\n\nI will deal with this later.",
+      "parentUuid": "c53317a1_b10c0744",
+      "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e08760c7_9b193e01",
         "filename": "vpx_dsp/x86/sse_sse4.c",
         "patchSetId": 10
@@ -139,6 +235,24 @@
       "writtenOn": "2023-10-11T05:06:55Z",
       "side": 1,
       "message": "add a newline",
+      "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58659bd1_fb55783f",
+        "filename": "vpx_dsp/x86/sse_sse4.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-13T23:42:42Z",
+      "side": 1,
+      "message": "Done. Also fixed in libaom: https://aomedia-review.googlesource.com/c/aom/+/182562",
+      "parentUuid": "e08760c7_9b193e01",
       "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
