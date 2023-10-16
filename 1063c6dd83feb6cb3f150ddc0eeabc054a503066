@@ -224,6 +224,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "32da62d3_85227c5d",
+        "filename": "vpx_dsp/x86/sse_sse4.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-10-16T19:40:23Z",
+      "side": 1,
+      "message": "\u003e \"Summary\" seems to be used as a verb here. I guess we should change \"summary\" to \"add\" or \"calculate_sum\". Any suggestions?\n\u003e \n\u003e I will deal with this later.\n\nElsewhere horizontal_add_ is used.",
+      "parentUuid": "f54baaa1_249e1b37",
+      "revId": "1063c6dd83feb6cb3f150ddc0eeabc054a503066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e08760c7_9b193e01",
         "filename": "vpx_dsp/x86/sse_sse4.c",
         "patchSetId": 10
