@@ -16,6 +16,24 @@
       "message": "Does this resolve the failure case?",
       "revId": "2ab7ba82511eceb24d45361a0ba81a1460f5dbfc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0605ba57_8b1d22ea",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-16T14:11:57Z",
+      "side": 1,
+      "message": "Yes this does, and specifically targeted that case (meaning no other blocks enter this condition, so it won\u0027t cause regression)",
+      "parentUuid": "c6bb5e38_4e6a90a0",
+      "revId": "2ab7ba82511eceb24d45361a0ba81a1460f5dbfc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
