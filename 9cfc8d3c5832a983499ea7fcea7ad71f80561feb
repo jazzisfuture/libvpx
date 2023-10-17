@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e7eed150_e1da637f",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2649,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-17T20:22:58Z",
+      "side": 1,
+      "message": "Filed a bug to track:\n\nhttps://bugs.chromium.org/p/webm/issues/detail?id\u003d1824",
+      "parentUuid": "fc7af31e_7ebfa92c",
+      "revId": "9cfc8d3c5832a983499ea7fcea7ad71f80561feb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "78363320_b14e3d2a",
@@ -49,6 +67,24 @@
       "writtenOn": "2023-10-17T18:35:18Z",
       "side": 1,
       "message": "Nit: The `(int64_t)` cast is not necessary. Since `lc-\u003etarget_bandwidth` is int and `lc-\u003eframerate` is double, `lc-\u003etarget_bandwidth` is implicitly cast to double before the division.\n\nThis comment also applies to the three changes below (lines 277, 320, 343).",
+      "revId": "9cfc8d3c5832a983499ea7fcea7ad71f80561feb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58d20824_b6ada6a8",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-17T20:22:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "78363320_b14e3d2a",
       "revId": "9cfc8d3c5832a983499ea7fcea7ad71f80561feb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
