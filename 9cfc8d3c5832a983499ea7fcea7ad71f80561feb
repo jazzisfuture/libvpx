@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1d6f7806_a711b6bb",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2649,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-17T18:35:18Z",
+      "side": 1,
+      "message": "(You can do this in a separate CL.) I suggest we take the opportunity to review all the arithmetic operations for potential integer overflows.\n\nFor example, here both `rc-\u003eavg_frame_bandwidth` and `oxcf-\u003etwo_pass_vbrmin_section` are `int`. So if `rc-\u003eavg_frame_bandwidth` is INT_MAX and oxcf-\u003etwo_pass_vbrmin_section` is 2, their product will overflow.",
+      "revId": "9cfc8d3c5832a983499ea7fcea7ad71f80561feb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "78363320_b14e3d2a",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 236,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-17T18:35:18Z",
+      "side": 1,
+      "message": "Nit: The `(int64_t)` cast is not necessary. Since `lc-\u003etarget_bandwidth` is int and `lc-\u003eframerate` is double, `lc-\u003etarget_bandwidth` is implicitly cast to double before the division.\n\nThis comment also applies to the three changes below (lines 277, 320, 343).",
+      "revId": "9cfc8d3c5832a983499ea7fcea7ad71f80561feb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
