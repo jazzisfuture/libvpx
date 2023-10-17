@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "73c3a882_ac74c21a",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-17T20:44:31Z",
+      "side": 1,
+      "message": "Nit: We can delete line 434 (#endif) and line 436 (#if CONFIG_VP9_ENCODER).",
+      "revId": "7d500fb001ad73b7fe6c9e6aa96f4e0187e55b3c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
