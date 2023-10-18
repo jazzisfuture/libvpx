@@ -16,6 +16,24 @@
       "message": "Getting this to run in most cases will be difficult given the amount of memory that will be needed and how slow it likely will be.\n\nNote we have some of this for realtime already:\nhttps://chromium.googlesource.com/webm/libvpx/+/refs/heads/main/test/realtime_test.cc#96",
       "revId": "d0643978360050ff24b46dd411f00e735ed35ff0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "66fb1b20_18569511",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-18T21:19:56Z",
+      "side": 1,
+      "message": "Anything that uses (frame_width * frame_height) will overflow, not even at this large size.\n\nAlso the vp8 realtime has the issue of large compressed size overflow because of lower compression efficiency.\n\nWhat kind of \"arithmetic operations for potential integer overflows\" are we looking to address here[1], if not this kind?\n\n[1]https://chromium-review.googlesource.com/c/webm/libvpx/+/4944271/comment/1d6f7806_a711b6bb/",
+      "parentUuid": "509658e6_4c895096",
+      "revId": "d0643978360050ff24b46dd411f00e735ed35ff0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
