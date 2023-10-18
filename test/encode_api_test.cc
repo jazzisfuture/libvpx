@@ -432,6 +432,28 @@ TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
       << static_cast<double>(cfg.g_timebase.den) / cfg.g_timebase.num;
 }
 
+// TODO(webm:1824): VP9 spec allows maximum frame size of 65536x65536 but it
+// exposes integer overflows. Enable when all are addressed.
+TEST(EncodeAPI, DISABLED_ConfigLargeFrameSizeVp9) {
+  constexpr int kWidth = 65536;
+  constexpr int kHeight = 65536;
+  constexpr auto *iface = &vpx_codec_vp9_cx_algo;
+  SCOPED_TRACE(vpx_codec_iface_name(iface));
+  vpx_codec_enc_cfg_t cfg = {};
+  vpx_codec_ctx_t enc;
+
+  ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+  // The following setting will cause avg_frame_bandwidth in rate control to be
+  // larger than INT_MAX
+  cfg.rc_target_bitrate = 12000;
+  cfg.g_timebase.den = 30;
+  cfg.g_timebase.num = 1;
+  EXPECT_NO_FATAL_FAILURE(InitCodec(*iface, kWidth, kHeight, &enc, &cfg));
+  EXPECT_NO_FATAL_FAILURE(EncodeWithConfig(cfg, &enc))
+      << "frame width: " << kWidth << " frame height: " << kHeight;
+  EXPECT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+}
+
 class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
       public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
