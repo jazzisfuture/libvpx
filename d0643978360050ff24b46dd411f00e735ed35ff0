@@ -34,6 +34,24 @@
       "parentUuid": "509658e6_4c895096",
       "revId": "d0643978360050ff24b46dd411f00e735ed35ff0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "47afda7d_42e379e8",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 439,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-18T22:18:45Z",
+      "side": 1,
+      "message": "While working on libgav1 and libavif, I studied the issue of the maximum frame width and height for a code base that uses the 32-bit int type (signed or unsigned) for their product. My conclusion, which is supported by the maximum frame size (area) in Chrome, is that the product of width and height for such a code base must be \u003c 2^28 \u003d 256 * 1024. So in libavif I added:\n\n```\n// A reasonable default for maximum image size (in pixel count) to avoid out-of-memory errors or\n// integer overflow in (32-bit) int or unsigned int arithmetic operations.\n#define AVIF_DEFAULT_IMAGE_SIZE_LIMIT (16384 * 16384)\n```\n\nSince libvpx uses the 32-bit int type (signed or unsigned) for the product of width and height, we know libvpx cannot possibly handle a frame size of 65536x65536. This test should aim to fail gracefully in either vpx_codec_enc_init() or vpx_codec_encode().\n\nNote: In theory we can audit the libvpx code base and uses the `size_t` type when multiplying width and height. Then on 64-bit platforms (where `size_t` is 64 bits), we will be able to encode a frame size of 65536x65536. But this is a lot of work and I think it\u0027s not worth doing.",
+      "parentUuid": "66fb1b20_18569511",
+      "revId": "d0643978360050ff24b46dd411f00e735ed35ff0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
