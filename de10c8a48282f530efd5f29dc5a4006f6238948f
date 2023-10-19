@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04ec1be8_820e993c",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-19T15:28:12Z",
+      "side": 1,
+      "message": "I suggest we still keep the original `#if CONFIG_VP9_ENCODER` line unchanged, and then add a new `#if VPX_ARCH_X86_64 || VPX_ARCH_AARCH64` line around this test:\n\n```\n#if CONFIG_VP9_ENCODER\n#if VPX_ARCH_X86_64 || VPX_ARCH_AARCH64\nTEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {\n  ...\n}\n#endif\n\nclass EncodeApiGetTplStatsTest\n    : public ::libvpx_test::EncoderTest,\n      public ::testing::TestWithParam\u003cconst libvpx_test::CodecFactory *\u003e {\n...\n```",
+      "revId": "de10c8a48282f530efd5f29dc5a4006f6238948f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e16892e9_c5f40161",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 436,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-19T15:28:12Z",
+      "side": 1,
+      "message": "Delete this line (see the comment above).",
+      "revId": "de10c8a48282f530efd5f29dc5a4006f6238948f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
