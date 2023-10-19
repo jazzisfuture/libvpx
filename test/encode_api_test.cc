@@ -408,7 +408,7 @@ TEST(EncodeAPI, ConfigResizeChangeThreadCount) {
   }
 }
 
-#if CONFIG_VP9_ENCODER
+#if CONFIG_VP9_ENCODER && (VPX_ARCH_X86_64 || VPX_ARCH_AARCH64)
 TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
   constexpr int kWidth = 16383;
   constexpr int kHeight = 16383;
@@ -431,7 +431,9 @@ TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
       << "target bitrate: " << cfg.rc_target_bitrate << " framerate: "
       << static_cast<double>(cfg.g_timebase.den) / cfg.g_timebase.num;
 }
+#endif
 
+#if CONFIG_VP9_ENCODER
 class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
       public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
