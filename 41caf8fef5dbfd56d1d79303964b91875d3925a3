@@ -106,6 +106,23 @@
       "parentUuid": "2e4a954e_2286872c",
       "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4941800_5608fbb1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-10-19T17:43:31Z",
+      "side": 1,
+      "message": "In AV1, after seeing this type of bugs from time to time, we felt our old handling method was quite error-prone, and hard to maintain. We changed the way of clearing MMX registers in AV1:\nhttps://bugs.chromium.org/p/aomedia/issues/detail?id\u003d2968\nNow, with this also happens in VP9, IMO, the final solution is to change the handling following AV1 method. This shouldn\u0027t affect performance much as we saw in AV1. Of course, this is beyond the scope of this CL. We can discuss it separately.\n\nRegarding this CL, the fix follows AV1 method, but inconsistent with VP9 method. This can be a quick workaround. Could you run some speed tests to show the performance impact?",
+      "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
