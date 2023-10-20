@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "036e574b_884ba43d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-20T18:46:01Z",
+      "side": 1,
+      "message": "LGTM. Thanks for reducing the memory consumption of the test.\n\nI suggest adding two comments to explain the non-obvious facts about this test.",
+      "revId": "fbf725fe83d17512a5942ee070fcb2e7b12e048f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b52e6412_de945750",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-20T18:46:01Z",
+      "side": 1,
+      "message": "Nit: I suggest we copy (maybe shorten a bit) the commit message of https://chromium-review.googlesource.com/c/webm/libvpx/+/4951402 as a comment here to explain why the test is not run on 32-bit systems.",
+      "revId": "fbf725fe83d17512a5942ee070fcb2e7b12e048f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "75a91f83_67428f10",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 428,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-20T18:46:01Z",
+      "side": 1,
+      "message": "I suggest adding a comment here to note that framerate 0.1 (equivalent to timebase 10) is the smallest framerate allowed by libvpx, so we can\u0027t go any lower. This was not obvious to me.",
+      "revId": "fbf725fe83d17512a5942ee070fcb2e7b12e048f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
