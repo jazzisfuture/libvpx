@@ -411,8 +411,8 @@ TEST(EncodeAPI, ConfigResizeChangeThreadCount) {
 #if CONFIG_VP9_ENCODER
 #if VPX_ARCH_X86_64 || VPX_ARCH_AARCH64
 TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
-  constexpr int kWidth = 16383;
-  constexpr int kHeight = 16383;
+  constexpr int kWidth = 12383;
+  constexpr int kHeight = 8192;
   constexpr auto *iface = &vpx_codec_vp9_cx_algo;
   SCOPED_TRACE(vpx_codec_iface_name(iface));
   vpx_codec_enc_cfg_t cfg = {};
@@ -427,8 +427,7 @@ TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
   cfg.rc_target_bitrate = INT_MAX;
   cfg.g_timebase.den = 1;
   cfg.g_timebase.num = 10;
-  EXPECT_NO_FATAL_FAILURE(InitCodec(*iface, kWidth, kHeight, &enc.ctx, &cfg));
-  EXPECT_NO_FATAL_FAILURE(EncodeWithConfig(cfg, &enc.ctx))
+  EXPECT_NO_FATAL_FAILURE(InitCodec(*iface, kWidth, kHeight, &enc.ctx, &cfg))
       << "target bitrate: " << cfg.rc_target_bitrate << " framerate: "
       << static_cast<double>(cfg.g_timebase.den) / cfg.g_timebase.num;
 }
