@@ -123,6 +123,24 @@
       "message": "In AV1, after seeing this type of bugs from time to time, we felt our old handling method was quite error-prone, and hard to maintain. We changed the way of clearing MMX registers in AV1:\nhttps://bugs.chromium.org/p/aomedia/issues/detail?id\u003d2968\nNow, with this also happens in VP9, IMO, the final solution is to change the handling following AV1 method. This shouldn\u0027t affect performance much as we saw in AV1. Of course, this is beyond the scope of this CL. We can discuss it separately.\n\nRegarding this CL, the fix follows AV1 method, but inconsistent with VP9 method. This can be a quick workaround. Could you run some speed tests to show the performance impact?",
       "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a936084f_90241a5c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-10-23T15:45:23Z",
+      "side": 1,
+      "message": "We tested the performance of this CL for 3 clips (hantro_collage_w352h288.yuv, niklas_640_480_30.yuv and niklas_1280_720_30.y4m) at encoding bitrates of 1600kbps and 6400kbps for 160 frames.\n\nWe observed a negligible change in encode time (averaged over clips and bitrates) as follows:\n```\nGood\ncpu-used  Encode time reduction (%)\n       0             0.43\n       4             0.30\n       5             0.00\nrt\ncpu-used\n       0             0.20\n       7            -0.65\n       8            -0.20\n       9            -0.70\n```\nAlso, when we performed the encoding of rt cpu9 preset for one of the test cases multiple times (to check the variation of encode time from one run to another), the average encode time reduction seen was ~0.25%.",
+      "parentUuid": "d4941800_5608fbb1",
+      "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
