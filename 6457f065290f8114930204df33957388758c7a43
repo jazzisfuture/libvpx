@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0e2dea0_6e277e63",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-10-24T15:55:33Z",
+      "side": 1,
+      "message": "SVE code should start appearing in November - we see significant uplifts over Neon when implementing convolution and sum-of-squares calculations using the 16-bit dot-product instructions.",
+      "revId": "6457f065290f8114930204df33957388758c7a43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
