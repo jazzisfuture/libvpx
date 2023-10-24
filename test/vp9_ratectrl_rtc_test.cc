@@ -76,13 +76,19 @@ class RcInterfaceTest
     int loopfilter_level, qp;
     encoder->Control(VP9E_GET_LOOPFILTER_LEVEL, &loopfilter_level);
     encoder->Control(VP8E_GET_LAST_QUANTIZER, &qp);
-    rc_api_->ComputeQP(frame_params_);
-    ASSERT_EQ(rc_api_->GetQP(), qp);
-    ASSERT_EQ(rc_api_->GetLoopfilterLevel(), loopfilter_level);
+    if (rc_api_->ComputeQP(frame_params_) == libvpx::FrameDropDecision::kOk) {
+      frame_is_dropped_ = false;
+      ASSERT_EQ(rc_api_->GetQP(), qp);
+      ASSERT_EQ(rc_api_->GetLoopfilterLevel(), loopfilter_level);
+    } else {
+      frame_is_dropped_ = true;
+      num_drops_++;
+    }
   }
 
   void FramePktHook(const vpx_codec_cx_pkt_t *pkt) override {
-    rc_api_->PostEncodeUpdate(pkt->data.frame.sz, frame_params_);
+    if (!frame_is_dropped_)
+      rc_api_->PostEncodeUpdate(pkt->data.frame.sz, frame_params_);
   }
 
   void RunOneLayer() {
@@ -95,6 +101,31 @@ class RcInterfaceTest
                                          1280, 720, 30, 1, 0, kNumFrames);
 
     ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+  }
+
+  void RunOneLayerDropFramesCBR() {
+    if (GET_PARAM(2) != VPX_CBR) {
+      // Frame dropping is only for CBR mode.
+      GTEST_SKIP();
+    }
+    SetConfig(GET_PARAM(2));
+    // Use lower bitrate, lower max-q, and enable frame dropper.
+    rc_cfg_.target_bandwidth = 200;
+    cfg_.rc_target_bitrate = 200;
+    rc_cfg_.frame_drop_thresh = 30;
+    cfg_.rc_dropframe_thresh = 30;
+    rc_cfg_.max_quantizer = 50;
+    cfg_.rc_max_quantizer = 50;
+    rc_api_ = libvpx::VP9RateControlRTC::Create(rc_cfg_);
+    frame_params_.spatial_layer_id = 0;
+    frame_params_.temporal_layer_id = 0;
+
+    ::libvpx_test::I420VideoSource video("desktop_office1.1280_720-020.yuv",
+                                         1280, 720, 30, 1, 0, kNumFrames);
+
+    ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
+    // Check that some frames were dropped, otherwise test has no value.
+    ASSERT_GE(num_drops_, 1);
   }
 
   void RunOneLayerVBRPeriodicKey() {
@@ -134,6 +165,7 @@ class RcInterfaceTest
     rc_cfg_.min_quantizers[0] = 2;
     rc_cfg_.rc_mode = rc_mode;
     rc_cfg_.aq_mode = aq_mode_;
+    rc_cfg_.frame_drop_thresh = 0;
 
     // Encoder settings for ground truth.
     cfg_.g_w = 1280;
@@ -152,6 +184,8 @@ class RcInterfaceTest
     cfg_.rc_target_bitrate = 1000;
     cfg_.kf_min_dist = key_interval_;
     cfg_.kf_max_dist = key_interval_;
+    cfg_.rc_dropframe_thresh = 0;
+    num_drops_ = 0;
   }
 
   std::unique_ptr<libvpx::VP9RateControlRTC> rc_api_;
@@ -160,6 +194,8 @@ class RcInterfaceTest
   int key_interval_;
   libvpx::VP9FrameParamsQpRTC frame_params_;
   bool encoder_exit_;
+  bool frame_is_dropped_;
+  int num_drops_;
 };
 
 class RcInterfaceSvcTest
@@ -551,6 +587,8 @@ class RcInterfaceSvcTest
 };
 
 TEST_P(RcInterfaceTest, OneLayer) { RunOneLayer(); }
+
+TEST_P(RcInterfaceTest, OneLayerDropFrames) { RunOneLayerDropFramesCBR(); }
 
 TEST_P(RcInterfaceTest, OneLayerVBRPeriodicKey) { RunOneLayerVBRPeriodicKey(); }
 
