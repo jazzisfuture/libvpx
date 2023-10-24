@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "84be3882_be5b8477",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-10-24T21:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eff6467b_eca4c39c",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 4
+      },
+      "revId": "99450da99ba8ba49c87e69175ddb98a83a226eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a72abb84_b4199ce1",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2fe3291d_c5d9151d",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-10-24T21:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a72abb84_b4199ce1",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 66,
+        "endChar": 10
+      },
+      "revId": "99450da99ba8ba49c87e69175ddb98a83a226eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f2226d7d_05c217bf",
@@ -60,6 +108,30 @@
       "writtenOn": "2023-10-24T19:13:51Z",
       "side": 1,
       "message": "Also add comments to explain the output of this function, especially `frame_params` is only valid if the returned result is `kOk`",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 8
+      },
+      "revId": "99450da99ba8ba49c87e69175ddb98a83a226eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f1026110_398a0daa",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-10-24T21:27:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f2226d7d_05c217bf",
       "range": {
         "startLine": 101,
         "startChar": 2,
