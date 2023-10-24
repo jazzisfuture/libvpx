@@ -172,7 +172,12 @@ bool VP9RateControlRTC::UpdateRateControl(
   vp9_new_framerate(cpi_, cpi_->framerate);
   if (cpi_->svc.number_temporal_layers > 1 ||
       cpi_->svc.number_spatial_layers > 1) {
-    if (cm->current_video_frame == 0) vp9_init_layer_context(cpi_);
+    if (cm->current_video_frame == 0) {
+      vp9_init_layer_context(cpi_);
+      // svc->framedrop_mode is not currently exposed, so only allow for
+      // full superframe drop for now.
+      cpi_->svc.framedrop_mode = FULL_SUPERFRAME_DROP;
+    }
     vp9_update_layer_context_change_config(cpi_,
                                            (int)cpi_->oxcf.target_bandwidth);
   }
@@ -182,7 +187,10 @@ bool VP9RateControlRTC::UpdateRateControl(
   return true;
 }
 
-void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
+// Compute the QP for the frame. If the frame is dropped this function
+// returns kDrop, and no QP is computed. If the frame is encoded (not dropped)
+// the QP is computed and kOk is returned.
+FrameDropDecision VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
   VP9_COMMON *const cm = &cpi_->common;
   int width, height;
   cpi_->svc.spatial_layer_id = frame_params.spatial_layer_id;
@@ -234,6 +242,18 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
     vp9_restore_layer_context(cpi_);
     vp9_rc_get_svc_params(cpi_);
   }
+  // SVC: check for skip encoding of enhancement layer if the
+  // layer target bandwidth = 0.
+  if (vp9_svc_check_skip_enhancement_layer(cpi_))
+    return FrameDropDecision::kDrop;
+  // Check for dropping this frame based on buffer level.
+  // Never drop on key frame, or if base layer is key for svc,
+  if (!frame_is_intra_only(cm) &&
+      (!cpi_->use_svc ||
+       !cpi_->svc.layer_context[cpi_->svc.temporal_layer_id].is_key_frame)) {
+    if (vp9_rc_drop_frame(cpi_)) return FrameDropDecision::kDrop;
+  }
+  // Compute the QP for the frame.
   int bottom_index, top_index;
   cpi_->common.base_qindex =
       vp9_rc_pick_q_and_bounds(cpi_, &bottom_index, &top_index);
@@ -242,6 +262,13 @@ void VP9RateControlRTC::ComputeQP(const VP9FrameParamsQpRTC &frame_params) {
   if (cpi_->svc.number_spatial_layers > 1 ||
       cpi_->svc.number_temporal_layers > 1)
     vp9_save_layer_context(cpi_);
+
+  cpi_->last_frame_dropped = 0;
+  cpi_->svc.last_layer_dropped[cpi_->svc.spatial_layer_id] = 0;
+  if (cpi_->svc.spatial_layer_id == cpi_->svc.number_spatial_layers - 1)
+    cpi_->svc.num_encoded_top_layer++;
+
+  return FrameDropDecision::kOk;
 }
 
 int VP9RateControlRTC::GetQP() const { return cpi_->common.base_qindex; }
