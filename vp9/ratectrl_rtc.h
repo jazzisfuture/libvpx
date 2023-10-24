@@ -61,6 +61,12 @@ struct VP9SegmentationData {
   size_t delta_q_size;
 };
 
+enum Result {
+    kOk,
+    kError,
+    kDrop,
+};
+
 // This interface allows using VP9 real-time rate control without initializing
 // the encoder. To use this interface, you need to link with libvpxrc.a.
 //
@@ -92,7 +98,7 @@ class VP9RateControlRTC {
   int GetQP() const;
   int GetLoopfilterLevel() const;
   bool GetSegmentationData(VP9SegmentationData *segmentation_data) const;
-  void ComputeQP(const VP9FrameParamsQpRTC &frame_params);
+  Result ComputeQP(const VP9FrameParamsQpRTC &frame_params);
   // Feedback to rate control with the size of current encoded frame
   void PostEncodeUpdate(uint64_t encoded_frame_size,
                         const VP9FrameParamsQpRTC &frame_params);
