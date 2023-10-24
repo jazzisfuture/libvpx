@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eff6467b_eca4c39c",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-24T19:13:51Z",
+      "side": 1,
+      "message": "prefer using `enum class` for scoped enumerations",
+      "range": {
+        "startLine": 64,
+        "startChar": 0,
+        "endLine": 64,
+        "endChar": 4
+      },
+      "revId": "99450da99ba8ba49c87e69175ddb98a83a226eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a72abb84_b4199ce1",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-24T19:13:51Z",
+      "side": 1,
+      "message": "Also add comments about what they mean",
+      "range": {
+        "startLine": 66,
+        "startChar": 4,
+        "endLine": 66,
+        "endChar": 10
+      },
+      "revId": "99450da99ba8ba49c87e69175ddb98a83a226eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f2226d7d_05c217bf",
+        "filename": "vp9/ratectrl_rtc.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-24T19:13:51Z",
+      "side": 1,
+      "message": "Also add comments to explain the output of this function, especially `frame_params` is only valid if the returned result is `kOk`",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 8
+      },
+      "revId": "99450da99ba8ba49c87e69175ddb98a83a226eb9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
