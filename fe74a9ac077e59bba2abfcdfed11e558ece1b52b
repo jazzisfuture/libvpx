@@ -43,6 +43,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f0198564_b8c6eb2a",
+        "filename": "test/vp9_ratectrl_rtc_test.cc",
+        "patchSetId": 11
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-10-26T14:08:22Z",
+      "side": 1,
+      "message": "This works for now. Ideally we want to make sure the number of dropped frames from RC is the same as that from the encoder.",
+      "range": {
+        "startLine": 128,
+        "startChar": 0,
+        "endLine": 128,
+        "endChar": 29
+      },
+      "revId": "fe74a9ac077e59bba2abfcdfed11e558ece1b52b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "bf52c373_6b15d44f",
         "filename": "vp9/ratectrl_rtc.h",
         "patchSetId": 11
