@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f9b85634_5b8e6597",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-10-27T19:19:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08eeefe5_e486b204",
+      "revId": "a8db7ff9ac4e1712939534b227dedd7ac3abc4a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d1932105_1b30e17c",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-10-27T16:57:40Z",
       "side": 1,
       "message": "In alphabetical order, this should right before line 28 (`#include \"vpx_ports/mem.h\"`).",
+      "revId": "a8db7ff9ac4e1712939534b227dedd7ac3abc4a8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db686e0c_5581d167",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-10-27T19:19:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d1932105_1b30e17c",
       "revId": "a8db7ff9ac4e1712939534b227dedd7ac3abc4a8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

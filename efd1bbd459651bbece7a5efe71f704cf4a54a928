@@ -34,6 +34,24 @@
       "parentUuid": "b872a67f_675fc243",
       "revId": "efd1bbd459651bbece7a5efe71f704cf4a54a928",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b7c0639_b35aef9e",
+        "filename": "vp8/encoder/encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-10-27T19:19:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c24bc38e_44f90884",
+      "revId": "efd1bbd459651bbece7a5efe71f704cf4a54a928",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
