@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "vpx/internal/vpx_codec_internal.h"
+#include "vpx_mem/vpx_mem.h"
 #include "vpx_config.h"
 #include "vp8_rtcd.h"
 #include "./vpx_dsp_rtcd.h"

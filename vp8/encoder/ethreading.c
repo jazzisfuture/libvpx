@@ -15,6 +15,7 @@
 #include "bitstream.h"
 #include "encodeframe.h"
 #include "ethreading.h"
+#include <stddef.h>
 
 #if CONFIG_MULTITHREAD
 
