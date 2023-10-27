@@ -18,6 +18,7 @@
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"
 #include "./vpx_scale_rtcd.h"
+#include "vpx_mem/vpx_mem.h"
 #include "vpx_dsp/psnr.h"
 #include "vpx_dsp/vpx_dsp_common.h"
 #include "vpx_dsp/vpx_filter.h"
@@ -33,6 +34,7 @@
 #endif  // CONFIG_BITSTREAM_DEBUG || CONFIG_MISMATCH_DEBUG
 
 #include "vp9/common/vp9_alloccommon.h"
+#include "vp9/common/vp9_blockd.h"
 #include "vp9/common/vp9_filter.h"
 #include "vp9/common/vp9_idct.h"
 #if CONFIG_VP9_POSTPROC
