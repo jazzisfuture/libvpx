@@ -16,6 +16,24 @@
       "message": "Maybe clean up the include order here according to Google style guide:\n\nhttps://google.github.io/styleguide/cppguide.html#Names_and_Order_of_Includes",
       "revId": "efd1bbd459651bbece7a5efe71f704cf4a54a928",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c24bc38e_44f90884",
+        "filename": "vp8/encoder/encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-10-27T16:57:40Z",
+      "side": 1,
+      "message": "The header includes in this file are a mess. We can make the most important fixes:\n\n1. Move the C system headers (lines 34-35) first, followed by a blank line, as you did in vp8/encoder/ethreading.c.\n\n2. Move the two new lines (currently lines 11-12) right before line 37 (`#include \"vpx_ports/vpx_timer.h\"`).",
+      "parentUuid": "b872a67f_675fc243",
+      "revId": "efd1bbd459651bbece7a5efe71f704cf4a54a928",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
