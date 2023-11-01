@@ -1,6 +1,7 @@
 {
   "comments": [
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_4ecd2c1b",
         "filename": "av1/common/enums.h",
@@ -14,10 +15,10 @@
       "side": 1,
       "message": "Cause some confusion. Assigning explicit values from 0-5 would be good.",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "2bde5729_0b887b6d",
         "filename": "av1/common/enums.h",
@@ -32,10 +33,10 @@
       "message": "Done",
       "parentUuid": "8baca39c_4ecd2c1b",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_6e4af074",
         "filename": "av1/common/restoration.c",
@@ -49,10 +50,10 @@
       "side": 1,
       "message": "Remove code that has been commented out",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_245bb768",
         "filename": "av1/common/restoration.c",
@@ -67,10 +68,10 @@
       "message": "Done",
       "parentUuid": "8baca39c_6e4af074",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_eed7e0d4",
         "filename": "av1/decoder/decodeframe.c",
@@ -84,10 +85,10 @@
       "side": 1,
       "message": "unnecessary else statement because the if condition is (rsi-\u003eframe_restoration_type !\u003d RESTORE_NONE)",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_2482d74e",
         "filename": "av1/decoder/decodeframe.c",
@@ -102,10 +103,10 @@
       "message": "Done",
       "parentUuid": "8baca39c_eed7e0d4",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_6e5f508a",
         "filename": "av1/encoder/bitstream.c",
@@ -119,10 +120,10 @@
       "side": 1,
       "message": "Better to have a separate function instead of to duplicate the code twice here and below",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "2bde5729_ab7867a4",
         "filename": "av1/encoder/bitstream.c",
@@ -137,10 +138,10 @@
       "message": "Done",
       "parentUuid": "8baca39c_6e5f508a",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_ce4dbce1",
         "filename": "av1/encoder/bitstream.c",
@@ -154,10 +155,10 @@
       "side": 1,
       "message": "See above. Same comment for decoder.",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_aa2311da",
         "filename": "av1/encoder/bitstream.c",
@@ -172,10 +173,10 @@
       "message": "Done",
       "parentUuid": "8baca39c_ce4dbce1",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_ee660048",
         "filename": "av1/encoder/pickrst.c",
@@ -189,10 +190,10 @@
       "side": 1,
       "message": "According to the order in the table, SRGPROJ is the second type, SWITCHABLE is the last one. So, {2, 2, 3, 3, 2}",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_847803a5",
         "filename": "av1/encoder/pickrst.c",
@@ -207,10 +208,10 @@
       "message": "good catch, done.",
       "parentUuid": "8baca39c_ee660048",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_6e45908b",
         "filename": "av1/encoder/pickrst.c",
@@ -224,10 +225,10 @@
       "side": 1,
       "message": "Remove test code",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "8baca39c_046cf3e4",
         "filename": "av1/encoder/pickrst.c",
@@ -242,8 +243,176 @@
       "message": "Done",
       "parentUuid": "8baca39c_6e45908b",
       "revId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
+  "submitRequirementResults": [
+    {
+      "submitRequirement": {
+        "name": "Code-Owners",
+        "description": {
+          "value": "User with the code owner override approved the change"
+        },
+        "applicabilityExpression": {
+          "value": {
+            "expressionString": "has:enabled_code-owners"
+          }
+        },
+        "submittabilityExpression": {
+          "expressionString": "has:approval_code-owners"
+        },
+        "overrideExpression": {
+          "value": {
+            "expressionString": "label:Owners-Override\u003d+1"
+          }
+        },
+        "allowOverrideInChildProjects": true
+      },
+      "applicabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"has:enabled_code-owners"},"status":"PASS","errorMessage":{"value":null},"passingAtoms":["has:enabled_code-owners"],"failingAtoms":[]}
+      },
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"has:approval_code-owners"},"status":"PASS","errorMessage":{"value":null},"passingAtoms":["has:approval_code-owners"],"failingAtoms":[]}
+      },
+      "overrideExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Owners-Override=+1"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Owners-Override=+1"]}
+      },
+      "patchSetCommitId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
+    },
+    {
+      "submitRequirement": {
+        "name": "Code-Review",
+        "description": {
+          "value": "At least one maximum vote for label \u0027Code-Review\u0027 is required"
+        },
+        "applicabilityExpression": {},
+        "submittabilityExpression": {
+          "expressionString": "label:Code-Review\u003dMAX,user\u003dnon_uploader AND -label:Code-Review\u003dMIN"
+        },
+        "overrideExpression": {
+          "value": {
+            "expressionString": "label:Bot-Commit\u003d+1 AND -label:Code-Review\u003dMIN"
+          }
+        },
+        "allowOverrideInChildProjects": true
+      },
+      "applicabilityExpressionResult": {},
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Code-Review=MAX,user=non_uploader AND -label:Code-Review=MIN"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Code-Review=MAX,user=non_uploader","label:Code-Review=MIN"]}
+      },
+      "overrideExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Bot-Commit=+1 AND -label:Code-Review=MIN"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Bot-Commit=+1","label:Code-Review=MIN"]}
+      },
+      "patchSetCommitId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
+    },
+    {
+      "submitRequirement": {
+        "name": "Commit-Queue",
+        "description": {
+          "value": "Submit requirement for the \u0027Commit-Queue\u0027 label"
+        },
+        "applicabilityExpression": {
+          "value": {
+            "expressionString": "is:false"
+          }
+        },
+        "submittabilityExpression": {
+          "expressionString": "is:true"
+        },
+        "overrideExpression": {},
+        "allowOverrideInChildProjects": true
+      },
+      "applicabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"is:false"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["is:false"]}
+      },
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"is:true"},"status":"NOT_EVALUATED","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":[]}
+      },
+      "overrideExpressionResult": {},
+      "patchSetCommitId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
+    },
+    {
+      "submitRequirement": {
+        "name": "Review-Enforcement",
+        "description": {
+          "value": "Two Google employees must approve the change. Uploading the change or voting positively on Code-Review count as approval."
+        },
+        "applicabilityExpression": {
+          "value": {
+            "expressionString": "is:review-enforced_gerrit"
+          }
+        },
+        "submittabilityExpression": {
+          "expressionString": "is:review-enforcement-satisfied_gerrit"
+        },
+        "overrideExpression": {},
+        "allowOverrideInChildProjects": false
+      },
+      "applicabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"is:review-enforced_gerrit"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["is:review-enforced_gerrit"]}
+      },
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"is:review-enforcement-satisfied_gerrit"},"status":"NOT_EVALUATED","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":[]}
+      },
+      "overrideExpressionResult": {},
+      "patchSetCommitId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
+    },
+    {
+      "submitRequirement": {
+        "name": "Verified",
+        "description": {
+          "value": "CI or human verified the change"
+        },
+        "applicabilityExpression": {
+          "value": {
+            "expressionString": "-branch:refs/meta/config"
+          }
+        },
+        "submittabilityExpression": {
+          "expressionString": "label:Verified\u003dMAX AND -label:Verified\u003dMIN"
+        },
+        "overrideExpression": {
+          "value": {
+            "expressionString": "label:Bot-Commit\u003d+1"
+          }
+        },
+        "allowOverrideInChildProjects": true
+      },
+      "applicabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"-branch:refs/meta/config"},"status":"PASS","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["branch:refs/meta/config"]}
+      },
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Verified=MAX AND -label:Verified=MIN"},"status":"PASS","errorMessage":{"value":null},"passingAtoms":["label:Verified=MAX"],"failingAtoms":["label:Verified=MIN"]}
+      },
+      "overrideExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Bot-Commit=+1"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Bot-Commit=+1"]}
+      },
+      "patchSetCommitId": "3a51aadca3aaf48962e6b875227eca4a8949e85c",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
     }
   ]
 }
