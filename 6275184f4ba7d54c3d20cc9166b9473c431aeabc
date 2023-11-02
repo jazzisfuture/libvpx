@@ -16,6 +16,70 @@
       "message": "This commit enables the C vs. SIMD test for the x86 platform and disables the 10-bit real-time test for the ARM platform.\nAlso, we have skipped printing the test platform after test completion for “vp9_c_vs_simd_encode.sh” in run_tests() function as the C vs SIMD tests are run for x86 32-bit, 64-bit and ARM platform (if the machine on which the tests are run supports).",
       "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8bd02a15_df6edd31",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-11-02T03:59:38Z",
+      "side": 1,
+      "message": "Please see my comments.",
+      "parentUuid": "2473a144_d8a819f1",
+      "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ce48e950_bc221a71",
+        "filename": "test/tools_common.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-11-02T03:59:38Z",
+      "side": 1,
+      "message": "Could you explain this more (what would happen differently with the change)? Since this is a common function for all tests, it is preferred not to change for 1 individual test if it is not necessary.",
+      "range": {
+        "startLine": 284,
+        "startChar": 2,
+        "endLine": 288,
+        "endChar": 4
+      },
+      "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83185973_6b9701fb",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-11-02T03:59:38Z",
+      "side": 1,
+      "message": "We only need this if there is mismatch in this case. This script should already be run daily in Jenkins for a while. No mismatch is reported, right?",
+      "range": {
+        "startLine": 281,
+        "startChar": 6,
+        "endLine": 281,
+        "endChar": 51
+      },
+      "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
