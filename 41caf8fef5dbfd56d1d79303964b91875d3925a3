@@ -141,6 +141,24 @@
       "parentUuid": "d4941800_5608fbb1",
       "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "970cedc8_cf662886",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-11-02T03:39:46Z",
+      "side": 1,
+      "message": "Thanks for the testing. Talked to James, and we agree to checking in this fix so that the 32-bit build test can be enabled.",
+      "parentUuid": "a936084f_90241a5c",
+      "revId": "41caf8fef5dbfd56d1d79303964b91875d3925a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
