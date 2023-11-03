@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0f5e6f5_b6150944",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-03T20:04:30Z",
+      "side": 1,
+      "message": "We can keep the `ctx-\u003efragments.count \u003d 0;` line from the original code. I don\u0027t think it\u0027s necessary, but we can keep it to minimize behavioral change.",
+      "parentUuid": "9de6dbe4_a3d320ba",
+      "revId": "a938f93031a8be0a561bdbcab5d68866d90f727c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "a522cb26_69fac94b",
