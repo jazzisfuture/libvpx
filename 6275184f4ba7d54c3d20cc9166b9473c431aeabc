@@ -101,6 +101,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1868edfc_d988f4c0",
+        "filename": "test/tools_common.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-11-03T16:11:07Z",
+      "side": 1,
+      "message": "Ok. This test is independent of the Jenkins target config test. With this change, we are getting more accurate information. This should be fine. Thanks for explaining it.",
+      "parentUuid": "2c86a8dd_5c9f0132",
+      "range": {
+        "startLine": 284,
+        "startChar": 2,
+        "endLine": 288,
+        "endChar": 4
+      },
+      "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "83185973_6b9701fb",
@@ -138,6 +162,30 @@
       "side": 1,
       "message": "Yes, no mismatch is reported in Jenkins. Thus, included 10-bit clips for armv8 real-time test. However,  BUG\u003dwebm:1816 and BUG\u003dwebm:1811 reported ARM failure for 10-bit clips (we were not able to reproduce the issue).",
       "parentUuid": "83185973_6b9701fb",
+      "range": {
+        "startLine": 281,
+        "startChar": 6,
+        "endLine": 281,
+        "endChar": 51
+      },
+      "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd6b52b0_1a68cad3",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-11-03T16:11:07Z",
+      "side": 1,
+      "message": "ok. looks like arm mismatch was already fixed in https://bugs.chromium.org/p/webm/issues/detail?id\u003d1819",
+      "parentUuid": "b6610580_85ec6e79",
       "range": {
         "startLine": 281,
         "startChar": 6,
