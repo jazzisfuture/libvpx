@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "32053a04_d4c4c0b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-03T19:59:46Z",
+      "side": 1,
+      "message": "I suggest an alternative fix. It would be good to add a test.",
+      "revId": "a938f93031a8be0a561bdbcab5d68866d90f727c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9de6dbe4_a3d320ba",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 251,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-03T19:59:46Z",
+      "side": 1,
+      "message": "It is better to validate the array index before using it, here:\n\n```\n    if (ctx-\u003efragments.count \u003e\u003d MAX_PARTITIONS) {\n      *res \u003d VPX_CODEC_INVALID_PARAM;\n      return -1;\n    }\n```\n\nAlso, it is clearer to use MAX_PARTITIONS as the size of these two arrays because of the following struct definition:\n\n```\ntypedef struct {\n  int enabled;\n  unsigned int count;\n  const unsigned char *ptrs[MAX_PARTITIONS];\n  unsigned int sizes[MAX_PARTITIONS];\n} FRAGMENT_DATA;\n```",
+      "revId": "a938f93031a8be0a561bdbcab5d68866d90f727c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a522cb26_69fac94b",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 255,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-03T19:59:46Z",
+      "side": 1,
+      "message": "This check will be overly strict if we never call `update_fragments()` again. That\u0027s another reason it\u0027s better to check the array index before use.",
+      "revId": "a938f93031a8be0a561bdbcab5d68866d90f727c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
