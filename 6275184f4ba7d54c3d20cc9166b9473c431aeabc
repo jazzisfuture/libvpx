@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "489b4dc9_a98f4a8b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-11-03T13:31:29Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "8bd02a15_df6edd31",
+      "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ce48e950_bc221a71",
@@ -61,6 +79,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2c86a8dd_5c9f0132",
+        "filename": "test/tools_common.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 288,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-11-03T13:31:29Z",
+      "side": 1,
+      "message": "Print in the parent version:\n```\nvp9_c_vs_simd_encode: Done, all tests pass for x86_64-linux-gcc @ \u003ccommit-id\u003e.\n```\nPrint in this CL\n```\nvp9_c_vs_simd_encode: Done, all tests pass for \u003ccommit-id\u003e.\n```\n In the parent version the target configuration (specifically `TOOLCHAIN` present in the `LIBVPX_CONFIG_PATH/config.mk` file) is printed. This `config.mk` file is created during the `configure` step of the Jenkins build setup. C vs SIMD tests are run for x86 32-bit, 64-bit and ARM platforms (prints are present to indicate the test completion at line numbers 395, 405, 415 in `vp9_c_vs_simd_encode.sh`) and `configure` for these different targets are done in `VPX_TEST_OUTPUT_DIR/build_target_${target}` directories (the corresponding `config.mk` file would be present here). Thus we thought printing the target configuration as present in the `LIBVPX_CONFIG_PATH/config.mk` file would not be accurate. Please let us know if it is better to keep the original code.",
+      "parentUuid": "ce48e950_bc221a71",
+      "range": {
+        "startLine": 284,
+        "startChar": 2,
+        "endLine": 288,
+        "endChar": 4
+      },
+      "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "83185973_6b9701fb",
         "filename": "test/vp9_c_vs_simd_encode.sh",
         "patchSetId": 2
@@ -72,6 +114,30 @@
       "writtenOn": "2023-11-02T03:59:38Z",
       "side": 1,
       "message": "We only need this if there is mismatch in this case. This script should already be run daily in Jenkins for a while. No mismatch is reported, right?",
+      "range": {
+        "startLine": 281,
+        "startChar": 6,
+        "endLine": 281,
+        "endChar": 51
+      },
+      "revId": "6275184f4ba7d54c3d20cc9166b9473c431aeabc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b6610580_85ec6e79",
+        "filename": "test/vp9_c_vs_simd_encode.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1573372
+      },
+      "writtenOn": "2023-11-03T13:31:29Z",
+      "side": 1,
+      "message": "Yes, no mismatch is reported in Jenkins. Thus, included 10-bit clips for armv8 real-time test. However,  BUG\u003dwebm:1816 and BUG\u003dwebm:1811 reported ARM failure for 10-bit clips (we were not able to reproduce the issue).",
+      "parentUuid": "83185973_6b9701fb",
       "range": {
         "startLine": 281,
         "startChar": 6,
