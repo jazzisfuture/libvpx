@@ -252,7 +252,7 @@ static int update_fragments(vpx_codec_alg_priv_t *ctx, const uint8_t *data,
     ctx->fragments.ptrs[ctx->fragments.count] = data;
     ctx->fragments.sizes[ctx->fragments.count] = data_sz;
     ctx->fragments.count++;
-    if (ctx->fragments.count > (1 << EIGHT_PARTITION) + 1) {
+    if (ctx->fragments.count >= (1 << EIGHT_PARTITION) + 1) {
       ctx->fragments.count = 0;
       *res = VPX_CODEC_INVALID_PARAM;
       return -1;
