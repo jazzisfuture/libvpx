@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d698d10b_d06ffe28",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-03T20:27:28Z",
+      "side": 1,
+      "message": "We can do two things here:\n\n - Add VPX_CODEC_USE_INPUT_FRAGMENTS to existing vpx_dec_fuzzer. Though it only applies to VP8.\n - Take the bitstream and add a unit test to trigger this case specifically. I just noticed there\u0027s no unit test coverage for VPX_CODEC_USE_INPUT_FRAGMENTS at all.",
+      "parentUuid": "32053a04_d4c4c0b6",
+      "revId": "a938f93031a8be0a561bdbcab5d68866d90f727c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9de6dbe4_a3d320ba",
