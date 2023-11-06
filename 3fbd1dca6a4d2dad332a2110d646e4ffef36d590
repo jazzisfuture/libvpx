@@ -92,6 +92,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "c11632ce_b49bcedd",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1608754
+      },
+      "writtenOn": "2023-11-06T19:13:50Z",
+      "side": 1,
+      "message": "If you navigate to the DEPS file and search for libvpx on https://webrtc.googlesource.com/src.git/+log/refs/branch-heads/5993 it refers to commit https://chromium.googlesource.com/webm/libvpx.git@24c0dcc8513b8c1ba4ffbf934a399f89de646ffe",
+      "parentUuid": "50039ed3_50a97ff3",
+      "revId": "3fbd1dca6a4d2dad332a2110d646e4ffef36d590",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "703e5513_4687a517",
         "filename": "vp8/encoder/onyx_if.c",
         "patchSetId": 3
