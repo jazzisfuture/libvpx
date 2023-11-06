@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "18718186_fcbaca13",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 866,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-11-06T23:17:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a8792c09_42e9eb78",
+      "revId": "6d6a58d9cc43646a26e3f90d9ab607288430c1e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "33ed9568_951cb38d",
@@ -31,6 +49,24 @@
       "writtenOn": "2023-11-06T22:52:27Z",
       "side": 1,
       "message": "libaom\u0027s test also includes a function:\n\n```\n  extern void unused(void);\n  void unused(void) {}\n```\n\nIs that function not necessary in the libvpx `check_cpp` test?",
+      "revId": "6d6a58d9cc43646a26e3f90d9ab607288430c1e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d6a0abcf_da08e80f",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 871,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-11-06T23:17:31Z",
+      "side": 1,
+      "message": "\u003e libaom\u0027s test also includes a function:\n\u003e \n\u003e ```\n\u003e   extern void unused(void);\n\u003e   void unused(void) {}\n\u003e ```\n\u003e \n\u003e Is that function not necessary in the libvpx `check_cpp` test?\n\nlibvpx has `check_cpp` and `check_cc`. `check_cpp` uses `-E` to only run the preprocessor.",
+      "parentUuid": "33ed9568_951cb38d",
       "revId": "6d6a58d9cc43646a26e3f90d9ab607288430c1e9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
