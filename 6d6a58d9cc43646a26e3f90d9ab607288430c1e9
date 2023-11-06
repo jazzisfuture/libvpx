@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8792c09_42e9eb78",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 866,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-06T22:52:27Z",
+      "side": 1,
+      "message": "Nit/optional: It would be good to note PIE is position independent executable.",
+      "revId": "6d6a58d9cc43646a26e3f90d9ab607288430c1e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "33ed9568_951cb38d",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 871,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-06T22:52:27Z",
+      "side": 1,
+      "message": "libaom\u0027s test also includes a function:\n\n```\n  extern void unused(void);\n  void unused(void) {}\n```\n\nIs that function not necessary in the libvpx `check_cpp` test?",
+      "revId": "6d6a58d9cc43646a26e3f90d9ab607288430c1e9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
