@@ -74,6 +74,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d17be3cd_67d4d9dc",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-11-06T18:55:12Z",
+      "side": 1,
+      "message": "\u003e \u003e I see. In this case I was referring to WebRTC m118 (5993). Libvpx has not been updated there.\n\u003e \n\u003e Do you have a pointer to the code you\u0027re referring to? WebRTC should use the version in third_party/libvpx when building Chrome.\n\nIt\u0027s also worth noting that WebRTC was not affected by this bug. The codec is reinitialized when dealing with resizes and the thread count is only set at that time.",
+      "parentUuid": "50039ed3_50a97ff3",
+      "revId": "3fbd1dca6a4d2dad332a2110d646e4ffef36d590",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "703e5513_4687a517",
         "filename": "vp8/encoder/onyx_if.c",
         "patchSetId": 3
