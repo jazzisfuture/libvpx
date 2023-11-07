@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ae48cba_ebd0a34e",
+        "filename": "vpxenc.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 886,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-07T23:50:14Z",
+      "side": 1,
+      "message": "The `rc_end_usage` field is defined as follows:\n\n```\n  enum vpx_rc_mode rc_end_usage;\n```\n\nand the enum type is defined as follows:\n\n```\nenum vpx_rc_mode {\n  VPX_VBR, /**\u003c Variable Bit Rate (VBR) mode */\n  VPX_CBR, /**\u003c Constant Bit Rate (CBR) mode */\n  VPX_CQ,  /**\u003c Constrained Quality (CQ)  mode */\n  VPX_Q,   /**\u003c Constant Quality (Q) mode */\n};\n```",
+      "revId": "c732fa70705a1563d1e92462d0157501efc85718",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
