@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7564de88_9620c3d3",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 127,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T00:18:42Z",
+      "side": 1,
+      "message": "I am too lazy to think of a more descriptive test name.",
+      "revId": "9f9d326a357949c83884aae61a01d5f8997aa0e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05c8357a_6c4d9317",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1561,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T00:18:42Z",
+      "side": 1,
+      "message": "I kept the `(int64_t)` cast, which is apparently intended to use `int64_t` arithematic until the multiplication by `cpi-\u003eframerate` (which is a `double`). After `cpi-\u003eframerate` we switch to `double` arithmetic, so I changed the 1000 constant to a double constant 1000.0.",
+      "revId": "9f9d326a357949c83884aae61a01d5f8997aa0e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9811789_1838b3f5",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1563,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T00:18:42Z",
+      "side": 1,
+      "message": "If we get here, `raw_target_rate` is less than or equal to `cpi-\u003eoxcf.target_bandwidth`, which is an `unsigned int`. So the `(unsigned int)` cast is safe.",
+      "revId": "9f9d326a357949c83884aae61a01d5f8997aa0e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f4ffbf36_9d3d751f",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1565,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T00:18:42Z",
+      "side": 1,
+      "message": "This multiplication by 1000 may potentially overflow. We are apparently assuming the following code in `set_vp8e_config()` has been executed before we get here:\n\n```\n  // Cap the target rate to 1000 Mbps to avoid some integer overflows in\n  // target bandwidth calculations.\n  oxcf-\u003etarget_bandwidth \u003d VPXMIN(cfg.rc_target_bitrate, 1000000);\n```\n\nBut my analysis shows it is NOT true in the following case:\n\nvp8e_encode() \u003d\u003e pick_quickcompress_mode() \u003d\u003e vp8_change_config()\n\nSo I think it is better to multiply by 1000 in `set_vp8e_config()` instead. I will not try to do that in this CL.",
+      "revId": "9f9d326a357949c83884aae61a01d5f8997aa0e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
