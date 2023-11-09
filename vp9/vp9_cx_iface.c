@@ -308,7 +308,6 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
       }
 
       for (i = 0; i < (int)cfg->ss_number_layers; ++i) {
-        unsigned int layer_id;
         if (n_packets_per_layer[i] < 2) {
           ERROR(
               "rc_twopass_stats_in requires at least two packets for each "
@@ -317,7 +316,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
 
         stats = (const FIRSTPASS_STATS *)cfg->rc_twopass_stats_in.buf +
                 n_packets - cfg->ss_number_layers + i;
-        layer_id = (int)stats->spatial_layer_id;
+        const unsigned int layer_id = (int)stats->spatial_layer_id;
 
         if (layer_id >= cfg->ss_number_layers ||
             (unsigned int)(stats->count + 0.5) !=
