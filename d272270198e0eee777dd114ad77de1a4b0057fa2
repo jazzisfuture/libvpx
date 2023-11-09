@@ -16,6 +16,24 @@
       "message": "This field is `cpi-\u003eoxcf.target_bandwidth`. The original comment is incorrect. A strong evidence that the unit is bits per second is the following code in `vp8_change_config()`:\n\n```\n  /* Convert target bandwidth from Kbit/s to Bit/s */\n  cpi-\u003eoxcf.target_bandwidth *\u003d 1000;\n```",
       "revId": "d272270198e0eee777dd114ad77de1a4b0057fa2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "00b85cd3_56558102",
+        "filename": "vp8/common/onyx.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-09T18:40:38Z",
+      "side": 1,
+      "message": "Actually this is in Kilobits/second sometimes and bits/second at other places...\n\nin `set_vp8e_config`, it\u0027s set to `rc_target_bitrate` which is in kilobits/second\n\nThen in `vp8_change_config` it\u0027s converted to bits/second......\n\nbut `*_bandwidth` is generally in bits/second. It would be clearer to explain the initial setup and then conversion in the comment here.",
+      "parentUuid": "ad922611_7fa3fc1f",
+      "revId": "d272270198e0eee777dd114ad77de1a4b0057fa2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
