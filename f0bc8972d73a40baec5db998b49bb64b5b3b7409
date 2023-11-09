@@ -36,6 +36,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3f28f1b1_07a93108",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-11-09T23:51:44Z",
+      "side": 1,
+      "message": "We\u0027ll want to make sure to mention this in the changelog for the next release.",
+      "revId": "f0bc8972d73a40baec5db998b49bb64b5b3b7409",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c89a8bdc_5d50d281",
@@ -79,6 +96,23 @@
         "endLine": 672,
         "endChar": 56
       },
+      "revId": "f0bc8972d73a40baec5db998b49bb64b5b3b7409",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0300376_d589ed09",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-11-09T23:51:44Z",
+      "side": 1,
+      "message": "This is proof of the change. Did you want to leave it when submitting?",
       "revId": "f0bc8972d73a40baec5db998b49bb64b5b3b7409",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
