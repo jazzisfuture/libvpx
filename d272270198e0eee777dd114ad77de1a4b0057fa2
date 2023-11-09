@@ -34,6 +34,24 @@
       "parentUuid": "ad922611_7fa3fc1f",
       "revId": "d272270198e0eee777dd114ad77de1a4b0057fa2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ca72b17e_b98133bd",
+        "filename": "vp8/common/onyx.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T19:49:23Z",
+      "side": 1,
+      "message": "Thanks a lot for the comment. I found the same thing while debugging. Here is the detail.\n\nThe unit of this field is either kilobits per second or bits per second, depending on which `oxcf` it is in.\n\nThere is `ctx-\u003eoxcf`, and there is `ctx-\u003ecpi-\u003eoxcf`.\n\nThe unit of `ctx-\u003eoxcf.target_bandwidth` is kilobits per second.\n\nThe unit of `ctx-\u003ecpi-\u003eoxcf.target_bandwidth` is bits per second.\n\n`set_vp8e_config` sets `ctx-\u003eoxcf`.\n\n`vp8_change_config` first copies `ctx-\u003eoxcf` to `ctx-\u003ecpi-\u003eoxcf`, and then tweaks `ctx-\u003ecpi-\u003eoxcf`.\n\nI will try to document the current confusing state in this CL, and then see if I can figure out how to standardize on bits per second later.",
+      "parentUuid": "00b85cd3_56558102",
+      "revId": "d272270198e0eee777dd114ad77de1a4b0057fa2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
