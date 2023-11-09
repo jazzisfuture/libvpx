@@ -86,6 +86,24 @@
       "parentUuid": "c35999de_0e6b6adb",
       "revId": "4e05c38c85fd3f72e167bbf8bb82816bc45393a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cb3c28e_d8825c97",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T21:34:41Z",
+      "side": 1,
+      "message": "I also noticed that. This was formatted by clang-format. I don\u0027t know why clang-format uses only one space before a /* ... */ comment but uses two spaces before a // comment.",
+      "parentUuid": "e3878434_a61bd8ac",
+      "revId": "4e05c38c85fd3f72e167bbf8bb82816bc45393a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
