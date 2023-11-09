@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22f0bde6_9caafb2f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-11-09T20:06:22Z",
+      "side": 1,
+      "message": "In the public headers we\u0027ve been making the assumption of C99 headers (stdint.h) for some time. So it\u0027s unlikely people have been compiling this with very old compilers. This, however, may affect downstream builds like firefox.",
+      "revId": "f0bc8972d73a40baec5db998b49bb64b5b3b7409",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c89a8bdc_5d50d281",
+        "filename": "configure",
+        "patchSetId": 1
+      },
+      "lineNbr": 672,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-11-09T20:06:22Z",
+      "side": 1,
+      "message": "Are gnu extensions needed now that you\u0027re moving to c99?",
+      "range": {
+        "startLine": 672,
+        "startChar": 35,
+        "endLine": 672,
+        "endChar": 56
+      },
+      "revId": "f0bc8972d73a40baec5db998b49bb64b5b3b7409",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
