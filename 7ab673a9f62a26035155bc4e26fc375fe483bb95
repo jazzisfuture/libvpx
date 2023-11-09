@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ffdf1fa2_df6b3d0a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T20:10:33Z",
+      "side": 1,
+      "message": "PTAL. Thanks!",
+      "revId": "7ab673a9f62a26035155bc4e26fc375fe483bb95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5876c399_89156b2e",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T20:10:33Z",
+      "side": 1,
+      "message": "I also verified that VP9 doesn\u0027t have this bug. The corresponding code in VP9 (search for `raw_target_rate` in vp9/vp9_cx_iface.c) uses `oxcf-\u003einit_framerate` instead of `cpi-\u003eframerate`, and `oxcf-\u003einit_framerate` is at most 180.",
+      "revId": "7ab673a9f62a26035155bc4e26fc375fe483bb95",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
