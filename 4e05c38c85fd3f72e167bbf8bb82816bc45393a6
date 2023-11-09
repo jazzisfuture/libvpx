@@ -68,6 +68,24 @@
       "message": "Thanks for the review.",
       "revId": "4e05c38c85fd3f72e167bbf8bb82816bc45393a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e3878434_a61bd8ac",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-09T20:56:37Z",
+      "side": 1,
+      "message": "I thought the comment needs to be at least 2 spaces after the code, maybe it only applies to `//`",
+      "parentUuid": "c35999de_0e6b6adb",
+      "revId": "4e05c38c85fd3f72e167bbf8bb82816bc45393a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
