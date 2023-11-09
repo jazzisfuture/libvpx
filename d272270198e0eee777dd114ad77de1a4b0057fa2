@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad922611_7fa3fc1f",
+        "filename": "vp8/common/onyx.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-09T18:25:27Z",
+      "side": 1,
+      "message": "This field is `cpi-\u003eoxcf.target_bandwidth`. The original comment is incorrect. A strong evidence that the unit is bits per second is the following code in `vp8_change_config()`:\n\n```\n  /* Convert target bandwidth from Kbit/s to Bit/s */\n  cpi-\u003eoxcf.target_bandwidth *\u003d 1000;\n```",
+      "revId": "d272270198e0eee777dd114ad77de1a4b0057fa2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
