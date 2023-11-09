@@ -83,7 +83,7 @@ typedef struct {
   int Width;
   int Height;
   struct vpx_rational timebase;
-  unsigned int target_bandwidth; /* kilobits per second */
+  unsigned int target_bandwidth; /* bits per second */
 
   /* Parameter used for applying denoiser.
    * For temporal denoiser: noise_sensitivity = 0 means off,
@@ -214,6 +214,7 @@ typedef struct {
 
   /* Temporal scaling parameters */
   unsigned int number_of_layers;
+  /* kilobits per second */
   unsigned int target_bitrate[VPX_TS_MAX_PERIODICITY];
   unsigned int rate_decimator[VPX_TS_MAX_PERIODICITY];
   unsigned int periodicity;
