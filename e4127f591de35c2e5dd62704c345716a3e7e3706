@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0bbdebb_3fd706ab",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-10T21:18:51Z",
+      "side": 1,
+      "message": "This is done by the following code in the set_encoder_config() function in vp9/vp9_cx_iface.c:\n\n```\n  oxcf-\u003espeed \u003d abs(extra_cfg-\u003ecpu_used);\n```\n\nI couldn\u0027t find similar code in VP8, so this comment only talks about VP9.",
+      "revId": "e4127f591de35c2e5dd62704c345716a3e7e3706",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
