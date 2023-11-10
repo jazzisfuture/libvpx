@@ -33,6 +33,24 @@
       "message": "I got the VS 2012 version from these sources:\n\n1. Support for mixing declarations with code first appeared in VS 2013:\nhttps://learn.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2013/hh409293(v\u003dvs.120)#improved-iso-cc-standards-support\n\n2. All VS versions:\nhttps://learn.microsoft.com/en-us/previous-versions/visualstudio/",
       "revId": "27d1e61a7207abe37e04aa478356a6a472b53780",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c9be1d7_f43a096b",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-11-10T17:36:33Z",
+      "side": 1,
+      "message": "\u003e I got the VS 2012 version from these sources:\n\u003e \n\u003e 1. Support for mixing declarations with code first appeared in VS 2013:\n\u003e https://learn.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2013/hh409293(v\u003dvs.120)#improved-iso-cc-standards-support\n\u003e \n\u003e 2. All VS versions:\n\u003e https://learn.microsoft.com/en-us/previous-versions/visualstudio/\n\nThe configure options only go back to vs14 now. Older versions were removed in https://chromium-review.googlesource.com/c/webm/libvpx/+/1361849.",
+      "parentUuid": "7fbf7d3b_def5b325",
+      "revId": "27d1e61a7207abe37e04aa478356a6a472b53780",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
