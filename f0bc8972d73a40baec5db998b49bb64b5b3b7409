@@ -53,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f8ec9af_4bad1eb2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-10T02:21:44Z",
+      "side": 1,
+      "message": "Done. Added an entry for the next libvpx release in the changelog.",
+      "parentUuid": "3f28f1b1_07a93108",
+      "revId": "f0bc8972d73a40baec5db998b49bb64b5b3b7409",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "c89a8bdc_5d50d281",
@@ -113,6 +131,24 @@
       "writtenOn": "2023-11-09T23:51:44Z",
       "side": 1,
       "message": "This is proof of the change. Did you want to leave it when submitting?",
+      "revId": "f0bc8972d73a40baec5db998b49bb64b5b3b7409",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "750b9a2f_4bf4a200",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-10T02:21:44Z",
+      "side": 1,
+      "message": "Done. Removed from the CL.",
+      "parentUuid": "f0300376_d589ed09",
       "revId": "f0bc8972d73a40baec5db998b49bb64b5b3b7409",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

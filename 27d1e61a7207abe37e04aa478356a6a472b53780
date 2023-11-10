@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "513992c3_3aafd251",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-10T02:21:44Z",
+      "side": 1,
+      "message": "PTAL. Thanks.",
+      "revId": "27d1e61a7207abe37e04aa478356a6a472b53780",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fbf7d3b_def5b325",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-10T02:21:44Z",
+      "side": 1,
+      "message": "I got the VS 2012 version from these sources:\n\n1. Support for mixing declarations with code first appeared in VS 2013:\nhttps://learn.microsoft.com/en-us/previous-versions/visualstudio/visual-studio-2013/hh409293(v\u003dvs.120)#improved-iso-cc-standards-support\n\n2. All VS versions:\nhttps://learn.microsoft.com/en-us/previous-versions/visualstudio/",
+      "revId": "27d1e61a7207abe37e04aa478356a6a472b53780",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
