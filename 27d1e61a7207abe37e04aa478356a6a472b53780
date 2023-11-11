@@ -51,6 +51,24 @@
       "parentUuid": "7fbf7d3b_def5b325",
       "revId": "27d1e61a7207abe37e04aa478356a6a472b53780",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c24149a4_8a0f6969",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-11T02:29:42Z",
+      "side": 1,
+      "message": "Thanks for the info. vs14 is Visual Studio 2015. Then this CL doesn\u0027t change the supported Visual Studio versions.",
+      "parentUuid": "5c9be1d7_f43a096b",
+      "revId": "27d1e61a7207abe37e04aa478356a6a472b53780",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
