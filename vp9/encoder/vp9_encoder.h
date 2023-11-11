@@ -1037,6 +1037,8 @@ typedef struct VP9_COMP {
 
   int fixed_qp_onepass;
 
+  int disable_scene_detection_rtc_ratectrl;
+
 #if CONFIG_COLLECT_COMPONENT_TIMING
   /*!
    * component_time[] are initialized to zero while encoder starts.
