@@ -732,6 +732,8 @@ void vp8_tokenize_mb(VP8_COMP *, MACROBLOCK *, TOKENEXTRA **);
 
 void vp8_set_speed_features(VP8_COMP *cpi);
 
+int vp8_check_drop_buffer(VP8_COMP *cpi);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
