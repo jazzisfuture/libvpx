@@ -628,6 +628,7 @@ static vpx_codec_err_t ctrl_set_rtc_external_ratectrl(vpx_codec_alg_priv_t *ctx,
   if (data) {
     cpi->cyclic_refresh_mode_enabled = 0;
     cpi->rt_always_update_correction_factor = 1;
+    cpi->rt_drop_recode_on_overshoot = 0;
   }
   return VPX_CODEC_OK;
 }
