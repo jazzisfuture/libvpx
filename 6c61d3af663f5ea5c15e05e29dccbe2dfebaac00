@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9d7c1e21_eafd5092",
+        "filename": "test/vp8_ratectrl_rtc_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-13T20:51:50Z",
+      "side": 1,
+      "message": "you can use initialization list here to set `frame_drop_thresh_` to 0 so you don\u0027t have to set them in the tests that don\u0027t drop frames.",
+      "range": {
+        "startLine": 55,
+        "startChar": 76,
+        "endLine": 55,
+        "endChar": 77
+      },
+      "revId": "6c61d3af663f5ea5c15e05e29dccbe2dfebaac00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6180f121_8f593083",
+        "filename": "test/vp8_ratectrl_rtc_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 258,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-13T20:51:50Z",
+      "side": 1,
+      "message": "you can use `GTEST_SKIP() \u003c\u003c \"Reasons to skip this\"`",
+      "range": {
+        "startLine": 258,
+        "startChar": 61,
+        "endLine": 258,
+        "endChar": 67
+      },
+      "revId": "6c61d3af663f5ea5c15e05e29dccbe2dfebaac00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "353cc18a_d306b921",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 3200,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-13T20:51:50Z",
+      "side": 1,
+      "message": "this pair of () is not needed",
+      "range": {
+        "startLine": 3200,
+        "startChar": 38,
+        "endLine": 3200,
+        "endChar": 39
+      },
+      "revId": "6c61d3af663f5ea5c15e05e29dccbe2dfebaac00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0c9a6025_87992041",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 3200,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-13T20:51:50Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 3200,
+        "startChar": 43,
+        "endLine": 3200,
+        "endChar": 44
+      },
+      "revId": "6c61d3af663f5ea5c15e05e29dccbe2dfebaac00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc939c82_5307d822",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-13T20:51:50Z",
+      "side": 1,
+      "message": "use `static_cast\u003cint\u003e()`",
+      "range": {
+        "startLine": 233,
+        "startChar": 7,
+        "endLine": 233,
+        "endChar": 10
+      },
+      "revId": "6c61d3af663f5ea5c15e05e29dccbe2dfebaac00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
