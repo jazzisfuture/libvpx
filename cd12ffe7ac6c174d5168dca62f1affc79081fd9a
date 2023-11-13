@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd633ef8_eb939b44",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3028,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-11-13T07:07:35Z",
+      "side": 1,
+      "message": "this function doesn\u0027t seem to be excluded for testing external RC\n(i.e, should there an additional flag under VP9E_SET_RTC_EXTERNAL_RATECTRL to\nexclude scene_detection)?",
+      "revId": "cd12ffe7ac6c174d5168dca62f1affc79081fd9a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
