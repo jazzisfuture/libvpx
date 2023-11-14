@@ -234,6 +234,30 @@
       },
       "revId": "6c61d3af663f5ea5c15e05e29dccbe2dfebaac00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3ec93c59_ce5f9021",
+        "filename": "vp8/vp8_ratectrl_rtc.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 233,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-11-14T19:44:24Z",
+      "side": 1,
+      "message": "Oh sorry I think you should still use `round()` (I shouldn\u0027t have included `round()` in my last comment.\n\nSo it\u0027d be\n\n`static_cast\u003cint\u003e(round(...))` and remove `+0.5`",
+      "parentUuid": "d28bedef_b9409ead",
+      "range": {
+        "startLine": 233,
+        "startChar": 7,
+        "endLine": 233,
+        "endChar": 10
+      },
+      "revId": "6c61d3af663f5ea5c15e05e29dccbe2dfebaac00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
