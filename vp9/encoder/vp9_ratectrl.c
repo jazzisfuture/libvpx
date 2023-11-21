@@ -1991,6 +1991,7 @@ void vp9_rc_postencode_update(VP9_COMP *cpi, uint64_t bytes_used) {
   rc->last_avg_frame_bandwidth = rc->avg_frame_bandwidth;
   if (cpi->use_svc && svc->spatial_layer_id < svc->number_spatial_layers - 1)
     svc->lower_layer_qindex = cm->base_qindex;
+  cpi->deadline_mode_previous_frame = cpi->oxcf.mode;
 }
 
 void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
@@ -2011,6 +2012,7 @@ void vp9_rc_postencode_update_drop_frame(VP9_COMP *cpi) {
     cpi->rc.buffer_level = cpi->rc.optimal_buffer_level;
     cpi->rc.bits_off_target = cpi->rc.optimal_buffer_level;
   }
+  cpi->deadline_mode_previous_frame = cpi->oxcf.mode;
 }
 
 int vp9_calc_pframe_target_size_one_pass_vbr(const VP9_COMP *cpi) {
