@@ -1037,6 +1037,8 @@ typedef struct VP9_COMP {
 
   int fixed_qp_onepass;
 
+  MODE deadline_mode_previous_frame;
+
 #if CONFIG_COLLECT_COMPONENT_TIMING
   /*!
    * component_time[] are initialized to zero while encoder starts.
