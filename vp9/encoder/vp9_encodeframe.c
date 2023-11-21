@@ -3205,7 +3205,7 @@ static int ml_pruning_partition(VP9_COMMON *const cm, MACROBLOCKD *const xd,
       left_par = 1;
   }
 
-  if (prev_mi) {
+  if (prev_mi[0]) {
     context_size = prev_mi[0]->sb_type;
     if (context_size < bsize)
       last_par = 2;
