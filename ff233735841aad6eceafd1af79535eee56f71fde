@@ -1,0 +1,78 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b60df49_6f435ba0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-21T21:30:35Z",
+      "side": 1,
+      "message": "LGTM. Thanks. I suggest some small changes.",
+      "revId": "ff233735841aad6eceafd1af79535eee56f71fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ac69bd13_240cebdc",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 499,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-21T21:30:35Z",
+      "side": 1,
+      "message": "Nit: unsigned int",
+      "revId": "ff233735841aad6eceafd1af79535eee56f71fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4dd03399_aa3bd6d5",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 525,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-21T21:30:35Z",
+      "side": 1,
+      "message": "Nit: unsigned int",
+      "range": {
+        "startLine": 523,
+        "startChar": 0,
+        "endLine": 525,
+        "endChar": 15
+      },
+      "revId": "ff233735841aad6eceafd1af79535eee56f71fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0c83d88b_6f7a4923",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 552,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-21T21:30:35Z",
+      "side": 1,
+      "message": "Assert `image` is not null (also after line 571):\n\n```\n  ASSERT_NE(image, nullptr);\n```",
+      "revId": "ff233735841aad6eceafd1af79535eee56f71fde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
