@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3146bf35_79ddde3e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-21T17:48:28Z",
+      "side": 1,
+      "message": "Thank you for the quick fix. Please add a unit test (or two) by converting the reproducer test cases. Here is an example (for libaom).",
+      "revId": "8ecab7dd0359a5d0310e46a4a96b0ea828c1025e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "99dd7fb3_204979c8",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3055,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-21T17:48:28Z",
+      "side": 1,
+      "message": "Omit this check because `prev_mi` cannot be null.\n\nWe can make this change in a separate CL if you want to make this CL focused on the bugs.",
+      "revId": "8ecab7dd0359a5d0310e46a4a96b0ea828c1025e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cfa7ae43_fca071c6",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3059,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-21T17:48:28Z",
+      "side": 1,
+      "message": "We see a similar null pointer check here, after dereferencing `prev_mi`.",
+      "revId": "8ecab7dd0359a5d0310e46a4a96b0ea828c1025e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
