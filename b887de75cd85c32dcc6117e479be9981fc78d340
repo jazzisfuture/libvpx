@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0bede5d_cab20798",
+        "filename": "test/keyframe_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 205,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-22T22:52:29Z",
+      "side": 1,
+      "message": "According to the comment for `kf_max_dist` in vpx/vpx_encoder.h\n\n```\n  /*!\\brief Keyframe maximum interval\n   *\n   * This value, expressed as a number of frames, forces the encoder to code\n   * a keyframe if one has not been coded in the last kf_max_dist frames.\n   * A value of 0 implies all frames will be keyframes. Set kf_min_dist\n   * equal to kf_max_dist for a fixed interval.\n   */\n  unsigned int kf_max_dist;\n```\n\nthis test should be:\n\n```\nif (i % (kf_max_dist + 1) \u003d\u003d 0)\n```\n\nBut the behavior of `kf_max_dist` differs from the comment by one.",
+      "revId": "b887de75cd85c32dcc6117e479be9981fc78d340",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
