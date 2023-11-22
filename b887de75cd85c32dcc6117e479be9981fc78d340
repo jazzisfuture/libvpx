@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4717ab42_9220bd03",
+        "filename": "test/keyframe_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 106,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-22T22:55:10Z",
+      "side": 1,
+      "message": "Note that this file already has a test for `kf_max_dist`. But it tests only one value (25) of `kf_max_dist`. The new test in this CL tests much more values of `kf_max_dist`.",
+      "revId": "b887de75cd85c32dcc6117e479be9981fc78d340",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "a0bede5d_cab20798",
         "filename": "test/keyframe_test.cc",
         "patchSetId": 1
