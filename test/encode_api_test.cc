@@ -526,6 +526,125 @@ void VP9Encoder::Encode(bool key_frame) {
   vpx_img_free(image);
 }
 
+<<<<<<< HEAD   (a9a0be [M120-LTS] Fix scaled reference offsets.)
+=======
+// This is a test case from clusterfuzz.
+TEST(EncodeAPI, PrevMiCheckNullptr) {
+  VP9Encoder encoder(0);
+  encoder.Configure(0, 1554, 644, VPX_VBR, VPX_DL_REALTIME);
+
+  // First step: encode, without forcing KF.
+  encoder.Encode(false);
+  // Second step: change config
+  encoder.Configure(0, 1131, 644, VPX_CBR, VPX_DL_GOOD_QUALITY);
+  // Third step: encode, without forcing KF
+  encoder.Encode(false);
+}
+
+// This is a test case from clusterfuzz: based on b/310477034.
+// Encode a few frames with multiple change config call
+// with different frame size.
+TEST(EncodeAPI, MultipleChangeConfigResize) {
+  VP9Encoder encoder(3);
+
+  // Set initial config.
+  encoder.Configure(3, 41, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode first frame.
+  encoder.Encode(true);
+
+  // Change config.
+  encoder.Configure(16, 31, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Change config again.
+  encoder.Configure(0, 17, 1, VPX_CBR, VPX_DL_REALTIME);
+
+  // Encode 2nd frame with new config, set delta frame.
+  encoder.Encode(false);
+
+  // Encode 3rd frame with same config, set delta frame.
+  encoder.Encode(false);
+}
+
+// This is a test case from clusterfuzz: based on b/310663186.
+// Encode set of frames while varying the deadline on the fly from
+// good to realtime to best and back to realtime.
+TEST(EncodeAPI, DynamicDeadlineChange) {
+  // Use realtime speed: 5 to 9.
+  VP9Encoder encoder(5);
+
+  // Set initial config, in particular set deadline to GOOD mode.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 1st frame.
+  encoder.Encode(true);
+
+  // Encode 2nd frame, delta frame.
+  encoder.Encode(false);
+
+  // Change config: change deadline to REALTIME.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode 3rd frame with new config, set key frame.
+  encoder.Encode(true);
+
+  // Encode 4th frame with same config, delta frame.
+  encoder.Encode(false);
+
+  // Encode 5th frame with same config, key frame.
+  encoder.Encode(true);
+
+  // Change config: change deadline to BEST.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_BEST_QUALITY);
+
+  // Encode 6th frame with new config, set delta frame.
+  encoder.Encode(false);
+
+  // Change config: change deadline to REALTIME.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode 7th frame with new config, set delta frame.
+  encoder.Encode(false);
+
+  // Encode 8th frame with new config, set key frame.
+  encoder.Encode(true);
+
+  // Encode 9th frame with new config, set delta frame.
+  encoder.Encode(false);
+}
+
+TEST(EncodeAPI, Buganizer310340241) {
+  VP9Encoder encoder(-6);
+
+  // Set initial config, in particular set deadline to GOOD mode.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 1st frame.
+  encoder.Encode(true);
+
+  // Encode 2nd frame, delta frame.
+  encoder.Encode(false);
+
+  // Change config: change deadline to REALTIME.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode 3rd frame with new config, set key frame.
+  encoder.Encode(true);
+}
+
+// This is a test case from clusterfuzz: based on b/312517065.
+TEST(EncodeAPI, Buganizer312517065) {
+  VP9Encoder encoder(4);
+  encoder.Configure(0, 1060, 437, VPX_CBR, VPX_DL_REALTIME);
+  encoder.Encode(true);
+  encoder.Configure(10, 33, 437, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  encoder.Encode(false);
+  encoder.Configure(6, 327, 269, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  encoder.Configure(15, 1060, 437, VPX_CBR, VPX_DL_REALTIME);
+  encoder.Encode(false);
+}
+
+>>>>>>> CHANGE (5d49fa Set skip_recode=0 in nonrd_pick_sb_modes)
 // This is a test case from clusterfuzz: based on b/311489136.
 // Encode a few frames with multiple change config call
 // with different frame size.
