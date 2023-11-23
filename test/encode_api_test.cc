@@ -673,6 +673,32 @@ TEST(EncodeAPI, DynamicDeadlineChange) {
   encoder.Encode(false);
 }
 
+TEST(EncodeAPI, EncodeArbitraryCallSequence) {
+  // Use realtime speed: 5 to 9.
+  VP9Encoder encoder(-9);
+
+  // Set initial config, in particular set deadline to GOOD mode.
+  encoder.Configure(16, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 1st frame.
+  encoder.Encode(true);
+
+  // Set initial config, in particular set deadline to GOOD mode.
+  encoder.Configure(16, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 2nd frame, delta frame.
+  encoder.Encode(false);
+
+  // Change config: change deadline to REALTIME.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode 3rd frame with new config, set key frame.
+  encoder.Encode(true);
+
+  // Encode 4th frame with new config
+  encoder.Encode(false);
+}
+
 class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
       public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
