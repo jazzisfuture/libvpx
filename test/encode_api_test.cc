@@ -633,21 +633,6 @@ TEST(EncodeAPI, DynamicDeadlineChange) {
   // Use realtime speed: 5 to 9.
   VP9Encoder encoder(5);
 
-  // Set initial config, in particular set deadline to GOOD mode.
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
-
-  // Encode 1st frame.
-  encoder.Encode(true);
-
-  // Encode 2nd frame, delta frame.
-  encoder.Encode(false);
-
-  // Change config: change deadline to REALTIME.
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
-
-  // Encode 3rd frame with new config, set key frame.
-  encoder.Encode(true);
-
   // Encode 4th frame with same config, delta frame.
   encoder.Encode(false);
 
@@ -671,6 +656,26 @@ TEST(EncodeAPI, DynamicDeadlineChange) {
 
   // Encode 9th frame with new config, set delta frame.
   encoder.Encode(false);
+}
+
+TEST(EncodeAPI, Buganizer310340241) {
+  // Use realtime speed: 5 to 9.
+  VP9Encoder encoder(-6);
+
+  // Set initial config, in particular set deadline to GOOD mode.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 1st frame.
+  encoder.Encode(true);
+
+  // Encode 2nd frame, delta frame.
+  encoder.Encode(false);
+
+  // Change config: change deadline to REALTIME.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode 3rd frame with new config, set key frame.
+  encoder.Encode(true);
 }
 
 // This is a test case from clusterfuzz: based on b/312517065.
@@ -761,6 +766,8 @@ TEST(EncodeAPI, Buganizer310329177) {
 
   // Encode 2nd frame with new config, set delta frame.
   encoder.Encode(false);
+=======
+>>>>>>> 0310331b5 (Set skip_recode=0 in nonrd_pick_sb_modes)
 }
 
 class EncodeApiGetTplStatsTest
