@@ -1,0 +1,129 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4ff5519_36b39440",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-28T00:47:04Z",
+      "side": 1,
+      "message": "LGTM. I suggest a few small changes.",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "633cde7b_276fdb9b",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 686,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-28T00:47:04Z",
+      "side": 1,
+      "message": "Nit: 1000000 \u003d\u003e VPX_DL_GOOD_QUALITY",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "de253baa_a56892e2",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 716,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-28T00:47:04Z",
+      "side": 1,
+      "message": "Nit: Change the last 1 to VPX_DL_REALTIME",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03043298_977cea5c",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 734,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-28T00:47:04Z",
+      "side": 1,
+      "message": "Nit: Change the last 0 to VPX_DL_BEST_QUALITY",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30d05d03_e28cc6dd",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 744,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-28T00:47:04Z",
+      "side": 1,
+      "message": "Nit: Change the last 1 to VPX_DL_REALTIME",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b9fe89d9_f5648778",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 2292,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-28T00:47:04Z",
+      "side": 1,
+      "message": "Nit: We can work this into the previous two lines by removing \"or\" from line 2290 and adding the new reason to line 2291:\n\n  // indicates key, superframe counter hits key frequency, (non-intra) sync\n  // flag is set for spatial layer 0, or the deadline mode changes.",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2d64e0cb_f3a645d9",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 862,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-28T00:47:04Z",
+      "side": 1,
+      "message": "Nit: rc_mode \u003d\u003e \"mode\" or \"deadline mode\"\n\nrc_mode has a different meaning:\n\n```\n  // vbr, cbr, constrained quality or constant quality\n  enum vpx_rc_mode rc_mode;\n```",
+      "range": {
+        "startLine": 862,
+        "startChar": 40,
+        "endLine": 862,
+        "endChar": 47
+      },
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
