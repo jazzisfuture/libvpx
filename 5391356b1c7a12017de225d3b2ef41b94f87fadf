@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "28f1e14d_791eca6d",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 716,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-11-28T04:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de253baa_a56892e2",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "03043298_977cea5c",
@@ -65,6 +83,24 @@
       "writtenOn": "2023-11-28T00:47:04Z",
       "side": 1,
       "message": "Nit: Change the last 0 to VPX_DL_BEST_QUALITY",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6db7b8f_4c7d430d",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 734,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-11-28T04:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "03043298_977cea5c",
       "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -86,6 +122,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c2aed1b_a59922ca",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 744,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-11-28T04:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30d05d03_e28cc6dd",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b9fe89d9_f5648778",
@@ -103,6 +157,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3e48a6b1_819f7f27",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 2292,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-11-28T04:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b9fe89d9_f5648778",
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2d64e0cb_f3a645d9",
@@ -116,6 +188,30 @@
       "writtenOn": "2023-11-28T00:47:04Z",
       "side": 1,
       "message": "Nit: rc_mode \u003d\u003e \"mode\" or \"deadline mode\"\n\nrc_mode has a different meaning:\n\n```\n  // vbr, cbr, constrained quality or constant quality\n  enum vpx_rc_mode rc_mode;\n```",
+      "range": {
+        "startLine": 862,
+        "startChar": 40,
+        "endLine": 862,
+        "endChar": 47
+      },
+      "revId": "5391356b1c7a12017de225d3b2ef41b94f87fadf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a37e2755_89d8ad6e",
+        "filename": "vp9/encoder/vp9_speed_features.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 862,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2023-11-28T04:12:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2d64e0cb_f3a645d9",
       "range": {
         "startLine": 862,
         "startChar": 40,
