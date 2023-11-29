@@ -540,10 +540,10 @@ TEST(EncodeAPI, PrevMiCheckNullptr) {
     unsigned int width;
     unsigned int height;
     vpx_rc_mode end_usage;
-    unsigned long deadline;
+    vpx_enc_deadline_t deadline;
   };
   struct Config init_config = { 0, 1554, 644, VPX_VBR, 1 };
-  unsigned long deadline = init_config.deadline;
+  vpx_enc_deadline_t deadline = init_config.deadline;
   ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, /*usage=*/0),
             VPX_CODEC_OK);
   cfg.g_threads = init_config.thread;
