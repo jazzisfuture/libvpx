@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "39578952_9e0b1ed1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-29T20:38:45Z",
+      "side": 1,
+      "message": "For encoder-specific types, the `vpx_codec_enc_` and `vpx_enc_` prefixes are both used. `vpx_codec_enc_` seems more common, but I decided to go for the shorter `vpx_enc_` prefix.\n\nPlease let me know if you prefer `vpx_codec_enc_`.\n\nAlternatively, we may be able to change the type of decoder\u0027s deadline parameter to unsigned long, and then use the `vpx_codec_deadline_t` type alias for both the encoder and decoder\u0027s deadline parameters.",
+      "revId": "f756744ada2b0f5c4c5d777bc72ede963f87bfd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
