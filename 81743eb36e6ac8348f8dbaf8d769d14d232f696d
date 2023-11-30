@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7231ab6f_3e57a5f4",
+        "filename": "vpx/internal/vpx_codec_internal.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 291,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-30T21:05:09Z",
+      "side": 1,
+      "message": "The ABI check failed because of the change to the `vpx_codec_decode_fn_t` type above, which results in a change to the `vpx_codec_iface` struct here. This is a false positive because this header (vpx/internal/vpx_codec_internal.h) is a private header and the type definitions in this header are not visible to the clients of the libvpx public API.\n\nIn the public header vpx/vpx_codec.h, the type `struct vpx_codec_iface` is used, but it is an incomplete type, which means the struct definition is not available.",
+      "revId": "81743eb36e6ac8348f8dbaf8d769d14d232f696d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "d4d99153_722fe843",
         "filename": "vpx/src/vpx_decoder.c",
         "patchSetId": 1
