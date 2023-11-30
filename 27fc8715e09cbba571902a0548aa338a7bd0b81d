@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d88fa47_bb2df286",
+        "filename": "tools_common.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-30T23:05:28Z",
+      "side": 1,
+      "message": "The `!defined(__LP64__) \u0026\u0026 defined(_FILE_OFFSET_BITS) \u0026\u0026 _FILE_OFFSET_BITS \u003d\u003d 64` test is equivalent to the `defined(__USE_FILE_OFFSET64)` test.\n\nSince `__USE_FILE_OFFSET64` is an internal macro of libc, we probably should not test it. Hence the longer test.\n\nDetails:\n\nOn Android, `__USE_FILE_OFFSET64` is defined in \u003csys/cdefs.h\u003e as follows:\n\nhttps://android.googlesource.com/platform/bionic/+/refs/heads/main/libc/include/sys/cdefs.h\n\n```\n/*\n * _FILE_OFFSET_BITS 64 support.\n * See https://android.googlesource.com/platform/bionic/+/main/docs/32-bit-abi.md\n */\n#if !defined(__LP64__) \u0026\u0026 defined(_FILE_OFFSET_BITS) \u0026\u0026 _FILE_OFFSET_BITS \u003d\u003d 64\n#  define __USE_FILE_OFFSET64 1\n/*\n * Note that __RENAME_IF_FILE_OFFSET64 is only valid if the off_t and off64_t\n * functions were both added at the same API level because if you use this,\n * you only have one declaration to attach __INTRODUCED_IN to.\n */\n#  define __RENAME_IF_FILE_OFFSET64(func) __RENAME(func)\n#else\n#  define __RENAME_IF_FILE_OFFSET64(func)\n#endif\n```",
+      "revId": "27fc8715e09cbba571902a0548aa338a7bd0b81d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
