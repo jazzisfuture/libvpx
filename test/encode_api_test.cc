@@ -434,6 +434,257 @@ TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
 }
 #endif  // VPX_ARCH_X86_64 || VPX_ARCH_AARCH64
 
+<<<<<<< HEAD   (424723 Run bitrate overflow test only on 64bit systems)
+=======
+vpx_image_t *CreateImage(const unsigned int width, const unsigned int height) {
+  vpx_image_t *image =
+      vpx_img_alloc(nullptr, VPX_IMG_FMT_I420, width, height, 1);
+  if (!image) return image;
+
+  for (unsigned int i = 0; i < image->d_h; ++i) {
+    memset(image->planes[0] + i * image->stride[0], 128, image->d_w);
+  }
+  const unsigned int uv_h = (image->d_h + 1) / 2;
+  const unsigned int uv_w = (image->d_w + 1) / 2;
+  for (unsigned int i = 0; i < uv_h; ++i) {
+    memset(image->planes[1] + i * image->stride[1], 128, uv_w);
+    memset(image->planes[2] + i * image->stride[2], 128, uv_w);
+  }
+
+  return image;
+}
+
+// Emulates the WebCodecs VideoEncoder interface.
+class VP9Encoder {
+ public:
+  VP9Encoder(int speed) : speed_(speed) {}
+  ~VP9Encoder();
+
+  void Configure(unsigned int threads, unsigned int width, unsigned int height,
+                 vpx_rc_mode end_usage, unsigned long deadline);
+  void Encode(bool key_frame);
+
+ private:
+  const int speed_;
+  bool initialized_ = false;
+  vpx_codec_enc_cfg_t cfg_;
+  vpx_codec_ctx_t enc_;
+  int frame_index_ = 0;
+  unsigned long deadline_ = 0;
+};
+
+VP9Encoder::~VP9Encoder() {
+  if (initialized_) {
+    EXPECT_EQ(vpx_codec_destroy(&enc_), VPX_CODEC_OK);
+  }
+}
+
+void VP9Encoder::Configure(unsigned int threads, unsigned int width,
+                           unsigned int height, vpx_rc_mode end_usage,
+                           unsigned long deadline) {
+  deadline_ = deadline;
+
+  if (!initialized_) {
+    vpx_codec_iface_t *const iface = vpx_codec_vp9_cx();
+    ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg_, /*usage=*/0),
+              VPX_CODEC_OK);
+    cfg_.g_threads = threads;
+    cfg_.g_w = width;
+    cfg_.g_h = height;
+    cfg_.g_timebase.num = 1;
+    cfg_.g_timebase.den = 1000 * 1000;  // microseconds
+    cfg_.g_pass = VPX_RC_ONE_PASS;
+    cfg_.g_lag_in_frames = 0;
+    cfg_.rc_end_usage = end_usage;
+    cfg_.rc_min_quantizer = 2;
+    cfg_.rc_max_quantizer = 58;
+    ASSERT_EQ(vpx_codec_enc_init(&enc_, iface, &cfg_, 0), VPX_CODEC_OK);
+    ASSERT_EQ(vpx_codec_control(&enc_, VP8E_SET_CPUUSED, speed_), VPX_CODEC_OK);
+    initialized_ = true;
+    return;
+  }
+
+  cfg_.g_threads = threads;
+  cfg_.g_w = width;
+  cfg_.g_h = height;
+  cfg_.rc_end_usage = end_usage;
+  ASSERT_EQ(vpx_codec_enc_config_set(&enc_, &cfg_), VPX_CODEC_OK)
+      << vpx_codec_error_detail(&enc_);
+}
+
+void VP9Encoder::Encode(bool key_frame) {
+  const vpx_codec_cx_pkt_t *pkt;
+  vpx_image_t *image = CreateImage(cfg_.g_w, cfg_.g_h);
+  ASSERT_NE(image, nullptr);
+  const vpx_enc_frame_flags_t frame_flags = key_frame ? VPX_EFLAG_FORCE_KF : 0;
+  ASSERT_EQ(
+      vpx_codec_encode(&enc_, image, frame_index_, 1, frame_flags, deadline_),
+      VPX_CODEC_OK);
+  frame_index_++;
+  vpx_codec_iter_t iter = nullptr;
+  while ((pkt = vpx_codec_get_cx_data(&enc_, &iter)) != nullptr) {
+    ASSERT_EQ(pkt->kind, VPX_CODEC_CX_FRAME_PKT);
+  }
+  vpx_img_free(image);
+}
+
+// This is a test case from clusterfuzz.
+TEST(EncodeAPI, PrevMiCheckNullptr) {
+  VP9Encoder encoder(0);
+  encoder.Configure(0, 1554, 644, VPX_VBR, VPX_DL_REALTIME);
+
+  // First step: encode, without forcing KF.
+  encoder.Encode(false);
+  // Second step: change config
+  encoder.Configure(0, 1131, 644, VPX_CBR, VPX_DL_GOOD_QUALITY);
+  // Third step: encode, without forcing KF
+  encoder.Encode(false);
+}
+
+// This is a test case from clusterfuzz: based on b/310477034.
+// Encode a few frames with multiple change config call
+// with different frame size.
+TEST(EncodeAPI, MultipleChangeConfigResize) {
+  VP9Encoder encoder(3);
+
+  // Set initial config.
+  encoder.Configure(3, 41, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode first frame.
+  encoder.Encode(true);
+
+  // Change config.
+  encoder.Configure(16, 31, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Change config again.
+  encoder.Configure(0, 17, 1, VPX_CBR, VPX_DL_REALTIME);
+
+  // Encode 2nd frame with new config, set delta frame.
+  encoder.Encode(false);
+
+  // Encode 3rd frame with same config, set delta frame.
+  encoder.Encode(false);
+}
+
+// This is a test case from clusterfuzz: based on b/310663186.
+// Encode set of frames while varying the deadline on the fly from
+// good to realtime to best and back to realtime.
+TEST(EncodeAPI, DynamicDeadlineChange) {
+  // Use realtime speed: 5 to 9.
+  VP9Encoder encoder(5);
+
+  // Set initial config, in particular set deadline to GOOD mode.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 1st frame.
+  encoder.Encode(true);
+
+  // Encode 2nd frame, delta frame.
+  encoder.Encode(false);
+
+  // Change config: change deadline to REALTIME.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode 3rd frame with new config, set key frame.
+  encoder.Encode(true);
+
+  // Encode 4th frame with same config, delta frame.
+  encoder.Encode(false);
+
+  // Encode 5th frame with same config, key frame.
+  encoder.Encode(true);
+
+  // Change config: change deadline to BEST.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_BEST_QUALITY);
+
+  // Encode 6th frame with new config, set delta frame.
+  encoder.Encode(false);
+
+  // Change config: change deadline to REALTIME.
+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode 7th frame with new config, set delta frame.
+  encoder.Encode(false);
+
+  // Encode 8th frame with new config, set key frame.
+  encoder.Encode(true);
+
+  // Encode 9th frame with new config, set delta frame.
+  encoder.Encode(false);
+}
+
+// This is a test case from clusterfuzz: based on b/312517065.
+TEST(EncodeAPI, Buganizer312517065) {
+  VP9Encoder encoder(4);
+  encoder.Configure(0, 1060, 437, VPX_CBR, VPX_DL_REALTIME);
+  encoder.Encode(true);
+  encoder.Configure(10, 33, 437, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  encoder.Encode(false);
+  encoder.Configure(6, 327, 269, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  encoder.Configure(15, 1060, 437, VPX_CBR, VPX_DL_REALTIME);
+  encoder.Encode(false);
+}
+
+// This is a test case from clusterfuzz: based on b/311489136.
+// Encode a few frames with multiple change config call
+// with different frame size.
+TEST(EncodeAPI, Buganizer311489136) {
+  VP9Encoder encoder(1);
+
+  // Set initial config.
+  encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode first frame.
+  encoder.Encode(true);
+
+  // Change config.
+  encoder.Configure(3, 1678, 202, VPX_CBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 2nd frame with new config, set delta frame.
+  encoder.Encode(false);
+
+  // Change config again.
+  encoder.Configure(8, 1037, 476, VPX_CBR, VPX_DL_REALTIME);
+
+  // Encode 3rd frame with new config, set delta frame.
+  encoder.Encode(false);
+
+  // Change config again.
+  encoder.Configure(0, 580, 620, VPX_CBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 4th frame with same config, set delta frame.
+  encoder.Encode(false);
+}
+
+// This is a test case from clusterfuzz: based on b/312656387.
+// Encode a few frames with multiple change config call
+// with different frame size.
+TEST(EncodeAPI, Buganizer312656387) {
+  VP9Encoder encoder(1);
+
+  // Set initial config.
+  encoder.Configure(16, 1, 1024, VPX_CBR, VPX_DL_REALTIME);
+
+  // Change config.
+  encoder.Configure(15, 1, 1024, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode first frame.
+  encoder.Encode(true);
+
+  // Change config again.
+  encoder.Configure(14, 1, 595, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 2nd frame with new config.
+  encoder.Encode(true);
+
+  // Change config again.
+  encoder.Configure(2, 1, 1024, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 3rd frame with new config, set delta frame.
+  encoder.Encode(false);
+}
+
+>>>>>>> CHANGE (6f1001 Fix scaled reference offsets.)
 class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
       public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
