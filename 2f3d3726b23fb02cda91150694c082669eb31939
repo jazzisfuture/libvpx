@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4d65b0ef_a609aa8f",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 543,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-30T18:25:01Z",
+      "side": 0,
+      "message": "VP8\u0027s use of the decode deadline parameter is more complicated. But a careful analysis shows that VP8\u0027s decoder eventually discards the decode deadline parameter here. Note that it retrieves the deadline in the local variable `time_stamp` and never uses `time_stamp`.",
+      "revId": "2f3d3726b23fb02cda91150694c082669eb31939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "769f9ec7_bea9fb14",
+        "filename": "vp9/vp9_dx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 309,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-30T18:25:01Z",
+      "side": 0,
+      "message": "VP9\u0027s decoder discards the decode deadline parameter here.",
+      "revId": "2f3d3726b23fb02cda91150694c082669eb31939",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b09ddcf_5a7928e6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-30T18:25:01Z",
+      "side": 1,
+      "message": "This change is related to https://chromium-review.googlesource.com/c/webm/libvpx/+/5073697. I was wondering if it was safe to change the decode deadline parameter to be of the unsigned long type, so that we could use the same `vpx_codec_deadline_t` typedef for both the encode and decode deadline parameters.\n\nBut I found that the decode deadline parameter is actually ignored, and all the `vpx_codec_decode()` calls I have seen pass 0 as the deadline. So clients of libvpx don\u0027t need to use the long type when they call `vpx_codec_decode()`. I think we can leave the long type unchanged and just define a typedef for the encode deadline parameter.",
+      "revId": "81743eb36e6ac8348f8dbaf8d769d14d232f696d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4d99153_722fe843",
+        "filename": "vpx/src/vpx_decoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-11-30T18:25:01Z",
+      "side": 1,
+      "message": "I am tempted to extend the check here so that `vpx_codec_decode()` fails with `VPX_CODEC_INVALID_PARAM` if `deadline` is not zero. All the calls to `vpx_codec_decode()` that I have seen pass 0 as the `deadline` argument.\n\nIf you think this is a low-risk change, I can make this change in a follow-up CL.",
+      "revId": "81743eb36e6ac8348f8dbaf8d769d14d232f696d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
