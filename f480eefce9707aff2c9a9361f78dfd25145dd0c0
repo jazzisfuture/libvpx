@@ -16,6 +16,23 @@
       "message": "Jonathan: Please take a look and see if I ported your libaom CL to libvpx correctly. Thanks!",
       "revId": "f480eefce9707aff2c9a9361f78dfd25145dd0c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce34de11_3e3fc54a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2023-11-30T11:03:40Z",
+      "side": 1,
+      "message": "Looks fine, though we may be able to delete some code relating to 128x* blocks as the max is 64x64 in VP9, if I understand this correctly.",
+      "revId": "f480eefce9707aff2c9a9361f78dfd25145dd0c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
