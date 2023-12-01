@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "60f4281b_41d3376d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T22:56:18Z",
+      "side": 1,
+      "message": "I found that the decoder\u0027s deadline parameter is ignored and all the `vpx_codec_decode()` calls I have seen pass 0 as the deadline parameter. See https://chromium-review.googlesource.com/c/webm/libvpx/+/5076524.\n\nSo the type of the decode deadline parameter doesn\u0027t show up in libvpx client code, and therefore I don\u0027t think we need to change it.",
+      "parentUuid": "39578952_9e0b1ed1",
+      "revId": "f756744ada2b0f5c4c5d777bc72ede963f87bfd1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "889ce746_11b8faa0",
         "filename": "vp8/vp8_cx_iface.c",
         "patchSetId": 3
