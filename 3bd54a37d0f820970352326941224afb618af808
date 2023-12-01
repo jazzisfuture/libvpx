@@ -16,6 +16,24 @@
       "message": "Jingning: Thank you for the fixes? Please convert the test case in b/312517065 to a unit test in test/encode_api_test.cc. You can use the following CLs as examples:\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5049766\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5061423\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5050378",
       "revId": "3bd54a37d0f820970352326941224afb618af808",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "879b1d58_fe6fa74d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T00:05:44Z",
+      "side": 1,
+      "message": "Done in https://chromium-review.googlesource.com/c/webm/libvpx/+/5078412.",
+      "parentUuid": "1f38034c_f6599111",
+      "revId": "3bd54a37d0f820970352326941224afb618af808",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
