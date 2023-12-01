@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "51b4bdb0_b62a169d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T00:10:41Z",
+      "side": 1,
+      "message": "I took care of the changes I suggested in:\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5074318\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5078412",
+      "revId": "d7358ed53a6b344f6f374b3a5e8fe3d207bcc720",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "e7e47e42_97716b99",
@@ -31,6 +48,24 @@
       "writtenOn": "2023-11-28T00:54:56Z",
       "side": 1,
       "message": "Nit: add \"b/\" before \"310477034\".",
+      "revId": "d7358ed53a6b344f6f374b3a5e8fe3d207bcc720",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "34ec9009_5fca2146",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 600,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T00:10:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e7e47e42_97716b99",
       "revId": "d7358ed53a6b344f6f374b3a5e8fe3d207bcc720",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -52,6 +87,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "41855747_e2d09315",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 616,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T00:10:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "183ba5fa_c9acc0cc",
+      "revId": "d7358ed53a6b344f6f374b3a5e8fe3d207bcc720",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "58a5994c_9ff3b138",
@@ -69,6 +122,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "726c0974_11fdff4d",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 641,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T00:10:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "58a5994c_9ff3b138",
+      "revId": "d7358ed53a6b344f6f374b3a5e8fe3d207bcc720",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "63988087_1d15c63e",
@@ -82,6 +153,24 @@
       "writtenOn": "2023-11-28T00:54:56Z",
       "side": 1,
       "message": "Nit: Change the last 1 to VPX_DL_REALTIME",
+      "revId": "d7358ed53a6b344f6f374b3a5e8fe3d207bcc720",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e897a12_85f98a3c",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 4
+      },
+      "lineNbr": 650,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T00:10:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "63988087_1d15c63e",
       "revId": "d7358ed53a6b344f6f374b3a5e8fe3d207bcc720",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
