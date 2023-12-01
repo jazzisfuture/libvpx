@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "deb41ab3_bb9fce2f",
+        "filename": "vpx_dsp/arm/vpx_convolve8_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 485,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-01T21:38:10Z",
+      "side": 1,
+      "message": "the `vpx_` prefix could be removed from all static functions.",
+      "range": {
+        "startLine": 485,
+        "startChar": 19,
+        "endLine": 485,
+        "endChar": 23
+      },
+      "revId": "a33ac12dc0e6d99ee47f30edd37c4ca5e71b5b1d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
