@@ -355,9 +355,11 @@ static int get_down2_length(int length, int steps) {
 }
 
 static int get_down2_steps(int in_length, int out_length) {
+  assert(in_length > 0 && out_length > 0);
   int steps = 0;
   int proj_in_length;
-  while ((proj_in_length = get_down2_length(in_length, 1)) >= out_length) {
+  while (in_length > 1 &&
+         (proj_in_length = get_down2_length(in_length, 1)) >= out_length) {
     ++steps;
     in_length = proj_in_length;
   }
