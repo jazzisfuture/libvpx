@@ -52,6 +52,24 @@
       "parentUuid": "eaa74f47_04e02cde",
       "revId": "fb14de3807f506b22d846b357c39866d0c4730e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "41ce4487_58602f29",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T22:19:00Z",
+      "side": 1,
+      "message": "I can reproduce the same memory error in b/310340241 with two changes.\n\n1. Change the unit test to match the reproducer test case in the bug report exactly:\n\n```\nThe test fails with input:\nargument 0: -6\nargument 1: {{0, 1, 1, vpx_rc_mode{0}, 1000000}, {(index\u003d1, value\u003d{false}), (index\u003d1, value\u003d{false}), (index\u003d0, value\u003d{0, 1, 1, vpx_rc_mode{0}, 1}), (index\u003d1, value\u003d{true})}}\n```\n\n2. Revert Marco\u0027s CL, which is known to suppress several fuzzer bugs:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5050378",
+      "parentUuid": "1cef40e4_bbdce493",
+      "revId": "fb14de3807f506b22d846b357c39866d0c4730e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

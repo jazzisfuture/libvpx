@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ad6001a5_d959a962",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T22:19:00Z",
+      "side": 1,
+      "message": "I think the correct bug number is b/310340241.",
+      "parentUuid": "139f191b_a157d3ee",
+      "range": {
+        "startLine": 14,
+        "startChar": 5,
+        "endLine": 14,
+        "endChar": 16
+      },
+      "revId": "e23a3ccd61d86272c4f502ad26bdb4ff72b1f89a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "9f608a48_3eff9046",
         "filename": "test/encode_api_test.cc",
         "patchSetId": 2
@@ -43,6 +67,47 @@
         "endLine": 676,
         "endChar": 43
       },
+      "revId": "e23a3ccd61d86272c4f502ad26bdb4ff72b1f89a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f9952c6_b2581640",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 676,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T22:19:00Z",
+      "side": 1,
+      "message": "Please name this test \"Buganizer310340241\".",
+      "parentUuid": "9f608a48_3eff9046",
+      "range": {
+        "startLine": 676,
+        "startChar": 16,
+        "endLine": 676,
+        "endChar": 43
+      },
+      "revId": "e23a3ccd61d86272c4f502ad26bdb4ff72b1f89a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a8a027da_f976b771",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 700,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T22:19:00Z",
+      "side": 1,
+      "message": "Please apply the following patch to this test. Note that I cannot reproduce the memory error with speed -9. So I use the speed (-6) from the fuzzer test case.\n\n```\ndiff --git a/test/encode_api_test.cc b/test/encode_api_test.cc\nindex 5879c834a..57d6c02e7 100644\n--- a/test/encode_api_test.cc\n+++ b/test/encode_api_test.cc\n@@ -674,17 +674,13 @@ TEST(EncodeAPI, DynamicDeadlineChange) {\n }\n \n TEST(EncodeAPI, EncodeArbitraryCallSequence) {\n-  // Use realtime speed: 5 to 9.\n-  VP9Encoder encoder(-9);\n+  VP9Encoder encoder(-6);\n \n   // Set initial config, in particular set deadline to GOOD mode.\n-  encoder.Configure(16, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);\n+  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);\n \n   // Encode 1st frame.\n-  encoder.Encode(true);\n-\n-  // Set initial config, in particular set deadline to GOOD mode.\n-  encoder.Configure(16, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);\n+  encoder.Encode(false);\n \n   // Encode 2nd frame, delta frame.\n   encoder.Encode(false);\n@@ -694,9 +690,6 @@ TEST(EncodeAPI, EncodeArbitraryCallSequence) {\n \n   // Encode 3rd frame with new config, set key frame.\n   encoder.Encode(true);\n-\n-  // Encode 4th frame with new config\n-  encoder.Encode(false);\n }\n \n class EncodeApiGetTplStatsTest\n```",
       "revId": "e23a3ccd61d86272c4f502ad26bdb4ff72b1f89a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
