@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "301cdc29_f4853107",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-01T21:15:21Z",
+      "side": 1,
+      "message": "The only use of this function is in mips/loongarch code which checks the result against 2, so there\u0027s no compatibility issue here.",
+      "revId": "1b3ec0676cfbb79cc1ceb17add1af543ad8d4f4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
