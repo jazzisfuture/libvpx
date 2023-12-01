@@ -34,6 +34,24 @@
       "parentUuid": "4500cce4_95fb9522",
       "revId": "fb14de3807f506b22d846b357c39866d0c4730e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1cef40e4_bbdce493",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T21:50:41Z",
+      "side": 1,
+      "message": "Yes, we should check in the unit test. I will try to reproduce the error with this unit test.",
+      "parentUuid": "eaa74f47_04e02cde",
+      "revId": "fb14de3807f506b22d846b357c39866d0c4730e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }

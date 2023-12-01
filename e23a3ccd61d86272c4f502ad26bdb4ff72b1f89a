@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "139f191b_a157d3ee",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T21:50:41Z",
+      "side": 1,
+      "message": "b/310663186 is assigned to Marco. So the bug number seems wrong.",
+      "range": {
+        "startLine": 14,
+        "startChar": 5,
+        "endLine": 14,
+        "endChar": 16
+      },
+      "revId": "e23a3ccd61d86272c4f502ad26bdb4ff72b1f89a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9f608a48_3eff9046",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 676,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T21:50:41Z",
+      "side": 1,
+      "message": "Please change \"EncodeArbitraryCallSequence\" to \"BuganizerNNNNN\", where NNNNN is the bug number. (\"EncodeArbitraryCallSequence\" applies to all the tests we recently added.)",
+      "range": {
+        "startLine": 676,
+        "startChar": 16,
+        "endLine": 676,
+        "endChar": 43
+      },
+      "revId": "e23a3ccd61d86272c4f502ad26bdb4ff72b1f89a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
