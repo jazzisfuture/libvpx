@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca661bdd_42b147a6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-01T00:17:18Z",
+      "side": 1,
+      "message": "LGTM. Please have Jingning check the bug fix.\n\nAlso, it would be good if you could look at Jingning\u0027s three recent fixes:\nhttps://chromium.googlesource.com/webm/libvpx/\n\nThey seem related to scaled references and motion search.",
+      "revId": "8014b20411e6083c9c42f7a2ade7588db58d3c88",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
