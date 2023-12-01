@@ -16,6 +16,24 @@
       "message": "Angie: Thank you very much for the bug fix. Could you please convert the test case in b/310663186 to a test in test/encode_api_test.cc?\n\nIt is a rather manual process. You can use https://chromium-review.googlesource.com/c/webm/libvpx/+/5049766 as an example. I will look into making it easier to convert a fuzz test case to a unit test.",
       "revId": "fb14de3807f506b22d846b357c39866d0c4730e0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eaa74f47_04e02cde",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2023-12-01T19:50:22Z",
+      "side": 1,
+      "message": "I added the unit test.\nHowever, I can not reproduce the same memory error with either asan or valgrind.\nLet me know if we should still check-in the unit test.\n\nFor the bug fixing, I did tested it with the fuzzy test and it did make the fuzzy bug goes away.",
+      "parentUuid": "4500cce4_95fb9522",
+      "revId": "fb14de3807f506b22d846b357c39866d0c4730e0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
