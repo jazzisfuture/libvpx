@@ -355,9 +355,11 @@ static int get_down2_length(int length, int steps) {
 }
 
 static int get_down2_steps(int in_length, int out_length) {
+  assert(in_length > 0 && out_length > 0);
   int steps = 0;
   int proj_in_length;
-  while ((proj_in_length = get_down2_length(in_length, 1)) >= out_length) {
+  while (in_length > 1 &&
+         (proj_in_length = get_down2_length(in_length, 1)) >= out_length) {
     ++steps;
     in_length = proj_in_length;
   }
@@ -671,17 +673,17 @@ static void highbd_resize_multistep(const uint16_t *const input, int length,
     assert(otmp != NULL);
     otmp2 = otmp + get_down2_length(length, 1);
     for (s = 0; s < steps; ++s) {
-      const int proj_filteredlength = get_down2_length(filteredlength, 1);
+      const int last_filteredlength = filteredlength;
+      filteredlength = get_down2_length(filteredlength, 1);
       const uint16_t *const in = (s == 0 ? input : out);
-      if (s == steps - 1 && proj_filteredlength == olength)
+      if (s == steps - 1 && filteredlength == olength)
         out = output;
       else
         out = (s & 1 ? otmp2 : otmp);
-      if (filteredlength & 1)
-        highbd_down2_symodd(in, filteredlength, out, bd);
+      if (last_filteredlength & 1)
+        highbd_down2_symodd(in, last_filteredlength, out, bd);
       else
-        highbd_down2_symeven(in, filteredlength, out, bd);
-      filteredlength = proj_filteredlength;
+        highbd_down2_symeven(in, last_filteredlength, out, bd);
     }
     if (filteredlength != olength) {
       highbd_interpolate(out, filteredlength, output, olength, bd);
