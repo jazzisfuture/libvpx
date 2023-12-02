@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c60920d9_4f429583",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-02T00:49:15Z",
+      "side": 1,
+      "message": "LGTM. Thanks!",
+      "revId": "c27eea325f2a3081cfe6d9b3aabcf372a135e638",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9e903ce_d8ea3c68",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 683,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-02T00:49:15Z",
+      "side": 1,
+      "message": "Optional: In the fuzzer test case, this is `(index\u003d1, value\u003d{false})`. So we should pass `false` if we want to match the fuzzer test case exactly.\n\nSince this is the first frame, it probabaly makes no difference whether we force it to be a key frame or not.",
+      "revId": "c27eea325f2a3081cfe6d9b3aabcf372a135e638",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
