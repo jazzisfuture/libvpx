@@ -782,6 +782,25 @@ TEST(EncodeAPI, Buganizer310329177) {
   encoder.Encode(false);
 }
 
+TEST(EncodeAPI, Buganizer311985118) {
+  VP9Encoder encoder(0);
+
+  // Set initial config, in particular set deadline to GOOD mode.
+  encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 1st frame.
+  encoder.Encode(false);
+
+  // Change config: change threads and width.
+  encoder.Configure(0, 1574, 620, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Change config: change threads, width and height.
+  encoder.Configure(16, 837, 432, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 2nd frame.
+  encoder.Encode(false);
+}
+
 class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
       public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
