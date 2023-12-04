@@ -16,6 +16,24 @@
       "message": "update this one too. This structure is unfortunate as there\u0027s no difference between the targets.",
       "revId": "7899e73b1d418209f627cc3c4b7ce1d496a60c2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "edad475e_491a9af4",
+        "filename": "configure",
+        "patchSetId": 1
+      },
+      "lineNbr": 168,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-04T21:22:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4edea7cb_9fc6c2f6",
+      "revId": "7899e73b1d418209f627cc3c4b7ce1d496a60c2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
