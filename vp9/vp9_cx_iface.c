@@ -799,8 +799,10 @@ static vpx_codec_err_t encoder_set_config(vpx_codec_alg_priv_t *ctx,
       ERROR("Cannot change width or height after initialization");
     if (!valid_ref_frame_size(ctx->cfg.g_w, ctx->cfg.g_h, cfg->g_w, cfg->g_h) ||
         (ctx->cpi->initial_width && (int)cfg->g_w > ctx->cpi->initial_width) ||
-        (ctx->cpi->initial_height && (int)cfg->g_h > ctx->cpi->initial_height))
+        (ctx->cpi->initial_height &&
+         (int)cfg->g_h > ctx->cpi->initial_height)) {
       force_key = 1;
+    }
   }
 
   // Prevent increasing lag_in_frames. This check is stricter than it needs
@@ -823,12 +825,26 @@ static vpx_codec_err_t encoder_set_config(vpx_codec_alg_priv_t *ctx,
   }
   ctx->cpi->common.error.setjmp = 1;
 
+  // Note: function encoder_set_config() is allowed to be called multiple times.
+  // However, when the original frame width or height is less than two times of
+  // the new frame width or height, a forced key frame should be used.
+  // To make sure the correct detection of a forced key frame,
+  // we need to update the frame width and height only when the actual
+  // encoding is performed.
+  // A workaround solution here is to use temporary variable last_encoded_width
+  // and last_encoded_height to reset to the last encoded width and height.
+  // And when actual encoding is applied, encoder_encode(), the width and
+  // height in ctx->cfg is updated.
+  const int last_encoded_width = ctx->cfg.g_w;
+  const int last_encoded_height = ctx->cfg.g_h;
   ctx->cfg = *cfg;
   set_encoder_config(&ctx->oxcf, &ctx->cfg, &ctx->extra_cfg);
   set_twopass_params_from_config(&ctx->cfg, ctx->cpi);
   // On profile change, request a key frame
   force_key |= ctx->cpi->common.profile != ctx->oxcf.profile;
   vp9_change_config(ctx->cpi, &ctx->oxcf);
+  ctx->cfg.g_w = last_encoded_width;
+  ctx->cfg.g_h = last_encoded_height;
 
   if (force_key) ctx->next_frame_flags |= VPX_EFLAG_FORCE_KF;
 
@@ -1307,6 +1323,8 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
   size_t data_sz;
   vpx_codec_cx_pkt_t pkt;
   memset(&pkt, 0, sizeof(pkt));
+  ctx->cfg.g_w = ctx->oxcf.width;
+  ctx->cfg.g_h = ctx->oxcf.height;
 
   if (cpi == NULL) return VPX_CODEC_INVALID_PARAM;
 
