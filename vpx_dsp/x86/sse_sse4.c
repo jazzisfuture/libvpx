@@ -10,6 +10,7 @@
 
 #include <assert.h>
 #include <smmintrin.h>
+#include <stdint.h>
 
 #include "./vpx_config.h"
 #include "./vpx_dsp_rtcd.h"

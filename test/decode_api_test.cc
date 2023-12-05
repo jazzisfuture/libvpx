@@ -13,6 +13,7 @@
 #include "./vpx_config.h"
 #include "test/ivf_video_source.h"
 #include "vpx/vp8dx.h"
+#include "vpx/vpx_codec.h"
 #include "vpx/vpx_decoder.h"
 
 namespace {
