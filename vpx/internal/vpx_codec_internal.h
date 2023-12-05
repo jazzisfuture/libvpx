@@ -44,8 +44,8 @@
  */
 #ifndef VPX_VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
 #define VPX_VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
-#include "../vpx_decoder.h"
-#include "../vpx_encoder.h"
+#include "../vpx_decoder.h"  // IWYU pragma: export
+#include "../vpx_encoder.h"  // IWYU pragma: export
 #include <stdarg.h>
 
 #include "vpx_config.h"
