@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bec0b6a6_f24e47ea",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-05T22:34:52Z",
+      "side": 1,
+      "message": "Note that I didn\u0027t modify test/sum_squares_test.cc, which still tests block sizes up to 128x128.",
+      "revId": "c4c92080545970899488ab27944792a95c7131a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
