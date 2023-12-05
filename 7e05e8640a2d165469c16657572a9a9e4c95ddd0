@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "824f7d61_f655edcb",
+        "filename": "test/decode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-05T19:23:00Z",
+      "side": 1,
+      "message": "This fix is fine. Wan-Teh and I were talking about adding a IWYU export annotation in vpx_decoder.h to suppress the warning.",
+      "revId": "7e05e8640a2d165469c16657572a9a9e4c95ddd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
