@@ -16,6 +16,24 @@
       "message": "The original code at line 800 uses `ctx-\u003ecfg.g_w` and `ctx-\u003ecfg.g_h`. Is it better to use `ctx-\u003eoxcf.width` and `ctx-\u003eoxcf.height` here?",
       "revId": "a6386739aee249c1139146a0f0e2d3dd40108052",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cef9e63a_fd76c188",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1326,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2023-12-05T23:10:56Z",
+      "side": 1,
+      "message": "ctx-\u003eoxcf.width and ctx-\u003eoxcf.height are assigned to be equal as ctx-\u003ecfg.g_w and cfg-\u003eg_h in set_encoder_config().",
+      "parentUuid": "f4d69ab3_7ebbeb9a",
+      "revId": "a6386739aee249c1139146a0f0e2d3dd40108052",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
