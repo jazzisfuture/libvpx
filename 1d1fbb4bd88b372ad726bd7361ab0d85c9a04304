@@ -34,6 +34,24 @@
       "parentUuid": "16c17da8_834b107c",
       "revId": "1d1fbb4bd88b372ad726bd7361ab0d85c9a04304",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0e6611b9_52286dfd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-05T19:51:22Z",
+      "side": 1,
+      "message": "Thank you for taking a look. I will abandon this CL.",
+      "parentUuid": "18da81ef_d3974204",
+      "revId": "1d1fbb4bd88b372ad726bd7361ab0d85c9a04304",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
