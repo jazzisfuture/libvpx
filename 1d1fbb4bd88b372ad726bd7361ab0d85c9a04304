@@ -16,6 +16,24 @@
       "message": "This CL is optional. Based on current usage, it\u0027s not clear whether vpx_codec_internal.h is intended as the facade header for vpx_decoder.h and vpx_encoder.h. So I will let James take a look and see if he remembers whether this file is designed to be used this way.",
       "revId": "1d1fbb4bd88b372ad726bd7361ab0d85c9a04304",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18da81ef_d3974204",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-05T19:31:01Z",
+      "side": 1,
+      "message": "\u003e This CL is optional. Based on current usage, it\u0027s not clear whether vpx_codec_internal.h is intended as the facade header for vpx_decoder.h and vpx_encoder.h. So I will let James take a look and see if he remembers whether this file is designed to be used this way.\n\nLooking at the file, I think it would be better to leave it as is. In the public API vpx_decoder.h/encoder.h should be enough for an application, but here I think we want to be explicit.",
+      "parentUuid": "16c17da8_834b107c",
+      "revId": "1d1fbb4bd88b372ad726bd7361ab0d85c9a04304",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
