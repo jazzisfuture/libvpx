@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7109c29_e0e26268",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 839,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2023-12-05T20:54:34Z",
+      "side": 1,
+      "message": "This workaround looks a bit risky to me, as ctx-\u003ecfg.g_w could be used by the client application after calling encoder_set_config but before encoding a frame (for example, if vpxenc would check cfg.g_w after calling encoder_set_config, then it would be confused because it would appear that the width is not correctly set).\n\nCan we instead introduce internal variables to remember the last encoded frame width \u0026 height (similar to ctx-\u003ecpi-\u003einitial_height), and pass them to line 800 `valid_ref_frame_size`? Then we can update this variable only after encoding a frame.",
+      "range": {
+        "startLine": 838,
+        "startChar": 1,
+        "endLine": 839,
+        "endChar": 47
+      },
+      "revId": "3fa3e0757a9e085b5f1215f7d90d182598987bd8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
