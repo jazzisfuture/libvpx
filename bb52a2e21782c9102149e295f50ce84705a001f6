@@ -16,6 +16,24 @@
       "message": "The IWYU export pragma is documented at\nhttps://github.com/include-what-you-use/include-what-you-use/blob/master/docs/IWYUPragmas.md#iwyu-pragma-export",
       "revId": "bb52a2e21782c9102149e295f50ce84705a001f6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b3492f18_81dd6db1",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-05T19:27:08Z",
+      "side": 1,
+      "message": "\u003e The IWYU export pragma is documented at\n\u003e https://github.com/include-what-you-use/include-what-you-use/blob/master/docs/IWYUPragmas.md#iwyu-pragma-export\n\nAnd include-cleaner which is setting up to be its successor:\n\nhttps://clangd.llvm.org/design/include-cleaner#iwyu-pragmas",
+      "parentUuid": "fad039ba_10da918b",
+      "revId": "bb52a2e21782c9102149e295f50ce84705a001f6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
