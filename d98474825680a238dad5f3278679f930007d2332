@@ -46,6 +46,30 @@
       },
       "revId": "d98474825680a238dad5f3278679f930007d2332",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4976761_a8d35fc1",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 807,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2023-12-05T21:49:53Z",
+      "side": 1,
+      "message": "Thank you for the explanation! LGTM",
+      "parentUuid": "554d5c18_adee483f",
+      "range": {
+        "startLine": 807,
+        "startChar": 40,
+        "endLine": 807,
+        "endChar": 56
+      },
+      "revId": "d98474825680a238dad5f3278679f930007d2332",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
