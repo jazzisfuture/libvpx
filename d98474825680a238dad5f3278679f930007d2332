@@ -22,6 +22,30 @@
       },
       "revId": "d98474825680a238dad5f3278679f930007d2332",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "554d5c18_adee483f",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 807,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2023-12-05T21:37:40Z",
+      "side": 1,
+      "message": "Thanks for raising this possible case. I studied the code and found that the current implementation is correct. Because:\n\nlast_coded_width and last_coded_height are init to 0 when creating the compressor (cpi), in vpx_codec_enc_init(), which is necessary for any encoding.\n\nTheir values will be updated only when vpx_codec_encode() is called.\nIf encoder_set_config() is called after vpx_codec_enc_init() and before vpx_codec_encode(), this condition will be triggered (their values are 0), and this frame is forced to be a keyframe, which is expected.\n\n\nBut, in case the logic of forced key frame is not what we would like in the imaginary use case, I added a check for whether last_coded_width and last_coded_height are non-zero.\n\nPTAL.",
+      "parentUuid": "e8f50958_be73fe0a",
+      "range": {
+        "startLine": 807,
+        "startChar": 40,
+        "endLine": 807,
+        "endChar": 56
+      },
+      "revId": "d98474825680a238dad5f3278679f930007d2332",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
