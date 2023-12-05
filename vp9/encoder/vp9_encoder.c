@@ -3079,12 +3079,11 @@ void vp9_write_yuv_rec_frame(VP9_COMMON *cm) {
 #endif
 
 #if CONFIG_VP9_HIGHBITDEPTH
-static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
-                                                YV12_BUFFER_CONFIG *dst,
-                                                int bd) {
+void vp9_scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
+                                             YV12_BUFFER_CONFIG *dst, int bd) {
 #else
-static void scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
-                                                YV12_BUFFER_CONFIG *dst) {
+void vp9_scale_and_extend_frame_nonnormative(const YV12_BUFFER_CONFIG *src,
+                                             YV12_BUFFER_CONFIG *dst) {
 #endif  // CONFIG_VP9_HIGHBITDEPTH
   // TODO(dkovalev): replace YV12_BUFFER_CONFIG with vpx_image_t
   int i;
@@ -4993,13 +4992,14 @@ YV12_BUFFER_CONFIG *vp9_scale_if_required(
         scale_and_extend_frame(unscaled, scaled, (int)cm->bit_depth,
                                filter_type, phase_scaler);
     else
-      scale_and_extend_frame_nonnormative(unscaled, scaled, (int)cm->bit_depth);
+      vp9_scale_and_extend_frame_nonnormative(unscaled, scaled,
+                                              (int)cm->bit_depth);
 #else
     if (use_normative_scaler && unscaled->y_width <= (scaled->y_width << 1) &&
         unscaled->y_height <= (scaled->y_height << 1))
       vp9_scale_and_extend_frame(unscaled, scaled, filter_type, phase_scaler);
     else
-      scale_and_extend_frame_nonnormative(unscaled, scaled);
+      vp9_scale_and_extend_frame_nonnormative(unscaled, scaled);
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     return scaled;
   } else {
