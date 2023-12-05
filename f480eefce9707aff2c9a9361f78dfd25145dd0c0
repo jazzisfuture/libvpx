@@ -33,6 +33,24 @@
       "message": "Looks fine, though we may be able to delete some code relating to 128x* blocks as the max is 64x64 in VP9, if I understand this correctly.",
       "revId": "f480eefce9707aff2c9a9361f78dfd25145dd0c0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f31d56c9_1e12a3b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-05T22:31:29Z",
+      "side": 1,
+      "message": "Done in https://chromium-review.googlesource.com/c/webm/libvpx/+/5090280. Thanks!",
+      "parentUuid": "ce34de11_3e3fc54a",
+      "revId": "f480eefce9707aff2c9a9361f78dfd25145dd0c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
