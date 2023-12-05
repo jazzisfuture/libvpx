@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8f50958_be73fe0a",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 807,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2023-12-05T21:10:52Z",
+      "side": 1,
+      "message": "Thanks for the change! Just one thing / question: Do we need to initialize these variables? I am not sure whether we will enter this clause before we encode the first frame, and whether it is safe if so.",
+      "range": {
+        "startLine": 807,
+        "startChar": 40,
+        "endLine": 807,
+        "endChar": 56
+      },
+      "revId": "d98474825680a238dad5f3278679f930007d2332",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
