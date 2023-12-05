@@ -38,6 +38,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "15e5c3d2_d78b576c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-05T19:44:11Z",
+      "side": 1,
+      "message": "Jerome: I suggest three adjustments. Thanks.",
+      "revId": "7e05e8640a2d165469c16657572a9a9e4c95ddd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "824f7d61_f655edcb",
         "filename": "test/decode_api_test.cc",
         "patchSetId": 1
@@ -49,6 +66,75 @@
       "writtenOn": "2023-12-05T19:23:00Z",
       "side": 1,
       "message": "This fix is fine. Wan-Teh and I were talking about adding a IWYU export annotation in vpx_decoder.h to suppress the warning.",
+      "revId": "7e05e8640a2d165469c16657572a9a9e4c95ddd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ab5c7d06_b3ef39c9",
+        "filename": "test/decode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-05T19:44:11Z",
+      "side": 1,
+      "message": "Delete this.\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5090268 will mark vpx_decoder.h as exporting vpx_codec.h.",
+      "parentUuid": "824f7d61_f655edcb",
+      "revId": "7e05e8640a2d165469c16657572a9a9e4c95ddd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d08632e2_e60645fb",
+        "filename": "test/sum_squares_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-05T19:44:11Z",
+      "side": 1,
+      "message": "Nit/optional: We could include \"vpx/vpx_integer.h\" instead, which is a facade header for \u003cstdint.h\u003e:\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5090268\n\nBut I prefer including \u003cstdint.h\u003e directly in new code, so this is fine.",
+      "revId": "7e05e8640a2d165469c16657572a9a9e4c95ddd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70756fa4_638e6b96",
+        "filename": "vpx_dsp/sse.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-05T19:44:11Z",
+      "side": 1,
+      "message": "Delete this.\n\nAfter https://chromium-review.googlesource.com/c/webm/libvpx/+/5090268, \u003cstdint.h\u003e will be provided by vpx_integer.h (included at line 22).",
+      "revId": "7e05e8640a2d165469c16657572a9a9e4c95ddd0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a93f5d7c_b41c2c2c",
+        "filename": "vpx_dsp/x86/sse_sse4.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-05T19:44:11Z",
+      "side": 1,
+      "message": "Delete this.\n\nAfter https://chromium-review.googlesource.com/c/webm/libvpx/+/5090268, this will be provided by vpx_integer.h (included at line 19).",
       "revId": "7e05e8640a2d165469c16657572a9a9e4c95ddd0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
