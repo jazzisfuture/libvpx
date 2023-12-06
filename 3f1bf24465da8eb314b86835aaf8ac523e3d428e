@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ca6cf58_7ce8a7e4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T23:24:50Z",
+      "side": 1,
+      "message": "Please wait for Bohan\u0027s revew.",
+      "revId": "3f1bf24465da8eb314b86835aaf8ac523e3d428e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5553526c_31cd0059",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3476,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T23:24:50Z",
+      "side": 1,
+      "message": "Before we restore `xd-\u003eplane[i].pre[0]`, do we need to free the current value of `xd-\u003eplane[i].pre[0]`?",
+      "revId": "3f1bf24465da8eb314b86835aaf8ac523e3d428e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
