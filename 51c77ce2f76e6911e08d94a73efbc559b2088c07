@@ -51,6 +51,23 @@
       "parentUuid": "aafc90aa_0f8d36f7",
       "revId": "51c77ce2f76e6911e08d94a73efbc559b2088c07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88ebec45_9a24647a",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 3919,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T21:59:05Z",
+      "side": 1,
+      "message": "Optional: The error code and error message are copied from the decoder code. Please see if the encoder should use a different error code or error message.",
+      "revId": "51c77ce2f76e6911e08d94a73efbc559b2088c07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
