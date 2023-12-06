@@ -67,6 +67,24 @@
       "message": "Nit/optional: The variable name \"buf_ptr_array\" could be shortened to \"buf_array\".",
       "revId": "30b54ef0645a26909ec443ce71f9ea092e834dff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47faf3d0_f97a53b5",
+        "filename": "vp9/common/vp9_reconinter.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-12-06T21:51:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c0eb7ee3_96679494",
+      "revId": "30b54ef0645a26909ec443ce71f9ea092e834dff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
