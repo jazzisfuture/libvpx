@@ -642,6 +642,71 @@ TEST(EncodeAPI, Buganizer311394513) {
   encoder.Encode(true);
 }
 
+<<<<<<< PATCH SET (60959e [M120-LTS] Set pred buffer stride correctly)
+// This is a test case from clusterfuzz: based on b/314857577.
+// Encode a few frames with multiple change config calls
+// with different frame sizes.
+TEST(EncodeAPI, Buganizer314857577) {
+  VP9Encoder encoder(4);
+
+  // Set initial config.
+  encoder.Configure(12, 1060, 437, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode first frame.
+  encoder.Encode(false);
+
+  // Change config.
+  encoder.Configure(16, 1060, 1, VPX_CBR, VPX_DL_REALTIME);
+
+  // Encode 2nd frame with new config.
+  encoder.Encode(false);
+
+  // Encode 3rd frame with new config.
+  encoder.Encode(true);
+
+  // Change config.
+  encoder.Configure(15, 33, 437, VPX_VBR, VPX_DL_GOOD_QUALITY);
+
+  // Encode 4th frame with new config.
+  encoder.Encode(true);
+
+  // Encode 5th frame with new config.
+  encoder.Encode(false);
+
+  // Change config.
+  encoder.Configure(5, 327, 269, VPX_VBR, VPX_DL_REALTIME);
+
+  // Change config.
+  encoder.Configure(15, 1060, 437, VPX_CBR, VPX_DL_REALTIME);
+
+  // Encode 6th frame with new config.
+  encoder.Encode(false);
+
+  // Encode 7th frame with new config.
+  encoder.Encode(false);
+
+  // Change config.
+  encoder.Configure(4, 1060, 437, VPX_VBR, VPX_DL_REALTIME);
+
+  // Encode 8th frame with new config.
+  encoder.Encode(false);
+}
+
+TEST(EncodeAPI, Buganizer312875957PredBufferStride) {
+  VP9Encoder encoder(-1);
+
+  encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_REALTIME);
+  encoder.Encode(true);
+  encoder.Encode(false);
+  encoder.Configure(0, 456, 486, VPX_VBR, VPX_DL_REALTIME);
+  encoder.Encode(true);
+  encoder.Configure(0, 1678, 620, VPX_CBR, 1000000);
+  encoder.Encode(false);
+  encoder.Encode(false);
+}
+
+=======
+>>>>>>> BASE      (fe5dc5 [M120-LTS] vp9_frame_scale.c,cosmetics: funnction -> functio)
 class EncodeApiGetTplStatsTest
     : public ::libvpx_test::EncoderTest,
       public ::testing::TestWithParam<const libvpx_test::CodecFactory *> {
