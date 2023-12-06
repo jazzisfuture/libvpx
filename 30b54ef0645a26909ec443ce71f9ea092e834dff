@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d474520_85e44ccb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T21:39:40Z",
+      "side": 1,
+      "message": "LGTM. Nice.",
+      "revId": "30b54ef0645a26909ec443ce71f9ea092e834dff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f57d9588_6a87ba9f",
+        "filename": "vp9/common/vp9_reconinter.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T21:39:40Z",
+      "side": 1,
+      "message": "I was worried that static analyzers may have trouble proving that `plane` is safe to use as the index for `buf_ptr_array` and `stride_array`, but it\u0027s already used as the index for the `xd-\u003eplane` array here. So we should be okay.",
+      "revId": "30b54ef0645a26909ec443ce71f9ea092e834dff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "abe51c55_8149022b",
+        "filename": "vp9/common/vp9_reconinter.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T21:39:40Z",
+      "side": 1,
+      "message": "In libaom, these fields are union members, so we don\u0027t need to set up this kind of array:\n\n```\ntypedef struct yv12_buffer_config {\n  ...\n  union {\n    struct {\n      int y_stride;\n      int uv_stride;\n    };\n    int strides[2];\n  };\n  union {\n    struct {\n      uint8_t *y_buffer;\n      uint8_t *u_buffer;\n      uint8_t *v_buffer;\n    };\n    uint8_t *buffers[3];\n  };\n  ...\n} YV12_BUFFER_CONFIG;\n```\n\nI wonder if we should make the same change to libvpx. (Don\u0027t make such a big change in this CL.)",
+      "revId": "30b54ef0645a26909ec443ce71f9ea092e834dff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c0eb7ee3_96679494",
+        "filename": "vp9/common/vp9_reconinter.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 172,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T21:39:40Z",
+      "side": 1,
+      "message": "Nit/optional: The variable name \"buf_ptr_array\" could be shortened to \"buf_array\".",
+      "revId": "30b54ef0645a26909ec443ce71f9ea092e834dff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
