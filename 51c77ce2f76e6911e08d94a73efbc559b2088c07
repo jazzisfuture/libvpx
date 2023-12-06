@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aafc90aa_0f8d36f7",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 3910,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T04:57:40Z",
+      "side": 1,
+      "message": "Should we skip the valid_ref_frame_size() call if frame_is_intra_only(cm) is true?\n\nOtherwise the work is wasted.",
+      "revId": "51c77ce2f76e6911e08d94a73efbc559b2088c07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
