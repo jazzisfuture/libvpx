@@ -50,6 +50,42 @@
       "message": "Nit: It would be good to add a comment to explain why we need to back up and restore `xd-\u003eplane[i].pre[0]`. We should be able to use part of your commit message as a comment here.",
       "revId": "61baa7dcc677cefcf9afb281b59939ac8ddbe9b8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fdce62b_2373653f",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3447,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-12-06T23:19:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e251e513_b37e4965",
+      "revId": "61baa7dcc677cefcf9afb281b59939ac8ddbe9b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d7b5cc40_88b21f31",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3447,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-12-06T23:19:47Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b57c623f_34ad5c5a",
+      "revId": "61baa7dcc677cefcf9afb281b59939ac8ddbe9b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
