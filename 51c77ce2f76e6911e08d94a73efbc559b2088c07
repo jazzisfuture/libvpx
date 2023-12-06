@@ -3,6 +3,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "2039bd43_75d52196",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 3891,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T14:32:12Z",
+      "side": 1,
+      "message": "Optional: I wonder if we should also copy the comment from vp9/decoder/vp9_decodeframe.c:\n\n```\n  // Check to make sure at least one of frames that this frame references\n  // has valid dimensions.\n```\n\nSince the code here is doing more than this check, I am worried that this comment will be confusing here. (The decoder code only does this check, so the comment is clear there.)",
+      "revId": "51c77ce2f76e6911e08d94a73efbc559b2088c07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "aafc90aa_0f8d36f7",
         "filename": "vp9/encoder/vp9_encoder.c",
         "patchSetId": 8
@@ -14,6 +31,24 @@
       "writtenOn": "2023-12-06T04:57:40Z",
       "side": 1,
       "message": "Should we skip the valid_ref_frame_size() call if frame_is_intra_only(cm) is true?\n\nOtherwise the work is wasted.",
+      "revId": "51c77ce2f76e6911e08d94a73efbc559b2088c07",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bc78e1d8_ac725855",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 3910,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-06T14:32:12Z",
+      "side": 1,
+      "message": "I found a good answer to my question.\n\n`vp9_setup_scale_factors_for_frame()` calls `valid_ref_frame_size()` internally. So we can detect the return value of that `valid_ref_frame_size()` call by inspecting `ref_buf-\u003esf`:\n\n```\n      has_valid_ref_frame |\u003d vp9_is_valid_scale(\u0026ref_buf-\u003esf);\n```\n\nNote: The `vp9_is_scaled()` call at line 3912 calls `vp9_is_valid_scale()` internally, so we will end up calling `vp9_is_valid_scale()` twice. But we cannot avoid that unless we manually inline that `vp9_is_scaled()` call.",
+      "parentUuid": "aafc90aa_0f8d36f7",
       "revId": "51c77ce2f76e6911e08d94a73efbc559b2088c07",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
