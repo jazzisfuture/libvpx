@@ -33,6 +33,24 @@
       "message": "Before we restore `xd-\u003eplane[i].pre[0]`, do we need to free the current value of `xd-\u003eplane[i].pre[0]`?",
       "revId": "3f1bf24465da8eb314b86835aaf8ac523e3d428e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7684141_919ee8c2",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 3476,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2023-12-07T00:54:15Z",
+      "side": 1,
+      "message": "No, it is handled in the encoder.",
+      "parentUuid": "5553526c_31cd0059",
+      "revId": "3f1bf24465da8eb314b86835aaf8ac523e3d428e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
