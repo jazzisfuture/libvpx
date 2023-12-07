@@ -19,6 +19,8 @@
 #include "vp9/common/vp9_reconinter.h"
 #include "vp9/common/vp9_reconintra.h"
 
+#include "vpx_scale/yv12config.h"
+
 #if CONFIG_VP9_HIGHBITDEPTH
 void vp9_highbd_build_inter_predictor(
     const uint16_t *src, int src_stride, uint16_t *dst, int dst_stride,
