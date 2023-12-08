@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c89212e9_4a7880d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-08T00:31:54Z",
+      "side": 1,
+      "message": "Cherry-picking this CL may help prevent merge conflicts when we cherry-pick later commits.",
+      "revId": "04b16cc2495d76a7ecc4517ac8648188ec5f3d8e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
