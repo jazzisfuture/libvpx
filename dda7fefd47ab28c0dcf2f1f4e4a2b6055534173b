@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "69efa58f_8919f17c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-08T00:23:15Z",
+      "side": 1,
+      "message": "Although this bug was fixed by two earlier commits, it\u0027s good to cherry-pick the bug\u0027s test case to prevent regression.",
+      "revId": "dda7fefd47ab28c0dcf2f1f4e4a2b6055534173b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
