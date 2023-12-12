@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9d2213b8_b02739e4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-12T17:59:56Z",
+      "side": 1,
+      "message": "LGTM. Thanks for the fix.\n\nIt would be good to understand why this simple-looking test program causes this integer overflow. None of the encoder config settings seem out of the ordinary.",
+      "revId": "221ec279fcd93c79dce068b85be2744373d5d6ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
