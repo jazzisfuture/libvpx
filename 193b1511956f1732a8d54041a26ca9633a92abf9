@@ -22,6 +22,30 @@
       },
       "revId": "193b1511956f1732a8d54041a26ca9633a92abf9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2fd4aff_475256a6",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-12T23:22:14Z",
+      "side": 1,
+      "message": "This is pseudorandom, not true random. We can reproduce the pseudorandom number sequence.\n\nAs for writing out the data of `img`, I am afraid that it is not practical. 1280 * 720 * 3 / 2 \u003d 1382400.",
+      "parentUuid": "f29c97b9_521a1207",
+      "range": {
+        "startLine": 187,
+        "startChar": 16,
+        "endLine": 187,
+        "endChar": 31
+      },
+      "revId": "193b1511956f1732a8d54041a26ca9633a92abf9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
