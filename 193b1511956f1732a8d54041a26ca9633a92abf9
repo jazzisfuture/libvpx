@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f29c97b9_521a1207",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-12-12T23:00:21Z",
+      "side": 1,
+      "message": "tests with randomness may be difficult to reproduce if it fails on some certain data.\n\nI\u0027d suggest to write out the data of `img` if the test fails. `ASSERT_EQ` supports stream operator `\u003c\u003c`.",
+      "range": {
+        "startLine": 187,
+        "startChar": 16,
+        "endLine": 187,
+        "endChar": 31
+      },
+      "revId": "193b1511956f1732a8d54041a26ca9633a92abf9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
