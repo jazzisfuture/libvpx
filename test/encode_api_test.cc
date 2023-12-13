@@ -731,6 +731,67 @@ TEST(EncodeAPI, ConfigResizeBiggerAfterEncode) {
   }
 }
 
+// This test reproduces https://crbug.com/webm/1828.
+TEST(EncodeAPI, HugePts) {
+  for (const auto *iface : kCodecIfaces) {
+    // Initialize encoder configuration
+    vpx_codec_enc_cfg_t cfg;
+    ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Initialize encoder
+    vpx_codec_ctx_t enc;
+    ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Allocate image buffer
+    vpx_image_t *image = CreateImage(cfg.g_w, cfg.g_h);
+    ASSERT_NE(image, nullptr);
+
+    // Encode frames
+    ASSERT_EQ(
+        vpx_codec_encode(&enc, image, 0, 0xffffffff, 0, VPX_DL_BEST_QUALITY),
+        VPX_CODEC_OK);
+    ASSERT_EQ(vpx_codec_encode(&enc, image, INT64_MAX, 0xffffffff, 0,
+                               VPX_DL_BEST_QUALITY),
+              VPX_CODEC_INVALID_PARAM);
+
+    // Cleanup
+    vpx_img_free(image);
+    EXPECT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+  }
+}
+
+// This test reproduces https://crbug.com/webm/1828.
+TEST(EncodeAPI, HugeDuration) {
+  for (const auto *iface : kCodecIfaces) {
+    // Initialize encoder configuration
+    vpx_codec_enc_cfg_t cfg;
+    ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Initialize encoder
+    vpx_codec_ctx_t enc;
+    ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Allocate image buffer
+    vpx_image_t *image = CreateImage(cfg.g_w, cfg.g_h);
+    ASSERT_NE(image, nullptr);
+
+    // Encode frame
+#if ULONG_MAX > UINT_MAX
+    ASSERT_EQ(vpx_codec_encode(&enc, image, 0, 0xbd6b566b15c7, 0,
+                               VPX_DL_BEST_QUALITY),
+              VPX_CODEC_INVALID_PARAM);
+#else
+    ASSERT_EQ(
+        vpx_codec_encode(&enc, image, 0, UINT_MAX, 0, VPX_DL_BEST_QUALITY),
+        VPX_CODEC_OK);
+#endif
+
+    // Cleanup
+    vpx_img_free(image);
+    EXPECT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+  }
+}
+
 #if CONFIG_VP9_ENCODER
 // Frame size needed to trigger the overflow exceeds the max buffer allowed on
 // 32-bit systems defined by VPX_MAX_ALLOCABLE_MEMORY
