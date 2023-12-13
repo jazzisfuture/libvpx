@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a7a09d3_e753f715",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-13T19:35:50Z",
+      "side": 1,
+      "message": "Note that this file defines `struct vpx_codec_alg_priv` here. This fact will be used in my reply at line 100.",
+      "revId": "960617ddb69fbdf53d29b0f5223c7d51566b9612",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "cf765e2c_2a0d010d",
@@ -41,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b63ded3_1869b437",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-13T19:35:50Z",
+      "side": 1,
+      "message": "Done. Please see if the new comment is clear enough.",
+      "parentUuid": "cf765e2c_2a0d010d",
+      "range": {
+        "startLine": 98,
+        "startChar": 55,
+        "endLine": 99,
+        "endChar": 18
+      },
+      "revId": "960617ddb69fbdf53d29b0f5223c7d51566b9612",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "50f18a4d_874b65fe",
@@ -54,6 +95,30 @@
       "writtenOn": "2023-12-13T15:39:46Z",
       "side": 1,
       "message": "this function looks the same as the one in vp9_cx_iface.c\n\ncan it be shared by both?",
+      "range": {
+        "startLine": 100,
+        "startChar": 23,
+        "endLine": 100,
+        "endChar": 41
+      },
+      "revId": "960617ddb69fbdf53d29b0f5223c7d51566b9612",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c39004e5_492c34b9",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-13T19:35:50Z",
+      "side": 1,
+      "message": "Yes, this function is the same as the one in vp9_cx_iface.c. But the two files cannot share this function directly, because the `vpx_codec_alg_priv_t` struct is defined separately in these two files.\n\nHowever, the two `vpx_codec_alg_priv_t` definitions have a common \"base class\" (see line 79 in this file). So it should be possible to change this function to take the base class instead as the first parameter.",
+      "parentUuid": "50f18a4d_874b65fe",
       "range": {
         "startLine": 100,
         "startChar": 23,
