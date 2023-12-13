@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -1166,9 +1167,9 @@ static vpx_codec_err_t encoder_destroy(vpx_codec_alg_priv_t *ctx) {
   return VPX_CODEC_OK;
 }
 
-static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
-                                    unsigned long duration,
-                                    vpx_enc_deadline_t deadline) {
+static vpx_codec_err_t pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
+                                               unsigned long duration,
+                                               vpx_enc_deadline_t deadline) {
   MODE new_mode = BEST;
 
 #if CONFIG_REALTIME_ONLY
@@ -1184,8 +1185,12 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
         VPX_STATIC_ASSERT(TICKS_PER_SEC > 1000000 &&
                           (TICKS_PER_SEC % 1000000) == 0);
 
-        duration_us = duration * (uint64_t)ctx->timestamp_ratio.num /
-                      (ctx->timestamp_ratio.den * (TICKS_PER_SEC / 1000000));
+        if (duration > UINT64_MAX / (uint64_t)ctx->timestamp_ratio.num) {
+          ERROR("duration is too big");
+        }
+        duration_us =
+            duration * (uint64_t)ctx->timestamp_ratio.num /
+            ((uint64_t)ctx->timestamp_ratio.den * (TICKS_PER_SEC / 1000000));
 
         // If the deadline is more that the duration this frame is to be shown,
         // use good quality mode. Otherwise use realtime mode.
@@ -1208,6 +1213,7 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
     ctx->oxcf.mode = new_mode;
     vp9_change_config(ctx->cpi, &ctx->oxcf);
   }
+  return VPX_CODEC_OK;
 }
 
 // Turn on to test if supplemental superframe data breaks decoding
@@ -1353,7 +1359,10 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
   }
   pts -= ctx->pts_offset;
 
-  pick_quickcompress_mode(ctx, duration, deadline);
+  res = pick_quickcompress_mode(ctx, duration, deadline);
+  if (res != VPX_CODEC_OK) {
+    return res;
+  }
   vpx_codec_pkt_list_init(&ctx->pkt_list);
 
   // Handle Flags
@@ -1385,19 +1394,30 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
   if (res == VPX_CODEC_OK) {
     unsigned int lib_flags = 0;
     YV12_BUFFER_CONFIG sd;
-    int64_t dst_time_stamp = timebase_units_to_ticks(timestamp_ratio, pts);
+    int64_t dst_time_stamp =
+        timebase_units_to_ticks(&cpi->common.error, timestamp_ratio, pts);
     size_t size, cx_data_sz;
     unsigned char *cx_data;
 
-    cpi->svc.timebase_fac = timebase_units_to_ticks(timestamp_ratio, 1);
+    cpi->svc.timebase_fac =
+        timebase_units_to_ticks(&cpi->common.error, timestamp_ratio, 1);
     cpi->svc.time_stamp_superframe = dst_time_stamp;
 
     // Set up internal flags
     if (ctx->base.init_flags & VPX_CODEC_USE_PSNR) cpi->b_calculate_psnr = 1;
 
     if (img != NULL) {
-      const int64_t dst_end_time_stamp =
-          timebase_units_to_ticks(timestamp_ratio, pts + duration);
+      int64_t dst_end_time_stamp;
+#if LONG_MAX == INT64_MAX
+      if (duration > INT64_MAX || pts > INT64_MAX - (int64_t)duration) {
+#else
+      if (pts > INT64_MAX - duration) {
+#endif
+        vpx_internal_error(&cpi->common.error, VPX_CODEC_INVALID_PARAM,
+                           "duration is too big");
+      }
+      dst_end_time_stamp = timebase_units_to_ticks(
+          &cpi->common.error, timestamp_ratio, pts + duration);
       res = image2yuvconfig(img, &sd);
 
       // Store the original flags in to the frame buffer. Will extract the
@@ -1425,7 +1445,6 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
       if (cx_data_sz < ctx->cx_data_sz / 2) {
         vpx_internal_error(&cpi->common.error, VPX_CODEC_ERROR,
                            "Compressed data buffer too small");
-        return VPX_CODEC_ERROR;
       }
     }
 
@@ -1478,6 +1497,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
         }
 
         if (size || (cpi->use_svc && cpi->svc.skip_enhancement_layer)) {
+          int64_t duration_tmp;
           // Pack invisible frames with the next visible frame
           if (!cpi->common.show_frame ||
               (cpi->use_svc && cpi->svc.spatial_layer_id <
@@ -1498,10 +1518,23 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
             if (ctx->output_cx_pkt_cb.output_cx_pkt) {
               pkt.kind = VPX_CODEC_CX_FRAME_PKT;
               pkt.data.frame.pts =
-                  ticks_to_timebase_units(timestamp_ratio, dst_time_stamp) +
+                  ticks_to_timebase_units(&cpi->common.error, timestamp_ratio,
+                                          dst_time_stamp) +
                   ctx->pts_offset;
-              pkt.data.frame.duration = (unsigned long)ticks_to_timebase_units(
-                  timestamp_ratio, dst_end_time_stamp - dst_time_stamp);
+              duration_tmp =
+                  ticks_to_timebase_units(&cpi->common.error, timestamp_ratio,
+                                          dst_end_time_stamp - dst_time_stamp);
+              if (duration_tmp < 0) {
+                vpx_internal_error(&cpi->common.error, VPX_CODEC_INVALID_PARAM,
+                                   "pkt.data.frame.duration is negative");
+              }
+#if LONG_MAX < INT64_MAX
+              if (duration_tmp > ULONG_MAX) {
+                vpx_internal_error(&cpi->common.error, VPX_CODEC_INVALID_PARAM,
+                                   "pkt.data.frame.duration too big");
+              }
+#endif
+              pkt.data.frame.duration = (unsigned long)duration_tmp;
               pkt.data.frame.flags = get_frame_pkt_flags(cpi, lib_flags);
               pkt.data.frame.buf = ctx->pending_cx_data;
               pkt.data.frame.sz = size;
@@ -1518,10 +1551,23 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
           // Add the frame packet to the list of returned packets.
           pkt.kind = VPX_CODEC_CX_FRAME_PKT;
           pkt.data.frame.pts =
-              ticks_to_timebase_units(timestamp_ratio, dst_time_stamp) +
+              ticks_to_timebase_units(&cpi->common.error, timestamp_ratio,
+                                      dst_time_stamp) +
               ctx->pts_offset;
-          pkt.data.frame.duration = (unsigned long)ticks_to_timebase_units(
-              timestamp_ratio, dst_end_time_stamp - dst_time_stamp);
+          duration_tmp =
+              ticks_to_timebase_units(&cpi->common.error, timestamp_ratio,
+                                      dst_end_time_stamp - dst_time_stamp);
+          if (duration_tmp < 0) {
+            vpx_internal_error(&cpi->common.error, VPX_CODEC_INVALID_PARAM,
+                               "pkt.data.frame.duration is negative");
+          }
+#if LONG_MAX < INT64_MAX
+          if (duration_tmp > ULONG_MAX) {
+            vpx_internal_error(&cpi->common.error, VPX_CODEC_INVALID_PARAM,
+                               "pkt.data.frame.duration too big");
+          }
+#endif
+          pkt.data.frame.duration = (unsigned long)duration_tmp;
           pkt.data.frame.flags = get_frame_pkt_flags(cpi, lib_flags);
           pkt.data.frame.width[cpi->svc.spatial_layer_id] = cpi->common.width;
           pkt.data.frame.height[cpi->svc.spatial_layer_id] = cpi->common.height;

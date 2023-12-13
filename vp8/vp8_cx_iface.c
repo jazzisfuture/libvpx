@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <limits.h>
+
 #include "./vpx_config.h"
 #include "./vp8_rtcd.h"
 #include "./vpx_dsp_rtcd.h"
@@ -777,9 +779,9 @@ static vpx_codec_err_t image2yuvconfig(const vpx_image_t *img,
   return res;
 }
 
-static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
-                                    unsigned long duration,
-                                    vpx_enc_deadline_t deadline) {
+static vpx_codec_err_t pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
+                                               unsigned long duration,
+                                               vpx_enc_deadline_t deadline) {
   int new_qc;
 
 #if !(CONFIG_REALTIME_ONLY)
@@ -793,8 +795,12 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
     VPX_STATIC_ASSERT(TICKS_PER_SEC > 1000000 &&
                       (TICKS_PER_SEC % 1000000) == 0);
 
-    duration_us = duration * (uint64_t)ctx->timestamp_ratio.num /
-                  (ctx->timestamp_ratio.den * (TICKS_PER_SEC / 1000000));
+    if (duration > UINT64_MAX / (uint64_t)ctx->timestamp_ratio.num) {
+      ERROR("duration is too big");
+    }
+    duration_us =
+        duration * (uint64_t)ctx->timestamp_ratio.num /
+        ((uint64_t)ctx->timestamp_ratio.den * (TICKS_PER_SEC / 1000000));
 
     /* If the deadline is more that the duration this frame is to be shown,
      * use good quality mode. Otherwise use realtime mode.
@@ -820,6 +826,7 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
     ctx->oxcf.Mode = new_qc;
     vp8_change_config(ctx->cpi, &ctx->oxcf);
   }
+  return VPX_CODEC_OK;
 }
 
 static vpx_codec_err_t set_reference_and_update(vpx_codec_alg_priv_t *ctx,
@@ -900,7 +907,7 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
   }
   pts_val -= ctx->pts_offset;
 
-  pick_quickcompress_mode(ctx, duration, deadline);
+  if (!res) res = pick_quickcompress_mode(ctx, duration, deadline);
   vpx_codec_pkt_list_init(&ctx->pkt_list);
 
   // If no flags are set in the encode call, then use the frame flags as
@@ -926,6 +933,7 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
     unsigned int lib_flags;
     YV12_BUFFER_CONFIG sd;
     int64_t dst_time_stamp, dst_end_time_stamp;
+    vpx_codec_pts_t pts_end;
     size_t size, cx_data_sz;
     unsigned char *cx_data;
     unsigned char *cx_data_end;
@@ -951,10 +959,27 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
     /* Convert API flags to internal codec lib flags */
     lib_flags = (flags & VPX_EFLAG_FORCE_KF) ? FRAMEFLAGS_KEY : 0;
 
+    if (pts_val > INT64_MAX / ctx->timestamp_ratio.num) {
+      vpx_internal_error(&ctx->cpi->common.error, VPX_CODEC_INVALID_PARAM,
+                         "pts is too big");
+    }
     dst_time_stamp =
         pts_val * ctx->timestamp_ratio.num / ctx->timestamp_ratio.den;
-    dst_end_time_stamp = (pts_val + (int64_t)duration) *
-                         ctx->timestamp_ratio.num / ctx->timestamp_ratio.den;
+#if LONG_MAX == INT64_MAX
+    if (duration > INT64_MAX || pts_val > INT64_MAX - (int64_t)duration) {
+#else
+    if (pts_val > INT64_MAX - (int64_t)duration) {
+#endif
+      vpx_internal_error(&ctx->cpi->common.error, VPX_CODEC_INVALID_PARAM,
+                         "duration is too big");
+    }
+    pts_end = pts_val + (int64_t)duration;
+    if (pts_end > INT64_MAX / ctx->timestamp_ratio.num) {
+      vpx_internal_error(&ctx->cpi->common.error, VPX_CODEC_INVALID_PARAM,
+                         "pts + duration is too big");
+    }
+    dst_end_time_stamp =
+        pts_end * ctx->timestamp_ratio.num / ctx->timestamp_ratio.den;
 
     if (img != NULL) {
       res = image2yuvconfig(img, &sd);
@@ -991,6 +1016,7 @@ static vpx_codec_err_t vp8e_encode(vpx_codec_alg_priv_t *ctx,
         VP8_COMP *cpi = (VP8_COMP *)ctx->cpi;
 
         /* Add the frame packet to the list of returned packets. */
+        // TODO(wtc): Check the calculations involving ctx->timestamp_ratio.
         round = (vpx_codec_pts_t)ctx->timestamp_ratio.num / 2;
         if (round > 0) --round;
         delta = (dst_end_time_stamp - dst_time_stamp);

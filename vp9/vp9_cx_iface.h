@@ -28,14 +28,24 @@ void vp9_dump_encoder_config(const VP9EncoderConfig *oxcf, FILE *fp);
 FRAME_INFO vp9_get_frame_info(const VP9EncoderConfig *oxcf);
 
 static INLINE int64_t
-timebase_units_to_ticks(const vpx_rational64_t *timestamp_ratio, int64_t n) {
+timebase_units_to_ticks(struct vpx_internal_error_info *info,
+                        const vpx_rational64_t *timestamp_ratio, int64_t n) {
+  if (n * timestamp_ratio->num > INT64_MAX) {
+    vpx_internal_error(info, VPX_CODEC_INVALID_PARAM,
+                       "overflow in timebase_units_to_ticks()");
+  }
   return n * timestamp_ratio->num / timestamp_ratio->den;
 }
 
 static INLINE int64_t
-ticks_to_timebase_units(const vpx_rational64_t *timestamp_ratio, int64_t n) {
+ticks_to_timebase_units(struct vpx_internal_error_info *info,
+                        const vpx_rational64_t *timestamp_ratio, int64_t n) {
   int64_t round = timestamp_ratio->num / 2;
   if (round > 0) --round;
+  if (n > (INT64_MAX - round) / timestamp_ratio->den) {
+    vpx_internal_error(info, VPX_CODEC_INVALID_PARAM,
+                       "overflow in ticks_to_timebase_units()");
+  }
   return (n * timestamp_ratio->den + round) / timestamp_ratio->num;
 }
 
