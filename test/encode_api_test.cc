@@ -44,6 +44,24 @@ bool IsVP9(vpx_codec_iface_t *iface) {
          0;
 }
 
+vpx_image_t *CreateImage(const unsigned int width, const unsigned int height) {
+  vpx_image_t *image =
+      vpx_img_alloc(nullptr, VPX_IMG_FMT_I420, width, height, 1);
+  if (!image) return image;
+
+  for (unsigned int i = 0; i < image->d_h; ++i) {
+    memset(image->planes[0] + i * image->stride[0], 128, image->d_w);
+  }
+  const unsigned int uv_h = (image->d_h + 1) / 2;
+  const unsigned int uv_w = (image->d_w + 1) / 2;
+  for (unsigned int i = 0; i < uv_h; ++i) {
+    memset(image->planes[1] + i * image->stride[1], 128, uv_w);
+    memset(image->planes[2] + i * image->stride[2], 128, uv_w);
+  }
+
+  return image;
+}
+
 TEST(EncodeAPI, InvalidParams) {
   uint8_t buf[1] = { 0 };
   vpx_image_t img;
@@ -213,7 +231,7 @@ TEST(EncodeAPI, RandomPixelsVp8) {
   // Destroy libvpx encoder
   vpx_codec_destroy(&enc);
 }
-#endif
+#endif  // CONFIG_VP8_ENCODER
 
 // Set up 2 spatial streams with 2 temporal layers per stream, and generate
 // invalid configuration by setting the temporal layer rate allocation
@@ -499,6 +517,67 @@ TEST(EncodeAPI, ConfigResizeChangeThreadCount) {
   }
 }
 
+// This test reproduces https://crbug.com/webm/1828.
+TEST(EncodeAPI, HugePts) {
+  for (const auto *iface : kCodecIfaces) {
+    // Initialize encoder configuration
+    vpx_codec_enc_cfg_t cfg;
+    ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Initialize encoder
+    vpx_codec_ctx_t enc;
+    ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Allocate image buffer
+    vpx_image_t *image = CreateImage(cfg.g_w, cfg.g_h);
+    ASSERT_NE(image, nullptr);
+
+    // Encode frames
+    ASSERT_EQ(
+        vpx_codec_encode(&enc, image, 0, 0xffffffff, 0, VPX_DL_BEST_QUALITY),
+        VPX_CODEC_OK);
+    ASSERT_EQ(vpx_codec_encode(&enc, image, INT64_MAX, 0xffffffff, 0,
+                               VPX_DL_BEST_QUALITY),
+              VPX_CODEC_INVALID_PARAM);
+
+    // Cleanup
+    vpx_img_free(image);
+    EXPECT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+  }
+}
+
+// This test reproduces https://crbug.com/webm/1828.
+TEST(EncodeAPI, HugeDuration) {
+  for (const auto *iface : kCodecIfaces) {
+    // Initialize encoder configuration
+    vpx_codec_enc_cfg_t cfg;
+    ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Initialize encoder
+    vpx_codec_ctx_t enc;
+    ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Allocate image buffer
+    vpx_image_t *image = CreateImage(cfg.g_w, cfg.g_h);
+    ASSERT_NE(image, nullptr);
+
+    // Encode frame
+#if ULONG_MAX > UINT_MAX
+    ASSERT_EQ(vpx_codec_encode(&enc, image, 0, 0xbd6b566b15c7, 0,
+                               VPX_DL_BEST_QUALITY),
+              VPX_CODEC_INVALID_PARAM);
+#else
+    ASSERT_EQ(
+        vpx_codec_encode(&enc, image, 0, UINT_MAX, 0, VPX_DL_BEST_QUALITY),
+        VPX_CODEC_OK);
+#endif
+
+    // Cleanup
+    vpx_img_free(image);
+    EXPECT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+  }
+}
+
 #if CONFIG_VP9_ENCODER
 // Frame size needed to trigger the overflow exceeds the max buffer allowed on
 // 32-bit systems defined by VPX_MAX_ALLOCABLE_MEMORY
@@ -527,24 +606,6 @@ TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
       << static_cast<double>(cfg.g_timebase.den) / cfg.g_timebase.num;
 }
 #endif  // VPX_ARCH_X86_64 || VPX_ARCH_AARCH64
-
-vpx_image_t *CreateImage(const unsigned int width, const unsigned int height) {
-  vpx_image_t *image =
-      vpx_img_alloc(nullptr, VPX_IMG_FMT_I420, width, height, 1);
-  if (!image) return image;
-
-  for (unsigned int i = 0; i < image->d_h; ++i) {
-    memset(image->planes[0] + i * image->stride[0], 128, image->d_w);
-  }
-  const unsigned int uv_h = (image->d_h + 1) / 2;
-  const unsigned int uv_w = (image->d_w + 1) / 2;
-  for (unsigned int i = 0; i < uv_h; ++i) {
-    memset(image->planes[1] + i * image->stride[1], 128, uv_w);
-    memset(image->planes[2] + i * image->stride[2], 128, uv_w);
-  }
-
-  return image;
-}
 
 // Emulates the WebCodecs VideoEncoder interface.
 class VP9Encoder {

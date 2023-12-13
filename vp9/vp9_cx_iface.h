@@ -27,8 +27,13 @@ void vp9_dump_encoder_config(const VP9EncoderConfig *oxcf, FILE *fp);
 
 FRAME_INFO vp9_get_frame_info(const VP9EncoderConfig *oxcf);
 
-static INLINE int64_t
-timebase_units_to_ticks(const vpx_rational64_t *timestamp_ratio, int64_t n) {
+static INLINE int64_t timebase_units_to_ticks(
+    const vpx_rational64_t *timestamp_ratio, int64_t n, vpx_codec_err_t *err) {
+  if (n > INT64_MAX / timestamp_ratio->num) {
+    if (err) *err = VPX_CODEC_INVALID_PARAM;
+    return INT64_MAX;
+  }
+  if (err) *err = VPX_CODEC_OK;
   return n * timestamp_ratio->num / timestamp_ratio->den;
 }
 

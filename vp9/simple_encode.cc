@@ -895,10 +895,10 @@ void SimpleEncode::ComputeFirstPassStats() {
     assert(!vp9_lookahead_full(lookahead));
     if (img_read(&img, in_file_)) {
       int next_show_idx = vp9_lookahead_next_show_idx(lookahead);
-      int64_t ts_start =
-          timebase_units_to_ticks(&oxcf.g_timebase_in_ts, next_show_idx);
-      int64_t ts_end =
-          timebase_units_to_ticks(&oxcf.g_timebase_in_ts, next_show_idx + 1);
+      int64_t ts_start = timebase_units_to_ticks(&oxcf.g_timebase_in_ts,
+                                                 next_show_idx, nullptr);
+      int64_t ts_end = timebase_units_to_ticks(&oxcf.g_timebase_in_ts,
+                                               next_show_idx + 1, nullptr);
       YV12_BUFFER_CONFIG sd;
       image2yuvconfig(&img, &sd);
       vp9_lookahead_push(lookahead, &sd, ts_start, ts_end, use_highbitdepth, 0);
@@ -1169,10 +1169,10 @@ void SimpleEncode::EncodeFrame(EncodeFrameResult *encode_frame_result) {
     // lookahead
     if (img_read(&impl_ptr_->tmp_img, in_file_)) {
       int next_show_idx = vp9_lookahead_next_show_idx(lookahead);
-      int64_t ts_start =
-          timebase_units_to_ticks(&cpi->oxcf.g_timebase_in_ts, next_show_idx);
+      int64_t ts_start = timebase_units_to_ticks(&cpi->oxcf.g_timebase_in_ts,
+                                                 next_show_idx, nullptr);
       int64_t ts_end = timebase_units_to_ticks(&cpi->oxcf.g_timebase_in_ts,
-                                               next_show_idx + 1);
+                                               next_show_idx + 1, nullptr);
       YV12_BUFFER_CONFIG sd;
       image2yuvconfig(&impl_ptr_->tmp_img, &sd);
       vp9_lookahead_push(lookahead, &sd, ts_start, ts_end, use_highbitdepth, 0);
