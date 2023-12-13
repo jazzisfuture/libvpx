@@ -16,6 +16,52 @@
       "message": "I probably should split this into two CLs, because the two changes are independent.",
       "revId": "960617ddb69fbdf53d29b0f5223c7d51566b9612",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf765e2c_2a0d010d",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 99,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-12-13T15:39:46Z",
+      "side": 1,
+      "message": "what\u0027s the reason for this? this comment seems to raise more question than it answers.\n\nIs it possible to fail gracefully if it\u0027s called by vp8e_init()?",
+      "range": {
+        "startLine": 98,
+        "startChar": 55,
+        "endLine": 99,
+        "endChar": 18
+      },
+      "revId": "960617ddb69fbdf53d29b0f5223c7d51566b9612",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50f18a4d_874b65fe",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-12-13T15:39:46Z",
+      "side": 1,
+      "message": "this function looks the same as the one in vp9_cx_iface.c\n\ncan it be shared by both?",
+      "range": {
+        "startLine": 100,
+        "startChar": 23,
+        "endLine": 100,
+        "endChar": 41
+      },
+      "revId": "960617ddb69fbdf53d29b0f5223c7d51566b9612",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
