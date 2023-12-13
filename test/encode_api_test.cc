@@ -9,6 +9,7 @@
  */
 
 #include <climits>
+#include <cstdint>
 #include <cstring>
 #include <initializer_list>
 #include <new>
@@ -728,6 +729,87 @@ TEST(EncodeAPI, ConfigResizeBiggerAfterEncode) {
               IsVP9(iface) ? VPX_CODEC_OK : VPX_CODEC_INVALID_PARAM);
 
     EXPECT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+  }
+}
+
+TEST(EncodeAPI, PtsSmallerThanInitialPts) {
+  for (const auto *iface : kCodecIfaces) {
+    // Initialize libvpx encoder.
+    vpx_codec_ctx_t enc;
+    vpx_codec_enc_cfg_t cfg;
+
+    ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+
+    ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Create input image.
+    vpx_image_t *const image = CreateImage(cfg.g_w, cfg.g_h);
+    ASSERT_NE(image, nullptr);
+
+    // Encode frame.
+    ASSERT_EQ(vpx_codec_encode(&enc, image, 12, 1, 0, VPX_DL_BEST_QUALITY),
+              VPX_CODEC_OK);
+    ASSERT_EQ(vpx_codec_encode(&enc, image, 13, 1, 0, VPX_DL_BEST_QUALITY),
+              VPX_CODEC_OK);
+    // pts (10) is smaller than the initial pts (12).
+    ASSERT_EQ(vpx_codec_encode(&enc, image, 10, 1, 0, VPX_DL_BEST_QUALITY),
+              VPX_CODEC_INVALID_PARAM);
+
+    // Free resources.
+    vpx_img_free(image);
+    ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
+  }
+}
+
+TEST(EncodeAPI, PtsOrDurationTooBig) {
+  for (const auto *iface : kCodecIfaces) {
+    // Initialize libvpx encoder.
+    vpx_codec_ctx_t enc;
+    vpx_codec_enc_cfg_t cfg;
+
+    ASSERT_EQ(vpx_codec_enc_config_default(iface, &cfg, 0), VPX_CODEC_OK);
+
+    ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
+
+    // Create input image.
+    vpx_image_t *const image = CreateImage(cfg.g_w, cfg.g_h);
+    ASSERT_NE(image, nullptr);
+
+    // Encode frame.
+    ASSERT_EQ(vpx_codec_encode(&enc, image, 0, 1, 0, VPX_DL_BEST_QUALITY),
+              VPX_CODEC_OK);
+#if ULONG_MAX > INT64_MAX
+    // duration is too big.
+    ASSERT_EQ(vpx_codec_encode(&enc, image, 0, (1ul << 63), 0, 2),
+              VPX_CODEC_INVALID_PARAM);
+#endif
+    // pts, when converted to ticks, is too big.
+    ASSERT_EQ(vpx_codec_encode(&enc, image, INT64_MAX / 1000000 + 1, 1, 0,
+                               VPX_DL_BEST_QUALITY),
+              VPX_CODEC_INVALID_PARAM);
+#if ULONG_MAX > INT64_MAX
+    // duration is too big.
+    ASSERT_EQ(
+        vpx_codec_encode(&enc, image, 0, (1ul << 63), 0, VPX_DL_BEST_QUALITY),
+        VPX_CODEC_INVALID_PARAM);
+    // pts + duration is too big.
+    ASSERT_EQ(
+        vpx_codec_encode(&enc, image, 1, INT64_MAX, 0, VPX_DL_BEST_QUALITY),
+        VPX_CODEC_INVALID_PARAM);
+#endif
+    // pts + duration, when converted to ticks, is too big.
+#if ULONG_MAX > INT64_MAX
+    ASSERT_EQ(vpx_codec_encode(&enc, image, 0, 0xbd6b566b15c7, 0,
+                               VPX_DL_BEST_QUALITY),
+              VPX_CODEC_INVALID_PARAM);
+#endif
+    ASSERT_EQ(vpx_codec_encode(&enc, image, INT64_MAX / 1000000, 1, 0,
+                               VPX_DL_BEST_QUALITY),
+              VPX_CODEC_INVALID_PARAM);
+
+    // Free resources.
+    vpx_img_free(image);
+    ASSERT_EQ(vpx_codec_destroy(&enc), VPX_CODEC_OK);
   }
 }
 
