@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb10b0e2_d8ac7f90",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-13T19:11:14Z",
+      "side": 1,
+      "message": "I moved the `vp8e_encode()` change in https://chromium-review.googlesource.com/c/webm/libvpx/+/5118662 to this CL so that it can be reviewed and submitted first.\n\nCurrently it seems that `vp8e_encode()` calls `vpx_internal_error()` only on memory allocation failures, so it\u0027s not easy to add a test for this change. But I am going to add checks to `vp8e_encode()` to detect huge `pts` or `duration` arguments, and I am planning to call `vpx_internal_error()` to report those errors.",
+      "revId": "4fe07a0c411d8ed0722c979f13248fd63ff69a73",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
