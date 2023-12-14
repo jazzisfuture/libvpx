@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "afc9a9a7_4dae9970",
+        "filename": ".mailmap",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-14T20:28:29Z",
+      "side": 1,
+      "message": "I think Johann wanted to keep the duck.com separate and use that going forward.\n\nLooking at `git shortlog -e`, you can also map `johannkoenig@dhcp-172-19-7-52.mtv.corp.google.com` to @google.com",
+      "revId": "a24186186d1adaadae5d5d2e0764934560eaa5a9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
