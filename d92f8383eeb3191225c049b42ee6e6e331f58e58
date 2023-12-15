@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80d1ae60_7a36d9db",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-15T23:00:19Z",
+      "side": 1,
+      "message": "I don\u0027t think this made it into a release. It could be cherry-picked to the release branch.",
+      "revId": "d92f8383eeb3191225c049b42ee6e6e331f58e58",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
