@@ -2087,7 +2087,6 @@ static vpx_codec_ctrl_fn_map_t encoder_ctrl_maps[] = {
   { VP9E_GET_ACTIVEMAP, ctrl_get_active_map },
   { VP9E_GET_LEVEL, ctrl_get_level },
   { VP9E_GET_SVC_REF_FRAME_CONFIG, ctrl_get_svc_ref_frame_config },
-  { VP9E_GET_TPL_STATS, ctrl_get_tpl_stats },
 
   { -1, NULL },
 };
