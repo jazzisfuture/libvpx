@@ -16,6 +16,63 @@
       "message": "James: Please do a quick, preliminary review of the general approach of the CL.\n\nI did it the hard way and added checks for overflows. This approach is tedious unless we add functions equivalent to Chrome\u0027s CheckedNumeric class.\n\nIdeally, if we can impose a safe range on the incoming pts and duration so that calculations cannot possibly overflow, that will be great.",
       "revId": "cf0ef710ef983d0ad8fd3199fe9e42e00b1101b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2db77696_f06757cb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-15T20:39:57Z",
+      "side": 1,
+      "message": "This looks OK. Is there anything in the public API documentation that should be updated? Maybe we could restrict ranges at that level.\n\nIt may not be a great concern, but I\u0027m wondering about scenarios where pts values might wrap due to a long running live presentation.",
+      "revId": "cf0ef710ef983d0ad8fd3199fe9e42e00b1101b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb50a909_c235d52c",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 798,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-15T20:39:57Z",
+      "side": 1,
+      "message": "given how the duration is used here it could be capped rather than an error.",
+      "revId": "cf0ef710ef983d0ad8fd3199fe9e42e00b1101b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fce798c1_d9e4f995",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1415,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-15T20:39:57Z",
+      "side": 1,
+      "message": "this `#if` format is somewhat unfortunate for brace completion. The condition could be broken out to a variable.",
+      "range": {
+        "startLine": 1415,
+        "startChar": 70,
+        "endLine": 1415,
+        "endChar": 72
+      },
+      "revId": "cf0ef710ef983d0ad8fd3199fe9e42e00b1101b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
