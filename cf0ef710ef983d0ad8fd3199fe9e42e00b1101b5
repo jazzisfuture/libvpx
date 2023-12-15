@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc99cb0a_eb7ffee5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2023-12-15T18:14:35Z",
+      "side": 1,
+      "message": "James: Please do a quick, preliminary review of the general approach of the CL.\n\nI did it the hard way and added checks for overflows. This approach is tedious unless we add functions equivalent to Chrome\u0027s CheckedNumeric class.\n\nIdeally, if we can impose a safe range on the incoming pts and duration so that calculations cannot possibly overflow, that will be great.",
+      "revId": "cf0ef710ef983d0ad8fd3199fe9e42e00b1101b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
