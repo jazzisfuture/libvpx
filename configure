@@ -27,6 +27,7 @@ Advanced options:
   ${toggle_unit_tests}            unit tests
   ${toggle_decode_perf_tests}     build decoder perf tests with unit tests
   ${toggle_encode_perf_tests}     build encoder perf tests with unit tests
+  ${toggle_pgo_tests}             build PGO benchmark with unit tests
   --cpu=CPU                       tune for the specified CPU (ARM: cortex-a8, X86: sse3)
   --libc=PATH                     path to alternate libc
   --size-limit=WxH                max size to allow in the decoder
@@ -354,6 +355,7 @@ CONFIG_LIST="
     libyuv
     decode_perf_tests
     encode_perf_tests
+    pgo_tests
     multi_res_encoding
     temporal_denoising
     vp9_temporal_denoising
@@ -418,6 +420,7 @@ CMDLINE_SELECT="
     libyuv
     decode_perf_tests
     encode_perf_tests
+    pgo_tests
     multi_res_encoding
     temporal_denoising
     vp9_temporal_denoising
