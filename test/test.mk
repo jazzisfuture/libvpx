@@ -105,6 +105,12 @@ ifeq ($(CONFIG_ENCODE_PERF_TESTS)$(CONFIG_VP9_ENCODER), yesyes)
 LIBVPX_TEST_SRCS-yes += encode_perf_test.cc
 endif
 
+# PGO perf tests are vp9 only
+ifeq ($(CONFIG_PGO_TESTS)$(CONFIG_VP9_ENCODER), yesyes)
+LIBVPX_TEST_SRCS-yes += decode_encode_profile_test.cc
+endif
+
+
 ## Multi-codec blackbox tests.
 ifeq ($(findstring yes,$(CONFIG_VP8_DECODER)$(CONFIG_VP9_DECODER)), yes)
 LIBVPX_TEST_SRCS-yes += invalid_file_test.cc
