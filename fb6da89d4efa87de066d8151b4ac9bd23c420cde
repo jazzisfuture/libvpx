@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7b46a4a3_df87de33",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-18T20:31:58Z",
+      "side": 1,
+      "message": "Make this `\u0027Bug:\u0027`, `BUG\u003d` also works. The linkification in gerrit doesn\u0027t seem to support the lowercase version; I\u0027m not sure about gitwatcher (used to update the bugs).",
+      "range": {
+        "startLine": 22,
+        "startChar": 0,
+        "endLine": 22,
+        "endChar": 3
+      },
+      "revId": "fb6da89d4efa87de066d8151b4ac9bd23c420cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f892ffe_1f8fbe42",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 1495,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-18T20:31:58Z",
+      "side": 1,
+      "message": "The code in this file is a little inconsistent. For now indent 2 spaces on continued lines.",
+      "revId": "fb6da89d4efa87de066d8151b4ac9bd23c420cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "19bd3d2f_5638dba0",
+        "filename": "configure",
+        "patchSetId": 1
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-18T20:31:58Z",
+      "side": 1,
+      "message": "this should be `pgo` or `llvm_profile` if it\u0027s specific, to contrast with `gprof`",
+      "revId": "fb6da89d4efa87de066d8151b4ac9bd23c420cde",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
