@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "56817c77_8238f48b",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1669,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2023-12-19T17:44:05Z",
+      "side": 1,
+      "message": "Does the logic in this function align with how the TPL calculation gets the reference frames?",
+      "range": {
+        "startLine": 1669,
+        "startChar": 11,
+        "endLine": 1669,
+        "endChar": 30
+      },
+      "revId": "0196126ab6b7e697def21df11551fd52bd8b198a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
