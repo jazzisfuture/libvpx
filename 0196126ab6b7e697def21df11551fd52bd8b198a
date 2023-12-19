@@ -46,6 +46,30 @@
       },
       "revId": "0196126ab6b7e697def21df11551fd52bd8b198a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "471d1c99_5ea9e38b",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1669,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-12-19T18:04:53Z",
+      "side": 1,
+      "message": "I guess I can pass a fixed flag to the callback since it\u0027s not being used by external RC?",
+      "parentUuid": "9b997563_0d3e5e4e",
+      "range": {
+        "startLine": 1669,
+        "startChar": 11,
+        "endLine": 1669,
+        "endChar": 30
+      },
+      "revId": "0196126ab6b7e697def21df11551fd52bd8b198a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
