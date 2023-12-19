@@ -70,6 +70,30 @@
       },
       "revId": "0196126ab6b7e697def21df11551fd52bd8b198a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e842fb38_a40b342e",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1669,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2023-12-19T18:13:58Z",
+      "side": 1,
+      "message": "Yeah I think a fixed flag would be better, indicating that it is an unused field in this case. I guess we can let the TPL pass decide its own reference frames for now (since it is really just the libvpx logic), but ideally it should be the same as what we use for the final encoding.",
+      "parentUuid": "471d1c99_5ea9e38b",
+      "range": {
+        "startLine": 1669,
+        "startChar": 11,
+        "endLine": 1669,
+        "endChar": 30
+      },
+      "revId": "0196126ab6b7e697def21df11551fd52bd8b198a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
