@@ -22,6 +22,30 @@
       },
       "revId": "0196126ab6b7e697def21df11551fd52bd8b198a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9b997563_0d3e5e4e",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1669,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-12-19T17:52:17Z",
+      "side": 1,
+      "message": "Good question.. I copied this function from vp9_encoder.c\n\nBut this ref frame flags are passed to the callback, however it\u0027s not used by the external RC.\n\nIn this case does this logic still matter to TPL? TPL will decide ref frames by itself for motion search, but will use the QP from external RC.",
+      "parentUuid": "56817c77_8238f48b",
+      "range": {
+        "startLine": 1669,
+        "startChar": 11,
+        "endLine": 1669,
+        "endChar": 30
+      },
+      "revId": "0196126ab6b7e697def21df11551fd52bd8b198a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
