@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8244b675_6a5a9997",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1707,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-20T18:05:07Z",
+      "side": 1,
+      "message": "Can this happen or should it be checked when set?\n\nIf any of this condition fails, what\u0027s expected?",
+      "range": {
+        "startLine": 1707,
+        "startChar": 34,
+        "endLine": 1707,
+        "endChar": 66
+      },
+      "revId": "de8b747552b7e8b5ff354e4b2b596f78980bce75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
