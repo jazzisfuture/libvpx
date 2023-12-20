@@ -55,7 +55,7 @@ static INLINE void vpx_convolve_4tap_horiz_neon(const uint8_t *src,
 
       int16x4_t d0 = convolve4_4(s0[0], s0[1], s0[2], s0[3], filter);
       int16x4_t d1 = convolve4_4(s1[0], s1[1], s1[2], s1[3], filter);
-      uint8x8_t d01 = vqrshrun_n_s16(vcombine_s16(d0, d1), FILTER_BITS - 1);
+      uint8x8_t d01 = vqrshrun_n_s16(vcombine_s16(d0, d1), FILTER_BITS);
 
       store_u8(dst, dst_stride, d01);
 
@@ -305,10 +305,7 @@ void vpx_convolve8_horiz_neon(const uint8_t *src, ptrdiff_t src_stride,
   (void)y_step_q4;
 
   if (vpx_get_filter_taps(filter[x0_q4]) <= 4) {
-    /* All 4-tap and bilinear filter values are even, so halve them to reduce
-     * intermediate precision requirements.
-     */
-    const int16x4_t x_filter_4tap = vshr_n_s16(vld1_s16(filter[x0_q4] + 2), 1);
+    const int16x4_t x_filter_4tap = vld1_s16(filter[x0_q4] + 2);
     vpx_convolve_4tap_horiz_neon(src - 1, src_stride, dst, dst_stride, w, h,
                                  x_filter_4tap);
   } else {
@@ -592,9 +589,8 @@ static INLINE void vpx_convolve_4tap_vert_neon(const uint8_t *src,
       d1 = convolve4_4(s1, s2, s3, s4, filter);
       d2 = convolve4_4(s2, s3, s4, s5, filter);
       d3 = convolve4_4(s3, s4, s5, s6, filter);
-      /* We halved the filter values so -1 from right shift. */
-      d01 = vqrshrun_n_s16(vcombine_s16(d0, d1), FILTER_BITS - 1);
-      d23 = vqrshrun_n_s16(vcombine_s16(d2, d3), FILTER_BITS - 1);
+      d01 = vqrshrun_n_s16(vcombine_s16(d0, d1), FILTER_BITS);
+      d23 = vqrshrun_n_s16(vcombine_s16(d2, d3), FILTER_BITS);
 
       store_u8(dst + 0 * dst_stride, dst_stride, d01);
       store_u8(dst + 2 * dst_stride, dst_stride, d23);

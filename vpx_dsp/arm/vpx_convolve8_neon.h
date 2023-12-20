@@ -353,22 +353,27 @@ static INLINE uint8x8_t convolve8_8_usdot(const uint8x16_t samples,
 static INLINE int16x4_t convolve4_4(const int16x4_t s0, const int16x4_t s1,
                                     const int16x4_t s2, const int16x4_t s3,
                                     const int16x4_t filters) {
+  // Filter taps sum to 128 but some can be negative. To avoid overflow and
+  // needing saturating arithmetic, multiply and add in the following order,
+  // leaving the central taps with largest magnitude until last: { 0, 1, 3, 2 }
   int16x4_t sum = vmul_lane_s16(s0, filters, 0);
   sum = vmla_lane_s16(sum, s1, filters, 1);
-  sum = vmla_lane_s16(sum, s2, filters, 2);
   sum = vmla_lane_s16(sum, s3, filters, 3);
+  sum = vmla_lane_s16(sum, s2, filters, 2);
   return sum;
 }
 
 static INLINE uint8x8_t convolve4_8(const int16x8_t s0, const int16x8_t s1,
                                     const int16x8_t s2, const int16x8_t s3,
                                     const int16x4_t filters) {
+  // Filter taps sum to 128 but some can be negative. To avoid overflow and
+  // needing saturating arithmetic, multiply and add in the following order,
+  // leaving the central taps with largest magnitude until last: { 0, 1, 3, 2 }
   int16x8_t sum = vmulq_lane_s16(s0, filters, 0);
   sum = vmlaq_lane_s16(sum, s1, filters, 1);
-  sum = vmlaq_lane_s16(sum, s2, filters, 2);
   sum = vmlaq_lane_s16(sum, s3, filters, 3);
-  /* We halved the filter values so -1 from right shift. */
-  return vqrshrun_n_s16(sum, FILTER_BITS - 1);
+  sum = vmlaq_lane_s16(sum, s2, filters, 2);
+  return vqrshrun_n_s16(sum, FILTER_BITS);
 }
 
 static INLINE int16x4_t convolve8_4(const int16x4_t s0, const int16x4_t s1,
@@ -380,14 +385,18 @@ static INLINE int16x4_t convolve8_4(const int16x4_t s0, const int16x4_t s1,
   const int16x4_t filters_hi = vget_high_s16(filters);
   int16x4_t sum;
 
+  // Filter taps sum to 128 but some can be negative. To avoid overflow and
+  // needing saturating arithmetic, multiply and add in the following order,
+  // leaving the central taps with largest magnitude until last:
+  // { 0, 1, 2, 5, 6, 7, 3, 4 }
   sum = vmul_lane_s16(s0, filters_lo, 0);
   sum = vmla_lane_s16(sum, s1, filters_lo, 1);
   sum = vmla_lane_s16(sum, s2, filters_lo, 2);
   sum = vmla_lane_s16(sum, s5, filters_hi, 1);
   sum = vmla_lane_s16(sum, s6, filters_hi, 2);
   sum = vmla_lane_s16(sum, s7, filters_hi, 3);
-  sum = vqadd_s16(sum, vmul_lane_s16(s3, filters_lo, 3));
-  sum = vqadd_s16(sum, vmul_lane_s16(s4, filters_hi, 0));
+  sum = vmla_lane_s16(sum, s3, filters_lo, 3);
+  sum = vmla_lane_s16(sum, s4, filters_hi, 0);
   return sum;
 }
 
@@ -400,14 +409,18 @@ static INLINE uint8x8_t convolve8_8(const int16x8_t s0, const int16x8_t s1,
   const int16x4_t filters_hi = vget_high_s16(filters);
   int16x8_t sum;
 
+  // Filter taps sum to 128 but some can be negative. To avoid overflow and
+  // needing saturating arithmetic, multiply and add in the following order,
+  // leaving the central taps with largest magnitude until last:
+  // { 0, 1, 2, 5, 6, 7, 3, 4 }
   sum = vmulq_lane_s16(s0, filters_lo, 0);
   sum = vmlaq_lane_s16(sum, s1, filters_lo, 1);
   sum = vmlaq_lane_s16(sum, s2, filters_lo, 2);
   sum = vmlaq_lane_s16(sum, s5, filters_hi, 1);
   sum = vmlaq_lane_s16(sum, s6, filters_hi, 2);
   sum = vmlaq_lane_s16(sum, s7, filters_hi, 3);
-  sum = vqaddq_s16(sum, vmulq_lane_s16(s3, filters_lo, 3));
-  sum = vqaddq_s16(sum, vmulq_lane_s16(s4, filters_hi, 0));
+  sum = vmlaq_lane_s16(sum, s3, filters_lo, 3);
+  sum = vmlaq_lane_s16(sum, s4, filters_hi, 0);
   return vqrshrun_n_s16(sum, FILTER_BITS);
 }
 
