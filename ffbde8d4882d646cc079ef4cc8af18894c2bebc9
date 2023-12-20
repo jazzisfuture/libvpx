@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c8743a16_6afcefe1",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 1521,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-20T18:16:33Z",
+      "side": 1,
+      "message": "This should remain llvm_profile, it\u0027s a shell variable to test. The script handles the mapping, see around line 620.",
+      "range": {
+        "startLine": 1521,
+        "startChar": 10,
+        "endLine": 1521,
+        "endChar": 22
+      },
+      "revId": "ffbde8d4882d646cc079ef4cc8af18894c2bebc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
