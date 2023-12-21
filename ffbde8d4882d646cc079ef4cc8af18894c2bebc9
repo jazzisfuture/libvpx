@@ -22,6 +22,30 @@
       },
       "revId": "ffbde8d4882d646cc079ef4cc8af18894c2bebc9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9df78e36_ed6dbd6d",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 3
+      },
+      "lineNbr": 1521,
+      "author": {
+        "id": 3230806
+      },
+      "writtenOn": "2023-12-21T13:10:58Z",
+      "side": 1,
+      "message": "Check",
+      "parentUuid": "c8743a16_6afcefe1",
+      "range": {
+        "startLine": 1521,
+        "startChar": 10,
+        "endLine": 1521,
+        "endChar": 22
+      },
+      "revId": "ffbde8d4882d646cc079ef4cc8af18894c2bebc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
