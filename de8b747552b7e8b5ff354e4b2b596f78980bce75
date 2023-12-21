@@ -22,6 +22,30 @@
       },
       "revId": "de8b747552b7e8b5ff354e4b2b596f78980bce75",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9da38349_720715ba",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1707,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2023-12-21T17:58:45Z",
+      "side": 1,
+      "message": "Yes it could happen.\n\nLibvpx executes different modules of the encoder depends on what callbacks are set. The external rate control provides different information for different encoding passes. There\u0027re also two projects now using callbacks and they\u0027re used differently. The old project uses all callbacks, but the new one doesn\u0027t. So the check here is needed.",
+      "parentUuid": "8244b675_6a5a9997",
+      "range": {
+        "startLine": 1707,
+        "startChar": 34,
+        "endLine": 1707,
+        "endChar": 66
+      },
+      "revId": "de8b747552b7e8b5ff354e4b2b596f78980bce75",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
