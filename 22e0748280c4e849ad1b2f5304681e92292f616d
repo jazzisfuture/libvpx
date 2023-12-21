@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b10dee4b_71ce0421",
+        "filename": "test/decode_encode_profile_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-21T21:35:04Z",
+      "side": 1,
+      "message": "I\u0027m not sure this is necessary. We could simply decode each frame, then encode them to generate the profile data.\n\nWhat you\u0027re tuning for will come into play here as well since you may be interested in 2-pass VOD or realtime. For someone going to this effort it may be easier to use the existing vpxdec and vpxenc tools to generate the profiles.",
+      "revId": "22e0748280c4e849ad1b2f5304681e92292f616d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
