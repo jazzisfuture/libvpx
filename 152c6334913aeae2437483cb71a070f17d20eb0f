@@ -16,6 +16,40 @@
       "message": "Thank you @jzern@google.com for the feedback. I made the suggested changes.",
       "revId": "152c6334913aeae2437483cb71a070f17d20eb0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "08f74fc8_f1bb7f2f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-21T21:26:55Z",
+      "side": 1,
+      "message": "This looks good, just one last comment. Sorry for reversing my position on the naming.",
+      "revId": "152c6334913aeae2437483cb71a070f17d20eb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42684584_8eb25806",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2023-12-21T21:26:55Z",
+      "side": 1,
+      "message": "Sorry for the back and forth on this one. I was looking more closely at gcc when testing this and since it accepts the option, let\u0027s go with `--use-profile` and `--enable-profile` (or `--enable-profile-generation`) so we don\u0027t need to introduce a change later that will affect compatibility.",
+      "revId": "152c6334913aeae2437483cb71a070f17d20eb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
