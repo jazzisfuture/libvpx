@@ -16,6 +16,24 @@
       "message": "I\u0027m not sure this is necessary. We could simply decode each frame, then encode them to generate the profile data.\n\nWhat you\u0027re tuning for will come into play here as well since you may be interested in 2-pass VOD or realtime. For someone going to this effort it may be easier to use the existing vpxdec and vpxenc tools to generate the profiles.",
       "revId": "22e0748280c4e849ad1b2f5304681e92292f616d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89f0ab24_d55d26c2",
+        "filename": "test/decode_encode_profile_test.cc",
+        "patchSetId": 9
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 3230806
+      },
+      "writtenOn": "2023-12-22T12:31:10Z",
+      "side": 1,
+      "message": "There are couple of reasons why I\u0027m suggesting use this approach compared to vpxenc/vpxdec:\n\n- Being able to generate profiles also on ARM embedded devices (webview/AOSP). These devices normally don\u0027t have the storage to store large YUV files.\n\n- I\u0027m working on adding the PGO support for libvpx in webview/chromium. Chromium normally uses a list of PGO test cases to generate the profile files directly on the target.\n\n- I have in plans to noise into the encoder input frames, to get closer to a real world scenario, where the encoder takes frames directly from the camera.\n\nI can try to move this to the Chromium code base.\n\n  To give some scope of this work effort, I\u0027m working on Google Meet/ ARM64/WebView optimization in @cbuquicchio@google.com\u0027s team.",
+      "parentUuid": "b10dee4b_71ce0421",
+      "revId": "22e0748280c4e849ad1b2f5304681e92292f616d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
