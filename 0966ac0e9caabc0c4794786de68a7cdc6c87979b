@@ -1,0 +1,112 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57b10c0b_7612527c",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T18:51:20Z",
+      "side": 1,
+      "message": "Nit: The \"and darwin23 for MacOS 14\" part is not clear to me. Also, it may be misinterpreted as a continuation of \"run-time CPU feature detection for Arm platforms\".\n\nA fix for the second issue is some repetition, e.g.,\n\n\u003e It adds support for run-time CPU feature detection for Arm platforms, and adds support for darwin23 for MacOS 14.\n\nIf I understand it correctly, darwin23 is MacOS 14. If so, then we could address the first issue by using parentheses, e.g.,\n\n\u003e It adds support for run-time CPU feature detection for Arm platforms, and adds support for darwin23 (macOS 14).\n\nNote: Current official spelling of \"macOS\" is lowercase m. It was spelled \"MacOS\" before in the \"MacOS X\" era.",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a6e7cd6_c152cd21",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T18:51:20Z",
+      "side": 1,
+      "message": "It would be good to highlight the ABI incompatible changes. They don\u0027t seem to be described in the Enhancement section.\n\nMore important, can libvpx users deal with the ABI incompatibilities by simply rebuilding their code? Or do they possibly need to modify their source code?",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a9cf5a9b_b0ebb805",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T18:51:20Z",
+      "side": 1,
+      "message": "Nit: Wrap this long line.",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57c2d3ef_eb944404",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T18:51:20Z",
+      "side": 1,
+      "message": "Nit: stand bitdepth \u003d\u003e \"standard bitdepth\" or \"bitdepth 8\"",
+      "range": {
+        "startLine": 16,
+        "startChar": 65,
+        "endLine": 16,
+        "endChar": 70
+      },
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b453b9a_b39a8251",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T18:51:20Z",
+      "side": 1,
+      "message": "Nit/optional: \"LSX\" is not as well known as Neon and AVX2. Would it be appropriate to mention the CPU? Is it called LoongArch?",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f010708c_12ec4a18",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T18:51:20Z",
+      "side": 1,
+      "message": "Nit: There is an extra period. Also the first \"encoding\" could be omitted.",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
