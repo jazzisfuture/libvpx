@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e8cbdc01_99ff9a5b",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 1065,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T19:15:43Z",
+      "side": 1,
+      "message": "Nit: is \u003d\u003e are ?",
+      "revId": "bd780340788f57acc185e96ee9deddbfe8fcc572",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d496c55c_b948399c",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1686,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T19:15:43Z",
+      "side": 1,
+      "message": "IMPORTANT: If the inner if conditional expression (lines 1684-1686) is false, we do not set `tpl_frame-\u003ebase_qindex`. But the original code sets `tpl_frame-\u003ebase_qindex`. So this is a change of behavior.\n\nShould we add an \"else\" clause to the inner if statement, at line 1712?",
+      "revId": "bd780340788f57acc185e96ee9deddbfe8fcc572",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f433cb8a_7c0523b5",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1705,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-02T19:15:43Z",
+      "side": 1,
+      "message": "Nit/optional: Google\u0027s C++ Style Guide recommends writing this kind of comment like this:\n\n```\n/*ref_frame_flags\u003d*/0\n```\n\nhttps://google.github.io/styleguide/cppguide.html#Function_Argument_Comments",
+      "revId": "bd780340788f57acc185e96ee9deddbfe8fcc572",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
