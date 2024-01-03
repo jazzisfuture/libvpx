@@ -1,5 +1,40 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5c13f58a_f29e3aef",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T18:57:04Z",
+      "side": 1,
+      "message": "Here are the changes to the public headers, compared with v1.13.1. (I omitted the comment changes.)\n\n1) In vpx/vpx_codec.h, `const` is added to the `vpx_codec_ctx_t *ctx` parameters of `vpx_codec_error()` and `vpx_codec_error_detail()`.\n\nThis change is ABI and API compatible.\n\n2) In vpx/vpx_encoder.h, the `VPX_ENCODER_ABI_VERSION` macro is bumped (from 15 to 16) and also gets a new component `VPX_TPL_ABI_VERSION`.\n\nThis change is ABI incompatible. This change is API compatible.\n\nI have two comments on this header.\n\n* I think it is incorrect to bump the 15 to 16 in `VPX_ENCODER_ABI_VERSION`, because there is no change to the API in vpx/vpx_encoder.h itself.\n* It doesn\u0027t seem necessary for vpx/vpx_encoder.h to include vpx_tpl.h, because vpx/vpx_encoder.h doesn\u0027t use anything defined in vpx_tpl.h except the `VPX_TPL_ABI_VERSION` macro. It seems that we could remove the `VPX_TPL_ABI_VERSION` component from `VPX_ENCODER_ABI_VERSION`. See my last comment on vpx/vpx_ext_ratectrl.h below.\n\n3) In vpx/vpx_ext_ratectrl.h, the `VPX_EXT_RATECTRL_ABI_VERSION` macro is bumped (from 6 to 7) and several structs get new members.\n\nThese changes are ABI incompatible. These changes seem to be API compatible, i.e., no source code changes to libvpx clients seem necessary because I believe they don\u0027t need to use the new struct members.\n\nSince vpx/vpx_ext_ratectrl.h uses a type (`VpxTplGopStats`) defined in vpx_tpl.h, I think we should add a `VPX_TPL_ABI_VERSION` component to `VPX_EXT_RATECTRL_ABI_VERSION`. See my last comment on vpx/vpx_encoder.h above.\n\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\n\nIn summary, libvpx users that don\u0027t use vpx/vpx_ext_ratectrl.h just need to recompile their code. They don\u0027t need to change their source code.\n\nIf libvpx users that use vpx/vpx_ext_ratectrl.h don\u0027t need to use the new struct members added in vpx/vpx_ext_ratectrl.h, they also just need to recompile their code and don\u0027t need to change their source code.",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eafe8d52_ef74f27a",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T18:57:04Z",
+      "side": 1,
+      "message": "The new `send_tpl_gop_stats` callback should be mentioned here. It doesn\u0027t seem to be covered by this sentence.\n\nOptional: It might be useful to mention the new struct members added in vpx/vpx_ext_ratectrl.h. I don\u0027t know what level of detail on new features this changelog goes into, but it seems that new functions and new struct members should be mentioned.\n\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\n\nThe following is a suggestion for the source code. You just need to make the suggested change on the main branch.\n\nIn vpx/vpx_ext_ratectrl.h, we should document which callback functions may be null. (Code Search shows that `send_firstpass_stats`, `send_tpl_gop_stats`, `get_encodeframe_decision`, `update_encodeframe_result`, `get_gop_decision`, and `get_frame_rdmult` may be null.). Alternatively, document which callback functions must be set.",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
