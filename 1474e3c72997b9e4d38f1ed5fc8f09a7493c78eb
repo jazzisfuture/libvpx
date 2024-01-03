@@ -35,6 +35,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "7fa2fcdb_ac68763c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T20:48:44Z",
+      "side": 1,
+      "message": "Addressed in https://chromium-review.googlesource.com/c/webm/libvpx/+/5165749",
+      "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d86fe414_fac41b0d",
@@ -48,6 +65,24 @@
       "writtenOn": "2024-01-03T20:18:43Z",
       "side": 1,
       "message": "There are two calls to `vp9_extrc_get_encodeframe_decision()` in libvpx. Both of them are guarded with the condition `cpi-\u003eext_ratectrl.ready \u0026\u0026 (cpi-\u003eext_ratectrl.funcs.rc_type \u0026 VPX_RC_QP) !\u003d 0`.\n\nSo I think the second if conditional in `vp9_extrc_get_encodeframe_decision()` could become an assertion:\n\n```\nvpx_codec_err_t vp9_extrc_get_encodeframe_decision(\n    EXT_RATECTRL *ext_ratectrl, int show_index, int coding_index, int gop_index,\n    FRAME_UPDATE_TYPE update_type, int gop_size, int use_alt_ref,\n    RefCntBuffer *ref_frame_bufs[MAX_INTER_REF_FRAMES], int ref_frame_flags,\n    vpx_rc_encodeframe_decision_t *encode_frame_decision) {\n  if (ext_ratectrl \u003d\u003d NULL) {\n    return VPX_CODEC_INVALID_PARAM;\n  }\n  if (ext_ratectrl-\u003eready \u0026\u0026 (ext_ratectrl-\u003efuncs.rc_type \u0026 VPX_RC_QP) !\u003d 0) {\n    ...\n    rc_status \u003d ext_ratectrl-\u003efuncs.get_encodeframe_decision(\n        ext_ratectrl-\u003emodel, \u0026encode_frame_info, encode_frame_decision);\n    if (rc_status \u003d\u003d VPX_RC_ERROR) {\n      return VPX_CODEC_ERROR;\n    }\n  } \n  return VPX_CODEC_OK;\n}\n```\n\nOtherwise, we need to return an error at the end of the function, because we cannot return `VPX_CODEC_OK` without setting the output parameter `*encode_frame_decision`. Note that we need to return `VPX_CODEC_OK` at the end of the second if statement:\n\n```\nvpx_codec_err_t vp9_extrc_get_encodeframe_decision(\n    EXT_RATECTRL *ext_ratectrl, int show_index, int coding_index, int gop_index,\n    FRAME_UPDATE_TYPE update_type, int gop_size, int use_alt_ref,\n    RefCntBuffer *ref_frame_bufs[MAX_INTER_REF_FRAMES], int ref_frame_flags,\n    vpx_rc_encodeframe_decision_t *encode_frame_decision) {\n  if (ext_ratectrl \u003d\u003d NULL) {\n    return VPX_CODEC_INVALID_PARAM;\n  }\n  if (ext_ratectrl-\u003eready \u0026\u0026 (ext_ratectrl-\u003efuncs.rc_type \u0026 VPX_RC_QP) !\u003d 0) {\n    ...\n    rc_status \u003d ext_ratectrl-\u003efuncs.get_encodeframe_decision(\n        ext_ratectrl-\u003emodel, \u0026encode_frame_info, encode_frame_decision);\n    if (rc_status \u003d\u003d VPX_RC_ERROR) {\n      return VPX_CODEC_ERROR;\n    }\n    return VPX_CODEC_OK;  \u003c\u003d ADD THIS\n  } \n  return VPX_CODEC_INVALID_PARAMETER;  \u003c\u003d CHANGE TO THIS\n}\n```",
+      "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "739e0d3c_f5306049",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1711,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T20:48:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d86fe414_fac41b0d",
       "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -137,6 +172,24 @@
       "side": 1,
       "message": "In the comment for the `VP9E_ENABLE_EXTERNAL_RC_TPL` codec control:\n\n```\n  /*!\\brief Codec control to use external RC to control TPL.\n   *\n   * This will use external RC to control the QP and GOP structure for TPL.\n   *\n   * Supported in codecs: VP9\n   */\n  VP9E_ENABLE_EXTERNAL_RC_TPL,\n```\n\nI think we should mention that VPX_RC_QP must be set in `rc_type` and the `get_encodeframe_decision` callback must be set.",
       "parentUuid": "2e535ed9_70c43e89",
+      "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "711359de_0133840f",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1723,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T20:48:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4805d2ad_8b218fc0",
       "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
