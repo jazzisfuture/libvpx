@@ -33,6 +33,23 @@
       "message": "The new `send_tpl_gop_stats` callback should be mentioned here. It doesn\u0027t seem to be covered by this sentence.\n\nOptional: It might be useful to mention the new struct members added in vpx/vpx_ext_ratectrl.h. I don\u0027t know what level of detail on new features this changelog goes into, but it seems that new functions and new struct members should be mentioned.\n\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\n\nThe following is a suggestion for the source code. You just need to make the suggested change on the main branch.\n\nIn vpx/vpx_ext_ratectrl.h, we should document which callback functions may be null. (Code Search shows that `send_firstpass_stats`, `send_tpl_gop_stats`, `get_encodeframe_decision`, `update_encodeframe_result`, `get_gop_decision`, and `get_frame_rdmult` may be null.). Alternatively, document which callback functions must be set.",
       "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "76896e0b_960190b8",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T20:20:57Z",
+      "side": 1,
+      "message": "We should mention the new public header vpx_tpl.h. This is useful information to the libvpx-dev package owners.",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
