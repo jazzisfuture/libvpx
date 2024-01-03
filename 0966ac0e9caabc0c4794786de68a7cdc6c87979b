@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0ba04b4_a76dd447",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 5,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T15:49:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57b10c0b_7612527c",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4a6e7cd6_c152cd21",
@@ -31,6 +49,24 @@
       "writtenOn": "2024-01-02T18:51:20Z",
       "side": 1,
       "message": "It would be good to highlight the ABI incompatible changes. They don\u0027t seem to be described in the Enhancement section.\n\nMore important, can libvpx users deal with the ABI incompatibilities by simply rebuilding their code? Or do they possibly need to modify their source code?",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "db10f8a5_1dd1dee0",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T15:49:02Z",
+      "side": 1,
+      "message": "There\u0027s function signature change (added `const`) and several ABI version bumps. I think that means this release is ABI incompatible. I checked `vp8/exports_*`, `vp9/exports_*`, `vpx/exports_*` and `vpx/*.h`. There are changes to the interface related to the external rate control library, as well as the realtime RC library.\n\nWe\u0027ve never indicated if libvpx users need to change their code though.",
+      "parentUuid": "4a6e7cd6_c152cd21",
       "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -75,6 +111,48 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "80972581_ed408b82",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T15:49:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "57c2d3ef_eb944404",
+      "range": {
+        "startLine": 16,
+        "startChar": 65,
+        "endLine": 16,
+        "endChar": 70
+      },
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bec91c3_a24379e0",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T15:49:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "a9cf5a9b_b0ebb805",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b453b9a_b39a8251",
@@ -92,6 +170,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0cc673d_f162aabd",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T15:49:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b453b9a_b39a8251",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f010708c_12ec4a18",
@@ -105,6 +201,24 @@
       "writtenOn": "2024-01-02T18:51:20Z",
       "side": 1,
       "message": "Nit: There is an extra period. Also the first \"encoding\" could be omitted.",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d2e8419_da8b38e7",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T15:49:02Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f010708c_12ec4a18",
       "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
