@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3265a577_e1026baa",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1723,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T19:28:40Z",
+      "side": 1,
+      "message": "This error message seems to be for the condition\n\n```\n          cpi-\u003eext_ratectrl.ready \u0026\u0026\n          (cpi-\u003eext_ratectrl.funcs.rc_type \u0026 VPX_RC_QP) !\u003d 0 \u0026\u0026\n          cpi-\u003eext_ratectrl.funcs.get_encodeframe_decision \u003d\u003d NULL\n```\n\nBut we also get here if `cpi-\u003eext_ratectrl.ready` is false or `(cpi-\u003eext_ratectrl.funcs.rc_type \u0026 VPX_RC_QP) \u003d\u003d 0`. Should we call `vpx_internal_error()` under those two conditions?",
+      "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
