@@ -34,6 +34,24 @@
       "parentUuid": "3265a577_e1026baa",
       "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "48869fdc_aa85ffe7",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1723,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T19:53:46Z",
+      "side": 1,
+      "message": "I am not familiar with the external rate control library, so I don\u0027t know what is the right way to report an error here.\n\nBut I am afraid that my question was not clear. What I meant to ask is: if `cpi-\u003eext_ratectrl.ready` is false or if `(cpi-\u003eext_ratectrl.funcs.rc_type \u0026 VPX_RC_QP) \u003d\u003d 0`, should we report an error or should we set `tpl_frame-\u003ebase_qindex` using the code at lines 1726-1728?",
+      "parentUuid": "84a3043e_6c4a369a",
+      "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
