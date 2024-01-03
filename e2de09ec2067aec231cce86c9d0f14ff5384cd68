@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fdfd2fd7_f33b8595",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T20:56:50Z",
+      "side": 1,
+      "message": "I suggest two small changes. Thanks.",
+      "revId": "e2de09ec2067aec231cce86c9d0f14ff5384cd68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d29ecde3_84232626",
+        "filename": "vp9/encoder/vp9_ext_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T20:56:50Z",
+      "side": 1,
+      "message": "This can also be converted to an assertion, because both callers of this function guarantee `ext_ratectrl` is not null.",
+      "revId": "e2de09ec2067aec231cce86c9d0f14ff5384cd68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "df289cbe_b3fdd14e",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 775,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T20:56:50Z",
+      "side": 1,
+      "message": "Also need to set the get_encodeframe_decision callback in vpx_rc_funcs_t.",
+      "revId": "e2de09ec2067aec231cce86c9d0f14ff5384cd68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
