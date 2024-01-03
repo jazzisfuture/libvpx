@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ef17397_214bb784",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-03T18:02:44Z",
+      "side": 1,
+      "message": "I will take a look at the public header (vpx/*.h) differences from the v1.13.1 release and report back.",
+      "parentUuid": "db10f8a5_1dd1dee0",
+      "revId": "0966ac0e9caabc0c4794786de68a7cdc6c87979b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a9cf5a9b_b0ebb805",
