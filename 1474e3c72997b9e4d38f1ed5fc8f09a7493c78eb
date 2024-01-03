@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8bb4383e_f909cd8c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-03T20:34:27Z",
+      "side": 1,
+      "message": "I\u0027ll address your comments in new CLs as they\u0027re different aspects of this interface.",
+      "revId": "1474e3c72997b9e4d38f1ed5fc8f09a7493c78eb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "d86fe414_fac41b0d",
