@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bde7a229_3a894a66",
+        "filename": "vp9/encoder/vp9_ext_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 165,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-04T18:57:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d29ecde3_84232626",
+      "revId": "e2de09ec2067aec231cce86c9d0f14ff5384cd68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "df289cbe_b3fdd14e",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-01-03T20:56:50Z",
       "side": 1,
       "message": "Also need to set the get_encodeframe_decision callback in vpx_rc_funcs_t.",
+      "revId": "e2de09ec2067aec231cce86c9d0f14ff5384cd68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3efe020a_d842bea3",
+        "filename": "vpx/vp8cx.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 775,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-04T18:57:23Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df289cbe_b3fdd14e",
       "revId": "e2de09ec2067aec231cce86c9d0f14ff5384cd68",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
