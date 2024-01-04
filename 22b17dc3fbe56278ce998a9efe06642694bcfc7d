@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "651544ef_025b6e07",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-04T20:24:18Z",
+      "side": 1,
+      "message": "New CL:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5169189",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5c13f58a_f29e3aef",
@@ -14,6 +31,24 @@
       "writtenOn": "2024-01-03T18:57:04Z",
       "side": 1,
       "message": "Here are the changes to the public headers, compared with v1.13.1. (I omitted the comment changes.)\n\n1) In vpx/vpx_codec.h, `const` is added to the `vpx_codec_ctx_t *ctx` parameters of `vpx_codec_error()` and `vpx_codec_error_detail()`.\n\nThis change is ABI and API compatible.\n\n2) In vpx/vpx_encoder.h, the `VPX_ENCODER_ABI_VERSION` macro is bumped (from 15 to 16) and also gets a new component `VPX_TPL_ABI_VERSION`.\n\nThis change is ABI incompatible. This change is API compatible.\n\nI have two comments on this header.\n\n* I think it is incorrect to bump the 15 to 16 in `VPX_ENCODER_ABI_VERSION`, because there is no change to the API in vpx/vpx_encoder.h itself.\n* It doesn\u0027t seem necessary for vpx/vpx_encoder.h to include vpx_tpl.h, because vpx/vpx_encoder.h doesn\u0027t use anything defined in vpx_tpl.h except the `VPX_TPL_ABI_VERSION` macro. It seems that we could remove the `VPX_TPL_ABI_VERSION` component from `VPX_ENCODER_ABI_VERSION`. See my last comment on vpx/vpx_ext_ratectrl.h below.\n\n3) In vpx/vpx_ext_ratectrl.h, the `VPX_EXT_RATECTRL_ABI_VERSION` macro is bumped (from 6 to 7) and several structs get new members.\n\nThese changes are ABI incompatible. These changes seem to be API compatible, i.e., no source code changes to libvpx clients seem necessary because I believe they don\u0027t need to use the new struct members.\n\nSince vpx/vpx_ext_ratectrl.h uses a type (`VpxTplGopStats`) defined in vpx_tpl.h, I think we should add a `VPX_TPL_ABI_VERSION` component to `VPX_EXT_RATECTRL_ABI_VERSION`. See my last comment on vpx/vpx_encoder.h above.\n\n\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\u003d\n\nIn summary, libvpx users that don\u0027t use vpx/vpx_ext_ratectrl.h just need to recompile their code. They don\u0027t need to change their source code.\n\nIf libvpx users that use vpx/vpx_ext_ratectrl.h don\u0027t need to use the new struct members added in vpx/vpx_ext_ratectrl.h, they also just need to recompile their code and don\u0027t need to change their source code.",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7292d2ac_627db26e",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-04T20:24:18Z",
+      "side": 1,
+      "message": "I found the original CL making changes to ABI version:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/4539169\n\nThe TPL structures `VpxTplGopStats` etc were moved from vpx_encoder.h to vpx_tpl.h and I believe this was the reason why VPX_ENCODER_ABI_VERSION needs to be modified.\n\nHowever maybe it only needs to be bumped by 1, instead of adding VPX_TPL_ABI_VERSION to it.\n\nWhat do you think?",
+      "parentUuid": "5c13f58a_f29e3aef",
       "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -35,6 +70,42 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "26407b3d_0cf4ff48",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-04T20:24:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eafe8d52_ef74f27a",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "27dac463_bbc2e223",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-04T20:24:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "eafe8d52_ef74f27a",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "76896e0b_960190b8",
@@ -48,6 +119,42 @@
       "writtenOn": "2024-01-03T20:20:57Z",
       "side": 1,
       "message": "We should mention the new public header vpx_tpl.h. This is useful information to the libvpx-dev package owners.",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "440dd70a_ac2f9c94",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-04T20:24:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "76896e0b_960190b8",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f6520347_869dae69",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-04T20:24:18Z",
+      "side": 1,
+      "message": "this header is not for the realtime rc lib. But I added a new item here for it.",
+      "parentUuid": "76896e0b_960190b8",
       "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
