@@ -55,6 +55,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "66b4b5f8_93246f6f",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-05T17:04:11Z",
+      "side": 1,
+      "message": "I studied the changes to vpx_encoder,h and vpx_tpl.h in https://chromium-review.googlesource.com/c/webm/libvpx/+/4539169. I verified that the three VpxTpl* structs were moved from vpx_encoder.h to vpx_tpl.h unchanged.\n\nSince vpx_encoder.h itself doesn\u0027t use any of the VpxTpl* structs, it wasn\u0027t clear why vpx_encoder.h needs to include vpx_tpl.h. The original CL answered this question for me: to avoid breaking code that includes vpx_encoder.h for the VpxTpl* structs.\n\nI also think your changes to vpx_encoder.h and vpx_tpl.h in the original CL regarding VPX_ENCODER_ABI_VERSION and VPX_TPL_ABI_VERSION are correct. It is correct to add the VPX_TPL_ABI_VERSION component to VPX_ENCODER_ABI_VERSION. However, since VPX_TPL_ABI_VERSION was equal to 0 in the original CL, VPX_ENCODER_ABI_VERSION was not bumped. That is also correct, because the original CL did not change the VpxTpl* structs.\n\nHowever, I think the VPX_ENCODER_ABI_VERSION bump in the following CL is incorrect:\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/4491027\n\nAdding a new encoder-side codec control (VP9E_GET_TPL_STATS) does not require bumping VPX_ENCODER_ABI_VERSION. I misunderstood this before, and I may have asked you to do this before. (I thought our users need to test the VPX_ENCODER_ABI_VERSION macro to detect the presence of the new codec control, but the correct way to do that is the test the VPX_CTRL_* macros, such as VPX_CTRL_VP9E_GET_TPL_STATS.)\n\nIt might be good to add a comment to vpx_encoder.h to explain why it includes vpx_tpl.h (because the VpxTpl* structs used to be defined in vpx_encoder.h).",
+      "parentUuid": "7292d2ac_627db26e",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "eafe8d52_ef74f27a",
         "filename": "CHANGELOG",
         "patchSetId": 3
