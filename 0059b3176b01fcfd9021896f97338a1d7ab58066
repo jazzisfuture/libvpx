@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86c96f2f_efff0b23",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-05T22:06:50Z",
+      "side": 1,
+      "message": "The commit message explains why I increased 16 to 18.",
+      "revId": "0059b3176b01fcfd9021896f97338a1d7ab58066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aadf24ea_daf34f23",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-05T22:06:50Z",
+      "side": 1,
+      "message": "The commit message explains why I decreased 7 to 5.",
+      "revId": "0059b3176b01fcfd9021896f97338a1d7ab58066",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
