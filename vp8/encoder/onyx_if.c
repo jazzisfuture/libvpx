@@ -5121,6 +5121,13 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
   cpi->time_compress_data += vpx_usec_timer_elapsed(&cmptimer);
 
   if (cpi->b_calculate_psnr && cpi->pass != 1 && cm->show_frame) {
+#if CONFIG_MULTITHREAD
+    /* wait for the lpf thread done */
+    if (vpx_atomic_load_acquire(&cpi->b_multi_threaded) && cpi->b_lpf_running) {
+      sem_wait(&cpi->h_event_end_lpf);
+      cpi->b_lpf_running = 0;
+    }
+#endif
     generate_psnr_packet(cpi);
   }
 
