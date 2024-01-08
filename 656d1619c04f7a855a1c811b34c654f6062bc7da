@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b3d291a_904fe14e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-08T19:48:43Z",
+      "side": 1,
+      "message": "This is incorrect. Here \"changed\" means an incompatible change. There are incompatible changes to the `VpxTpl*` structs.\n\nThis line should read:\n\n```\n   c\u003d9, a\u003d0, r\u003d0\n```",
+      "revId": "656d1619c04f7a855a1c811b34c654f6062bc7da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6305970b_f22e19f8",
+        "filename": "libs.mk",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-08T19:48:43Z",
+      "side": 1,
+      "message": "Since this release is ABI incompatible with the previous release, `SO_VERSION_MAJOR` should be greater than 8. So these are incorrect.",
+      "revId": "656d1619c04f7a855a1c811b34c654f6062bc7da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
