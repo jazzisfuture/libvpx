@@ -20,6 +20,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "b3ac5897_e159e165",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-08T19:49:40Z",
+      "side": 1,
+      "message": "These two lines should read:\n\n```\nMAJOR\u003dc-a\u003d9\nMINOR\u003da\u003d0\n```",
+      "revId": "656d1619c04f7a855a1c811b34c654f6062bc7da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "6305970b_f22e19f8",
         "filename": "libs.mk",
         "patchSetId": 1
