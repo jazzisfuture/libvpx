@@ -68,6 +68,24 @@
       "parentUuid": "42684584_8eb25806",
       "revId": "152c6334913aeae2437483cb71a070f17d20eb0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8f2755ca_9452237b",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-09T21:08:03Z",
+      "side": 1,
+      "message": "\u003e See the updated patch set. Before we close this issue, I have used the profile files for two purposes. It helped with some of the vector loop optimizations on ARM64, and used I also used it with optview2. The nice thing with using optview2, that it can visualize the failed compiler optimizations (clang optimization records log) with the \"hotness\" of the code lines (obtained from the profile data).\n\u003e Should I document this workflow somewhere?\n\nThat would be great. Maybe add a general `PROFILE GUIDED OPTIMIZATION (PGO)` (all caps for consistency) section after `CODE STYLE` in the README file.",
+      "parentUuid": "73400aad_89c5cc68",
+      "revId": "152c6334913aeae2437483cb71a070f17d20eb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
