@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c568147f_e89e0bc2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-09T15:36:19Z",
+      "side": 1,
+      "message": "LGTM.",
+      "revId": "2b1f6859f63ed874b27dc386e7d531536520e1ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a877f89_bc6243cb",
+        "filename": "libs.mk",
+        "patchSetId": 2
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-09T15:36:19Z",
+      "side": 1,
+      "message": "As an alternative, we can update these three versions by following steps 6-8 in https://semver.org/.\n\nThe libtool scheme is difficult to understand. I don\u0027t understand it, even though I can follow the procedure correctly.\n\nAnother drawback of libtool\u0027s scheme is that it results in a bigger-than-necessary increment of `SO_VERSION_MAJOR` when we set a nonzero `age` to 0. (This doesn\u0027t happen in this update because `age` is 0 before the update.)",
+      "revId": "2b1f6859f63ed874b27dc386e7d531536520e1ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
