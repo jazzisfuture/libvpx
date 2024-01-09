@@ -33,6 +33,24 @@
       "message": "James, I see a cherry-pick of this has been merged on the Venetian branch, but we haven\u0027t submitted to main. Did we forget to hit the button or is the intention to merge the Venetian branch into main once released? (I don\u0027t have permissions to press \u0027Submit\u0027 myself.)\n\n(There\u0027s a similar CR+2 but no submission for https://chromium-review.googlesource.com/c/webm/libvpx/+/5123341)",
       "revId": "090179a3e0f9cb536cb2b7969d3be8c683623230",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6d2db655_cc10e902",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-09T20:39:06Z",
+      "side": 1,
+      "message": "\u003e James, I see a cherry-pick of this has been merged on the Venetian branch, but we haven\u0027t submitted to main. Did we forget to hit the button or is the intention to merge the Venetian branch into main once released? (I don\u0027t have permissions to press \u0027Submit\u0027 myself.)\n\u003e \n\u003e (There\u0027s a similar CR+2 but no submission for https://chromium-review.googlesource.com/c/webm/libvpx/+/5123341)\n\nIt looks like I forgot to hit submit. Sorry about that.",
+      "parentUuid": "a9153830_36c64c68",
+      "revId": "090179a3e0f9cb536cb2b7969d3be8c683623230",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
