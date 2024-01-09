@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6905955f_03391749",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-09T21:14:36Z",
+      "side": 1,
+      "message": "Changes have been made in https://chromium-review.googlesource.com/c/webm/libvpx/+/5174173",
+      "parentUuid": "66b4b5f8_93246f6f",
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "eafe8d52_ef74f27a",
@@ -190,6 +208,30 @@
       "writtenOn": "2024-01-09T20:43:27Z",
       "side": 1,
       "message": "integer. Maybe there was a typo in the commit message or bug.",
+      "range": {
+        "startLine": 42,
+        "startChar": 11,
+        "endLine": 42,
+        "endChar": 19
+      },
+      "revId": "22b17dc3fbe56278ce998a9efe06642694bcfc7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "10ecb211_b9c3ddc0",
+        "filename": "CHANGELOG",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-09T21:14:36Z",
+      "side": 1,
+      "message": "Fixed in https://chromium-review.googlesource.com/c/webm/libvpx/+/5182574",
+      "parentUuid": "6f0dac67_2bd50720",
       "range": {
         "startLine": 42,
         "startChar": 11,
