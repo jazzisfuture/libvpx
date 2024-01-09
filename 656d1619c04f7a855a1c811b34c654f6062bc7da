@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "70da6a8c_28999b4a",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-09T14:19:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5b3d291a_904fe14e",
+      "revId": "656d1619c04f7a855a1c811b34c654f6062bc7da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b3ac5897_e159e165",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9ff510c3_5bd56d37",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-09T14:19:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b3ac5897_e159e165",
+      "revId": "656d1619c04f7a855a1c811b34c654f6062bc7da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6305970b_f22e19f8",
@@ -48,6 +84,24 @@
       "writtenOn": "2024-01-08T19:48:43Z",
       "side": 1,
       "message": "Since this release is ABI incompatible with the previous release, `SO_VERSION_MAJOR` should be greater than 8. So these are incorrect.",
+      "revId": "656d1619c04f7a855a1c811b34c654f6062bc7da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c6e888a7_d58a4460",
+        "filename": "libs.mk",
+        "patchSetId": 1
+      },
+      "lineNbr": 318,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-09T14:19:59Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6305970b_f22e19f8",
       "revId": "656d1619c04f7a855a1c811b34c654f6062bc7da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
