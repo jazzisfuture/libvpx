@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e03571e1_84a53a2a",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 5124,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-10T19:12:56Z",
+      "side": 1,
+      "message": "rather than copying this block can it just be moved before this block (since CONFIG_INTERNAL_STATS also calculates the psnr)?",
+      "revId": "42ceac1786f2c50839b42bdffe192b5ef3cb3e0b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
