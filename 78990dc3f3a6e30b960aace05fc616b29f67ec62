@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5af8f578_33235b98",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-10T23:10:02Z",
+      "side": 1,
+      "message": "indent this block (through line 446) once more",
+      "revId": "78990dc3f3a6e30b960aace05fc616b29f67ec62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
