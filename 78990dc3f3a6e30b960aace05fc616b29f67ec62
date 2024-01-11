@@ -16,6 +16,24 @@
       "message": "indent this block (through line 446) once more",
       "revId": "78990dc3f3a6e30b960aace05fc616b29f67ec62",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5febf9d_3b4fc806",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 1
+      },
+      "lineNbr": 434,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-11T18:23:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5af8f578_33235b98",
+      "revId": "78990dc3f3a6e30b960aace05fc616b29f67ec62",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
