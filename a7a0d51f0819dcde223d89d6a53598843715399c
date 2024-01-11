@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09bf954f_e2311ae8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-11T18:25:34Z",
+      "side": 1,
+      "message": "Thanks for the patch. I don\u0027t think this file is used very often.",
+      "revId": "a7a0d51f0819dcde223d89d6a53598843715399c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
