@@ -67,6 +67,74 @@
       "message": "Nit: I suggest adding curly braces around the if and else blocks, because the statement in the if branch is two lines.",
       "revId": "946724491236ad0b9b14089a8721c83a8b830e9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3d03b712_a0c6a697",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 1196,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-11T20:47:46Z",
+      "side": 1,
+      "message": "[See also the alternative at line 1203.]\n\nNit: Use `\u003e` instead of `\u003e\u003d` in the check",
+      "revId": "946724491236ad0b9b14089a8721c83a8b830e9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8483dd33_2a64ac9f",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 1199,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-11T20:47:46Z",
+      "side": 1,
+      "message": "[See also the alternative at line 1203.]\n\nHere we need to check for overflow again:\n\n```\n    // Is there a better name than \"temp\"?\n    int temp \u003d target_bits_per_frame / cpi-\u003ecommon.MBs;\n    if (temp \u003e (INT_MAX \u003e\u003e BPER_MB_NORMBITS)) {\n      target_bits_per_mb \u003d INT_MAX;\n    } else {\n      target_bits_per_mb \u003d temp \u003c\u003c BPER_MB_NORMBITS;\n    }\n```",
+      "revId": "946724491236ad0b9b14089a8721c83a8b830e9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2e247270_9d0756f1",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 1203,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-11T20:47:46Z",
+      "side": 1,
+      "message": "An alternative is to do the arithmetic in int64_t and then saturate it at the end:\n\n```\n    int64_t target_bits_per_frame_64 \u003d target_bits_per_frame;\n    // Please verify this won\u0027t overflow int64_t\n    int64_t target_bits_per_mb_64 \u003d (target_bits_per_frame_64 \u003c\u003c BPER_MB_NORMBITS) / cpi-\u003ecommon.MBs;\n    if (target_bits_per_mb_64 \u003e INT_MAX)\n      target_bits_per_mb \u003d INT_MAX;\n    else\n      target_bits_per_mb \u003d (int)target_bits_per_mb_64;\n```",
+      "revId": "946724491236ad0b9b14089a8721c83a8b830e9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30ddd4f7_553f56da",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 1542,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-11T20:47:46Z",
+      "side": 1,
+      "message": "Make the same change here.",
+      "revId": "946724491236ad0b9b14089a8721c83a8b830e9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
