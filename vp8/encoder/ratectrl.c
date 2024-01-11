@@ -791,8 +791,11 @@ static void calc_pframe_target_size(VP8_COMP *cpi) {
               (int)((cpi->buffer_level - cpi->oxcf.optimal_buffer_level) /
                     one_percent_bits);
         } else if (cpi->bits_off_target > cpi->oxcf.optimal_buffer_level) {
-          percent_high =
-              (int)((100 * cpi->bits_off_target) / (cpi->total_byte_count * 8));
+          if (cpi->total_byte_count > 0)
+            percent_high = (int)((100 * cpi->bits_off_target) /
+                                 (cpi->total_byte_count * 8));
+          else
+            percent_high = cpi->oxcf.over_shoot_pct;
         }
 
         if (percent_high > cpi->oxcf.over_shoot_pct) {
