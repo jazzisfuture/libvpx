@@ -16,6 +16,23 @@
       "message": "This apparently causes an overflow when it (at 70%, see line 279 below) is multiplied by 1000 and cast to `int`:\n\n```\nvoid vp8_init_temporal_layer_context(VP8_COMP *cpi, const VP8_CONFIG *oxcf,\n                                     const int layer,\n                                     double prev_layer_framerate) {\n  ...\n  lc-\u003etarget_bandwidth \u003d cpi-\u003eoxcf.target_bitrate[layer] * 1000;\n```\n\n\u003e 21:07:02 ../libvpx/vp8/encoder/onyx_if.c:279:26: runtime error: implicit conversion from type \u0027unsigned int\u0027 of value 3006476000 (32-bit, unsigned) to type \u0027int\u0027 changed the value to -1288491296 (32-bit, signed)",
       "revId": "7417728cce775b64e148c4d2a1d330ea2784e13a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dbb43aa9_a3f5be03",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 264,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-11T06:41:23Z",
+      "side": 1,
+      "message": "By a binary search, I found that 35792 is the smallest value of `cfg.rc_target_bitrate` to trigger the division-by-zero bug. If I set it to 35791 or lower, there is no division by zero.\n\nThis information may be useful to understanding the events that lead to the division by zero.",
+      "revId": "7417728cce775b64e148c4d2a1d330ea2784e13a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
