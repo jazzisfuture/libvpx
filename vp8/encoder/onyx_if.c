@@ -276,7 +276,10 @@ void vp8_init_temporal_layer_context(VP8_COMP *cpi, const VP8_CONFIG *oxcf,
   LAYER_CONTEXT *lc = &cpi->layer_context[layer];
 
   lc->framerate = cpi->output_framerate / cpi->oxcf.rate_decimator[layer];
-  lc->target_bandwidth = cpi->oxcf.target_bitrate[layer] * 1000;
+  if (cpi->oxcf.target_bitrate[layer] > INT_MAX / 1000)
+    lc->target_bandwidth = INT_MAX;
+  else
+    lc->target_bandwidth = cpi->oxcf.target_bitrate[layer] * 1000;
 
   lc->starting_buffer_level_in_ms = oxcf->starting_buffer_level;
   lc->optimal_buffer_level_in_ms = oxcf->optimal_buffer_level;
