@@ -38,7 +38,7 @@ def get_file_sha(filename):
         buf = file.read(HASH_CHUNK)
       return sha_hash.hexdigest()
   except IOError:
-    print "Error reading " + filename
+    print("Error reading " + filename)
 
 # Downloads a file from a url, and then checks the sha against the passed
 # in sha
@@ -47,6 +47,7 @@ def download_and_check_sha(url, filename, sha):
   fp = open(path, "wb")
   curl = pycurl.Curl()
   curl.setopt(pycurl.URL, url + "/" + filename)
+  print(url + "/" + filename)
   curl.setopt(pycurl.WRITEDATA, fp)
   curl.perform()
   curl.close()
@@ -67,7 +68,7 @@ try:
       getopt.getopt(sys.argv[1:], \
                     "u:i:o:", ["url=", "input_csv=", "output_dir="])
 except:
-  print 'get_files.py -u <url> -i <input_csv> -o <output_dir>'
+  print('get_files.py -u <url> -i <input_csv> -o <output_dir>')
   sys.exit(2)
 
 for opt, arg in opts:
@@ -79,7 +80,7 @@ for opt, arg in opts:
     local_resource_path = os.path.join(arg)
 
 if len(sys.argv) != 7:
-  print "Expects two paths and a url!"
+  print("Expects two paths and a url!")
   exit(1)
 
 if not os.path.isdir(local_resource_path):
@@ -89,7 +90,7 @@ file_list_csv = open(file_list_path, "rb")
 
 # Our 'csv' file uses multiple spaces as a delimiter, python's
 # csv class only uses single character delimiters, so we convert them below
-file_list_reader = csv.reader((re.sub(' +', ' ', line) \
+file_list_reader = csv.reader((re.sub(' +', ' ', line.decode('utf-8')) \
     for line in file_list_csv), delimiter = ' ')
 
 file_shas = []
@@ -104,15 +105,16 @@ for row in file_list_reader:
 file_list_csv.close()
 
 # Download files, only if they don't already exist and have correct shas
-for filename, sha in itertools.izip(file_names, file_shas):
+for filename, sha in zip(file_names, file_shas):
+  filename = filename.lstrip('*')
   path = os.path.join(local_resource_path, filename)
   if os.path.isfile(path) \
       and get_file_sha(path) == sha:
-    print path + ' exists, skipping'
+    print(path + ' exists, skipping')
     continue
   for retry in range(0, ftp_retries):
-    print "Downloading " + path
+    print("Downloading " + path)
     if not download_and_check_sha(url, filename, sha):
-      print "Sha does not match, retrying..."
+      print("Sha does not match, retrying...")
     else:
       break
