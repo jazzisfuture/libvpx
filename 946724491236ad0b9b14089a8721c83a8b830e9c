@@ -261,6 +261,24 @@
       "message": "Make the same change here.",
       "revId": "946724491236ad0b9b14089a8721c83a8b830e9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "acb2c867_6bb47c7e",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 1542,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-01-11T22:04:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "30ddd4f7_553f56da",
+      "revId": "946724491236ad0b9b14089a8721c83a8b830e9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
