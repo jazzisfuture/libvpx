@@ -11,6 +11,7 @@
 #include <climits>
 #include <cstring>
 #include <initializer_list>
+#include <memory>
 #include <new>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
@@ -198,15 +199,18 @@ TEST(EncodeAPI, RandomPixelsVp8) {
   ASSERT_EQ(vpx_codec_enc_init(&enc, iface, &cfg, 0), VPX_CODEC_OK);
 
   // Generate random frame data and encode
-  uint8_t img[1280 * 720 * 3 / 2];
+  constexpr size_t img_size = 1280 * 720 * 3 / 2;
+  std::unique_ptr<uint8_t> img(new (std::nothrow) uint8_t[img_size]);
+  uint8_t *const img_ptr = img.get();
+  ASSERT_NE(img, nullptr);
   libvpx_test::ACMRandom rng;
-  for (size_t i = 0; i < sizeof(img); ++i) {
-    img[i] = rng.Rand8();
+  for (size_t i = 0; i < img_size; ++i) {
+    img_ptr[i] = rng.Rand8();
   }
   vpx_image_t img_wrapper;
-  ASSERT_EQ(
-      vpx_img_wrap(&img_wrapper, VPX_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1, img),
-      &img_wrapper);
+  ASSERT_EQ(vpx_img_wrap(&img_wrapper, VPX_IMG_FMT_I420, cfg.g_w, cfg.g_h, 1,
+                         img_ptr),
+            &img_wrapper);
   ASSERT_EQ(vpx_codec_encode(&enc, &img_wrapper, 0, 1, 0, VPX_DL_BEST_QUALITY),
             VPX_CODEC_OK);
 
