@@ -3378,7 +3378,7 @@ int vp9_encodedframe_overshoot(VP9_COMP *cpi, int frame_size, int *q) {
       if (svc->disable_inter_layer_pred != INTER_LAYER_PRED_ON)
         num_spatial_layers = svc->number_spatial_layers;
       for (sl = 0; sl < num_spatial_layers; ++sl) {
-        for (tl = 0; tl < svc->temporal_layer_id; ++tl) {
+        for (tl = 0; tl < svc->number_temporal_layers; ++tl) {
           const int layer =
               LAYER_IDS_TO_IDX(sl, tl, svc->number_temporal_layers);
           LAYER_CONTEXT *lc = &svc->layer_context[layer];
