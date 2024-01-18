@@ -16,6 +16,24 @@
       "message": "The removal of these tests seems incorrect. Please doublecheck this.",
       "revId": "c7c381898e52172a9ee1ee044140d7e28e44f638",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0247241_26ac39b2",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1079,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-01-18T17:35:14Z",
+      "side": 0,
+      "message": "Done",
+      "parentUuid": "ac82868a_81e3555a",
+      "revId": "c7c381898e52172a9ee1ee044140d7e28e44f638",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
