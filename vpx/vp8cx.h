@@ -768,6 +768,7 @@ enum vp8e_enc_control_id {
    *
    */
   VP9E_SET_QUANTIZER_ONE_PASS,
+<<<<<<< HEAD   (71a5cb Add SVE implementation of HBD MSE functions)
 
   /*!\brief Codec control to use external RC to control TPL.
    *
@@ -778,6 +779,8 @@ enum vp8e_enc_control_id {
    * Supported in codecs: VP9
    */
   VP9E_ENABLE_EXTERNAL_RC_TPL,
+=======
+>>>>>>> BRANCH (602e2e Fix a typo in changelog for v1.14.0)
 };
 
 /*!\brief vpx 1-D scaling mode
@@ -1108,8 +1111,11 @@ VPX_CTRL_USE_TYPE(VP8E_SET_RTC_EXTERNAL_RATECTRL, int)
 #define VPX_CTRL_VP8E_SET_RTC_EXTERNAL_RATECTRL
 VPX_CTRL_USE_TYPE(VP9E_SET_QUANTIZER_ONE_PASS, int)
 #define VPX_CTRL_VP9E_SET_QUANTIZER_ONE_PASS
+<<<<<<< HEAD   (71a5cb Add SVE implementation of HBD MSE functions)
 VPX_CTRL_USE_TYPE(VP9E_ENABLE_EXTERNAL_RC_TPL, int)
 #define VPX_CTRL_VP9E_ENABLE_EXTERNAL_RC_TPL
+=======
+>>>>>>> BRANCH (602e2e Fix a typo in changelog for v1.14.0)
 
 /*!\endcond */
 /*! @} - end defgroup vp8_encoder */

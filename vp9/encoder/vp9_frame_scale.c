@@ -14,7 +14,10 @@
 #include "./vpx_scale_rtcd.h"
 #include "vp9/common/vp9_blockd.h"
 #include "vp9/encoder/vp9_encoder.h"
+<<<<<<< HEAD   (71a5cb Add SVE implementation of HBD MSE functions)
 #include "vpx/vpx_codec.h"
+=======
+>>>>>>> BRANCH (602e2e Fix a typo in changelog for v1.14.0)
 #include "vpx_dsp/vpx_filter.h"
 #include "vpx_scale/yv12config.h"
 
