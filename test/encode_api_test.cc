@@ -1071,6 +1071,7 @@ TEST(EncodeAPI, Buganizer311294795) {
   encoder.Encode(false);
   encoder.Encode(false);
 }
+<<<<<<< HEAD   (71a5cb Add SVE implementation of HBD MSE functions)
 
 TEST(EncodeAPI, Buganizer317105128) {
   VP9Encoder encoder(-9);
@@ -1078,6 +1079,8 @@ TEST(EncodeAPI, Buganizer317105128) {
   encoder.Configure(16, 1920, 1, VPX_CBR, VPX_DL_REALTIME);
 }
 
+=======
+>>>>>>> BRANCH (602e2e Fix a typo in changelog for v1.14.0)
 #endif  // CONFIG_VP9_ENCODER
 
 }  // namespace
