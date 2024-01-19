@@ -16,6 +16,24 @@
       "message": "You want \u003cstdlib.h\u003e for this. That or there is `die()`, but this file doesn\u0027t seem to use it.",
       "revId": "564fc3cd02806319e3536ec1d44897dcdfaa5095",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7a4465f0_cbe8a556",
+        "filename": "vp9/simple_encode.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 1062,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-19T19:52:38Z",
+      "side": 1,
+      "message": "Done. That\u0027s correct. This file uses `abort()`. I also added \u003cstdio.h\u003e for `fprintf()`.",
+      "parentUuid": "96ba0f7a_5b99f601",
+      "revId": "564fc3cd02806319e3536ec1d44897dcdfaa5095",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
