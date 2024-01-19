@@ -16,6 +16,24 @@
       "message": "Nit: Since this is a C++ file, it should follow the Google C++ Style Guide. This constant should be named `kImgSize`.\n\nOptional: We can switch to `vpx_img_alloc()` and `vpx_img_free()`. But the generation of random frame data will be a little complicated.",
       "revId": "1ea7482a30c81d9ee14add554b5b9ce35fc051c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1df14868_fd9a19ee",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-19T22:59:24Z",
+      "side": 1,
+      "message": "\u003e Nit: Since this is a C++ file, it should follow the Google C++ Style Guide. This constant should be named `kImgSize`.\n\u003e \n\nGood catch.\n\n\u003e Optional: We can switch to `vpx_img_alloc()` and `vpx_img_free()`. But the generation of random frame data will be a little complicated.\n\nWe have RandomVideoSource. That should be fine here.",
+      "parentUuid": "93bd70e5_e2b2ff41",
+      "revId": "1ea7482a30c81d9ee14add554b5b9ce35fc051c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
