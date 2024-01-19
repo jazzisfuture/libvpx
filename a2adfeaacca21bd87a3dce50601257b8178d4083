@@ -50,6 +50,24 @@
       "message": "I don\u0027t need to calculate `needed` here; I can just pass `bytespp, w` to `fread()`.\n\nWould you prefer that I use `needed` here to be consistent with `read_yuv_frame()` above?",
       "revId": "a2adfeaacca21bd87a3dce50601257b8178d4083",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c97b1df_f854f5e3",
+        "filename": "tools_common.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-19T03:27:14Z",
+      "side": 1,
+      "message": "\u003e I don\u0027t need to calculate `needed` here; I can just pass `bytespp, w` to `fread()`.\n\u003e \n\u003e Would you prefer that I use `needed` here to be consistent with `read_yuv_frame()` above?\n\nI think this is understandable as is.",
+      "parentUuid": "06c10a11_a83bf1b9",
+      "revId": "a2adfeaacca21bd87a3dce50601257b8178d4083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
