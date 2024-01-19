@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "620d5546_85ca5c8c",
+        "filename": "tools_common.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-19T01:54:41Z",
+      "side": 1,
+      "message": "In the comments, I changed \"at one time\" to \"at once\" and added \"if\".",
+      "revId": "a2adfeaacca21bd87a3dce50601257b8178d4083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ca49acf4_16080d7c",
+        "filename": "tools_common.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-19T01:54:41Z",
+      "side": 1,
+      "message": "Note the use of `needed` here (declared at line 122).",
+      "revId": "a2adfeaacca21bd87a3dce50601257b8178d4083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "06c10a11_a83bf1b9",
+        "filename": "tools_common.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 270,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-19T01:54:41Z",
+      "side": 1,
+      "message": "I don\u0027t need to calculate `needed` here; I can just pass `bytespp, w` to `fread()`.\n\nWould you prefer that I use `needed` here to be consistent with `read_yuv_frame()` above?",
+      "revId": "a2adfeaacca21bd87a3dce50601257b8178d4083",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
