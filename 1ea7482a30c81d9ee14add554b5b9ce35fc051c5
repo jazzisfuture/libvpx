@@ -34,6 +34,24 @@
       "parentUuid": "93bd70e5_e2b2ff41",
       "revId": "1ea7482a30c81d9ee14add554b5b9ce35fc051c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58d657ed_395897c7",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-20T00:28:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1df14868_fd9a19ee",
+      "revId": "1ea7482a30c81d9ee14add554b5b9ce35fc051c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
