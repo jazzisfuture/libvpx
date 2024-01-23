@@ -12,6 +12,7 @@
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
 #include "test/util.h"
+#include "vpx_config.h"
 namespace {
 
 #if CONFIG_VP8_ENCODER
@@ -28,7 +29,11 @@ class AltRefTest : public ::libvpx_test::EncoderTest,
 
   void SetUp() override {
     InitializeConfig();
+#if CONFIG_REALTIME_ONLY
+    SetMode(libvpx_test::kRealTime);
+#else
     SetMode(libvpx_test::kTwoPassGood);
+#endif
   }
 
   void BeginPassHook(unsigned int /*pass*/) override { altref_count_ = 0; }

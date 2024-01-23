@@ -151,7 +151,12 @@ TEST_P(KeyframeTest, TestAutoKeyframe) {
   }
 }
 
+#if CONFIG_REALTIME_ONLY
+VP8_INSTANTIATE_TEST_SUITE(KeyframeTest,
+                           ::testing::Values(libvpx_test::kRealTime));
+#else
 VP8_INSTANTIATE_TEST_SUITE(KeyframeTest, ALL_TEST_MODES);
+#endif
 
 bool IsVP9(vpx_codec_iface_t *iface) {
   static const char kVP9Name[] = "WebM Project VP9";

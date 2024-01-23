@@ -735,7 +735,13 @@ TEST(EncodeAPI, ConfigResizeBiggerAfterEncode) {
 // Frame size needed to trigger the overflow exceeds the max buffer allowed on
 // 32-bit systems defined by VPX_MAX_ALLOCABLE_MEMORY
 #if VPX_ARCH_X86_64 || VPX_ARCH_AARCH64
+// Under Chromium's configuration the allocator is unable to provide
+// the space required for the frames below.
+#if CHROMIUM
+TEST(EncodeAPI, DISABLED_ConfigLargeTargetBitrateVp9) {
+#else
 TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
+#endif
   constexpr int kWidth = 12383;
   constexpr int kHeight = 8192;
   constexpr auto *iface = &vpx_codec_vp9_cx_algo;
