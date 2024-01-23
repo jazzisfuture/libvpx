@@ -136,7 +136,11 @@ class ExtRateCtrlTest : public ::libvpx_test::EncoderTest,
 
   void SetUp() override {
     InitializeConfig();
+#if CONFIG_REALTIME_ONLY
+    SetMode(::libvpx_test::kRealTime);
+#else
     SetMode(::libvpx_test::kTwoPassGood);
+#endif
   }
 
   void PreEncodeFrameHook(::libvpx_test::VideoSource *video,
@@ -188,7 +192,11 @@ class ExtRateCtrlTest : public ::libvpx_test::EncoderTest,
   int current_frame_qp_;
 };
 
+#if CONFIG_REALTIME_ONLY
+TEST_F(ExtRateCtrlTest, DISABLED_EncodeTest) {
+#else
 TEST_F(ExtRateCtrlTest, EncodeTest) {
+#endif
   cfg_.rc_target_bitrate = 4000;
   cfg_.g_lag_in_frames = 25;
 
