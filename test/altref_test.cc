@@ -12,6 +12,7 @@
 #include "test/encode_test_driver.h"
 #include "test/i420_video_source.h"
 #include "test/util.h"
+#include "vpx_config.h"
 namespace {
 
 #if CONFIG_VP8_ENCODER
@@ -28,7 +29,11 @@ class AltRefTest : public ::libvpx_test::EncoderTest,
 
   void SetUp() override {
     InitializeConfig();
+#if CONFIG_REALTIME_ONLY
+    SetMode(libvpx_test::kRealTime);
+#else
     SetMode(libvpx_test::kTwoPassGood);
+#endif
   }
 
   void BeginPassHook(unsigned int /*pass*/) override { altref_count_ = 0; }
@@ -51,7 +56,11 @@ class AltRefTest : public ::libvpx_test::EncoderTest,
   int altref_count_;
 };
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(AltRefTest, DISABLED_MonotonicTimestamps) {
+#else
 TEST_P(AltRefTest, MonotonicTimestamps) {
+#endif
   const vpx_rational timebase = { 33333333, 1000000000 };
   cfg_.g_timebase = timebase;
   cfg_.rc_target_bitrate = 1000;
@@ -114,7 +123,11 @@ class AltRefForcedKeyTestLarge
   unsigned int frame_num_;
 };
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(AltRefForcedKeyTestLarge, DISABLED_Frame1IsKey) {
+#else
 TEST_P(AltRefForcedKeyTestLarge, Frame1IsKey) {
+#endif
   const vpx_rational timebase = { 1, 30 };
   const int lag_values[] = { 3, 15, 25, -1 };
 
@@ -128,7 +141,11 @@ TEST_P(AltRefForcedKeyTestLarge, Frame1IsKey) {
   }
 }
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(AltRefForcedKeyTestLarge, DISABLED_ForcedFrameIsKey) {
+#else
 TEST_P(AltRefForcedKeyTestLarge, ForcedFrameIsKey) {
+#endif
   const vpx_rational timebase = { 1, 30 };
   const int lag_values[] = { 3, 15, 25, -1 };
 

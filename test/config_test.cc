@@ -48,7 +48,11 @@ class ConfigTest
   unsigned int frame_count_max_;
 };
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(ConfigTest, DISABLED_LagIsDisabled) {
+#else
 TEST_P(ConfigTest, LagIsDisabled) {
+#endif
   frame_count_max_ = 2;
   cfg_.g_lag_in_frames = 15;
 

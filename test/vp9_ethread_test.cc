@@ -167,7 +167,11 @@ static void compare_fp_stats_md5(vpx_fixed_buf_t *fp_stats) {
   fp_stats->sz = 0;
 }
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(VPxFirstPassEncoderThreadTest, DISABLED_FirstPassStatsTest) {
+#else
 TEST_P(VPxFirstPassEncoderThreadTest, FirstPassStatsTest) {
+#endif
   ::libvpx_test::Y4mVideoSource video("niklas_1280_720_30.y4m", 0, 60);
 
   first_pass_only_ = true;
@@ -407,9 +411,13 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Combine(
         ::testing::Values(
             static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)),
+#if CONFIG_REALTIME_ONLY
+        ::testing::Values(::libvpx_test::kRealTime),
+#else
         ::testing::Values(::libvpx_test::kTwoPassGood,
                           ::libvpx_test::kOnePassGood,
                           ::libvpx_test::kRealTime),
+#endif
         ::testing::Range(3, 10),   // cpu_used
         ::testing::Range(0, 3),    // tile_columns
         ::testing::Range(2, 5)));  // threads
@@ -419,9 +427,13 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Combine(
         ::testing::Values(
             static_cast<const libvpx_test::CodecFactory *>(&libvpx_test::kVP9)),
+#if CONFIG_REALTIME_ONLY
+        ::testing::Values(::libvpx_test::kRealTime),
+#else
         ::testing::Values(::libvpx_test::kTwoPassGood,
                           ::libvpx_test::kOnePassGood,
                           ::libvpx_test::kRealTime),
+#endif
         ::testing::Range(0, 3),    // cpu_used
         ::testing::Range(0, 3),    // tile_columns
         ::testing::Range(2, 5)));  // threads
