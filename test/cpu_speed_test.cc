@@ -149,8 +149,12 @@ TEST_P(CpuSpeedTest, TestLowBitrate) {
 }
 
 VP9_INSTANTIATE_TEST_SUITE(CpuSpeedTest,
+#if CONFIG_REALTIME_ONLY
+                           ::testing::Values(::libvpx_test::kRealTime),
+#else
                            ::testing::Values(::libvpx_test::kTwoPassGood,
                                              ::libvpx_test::kOnePassGood,
                                              ::libvpx_test::kRealTime),
+#endif
                            ::testing::Range(0, 10));
 }  // namespace

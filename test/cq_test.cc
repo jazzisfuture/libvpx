@@ -102,7 +102,11 @@ class CQTest : public ::libvpx_test::EncoderTest,
 
 CQTest::BitrateMap CQTest::bitrates_;
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(CQTest, DISABLED_LinearPSNRIsHigherForCQLevel) {
+#else
 TEST_P(CQTest, LinearPSNRIsHigherForCQLevel) {
+#endif
   const vpx_rational timebase = { 33333333, 1000000000 };
   cfg_.g_timebase = timebase;
   cfg_.rc_target_bitrate = kCQTargetBitrate;

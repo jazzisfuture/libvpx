@@ -93,7 +93,14 @@ TEST_P(RealtimeTest, RealtimeDefaultCpuUsed) {
 
 TEST_P(RealtimeTest, IntegerOverflow) { TestIntegerOverflow(2048, 2048); }
 
+// 16K video is not supported in Chromium's configuration
+// due to the allocator not supporting the size required
+// for a framebuffer.
+#if CHROMIUM
+TEST_P(RealtimeTest, DISABLED_IntegerOverflowLarge) {
+#else
 TEST_P(RealtimeTest, IntegerOverflowLarge) {
+#endif
   if (IsVP9()) {
 #if VPX_ARCH_AARCH64 || VPX_ARCH_X86_64
     TestIntegerOverflow(16384, 16384);
