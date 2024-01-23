@@ -66,7 +66,11 @@ class LevelTest
   int level_;
 };
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(LevelTest, DISABLED_TestTargetLevel11Large) {
+#else
 TEST_P(LevelTest, TestTargetLevel11Large) {
+#endif
   ASSERT_NE(encoding_mode_, ::libvpx_test::kRealTime);
   ::libvpx_test::I420VideoSource video("hantro_odd.yuv", 208, 144, 30, 1, 0,
                                        60);
@@ -76,7 +80,11 @@ TEST_P(LevelTest, TestTargetLevel11Large) {
   ASSERT_GE(target_level_, level_);
 }
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(LevelTest, DISABLED_TestTargetLevel20Large) {
+#else
 TEST_P(LevelTest, TestTargetLevel20Large) {
+#endif
   ASSERT_NE(encoding_mode_, ::libvpx_test::kRealTime);
   ::libvpx_test::I420VideoSource video("hantro_collage_w352h288.yuv", 352, 288,
                                        30, 1, 0, 60);
@@ -86,7 +94,11 @@ TEST_P(LevelTest, TestTargetLevel20Large) {
   ASSERT_GE(target_level_, level_);
 }
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(LevelTest, DISABLED_TestTargetLevel31Large) {
+#else
 TEST_P(LevelTest, TestTargetLevel31Large) {
+#endif
   ASSERT_NE(encoding_mode_, ::libvpx_test::kRealTime);
   ::libvpx_test::I420VideoSource video("niklas_1280_720_30.y4m", 1280, 720, 30,
                                        1, 0, 60);
@@ -140,8 +152,13 @@ TEST_P(LevelTest, TestTargetLevelApi) {
   EXPECT_EQ(VPX_CODEC_OK, vpx_codec_destroy(&enc));
 }
 
+#if CONFIG_REALTIME_ONLY
+VP9_INSTANTIATE_TEST_SUITE(LevelTest, ::testing::Values(libvpx_test::kRealTime),
+                           ::testing::Range(0, 9));
+#else
 VP9_INSTANTIATE_TEST_SUITE(LevelTest,
                            ::testing::Values(::libvpx_test::kTwoPassGood,
                                              ::libvpx_test::kOnePassGood),
                            ::testing::Range(0, 9));
+#endif
 }  // namespace

@@ -148,9 +148,15 @@ TEST_P(CpuSpeedTest, TestLowBitrate) {
   ASSERT_NO_FATAL_FAILURE(RunLoop(&video));
 }
 
+#if CONFIG_REALTIME_ONLY
+VP9_INSTANTIATE_TEST_SUITE(CpuSpeedTest,
+                           ::testing::Values(::libvpx_test::kRealTime),
+                           ::testing::Range(0, 10));
+#else
 VP9_INSTANTIATE_TEST_SUITE(CpuSpeedTest,
                            ::testing::Values(::libvpx_test::kTwoPassGood,
                                              ::libvpx_test::kOnePassGood,
                                              ::libvpx_test::kRealTime),
                            ::testing::Range(0, 10));
+#endif
 }  // namespace
