@@ -85,6 +85,12 @@ class VP9FrameSizeTestsLarge : public ::libvpx_test::EncoderTest,
     SetMode(::libvpx_test::kRealTime);
   }
 
+  bool HandleEncoderInitResult(const vpx_codec_err_t res_enc,
+                               libvpx_test::Encoder* encoder) override {
+    EXPECT_EQ(expected_res_, res_enc) << encoder->EncoderError();
+    return res_enc == VPX_CODEC_OK;
+  }
+
   bool HandleDecodeResult(const vpx_codec_err_t res_dec,
                           const libvpx_test::VideoSource & /*video*/,
                           libvpx_test::Decoder *decoder) override {
@@ -127,7 +133,11 @@ class VP9FrameSizeTestsLarge : public ::libvpx_test::EncoderTest,
 
       ASSERT_NO_FATAL_FAILURE(video->Begin());
       encoder->InitEncoder(video);
-      ASSERT_FALSE(::testing::Test::HasFatalFailure());
+
+      if (!HandleEncoderInitResult(encoder->GetInitResult(), encoder.get())) {
+        return;
+      }
+
       for (bool again = true; again; video->Next()) {
         again = (video->img() != nullptr);
 
@@ -177,7 +187,13 @@ TEST_F(VP9FrameSizeTestsLarge, TestInvalidSizes) {
 #endif
 }
 
+// Under Chromium's configuration the allocator is unable to provide
+// the space required for a single frame at the maximum resolution.
+#if CHROMIUM
+TEST_F(VP9FrameSizeTestsLarge, DISABLED_ValidSizes) {
+#else
 TEST_F(VP9FrameSizeTestsLarge, ValidSizes) {
+#endif
   ::libvpx_test::RandomVideoSource video;
 
 #if CONFIG_SIZE_LIMIT

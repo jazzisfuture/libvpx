@@ -97,6 +97,7 @@ class Encoder {
   CxDataIterator GetCxData() { return CxDataIterator(&encoder_); }
 
   void InitEncoder(VideoSource *video);
+  vpx_codec_err_t GetInitResult() const { return encoder_res_; }
 
   const vpx_image_t *GetPreviewFrame() {
     return vpx_codec_get_preview_frame(&encoder_);
@@ -179,13 +180,13 @@ class Encoder {
 
   void set_deadline(vpx_enc_deadline_t deadline) { deadline_ = deadline; }
 
- protected:
-  virtual vpx_codec_iface_t *CodecInterface() const = 0;
-
   const char *EncoderError() {
     const char *detail = vpx_codec_error_detail(&encoder_);
     return detail ? detail : vpx_codec_error(&encoder_);
   }
+
+ protected:
+  virtual vpx_codec_iface_t *CodecInterface() const = 0;
 
   // Encode an image
   void EncodeFrameInternal(const VideoSource &video,
@@ -195,6 +196,7 @@ class Encoder {
   void Flush();
 
   vpx_codec_ctx_t encoder_;
+  vpx_codec_err_t encoder_res_;
   vpx_codec_enc_cfg_t cfg_;
   vpx_enc_deadline_t deadline_;
   unsigned long init_flags_;
@@ -237,6 +239,13 @@ class EncoderTest {
 
   // Hook to be called at the end of a pass.
   virtual void EndPassHook() {}
+
+  // Hook to be called to handle encoder init result. Return true to continue.
+  virtual bool HandleEncoderInitResult(const vpx_codec_err_t res_enc,
+                                       Encoder* encoder) {
+    EXPECT_EQ(VPX_CODEC_OK, res_enc) << encoder->EncoderError();
+    return VPX_CODEC_OK == res_enc;
+  }
 
   // Hook to be called before encoding a frame.
   virtual void PreEncodeFrameHook(VideoSource * /*video*/) {}

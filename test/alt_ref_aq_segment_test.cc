@@ -151,7 +151,11 @@ TEST_P(AltRefAqSegmentTest, TestNoMisMatchAltRefAQ4) {
 }
 
 VP9_INSTANTIATE_TEST_SUITE(AltRefAqSegmentTest,
+#if CONFIG_REALTIME_ONLY
+                           ::testing::Values(libvpx_test::kRealTime),
+#else
                            ::testing::Values(::libvpx_test::kOnePassGood,
                                              ::libvpx_test::kTwoPassGood),
+#endif
                            ::testing::Range(2, 5));
 }  // namespace

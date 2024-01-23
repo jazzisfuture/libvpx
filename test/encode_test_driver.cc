@@ -31,8 +31,11 @@ void Encoder::InitEncoder(VideoSource *video) {
     cfg_.g_timebase = video->timebase();
     cfg_.rc_twopass_stats_in = stats_->buf();
 
-    res = vpx_codec_enc_init(&encoder_, CodecInterface(), &cfg_, init_flags_);
-    ASSERT_EQ(VPX_CODEC_OK, res) << EncoderError();
+    encoder_res_ = vpx_codec_enc_init(&encoder_, CodecInterface(), &cfg_, init_flags_);
+
+    if (encoder_res_ != VPX_CODEC_OK) {
+      return;
+    }
 
 #if CONFIG_VP9_ENCODER
     if (CodecInterface() == &vpx_codec_vp9_cx_algo) {
@@ -187,6 +190,11 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
     ASSERT_NO_FATAL_FAILURE(video->Begin());
     encoder->InitEncoder(video);
+
+    if (!HandleEncoderInitResult(encoder->GetInitResult(), encoder.get())) {
+      return;
+    }
+
     ASSERT_FALSE(::testing::Test::HasFatalFailure());
 
     unsigned long dec_init_flags = 0;  // NOLINT

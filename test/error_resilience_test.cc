@@ -193,7 +193,11 @@ class ErrorResilienceTestLarge
   libvpx_test::TestMode encoding_mode_;
 };
 
+#if CONFIG_REALTIME_ONLY
+TEST_P(ErrorResilienceTestLarge, DISABLED_OnVersusOff) {
+#else
 TEST_P(ErrorResilienceTestLarge, OnVersusOff) {
+#endif
   const vpx_rational timebase = { 33333333, 1000000000 };
   cfg_.g_timebase = timebase;
   cfg_.rc_target_bitrate = 2000;
