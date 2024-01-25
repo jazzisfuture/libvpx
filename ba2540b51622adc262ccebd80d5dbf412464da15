@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58599111_a86e6776",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2024-01-25T10:25:01Z",
+      "side": 1,
+      "message": "Irritatingly, even though this is a Chromium-hosted project and I am a committer, I don\u0027t seem to have submit permissions.",
+      "revId": "ba2540b51622adc262ccebd80d5dbf412464da15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
