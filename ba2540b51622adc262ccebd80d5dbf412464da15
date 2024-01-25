@@ -16,6 +16,24 @@
       "message": "Irritatingly, even though this is a Chromium-hosted project and I am a committer, I don\u0027t seem to have submit permissions.",
       "revId": "ba2540b51622adc262ccebd80d5dbf412464da15",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "57cdb18c_e06147b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-25T20:53:59Z",
+      "side": 1,
+      "message": "\u003e Irritatingly, even though this is a Chromium-hosted project and I am a committer, I don\u0027t seem to have submit permissions.\n\nWell it\u0027s also bad that I sometimes get in the habit of +2\u0027ing a change and then get distracted before submitting. I added you to the webm-committers group on gerrit. Give it another try, you should be able to submit now.",
+      "parentUuid": "58599111_a86e6776",
+      "revId": "ba2540b51622adc262ccebd80d5dbf412464da15",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
