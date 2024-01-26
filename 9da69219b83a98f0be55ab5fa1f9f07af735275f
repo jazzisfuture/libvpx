@@ -33,6 +33,23 @@
       "message": "LGTM. Thanks!",
       "revId": "9da69219b83a98f0be55ab5fa1f9f07af735275f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b056d9bc_82905ca2",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-26T18:33:10Z",
+      "side": 1,
+      "message": "For future reference: This CL is the libvpx version of the libaom CL https://aomedia-review.googlesource.com/c/aom/+/186801.\n\nThe code modified in this CL was originally added in https://chromium-review.googlesource.com/c/webm/libvpx/+/73600.",
+      "revId": "9da69219b83a98f0be55ab5fa1f9f07af735275f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
