@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "35ec3aae_d9b609a0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-26T18:31:14Z",
+      "side": 1,
+      "message": "Please also mention the change to the `larger_dimensions` conditional in the commit message.",
+      "revId": "9da69219b83a98f0be55ab5fa1f9f07af735275f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6ff9c6ce_71e3efd3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-26T18:31:14Z",
+      "side": 1,
+      "message": "LGTM. Thanks!",
+      "revId": "9da69219b83a98f0be55ab5fa1f9f07af735275f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
