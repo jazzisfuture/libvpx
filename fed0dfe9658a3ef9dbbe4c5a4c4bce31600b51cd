@@ -16,6 +16,24 @@
       "message": "We could instead upstream this, but I don\u0027t think it was the core issue in crbug.com/webm/1708.",
       "revId": "fed0dfe9658a3ef9dbbe4c5a4c4bce31600b51cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "879f5922_afa45db0",
+        "filename": "third_party/libwebm/Android.mk",
+        "patchSetId": 1
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-01-27T00:22:00Z",
+      "side": 0,
+      "message": "Agreed. Only the GNU C++ compiler (g++) in Cygwin needs to use `-std\u003dgnu++11` when compiling the third_party/libwebm in libaom.",
+      "parentUuid": "d047a03b_dd3020ee",
+      "revId": "fed0dfe9658a3ef9dbbe4c5a4c4bce31600b51cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
