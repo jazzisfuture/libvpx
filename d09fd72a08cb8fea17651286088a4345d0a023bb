@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aea91cc4_b3234e7b",
+        "filename": "test/vp9_scale_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-01-30T05:44:13Z",
+      "side": 1,
+      "message": "this test would have caught the issue.",
+      "range": {
+        "startLine": 53,
+        "startChar": 40,
+        "endLine": 53,
+        "endChar": 41
+      },
+      "revId": "d09fd72a08cb8fea17651286088a4345d0a023bb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
