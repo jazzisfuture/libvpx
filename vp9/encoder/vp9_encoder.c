@@ -4627,6 +4627,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest
       }
     }
 #endif  // CONFIG_RATE_CTRL
+
     if (cpi->ext_ratectrl.ready && !ext_rc_recode &&
         !cpi->tpl_with_external_rc &&
         (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_QP) != 0 &&
@@ -4703,21 +4704,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest
 
     if (cpi->ext_ratectrl.ready &&
         (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_QP) != 0) {
-      // In general, for the external rate control, we take the qindex provided
-      // as input and encode the frame with this qindex faithfully. However,
-      // in some extreme scenarios, the provided qindex leads to a massive
-      // overshoot of frame size. In this case, we fall back to VP9's decision
-      // to pick a new qindex and recode the frame. We return the new qindex
-      // through the API to the external model.
-      if (ext_rc_max_frame_size == 0) {
-        if (!ext_rc_use_default_q) break;
-      } else if (ext_rc_max_frame_size == -1) {
-        // Do nothing, fall back to libvpx's recode decision.
-      } else {
-        // Change the max frame size, used in libvpx's recode decision.
-        rc->max_frame_bandwidth = ext_rc_max_frame_size;
-      }
-      ext_rc_recode = 1;
+      break;
     }
 #if CONFIG_RATE_CTRL
     if (cpi->oxcf.use_simple_encode_api) {
@@ -6413,7 +6400,12 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   }
 
   if (arf_src_index) {
-    assert(arf_src_index <= rc->frames_to_key);
+    if (!(cpi->ext_ratectrl.ready &&
+          (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
+          cpi->ext_ratectrl.funcs.get_gop_decision != NULL)) {
+      // This assert only makes sense when not using external RC.
+      assert(arf_src_index <= rc->frames_to_key);
+    }
     if ((source = vp9_lookahead_peek(cpi->lookahead, arf_src_index)) != NULL) {
       cpi->alt_ref_source = source;
 
