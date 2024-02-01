@@ -33,6 +33,24 @@
       "message": "This TODO comment was added in \nJohn Koleszar\u0027s CL \"Initial version of alpha channel support\":\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/51505\n\nWe can ignore alpha (which didn\u0027t make it into the VP9 bitstream specification) in this TODO comment. This TODO comment is still accurate because `vp9_copy_and_extend_frame_with_rect` is still not subsampling aware (it assumes subsampling is YUV 4:2:0).\n\nSo we have two options:\n\n1. Simpler option (this CL): delete the disabled partial copy code.\n2. Make `vp9_copy_and_extend_frame_with_rect` subsampling aware and re-enable the partial copy code.\n\nSince the partial copy code has been disabled since May 21, 2013, I think we can just delete it. Would you agree?",
       "revId": "8630b183230e7d4b87f8535e8d5e458e96366117",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "029afc51_8ae7dd6a",
+        "filename": "vp9/encoder/vp9_lookahead.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 129,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-02-01T01:15:05Z",
+      "side": 0,
+      "message": "Yes, option 1 seems better to me.",
+      "parentUuid": "3bced0f6_b4d9b2b2",
+      "revId": "8630b183230e7d4b87f8535e8d5e458e96366117",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
