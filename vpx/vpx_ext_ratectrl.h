@@ -90,8 +90,8 @@ typedef void *vpx_rc_model_t;
  * recoded to meet the size limit, following VP9's recoding principles.
  */
 typedef struct vpx_rc_encodeframe_decision {
-  int q_index;        /**< Quantizer step index [0..255]*/
-  int max_frame_size; /**< Maximal frame size allowed to encode a frame*/
+  int q_index; /**< Quantizer step index [0..255]*/
+  int rdmult;  /**< Frame level Lagrangian multiplier*/
 } vpx_rc_encodeframe_decision_t;
 
 /*!\brief Information for the frame to be encoded.
