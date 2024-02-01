@@ -104,6 +104,24 @@
       "parentUuid": "8f2755ca_9452237b",
       "revId": "152c6334913aeae2437483cb71a070f17d20eb0f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f20934b2_12720d69",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 3230806
+      },
+      "writtenOn": "2024-02-01T08:53:09Z",
+      "side": 1,
+      "message": "Thank you for the review. I have update the README file. In a separate patch I documented the optview2 usage (tools/README.pgo.md).\n\nLet me know if you want to keep that section.",
+      "parentUuid": "801b643e_3b47cf37",
+      "revId": "152c6334913aeae2437483cb71a070f17d20eb0f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
