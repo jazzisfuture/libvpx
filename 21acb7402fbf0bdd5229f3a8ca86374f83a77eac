@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "eec188f4_33f9dd95",
+        "filename": "vpx_dsp/arm/vpx_convolve8_neon_dotprod.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 624,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2024-02-01T21:17:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "08e7c713_8114461b",
+      "range": {
+        "startLine": 624,
+        "startChar": 22,
+        "endLine": 624,
+        "endChar": 30
+      },
+      "revId": "21acb7402fbf0bdd5229f3a8ca86374f83a77eac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8e962b33_f8233124",
@@ -47,6 +71,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9f89091_eb6486e1",
+        "filename": "vpx_dsp/arm/vpx_convolve8_neon_dotprod.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 638,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2024-02-01T21:17:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8e962b33_f8233124",
+      "range": {
+        "startLine": 638,
+        "startChar": 22,
+        "endLine": 638,
+        "endChar": 30
+      },
+      "revId": "21acb7402fbf0bdd5229f3a8ca86374f83a77eac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "9fa376f5_372111a5",
@@ -60,6 +108,30 @@
       "writtenOn": "2024-02-01T20:04:30Z",
       "side": 1,
       "message": "transform",
+      "range": {
+        "startLine": 640,
+        "startChar": 59,
+        "endLine": 640,
+        "endChar": 67
+      },
+      "revId": "21acb7402fbf0bdd5229f3a8ca86374f83a77eac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff5213f7_8f0ae365",
+        "filename": "vpx_dsp/arm/vpx_convolve8_neon_dotprod.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 640,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2024-02-01T21:17:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9fa376f5_372111a5",
       "range": {
         "startLine": 640,
         "startChar": 59,
