@@ -1,0 +1,84 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "856e81db_78825bf4",
+        "filename": "README",
+        "patchSetId": 1
+      },
+      "lineNbr": 213,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-02T01:58:23Z",
+      "side": 1,
+      "message": "break this line at ~80 characters and add \u0027...Profile Guided Optimization (PGO) ...\u0027",
+      "range": {
+        "startLine": 213,
+        "startChar": 28,
+        "endLine": 213,
+        "endChar": 31
+      },
+      "revId": "52e4f4f5bddee7ba31a560ab64d231b4d713750a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9e54d83_615b0748",
+        "filename": "tools/README.pgo.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-02T01:58:23Z",
+      "side": 1,
+      "message": "you can drop the PGO here and remove the ()s or swap the two",
+      "range": {
+        "startLine": 1,
+        "startChar": 8,
+        "endLine": 1,
+        "endChar": 11
+      },
+      "revId": "52e4f4f5bddee7ba31a560ab64d231b4d713750a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1a0cb16d_6bd583ba",
+        "filename": "tools/README.pgo.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-02T01:58:23Z",
+      "side": 1,
+      "message": "break these lines at around 80 characters",
+      "revId": "52e4f4f5bddee7ba31a560ab64d231b4d713750a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd58e5d1_53621ac7",
+        "filename": "tools/README.pgo.md",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-02T01:58:23Z",
+      "side": 1,
+      "message": "you can use markdown syntax in this file since it\u0027s a .md.\n\nIt can be `[optview2]: ...` here and above you can reference it with `[opt-view][optview2]`.",
+      "revId": "52e4f4f5bddee7ba31a560ab64d231b4d713750a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
