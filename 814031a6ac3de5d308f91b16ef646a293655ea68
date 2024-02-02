@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "38d1f458_77a1b387",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-02T19:06:21Z",
+      "side": 1,
+      "message": "Paul, Jingning: Please review this CL carefully. There are two ways to fix this bug. I explained the rationale for my proposed fix.",
+      "revId": "814031a6ac3de5d308f91b16ef646a293655ea68",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

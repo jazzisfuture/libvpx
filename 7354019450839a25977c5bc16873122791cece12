@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "53014279_12dadf8e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-02T19:06:21Z",
+      "side": 1,
+      "message": "An alternative is to store the result of the `clamp()` call in `q` as follows (which seems to be the original intent):\n\n```\n  q \u003d clamp(q, active_best_quality, active_worst_quality);\n```\n\nAfter analyzing the caller and the two related functions, I decided to delete the `clamp()` call. Please see my annotations in the file.",
+      "revId": "7354019450839a25977c5bc16873122791cece12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "17cba1c3_c02e666b",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1103,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-02T19:06:21Z",
+      "side": 1,
+      "message": "This is the first related function.\n\nNote that this function (`rc_pick_q_and_bounds_one_pass_cbr`) does not call `clamp(q, active_best_quality, active_worst_quality)`.",
+      "revId": "7354019450839a25977c5bc16873122791cece12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f5fc753_4477a62b",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1306,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-02T19:06:21Z",
+      "side": 1,
+      "message": "This is the second related function.\n\nNote that this function (`rc_pick_q_and_bounds_one_pass_vbr`) does not call `clamp(q, active_best_quality, active_worst_quality)`.",
+      "revId": "7354019450839a25977c5bc16873122791cece12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a101baf3_10353b1d",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1608,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-02T19:06:21Z",
+      "side": 1,
+      "message": "This is the (main) caller.\n\nThis nested if statement (lines 1600-1608) shows that `rc_pick_q_and_bounds_one_pass_cbr`, `rc_pick_q_and_bounds_one_pass_vbr`, and `vp9_rc_pick_q_and_bounds_two_pass` are used as one of three alternatives, so they should treat the return value `q` and the output parameters `*bottom_index` and `*top_index` in the same way.\n\nSince `rc_pick_q_and_bounds_one_pass_cbr` and `rc_pick_q_and_bounds_one_pass_vbr` do not clamp their return value `q`, `vp9_rc_pick_q_and_bounds_two_pass` doesn\u0027t need to do that either.",
+      "revId": "7354019450839a25977c5bc16873122791cece12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "176e8351_cb8b8038",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1615,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-02T19:06:21Z",
+      "side": 1,
+      "message": "Note the clamping here. However, we are clamping `*bottom_index` and `*top_index` instead of clamping `q`.",
+      "revId": "7354019450839a25977c5bc16873122791cece12",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
