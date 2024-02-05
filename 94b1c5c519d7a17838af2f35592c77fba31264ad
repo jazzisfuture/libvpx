@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6cb856da_6d2e77ca",
+        "filename": "vpx_dsp/arm/vpx_convolve_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-05T20:52:23Z",
+      "side": 1,
+      "message": "Is the intent to try to get cache line alignment? Does alignment beyond 8 benefit NEON loads and stores?",
+      "range": {
+        "startLine": 24,
+        "startChar": 18,
+        "endLine": 24,
+        "endChar": 20
+      },
+      "revId": "94b1c5c519d7a17838af2f35592c77fba31264ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
