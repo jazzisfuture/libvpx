@@ -16,6 +16,24 @@
       "message": "Just out of curiosity, do you have an example?",
       "revId": "27aedd8f9120b12fdf0e243d280a89513f97253e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc900d9a_9b575394",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2024-02-05T21:45:41Z",
+      "side": 1,
+      "message": "https://godbolt.org/z/8n33o95Ya\n\nGCC trunk still can\u0027t manage to undo the ld1r in the old code. (And ld1r is generally slower than a basic ld1.)",
+      "parentUuid": "81d2f6bc_b6ca68cd",
+      "revId": "27aedd8f9120b12fdf0e243d280a89513f97253e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
