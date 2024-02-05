@@ -34,6 +34,24 @@
       "parentUuid": "81d2f6bc_b6ca68cd",
       "revId": "27aedd8f9120b12fdf0e243d280a89513f97253e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "531aedd1_587e5ad3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2024-02-05T21:47:01Z",
+      "side": 1,
+      "message": "Correction: ld1r is generally slower than a basic ldr.",
+      "parentUuid": "bc900d9a_9b575394",
+      "revId": "27aedd8f9120b12fdf0e243d280a89513f97253e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
