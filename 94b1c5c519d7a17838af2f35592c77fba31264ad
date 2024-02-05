@@ -46,6 +46,30 @@
       },
       "revId": "94b1c5c519d7a17838af2f35592c77fba31264ad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e368d27_98cb7c3e",
+        "filename": "vpx_dsp/arm/vpx_convolve_neon.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-05T21:40:22Z",
+      "side": 1,
+      "message": "\u003e We have found that increasing alignment is beneficial on little (Cortex-A5*) cores, with 32-byte alignment giving pretty much the same performance as cache line alignment (which is usually 64 bytes on our modern cores.)\n\nGood to know. Thank you.",
+      "parentUuid": "440032b2_00f2cb66",
+      "range": {
+        "startLine": 24,
+        "startChar": 18,
+        "endLine": 24,
+        "endChar": 20
+      },
+      "revId": "94b1c5c519d7a17838af2f35592c77fba31264ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
