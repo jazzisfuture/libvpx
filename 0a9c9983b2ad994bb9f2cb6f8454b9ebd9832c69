@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "497720dc_0be21534",
+        "filename": "vpx_dsp/arm/sum_squares_sve.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-05T21:05:33Z",
+      "side": 1,
+      "message": "you can remove the else and save some indent given the other branch returns. See https://clang.llvm.org/extra/clang-tidy/checks/readability/else-after-return.html",
+      "revId": "0a9c9983b2ad994bb9f2cb6f8454b9ebd9832c69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
