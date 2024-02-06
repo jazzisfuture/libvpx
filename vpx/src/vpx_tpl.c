@@ -64,6 +64,7 @@ vpx_codec_err_t vpx_read_tpl_gop_stats(FILE *tpl_file,
   tpl_gop_stats->frame_stats_list = (VpxTplFrameStats *)vpx_calloc(
       frame_list_size, sizeof(tpl_gop_stats->frame_stats_list[0]));
   if (tpl_gop_stats->frame_stats_list == NULL) {
+    tpl_gop_stats->size = 0;
     return VPX_CODEC_MEM_ERROR;
   }
   for (i = 0; i < frame_list_size; i++) {
@@ -78,6 +79,7 @@ vpx_codec_err_t vpx_read_tpl_gop_stats(FILE *tpl_file,
         num_blocks, sizeof(frame_stats->block_stats_list[0]));
     if (frame_stats->block_stats_list == NULL) {
       vpx_free_tpl_gop_stats(tpl_gop_stats);
+      frame_stats->num_blocks = 0;
       return VPX_CODEC_MEM_ERROR;
     }
     for (block = 0; block < num_blocks; block++) {
