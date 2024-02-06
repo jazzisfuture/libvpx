@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e6d4ceb2_4089e9f9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T18:09:34Z",
+      "side": 1,
+      "message": "If you accept my suggestion, please update the commit message.",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51cc9e35_ac1e243d",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T18:09:34Z",
+      "side": 1,
+      "message": "A cleaner solution is to set `tpl_gop_stats-\u003esize` to `frame_list_size` after this if statement. I.e., move line 63 after this line.",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "13bcaf33_98df47e6",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T18:09:34Z",
+      "side": 1,
+      "message": "Similarly, we can move line 75 after this line.",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
