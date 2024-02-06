@@ -50,6 +50,41 @@
       "message": "Similarly, we can move line 75 after this line.",
       "revId": "b74a47372facb0f375d2ade11411854703f76d43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c1bc9255_c71225a9",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T18:17:31Z",
+      "side": 1,
+      "message": "IMPORTANT: line 82 is a use-after-free bug. So we must not add line 82.",
+      "parentUuid": "13bcaf33_98df47e6",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20069409_a9362b0f",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T18:17:31Z",
+      "side": 1,
+      "message": "I read the bug report. I think we should also avoid dangling pointers, so add the following after this line:\n\n```\n  tpl_gop_stats-\u003esize \u003d 0;\n  tpl_gop_stats-\u003eframe_stats_list \u003d NULL;\n```",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
