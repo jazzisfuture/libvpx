@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d018c1fe_1592de7d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-02-06T19:26:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e6d4ceb2_4089e9f9",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "51cc9e35_ac1e243d",
@@ -31,6 +49,24 @@
       "writtenOn": "2024-02-06T18:09:34Z",
       "side": 1,
       "message": "A cleaner solution is to set `tpl_gop_stats-\u003esize` to `frame_list_size` after this if statement. I.e., move line 63 after this line.",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "399fcb4d_da26f9a2",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-02-06T19:26:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "51cc9e35_ac1e243d",
       "revId": "b74a47372facb0f375d2ade11411854703f76d43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -70,6 +106,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "54cda585_4e9b50d3",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-02-06T19:26:20Z",
+      "side": 1,
+      "message": "Done\nGood catch!",
+      "parentUuid": "c1bc9255_c71225a9",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "20069409_a9362b0f",
@@ -83,6 +137,24 @@
       "writtenOn": "2024-02-06T18:17:31Z",
       "side": 1,
       "message": "I read the bug report. I think we should also avoid dangling pointers, so add the following after this line:\n\n```\n  tpl_gop_stats-\u003esize \u003d 0;\n  tpl_gop_stats-\u003eframe_stats_list \u003d NULL;\n```",
+      "revId": "b74a47372facb0f375d2ade11411854703f76d43",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ccf4344_2c3da9a3",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-02-06T19:26:20Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "20069409_a9362b0f",
       "revId": "b74a47372facb0f375d2ade11411854703f76d43",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
