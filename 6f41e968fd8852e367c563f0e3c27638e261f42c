@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1a297322_443259aa",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T20:48:43Z",
+      "side": 1,
+      "message": "Later: We should call `vpx_free_tpl_gop_stats(tpl_gop_stats)` before returning an error.",
+      "revId": "6f41e968fd8852e367c563f0e3c27638e261f42c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20665775_0e118a18",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 61,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T20:48:43Z",
+      "side": 1,
+      "message": "Later: To make it safe for the `CHECK_FSCANF_ERROR` macro to call `vpx_free_tpl_gop_stats(tpl_gop_stats)`, we need to change this line to the following:\n\n```\n  if (tpl_gop_stats \u003d\u003d NULL) return VPX_CODEC_INVALID_PARAM;\n  tpl_gop_stats-\u003esize \u003d 0;\n  tpl_gop_stats-\u003eframe_stats_list \u003d NULL;\n  if (tpl_file \u003d\u003d NULL) return VPX_CODEC_INVALID_PARAM;\n```\n\nIf we do this, we should delete line 66.",
+      "revId": "6f41e968fd8852e367c563f0e3c27638e261f42c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "57b77be1_e5dbc18b",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 62,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T20:48:43Z",
+      "side": 1,
+      "message": "Later: Check if `frame_list_size` is negative or 0. Can `frame_list_size` be 0?\n\n```\n  if (frame_list_size \u003c\u003d 0) return VPX_CODEC_ERROR;\n```",
+      "revId": "6f41e968fd8852e367c563f0e3c27638e261f42c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "314305cf_aab54afd",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 66,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T20:48:43Z",
+      "side": 1,
+      "message": "If we document that `vpx_free_tpl_gop_stats()` only needs to be called after a successful `vpx_read_tpl_gop_stats()` call, then this line is not necessary. (I expect this is the case because this is a common API design.)\n\nSo whether we need this line depends on the API contract for this function. See also my comment at line 61.",
+      "revId": "6f41e968fd8852e367c563f0e3c27638e261f42c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7ca607b1_686dec21",
+        "filename": "vpx/src/vpx_tpl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-06T20:48:43Z",
+      "side": 1,
+      "message": "Later: Check if `width`, `height`, or `num_blocks` is negative or 0.\n\n```\n    if (width \u003c\u003d 0 || height \u003c\u003d 0 || num_blocks \u003c\u003d 0) {\n      vpx_free_tpl_gop_stats(tpl_gop_stats);\n      return VPX_CODEC_ERROR;\n    }\n```",
+      "revId": "6f41e968fd8852e367c563f0e3c27638e261f42c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
