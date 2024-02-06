@@ -60,18 +60,18 @@ vpx_codec_err_t vpx_read_tpl_gop_stats(FILE *tpl_file,
   int i, frame_list_size;
   if (tpl_file == NULL || tpl_gop_stats == NULL) return VPX_CODEC_INVALID_PARAM;
   CHECK_FSCANF_ERROR(fscanf(tpl_file, "%d\n", &frame_list_size), 1);
-  tpl_gop_stats->size = frame_list_size;
   tpl_gop_stats->frame_stats_list = (VpxTplFrameStats *)vpx_calloc(
       frame_list_size, sizeof(tpl_gop_stats->frame_stats_list[0]));
   if (tpl_gop_stats->frame_stats_list == NULL) {
+    tpl_gop_stats->size = 0;
     return VPX_CODEC_MEM_ERROR;
   }
+  tpl_gop_stats->size = frame_list_size;
   for (i = 0; i < frame_list_size; i++) {
     VpxTplFrameStats *frame_stats = &tpl_gop_stats->frame_stats_list[i];
     int num_blocks, width, height, block;
     CHECK_FSCANF_ERROR(
         fscanf(tpl_file, "%d %d %d\n", &width, &height, &num_blocks), 3);
-    frame_stats->num_blocks = num_blocks;
     frame_stats->frame_width = width;
     frame_stats->frame_height = height;
     frame_stats->block_stats_list = (VpxTplBlockStats *)vpx_calloc(
@@ -80,6 +80,7 @@ vpx_codec_err_t vpx_read_tpl_gop_stats(FILE *tpl_file,
       vpx_free_tpl_gop_stats(tpl_gop_stats);
       return VPX_CODEC_MEM_ERROR;
     }
+    frame_stats->num_blocks = num_blocks;
     for (block = 0; block < num_blocks; block++) {
       VpxTplBlockStats *block_stats = &frame_stats->block_stats_list[block];
       CHECK_FSCANF_ERROR(
@@ -104,4 +105,6 @@ void vpx_free_tpl_gop_stats(VpxTplGopStats *tpl_gop_stats) {
     vpx_free(tpl_gop_stats->frame_stats_list[frame].block_stats_list);
   }
   vpx_free(tpl_gop_stats->frame_stats_list);
+  tpl_gop_stats->size = 0;
+  tpl_gop_stats->frame_stats_list = NULL;
 }
