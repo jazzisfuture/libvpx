@@ -16,6 +16,24 @@
       "message": "Gerrit seems to think there\u0027s a merge conflict. This should be fine to submit after rebasing.",
       "revId": "45b518af0954d1194b8de021c3e1ffc4a26a5d85",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fee7e381_e446f276",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-07T01:34:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2dc4eaba_2d04bf92",
+      "revId": "45b518af0954d1194b8de021c3e1ffc4a26a5d85",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
