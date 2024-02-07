@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2e1ad99_aad5677d",
+        "filename": "configure",
+        "patchSetId": 7
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-07T19:14:10Z",
+      "side": 1,
+      "message": "James: This CL added a `CONFIG_PROFILE` macro definition to the vpx_config.h header. (You can see it in https://chromium-review.googlesource.com/c/chromium/src/+/5272157.) I think that comes from this line.\n\nThe `CONFIG_PROFILE` macro is not being used. It seems unlikely that we will conditionally compile some code depending on whether the `--enable-profile` configure option is specified. Should we remove this line?",
+      "revId": "7eec109a831a51424db9a0991d9c69633d17d298",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
