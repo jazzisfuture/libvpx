@@ -16,6 +16,24 @@
       "message": "James: This CL added a `CONFIG_PROFILE` macro definition to the vpx_config.h header. (You can see it in https://chromium-review.googlesource.com/c/chromium/src/+/5272157.) I think that comes from this line.\n\nThe `CONFIG_PROFILE` macro is not being used. It seems unlikely that we will conditionally compile some code depending on whether the `--enable-profile` configure option is specified. Should we remove this line?",
       "revId": "7eec109a831a51424db9a0991d9c69633d17d298",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8538745_cf30e9b0",
+        "filename": "configure",
+        "patchSetId": 7
+      },
+      "lineNbr": 319,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-07T19:22:47Z",
+      "side": 1,
+      "message": "\u003e James: This CL added a `CONFIG_PROFILE` macro definition to the vpx_config.h header. (You can see it in https://chromium-review.googlesource.com/c/chromium/src/+/5272157.) I think that comes from this line.\n\u003e \n\u003e The `CONFIG_PROFILE` macro is not being used. It seems unlikely that we will conditionally compile some code depending on whether the `--enable-profile` configure option is specified. Should we remove this line?\n\nYes, that makes sense, though it\u0027s following the model for gprof, gcov and others. There\u0027s plenty of cleanup that could be done here.\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5276839",
+      "parentUuid": "b2e1ad99_aad5677d",
+      "revId": "7eec109a831a51424db9a0991d9c69633d17d298",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
