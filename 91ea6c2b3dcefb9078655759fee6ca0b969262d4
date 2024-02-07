@@ -16,6 +16,24 @@
       "message": "This one reports a merge conflict. I\u0027ll submit the 2 parents and then you can rebase this.",
       "revId": "91ea6c2b3dcefb9078655759fee6ca0b969262d4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "da7bb677_705c82b6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2024-02-07T00:33:40Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "74a20926_f47e6bf4",
+      "revId": "91ea6c2b3dcefb9078655759fee6ca0b969262d4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
