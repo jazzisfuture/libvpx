@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f60886af_51161b7a",
+        "filename": "vpx_dsp/arm/highbd_vpx_convolve8_neon.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 409,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-09T18:48:57Z",
+      "side": 1,
+      "message": "an alternative in blocks like this would be to return and remove the else and indent below which might be a little more readable. This matches much of the current code, however, so it\u0027s fine as is.",
+      "revId": "3127962e7160d7fe450488b0719b0ca669af7dc2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
