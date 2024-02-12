@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e999ff0d_7995bdd0",
+        "filename": "vp9/encoder/vp9_ethread.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-12T23:33:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "867d88fa_7a116c84",
+      "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "91f166d5_d7cd697f",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-02-12T22:39:48Z",
       "side": 1,
       "message": "Do not add this unless there are compilation errors on Linux. libvpx passes the --std\u003dgnu99 compiler flag on Linux, so it should not be necessary to define `_GNU_SOURCE`.",
+      "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14169f92_7f4d9b13",
+        "filename": "vpx_util/vpx_thread.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-12T23:33:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "91f166d5_d7cd697f",
       "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -69,6 +105,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6e3f25a8_b5ab34fa",
+        "filename": "vpx_util/vpx_thread.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-12T23:33:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3ed0659c_5bb1cc2a",
+      "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "160568ec_ed26a426",
@@ -82,6 +136,24 @@
       "writtenOn": "2024-02-12T22:39:48Z",
       "side": 1,
       "message": "To verify the changes to this loop requires either reviewing the rest of this file or checking that the rest of this file is the same as the corresponding code in libaom. I haven\u0027t done that. If you have verified these changes, then I don\u0027t do that.",
+      "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "784c42fc_3d69fd65",
+        "filename": "vpx_util/vpx_thread.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-12T23:33:48Z",
+      "side": 1,
+      "message": "I diffed the vpx and aom copies -- they\u0027re the same.",
+      "parentUuid": "160568ec_ed26a426",
       "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -103,6 +175,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1b0b39bc_edfac773",
+        "filename": "vpx_util/vpx_thread.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 146,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-12T23:33:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de8ee6f4_6fbd35b5",
+      "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6d0273c8_8cd62d10",
@@ -116,6 +206,24 @@
       "writtenOn": "2024-02-12T22:39:48Z",
       "side": 1,
       "message": "Optional: We don\u0027t need the changes related to `pthread_attr_t`. Please see my comments in vpx_util/vpx_thread.c at line 25 and line 146. But we can keep this in case we need to use `pthread_attr_t` in the future. (My preference is to remove it.)",
+      "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05e208b2_60bf5551",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-12T23:33:48Z",
+      "side": 1,
+      "message": "Removed.",
+      "parentUuid": "6d0273c8_8cd62d10",
       "revId": "b5a5725129b979aa71fa534c6515f8379374b851",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
