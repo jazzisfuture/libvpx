@@ -156,9 +156,9 @@ static INLINE int pthread_cond_wait(pthread_cond_t *const condition,
 
 // State of the worker thread object
 typedef enum {
-  NOT_OK = 0,  // object is unusable
-  OK,          // ready to work
-  WORK         // busy finishing the current task
+  VPX_STATUS_NOT_OK = 0,  // object is unusable
+  VPX_STATUS_OK,          // ready to work
+  VPX_STATUS_WORK         // busy finishing the current task
 } VPxWorkerStatus;
 
 // Function to be called by the worker thread. Takes two opaque pointers as
