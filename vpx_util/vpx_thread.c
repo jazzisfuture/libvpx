@@ -21,6 +21,7 @@
 #include <string.h>  // for memset()
 #include "./vpx_thread.h"
 #include "vpx_mem/vpx_mem.h"
+#include "vpx_util/vpx_pthread.h"
 
 #if CONFIG_MULTITHREAD
 
