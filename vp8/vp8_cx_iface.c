@@ -148,7 +148,7 @@ static vpx_codec_err_t validate_config(vpx_codec_alg_priv_t *ctx,
   RANGE_CHECK_HI(cfg, g_profile, 3);
   RANGE_CHECK_HI(cfg, rc_max_quantizer, 63);
   RANGE_CHECK_HI(cfg, rc_min_quantizer, cfg->rc_max_quantizer);
-  RANGE_CHECK_HI(cfg, g_threads, 64);
+  RANGE_CHECK_HI(cfg, g_threads, MAX_NUM_THREADS);
 #if CONFIG_REALTIME_ONLY
   RANGE_CHECK_HI(cfg, g_lag_in_frames, 0);
 #elif CONFIG_MULTI_RES_ENCODING
