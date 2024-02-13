@@ -33,6 +33,24 @@
       "message": "Also add the following before this line:\n\n```\n// Enable GNU extensions in glibc so that we can call pthread_setname_np().\n```",
       "revId": "b829afd8e230bdcd072735e73d504e1e8cf6c4ab",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a5f12806_634b025f",
+        "filename": "vpx_util/vpx_thread.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-13T02:46:05Z",
+      "side": 1,
+      "message": "Whoops, missed that line somehow. Done.",
+      "parentUuid": "43a00c06_7649d847",
+      "revId": "b829afd8e230bdcd072735e73d504e1e8cf6c4ab",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
