@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5bd844cc_3e0b0131",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 3580,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T19:34:33Z",
+      "side": 1,
+      "message": "The `\u003d {}` initializer may not be portable in C99. If I search for \"\u003d {}\" in the .c files in libvpx, this is the only occurrence:\n\n```\n$ find . -name \"*.c\" | xargs grep \"\u003d {}\"\n./vp9/encoder/vp9_firstpass.c:    vpx_rc_gop_decision_t gop_decision \u003d {};\n```\n\nAlso, it seems that we don\u0027t need to initialize `gop_decision`. We only use `gop_decision` if `vp9_extrc_get_gop_decision()` succeeds, and `vp9_extrc_get_gop_decision()` should set all the fields of `gop_decision`.",
+      "revId": "a64bf87fb963d96c4b8d7dbc2e4dff701a7c6347",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
