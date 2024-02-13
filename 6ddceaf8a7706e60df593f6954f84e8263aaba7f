@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9643faa2_3875cefc",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 159,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T22:52:48Z",
+      "side": 1,
+      "message": "Nit: I suggest adding `_WORKER` to the enum names, e.g., `VPX_WORKER_STATUS_NOT_OK`.\n\nIf the enum names are too long, we can omit `_STATUS`, e.g., `VPX_WORKER_NOT_OK`.",
+      "revId": "6ddceaf8a7706e60df593f6954f84e8263aaba7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86bd6e1e_0682a173",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T22:52:48Z",
+      "side": 1,
+      "message": "Optional: I think `WORKING` sounds nicer than `WORK` in the new name.",
+      "revId": "6ddceaf8a7706e60df593f6954f84e8263aaba7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
