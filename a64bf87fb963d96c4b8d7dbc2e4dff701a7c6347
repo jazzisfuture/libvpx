@@ -34,6 +34,24 @@
       "parentUuid": "5bd844cc_3e0b0131",
       "revId": "a64bf87fb963d96c4b8d7dbc2e4dff701a7c6347",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "751c869c_a39fc155",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 3580,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-02-13T20:29:55Z",
+      "side": 1,
+      "message": "chromium-review.googlesource.com/c/webm/libvpx/+/5291961",
+      "parentUuid": "a1613459_e76f9e66",
+      "revId": "a64bf87fb963d96c4b8d7dbc2e4dff701a7c6347",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
