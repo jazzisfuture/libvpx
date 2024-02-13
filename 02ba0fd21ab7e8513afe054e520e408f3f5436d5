@@ -16,6 +16,24 @@
       "message": "Only the vpx/*.h headers are public headers. Specifically, they are:\n\n```\nvpx/vp8cx.h  vpx/vpx_codec.h    vpx/vpx_ext_ratectrl.h  vpx/vpx_integer.h\nvpx/vp8dx.h  vpx/vpx_decoder.h  vpx/vpx_frame_buffer.h  vpx/vpx_tpl.h\nvpx/vp8.h    vpx/vpx_encoder.h  vpx/vpx_image.h\n```\n\nCode outside libvpx should only include the public headers. Could you tell us what you are trying to do?",
       "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8f19acdf_64463e58",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-13T02:54:13Z",
+      "side": 1,
+      "message": "Code in Chromium like this: https://source.chromium.org/chromium/chromium/src/+/main:media/base/libaom_thread_wrapper.cc;l\u003d13;drc\u003dd8d185fa4c9e89115c67b4a1e258007fee88fcff\n...seems to want to swap out the default threading implementation on libaom and libvpx with something based on the TaskScheduler. I don\u0027t know anything about either side of this, but if we happen to combine the two .cc files that do this into a single one that #includes both projects\u0027 headers, stuff blows up. This patch and https://chromium-review.googlesource.com/c/webm/libvpx/+/5288835, and the parallel ones on libaom (https://aomedia-review.googlesource.com/c/aom/+/187224, https://aomedia-review.googlesource.com/c/aom/+/187261) make that work.\n\nThey seem like kind of a good idea anyway (minor improvements in dependencies and clarity), so I figured they would be worth landing even if this configuration wasn\u0027t supported.",
+      "parentUuid": "66389b3d_47d2579a",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
