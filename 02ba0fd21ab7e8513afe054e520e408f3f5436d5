@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "66389b3d_47d2579a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T00:29:26Z",
+      "side": 1,
+      "message": "Only the vpx/*.h headers are public headers. Specifically, they are:\n\n```\nvpx/vp8cx.h  vpx/vpx_codec.h    vpx/vpx_ext_ratectrl.h  vpx/vpx_integer.h\nvpx/vp8dx.h  vpx/vpx_decoder.h  vpx/vpx_frame_buffer.h  vpx/vpx_tpl.h\nvpx/vp8.h    vpx/vpx_encoder.h  vpx/vpx_image.h\n```\n\nCode outside libvpx should only include the public headers. Could you tell us what you are trying to do?",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
