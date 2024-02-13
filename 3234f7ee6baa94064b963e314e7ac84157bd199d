@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d849f639_e0ada48f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T00:06:13Z",
+      "side": 1,
+      "message": "Delete this line.",
+      "revId": "3234f7ee6baa94064b963e314e7ac84157bd199d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
