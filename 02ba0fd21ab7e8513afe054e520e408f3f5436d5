@@ -34,6 +34,75 @@
       "parentUuid": "66389b3d_47d2579a",
       "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4caa2fd2_c5a62b2c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T23:13:38Z",
+      "side": 1,
+      "message": "Thanks for the reply. I forgot to say that the refactoring in this CL is a good idea on its own. I was just objecting to / questioning the reason given for this refactoring.",
+      "parentUuid": "8f19acdf_64463e58",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ab2e2552_30963eab",
+        "filename": "vpx_util/vpx_pthread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T23:13:38Z",
+      "side": 1,
+      "message": "\u003cerrno.h\u003e doesn\u0027t seem needed by anything in this file.\n\nOn the other hand, it would be good to include a header that defines `NULL` (used at line 57):\nhttps://en.cppreference.com/w/c/types/NULL",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed2f70cb_0bbea4b7",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T23:13:38Z",
+      "side": 1,
+      "message": "It seems bad to cast a pointer to unsigned int. Perhaps we should document that `val` must be `NULL`.",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5f93b301_1cbd4c37",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-13T23:13:38Z",
+      "side": 1,
+      "message": "Move the definitions of the `THREADFN` and `THREAD_RETURN` macros to vpx_util/vpx_thread.c.\n\nUsers of the `VPxWorkerInterface` don\u0027t need to know about `THREADFN` and `THREAD_RETURN`.",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
