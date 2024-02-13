@@ -16,6 +16,24 @@
       "message": "Delete this line.",
       "revId": "3234f7ee6baa94064b963e314e7ac84157bd199d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fff5a32b_67eb1e13",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-13T00:10:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d849f639_e0ada48f",
+      "revId": "3234f7ee6baa94064b963e314e7ac84157bd199d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
