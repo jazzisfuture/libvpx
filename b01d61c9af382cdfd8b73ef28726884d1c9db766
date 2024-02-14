@@ -22,6 +22,30 @@
       },
       "revId": "b01d61c9af382cdfd8b73ef28726884d1c9db766",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "de706615_7fe0819f",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1517,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-02-14T17:45:28Z",
+      "side": 1,
+      "message": "`gf_group-\u003eindex` is assigned to `idx` in line 1505 and it starts from 1, because for TPL the very first frame of GF group is either golden or key frame\n\nBut for WebM RC rate control library GF group doesn\u0027t include those two type of frames, so the index needs to be decreased by 1.",
+      "parentUuid": "f3846e60_6fb9d382",
+      "range": {
+        "startLine": 1517,
+        "startChar": 32,
+        "endLine": 1517,
+        "endChar": 52
+      },
+      "revId": "b01d61c9af382cdfd8b73ef28726884d1c9db766",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
