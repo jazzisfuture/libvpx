@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1dd4acd0_f7177d5d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-14T18:54:48Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "97b000e2_74821f5b",
+      "revId": "133790d507c8fbe2fb8925af612057391524997a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e774920c_8b9735e4",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 5
@@ -48,6 +66,24 @@
       "writtenOn": "2024-02-14T18:44:36Z",
       "side": 1,
       "message": "Optional: Here we are apparently replying on the corresponding header file vp9/decoder/vp9_job_queue.h #include\u0027ing \"vpx_util/vpx_pthread.h\". So the .c file doesn\u0027t need to include \"vpx_util/vpx_pthread.h\" again.\n\nThe IWYU tool allows this in general. However, I am not sure if the tool handles C files well.",
+      "revId": "133790d507c8fbe2fb8925af612057391524997a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3db7a142_e51f6ad0",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-14T18:54:48Z",
+      "side": 1,
+      "message": "Google style is that a .c file should re-include necessary headers from its related .h; see https://google.github.io/styleguide/cppguide.html#Include_What_You_Use.",
+      "parentUuid": "49d8400c_a7ea5297",
       "revId": "133790d507c8fbe2fb8925af612057391524997a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
