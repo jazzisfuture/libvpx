@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "97b000e2_74821f5b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-14T18:44:36Z",
+      "side": 1,
+      "message": "Nit/optional: I think the restructuring you did is great on its own, so we could remove this reason. If you prefer to give this reason, I suggest replacing \"headers from both libvpx and libaom\" with specific examples, such as \"both vpx_util/vpx_thread.h and aom_util/aom_thread.h\".",
+      "revId": "133790d507c8fbe2fb8925af612057391524997a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e774920c_8b9735e4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-14T18:44:36Z",
+      "side": 1,
+      "message": "LGTM. I like your restructuring very much. Thank you!",
+      "revId": "133790d507c8fbe2fb8925af612057391524997a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49d8400c_a7ea5297",
+        "filename": "vp9/decoder/vp9_job_queue.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-14T18:44:36Z",
+      "side": 1,
+      "message": "Optional: Here we are apparently replying on the corresponding header file vp9/decoder/vp9_job_queue.h #include\u0027ing \"vpx_util/vpx_pthread.h\". So the .c file doesn\u0027t need to include \"vpx_util/vpx_pthread.h\" again.\n\nThe IWYU tool allows this in general. However, I am not sure if the tool handles C files well.",
+      "revId": "133790d507c8fbe2fb8925af612057391524997a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b9d3c2dd_1509cb5a",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-14T18:44:36Z",
+      "side": 1,
+      "message": "Later: If we consider this header as public, then this internal macro should be moved elsewhere. vp9/encoder/vp9_encoder.h seems like a good place to define this macro.\n\nAlternatively we should add the `VPX_` prefix to the macro\u0027s name.",
+      "revId": "133790d507c8fbe2fb8925af612057391524997a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
