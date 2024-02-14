@@ -54,6 +54,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "56363c88_5832a6ff",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-14T00:54:14Z",
+      "side": 1,
+      "message": "Ack",
+      "parentUuid": "4caa2fd2_c5a62b2c",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ab2e2552_30963eab",
@@ -67,6 +85,24 @@
       "writtenOn": "2024-02-13T23:13:38Z",
       "side": 1,
       "message": "\u003cerrno.h\u003e doesn\u0027t seem needed by anything in this file.\n\nOn the other hand, it would be good to include a header that defines `NULL` (used at line 57):\nhttps://en.cppreference.com/w/c/types/NULL",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3687d745_7d3592ff",
+        "filename": "vpx_util/vpx_pthread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-14T00:54:14Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab2e2552_30963eab",
       "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -88,6 +124,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "37c1326a_d09d3d21",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-14T00:54:14Z",
+      "side": 1,
+      "message": "I went a step further and replaced THREAD_RETURN() with an actual success value, which is less flexible but much clearer.",
+      "parentUuid": "ed2f70cb_0bbea4b7",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5f93b301_1cbd4c37",
@@ -101,6 +155,24 @@
       "writtenOn": "2024-02-13T23:13:38Z",
       "side": 1,
       "message": "Move the definitions of the `THREADFN` and `THREAD_RETURN` macros to vpx_util/vpx_thread.c.\n\nUsers of the `VPxWorkerInterface` don\u0027t need to know about `THREADFN` and `THREAD_RETURN`.",
+      "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3087d1a9_aa57f391",
+        "filename": "vpx_util/vpx_thread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1000805
+      },
+      "writtenOn": "2024-02-14T00:54:14Z",
+      "side": 1,
+      "message": "Yes, I independently came to the same conclusion while addressing your previous nit :). Done.",
+      "parentUuid": "5f93b301_1cbd4c37",
       "revId": "02ba0fd21ab7e8513afe054e520e408f3f5436d5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
