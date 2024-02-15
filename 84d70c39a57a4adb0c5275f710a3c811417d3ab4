@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4635a726_54aa5cfa",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-15T18:18:57Z",
+      "side": 1,
+      "message": "The VP8 code in libvpx doesn\u0027t use pthread mutexes and condition variables for synchronization. Instead, it uses atomic variables and POSIX semaphores.\n\nAll the `sem_wait()` calls in VP8 should handle EINTR. Since this CL is a speculative fix, I am first fixing the two `sem_wait(\u0026cpi-\u003eh_event_end_lpf)` calls that I can interrupt with Ctrl-C and cause the same crash in bug chromium:324459561.\n\nThe reason I consider this fix as speculative is that there is no evidence in bug chromium:324459561 that vp8_encoder_fuzz_test was interrupted by a signal. But this is the only way I know to reproduce the crash.",
+      "revId": "84d70c39a57a4adb0c5275f710a3c811417d3ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
