@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "644cc5d2_db0efdb4",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 381,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-15T21:38:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b6695824_07aabefc",
+      "revId": "84d70c39a57a4adb0c5275f710a3c811417d3ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "934944e1_f81d65c5",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-02-15T19:52:53Z",
       "side": 1,
       "message": "`sem_wait` is `WaitForSingleObject` on Windows and `semaphore_wait` on Apple:\n\nhttps://chromium.googlesource.com/webm/libvpx/+/e1da3834ba80bfc1fb7d5c374a97544d00a15f5c/vp8/common/threading.h#69\n\nThe extra check on errno should be OK regardless of their semantics. Note the Windows path returns a boolean value.",
+      "revId": "84d70c39a57a4adb0c5275f710a3c811417d3ab4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "531a4c26_295cdf12",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 4405,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-15T21:38:58Z",
+      "side": 1,
+      "message": "Done. Thank you for telling me.\n\nI made two changes:\n\n1. I detect failure by testing `!\u003d 0` instead of `\u003d\u003d -1`. This works on Windows and Apple, too.\n\n2. Since the Windows and Apple implementations of `sem_wait()` don\u0027t set `errno`, I set `errno` to 0 before calling `sem_wait()` so that it is safe to compare `errno` with `EINTR` if `sem_wait()` fails.",
+      "parentUuid": "934944e1_f81d65c5",
       "revId": "84d70c39a57a4adb0c5275f710a3c811417d3ab4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
