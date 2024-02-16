@@ -19,7 +19,6 @@
 #include "vp8/common/common.h"
 #include "vp8/common/loopfilter.h"
 #include "vp8/common/swapyv12buffer.h"
-#include "vp8/common/threading.h"
 #include "decoderthreading.h"
 #include <stdio.h>
 #include <assert.h>

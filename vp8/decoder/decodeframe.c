@@ -31,7 +31,7 @@
 #include "error_concealment.h"
 #endif
 #include "vpx_mem/vpx_mem.h"
-#include "vp8/common/threading.h"
+#include "vpx_util/vpx_atomics.h"
 #include "decoderthreading.h"
 #include "dboolhuff.h"
 #include "vpx_dsp/vpx_dsp_common.h"

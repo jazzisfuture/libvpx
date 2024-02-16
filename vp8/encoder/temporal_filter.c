@@ -23,7 +23,6 @@
 #include "temporal_filter.h"
 #include "vpx_mem/vpx_mem.h"
 #include "vp8/common/swapyv12buffer.h"
-#include "vp8/common/threading.h"
 #include "vpx_ports/vpx_timer.h"
 
 #include <math.h>
