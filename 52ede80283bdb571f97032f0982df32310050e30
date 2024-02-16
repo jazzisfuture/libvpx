@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d28171d7_b005fccb",
+        "filename": "vp8/common/threading.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-16T00:51:32Z",
+      "side": 1,
+      "message": "In this CL I deleted the unused macro definitions. I will deal with the little remaining pthread stuff in a separate CL.",
+      "revId": "52ede80283bdb571f97032f0982df32310050e30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
