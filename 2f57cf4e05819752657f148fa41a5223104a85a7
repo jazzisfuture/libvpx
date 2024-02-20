@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d5b20195_a9e5069a",
+        "filename": "test/alt_ref_aq_segment_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-20T19:10:45Z",
+      "side": 1,
+      "message": "This test may not make sense for realtime. Lagged realtime encoding isn\u0027t used or supported for AV1 (https://crbug.com/aomedia/3323). This test could simply be removed in cmake with CONFIG_REALTIME_ONLY.",
+      "revId": "2f57cf4e05819752657f148fa41a5223104a85a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f7c09786_cdb74dfb",
+        "filename": "test/alt_ref_aq_segment_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-20T19:10:45Z",
+      "side": 1,
+      "message": "This will likely break visual studio builds. It doesn\u0027t support using #if etc. within macros. It\u0027s why many of the test instantiations use a separate array.",
+      "revId": "2f57cf4e05819752657f148fa41a5223104a85a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
