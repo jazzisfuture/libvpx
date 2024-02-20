@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42672b65_9542261b",
+        "filename": "vpx/internal/vpx_ratectrl_rtc.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-02-20T23:15:51Z",
+      "side": 1,
+      "message": "can you add a comment here how they should be used?\n - for example, the qp for dc component of uv should be the value of GetQP() + uvdc_delta_q\n - and are they always negative? positive?",
+      "range": {
+        "startLine": 27,
+        "startChar": 6,
+        "endLine": 27,
+        "endChar": 18
+      },
+      "revId": "7052a930e60b7ae5279fd76b819736a0dd8a3b89",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
