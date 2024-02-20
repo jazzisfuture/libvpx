@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "dcc1713d_a501b2ce",
+        "filename": "vpx_dsp/arm/highbd_vpx_convolve8_sve.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-20T19:14:52Z",
+      "side": 1,
+      "message": "These can be sorted.",
+      "revId": "eabed0bffeaa082870988555110a589e02f96f9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3957fac_149df7a2",
+        "filename": "vpx_dsp/arm/highbd_vpx_convolve8_sve.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-20T19:14:52Z",
+      "side": 1,
+      "message": "C99 was recently made the minimum, so you could return early in the previous block and save some indent here. This is consistent with much of the code though, so either way is fine.",
+      "revId": "eabed0bffeaa082870988555110a589e02f96f9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
