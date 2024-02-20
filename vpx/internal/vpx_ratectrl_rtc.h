@@ -22,6 +22,12 @@ enum class FrameDropDecision {
   kDrop,  // Frame is dropped.
 };
 
+struct UVDeltaQP {
+ public:
+  int uvdc_delta_q;
+  int uvac_delta_q;
+};
+
 struct VpxRateControlRtcConfig {
  public:
   VpxRateControlRtcConfig() {
