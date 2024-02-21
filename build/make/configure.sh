@@ -1007,7 +1007,16 @@ EOF
       # Arm ISA extensions are treated as supersets.
       case ${tgt_isa} in
         arm64|armv8)
+          aarch64_march_flag_neon="-march=armv8-a"
+          aarch64_march_flag_neon_dotprod="-march=armv8.2-a+dotprod"
+          aarch64_march_flag_neon_i8mm="-march=armv8.2-a+dotprod+i8mm"
+          aarch64_march_flag_sve="-march=armv8.2-a+dotprod+i8mm+sve"
           for ext in ${ARCH_EXT_LIST_AARCH64}; do
+            # Check the compiler supports the -march flag for the extension.
+            flag="$(eval echo \$"aarch64_march_flag_${ext}")"
+            if ! check_cflags "${flag}" || ! check_cxxflags "${flag}"; then
+              disable_exts="yes"
+            fi
             # Disable higher order extensions to simplify dependencies.
             if [ "$disable_exts" = "yes" ]; then
               if ! disabled $ext; then
