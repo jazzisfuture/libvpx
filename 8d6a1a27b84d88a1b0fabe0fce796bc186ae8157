@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "08f688d4_04b1b51c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-21T03:15:51Z",
+      "side": 1,
+      "message": "\u003e Anonymous unions are a useful language extension. It is used in the `YV12_BUFFER_CONFIG` struct in libaom. I think we should allow this extension.\n\nI think this is supported in most, if not all compilers; we haven\u0027t had any error reports. After https://chromium-review.googlesource.com/c/webm/libvpx/+/5291961 I thought it might be helpful to have nightly build with `-Wpedantic` enabled.\n\nAbsent this we could bump the minimum to C11. [FFmpeg was exploring this recently](https://ffmpeg.org/pipermail/ffmpeg-devel/2024-February/321165.html).",
+      "parentUuid": "0cde485d_e4c4a8c3",
+      "revId": "8d6a1a27b84d88a1b0fabe0fce796bc186ae8157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e0bf6a02_60632671",
         "filename": "vp9/encoder/vp9_context_tree.h",
         "patchSetId": 1
