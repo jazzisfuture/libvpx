@@ -1004,36 +1004,22 @@ EOF
   case ${toolchain} in
     arm*)
       soft_enable runtime_cpu_detect
-      # Arm ISA extensions are treated as supersets.
-      case ${tgt_isa} in
-        arm64|armv8)
-          for ext in ${ARCH_EXT_LIST_AARCH64}; do
-            # Disable higher order extensions to simplify dependencies.
-            if [ "$disable_exts" = "yes" ]; then
-              if ! disabled $ext; then
-                RTCD_OPTIONS="${RTCD_OPTIONS}--disable-${ext} "
-                disable_feature $ext
-              fi
-            elif disabled $ext; then
-              disable_exts="yes"
-            else
-              soft_enable $ext
-            fi
-          done
-          check_neon_sve_bridge_compiles
-          ;;
-        armv7|armv7s)
-          soft_enable neon
-          # Only enable neon_asm when neon is also enabled.
-          enabled neon && soft_enable neon_asm
-          # If someone tries to force it through, die.
-          if disabled neon && enabled neon_asm; then
-            die "Disabling neon while keeping neon-asm is not supported"
-          fi
-          ;;
-      esac
+
+      if [ ${tgt_isa} = "armv7" ] || [ ${tgt_isa} = "armv7s" ]; then
+        soft_enable neon
+        # Only enable neon_asm when neon is also enabled.
+        enabled neon && soft_enable neon_asm
+        # If someone tries to force it through, die.
+        if disabled neon && enabled neon_asm; then
+          die "Disabling neon while keeping neon-asm is not supported"
+        fi
+      fi
 
       asm_conversion_cmd="cat"
+
+      # Only check for -march=... support on compilers that take GCC-style
+      # flags.
+      cc_is_gnu_like="yes"
 
       case ${tgt_cc} in
         gcc)
@@ -1087,6 +1073,7 @@ EOF
           # A number of ARM-based Windows platforms are constrained by their
           # respective SDKs' limitations. Fortunately, these are all 32-bit ABIs
           # and so can be selected as 'win32'.
+          cc_is_gnu_like="no"
           if [ ${tgt_os} = "win32" ]; then
             asm_conversion_cmd="${source_path_mk}/build/make/ads2armasm_ms.pl"
             AS_SFX=.S
@@ -1131,6 +1118,7 @@ EOF
           LD="${source_path}/build/make/armlink_adapter.sh"
           STRIP=arm-none-linux-gnueabi-strip
           NM=arm-none-linux-gnueabi-nm
+          cc_is_gnu_like="no"
           tune_cflags="--cpu="
           tune_asflags="--cpu="
           if [ -z "${tune_cpu}" ]; then
@@ -1253,6 +1241,39 @@ EOF
           fi
           ;;
       esac
+
+      # AArch64 ISA extensions are treated as supersets.
+      if [ ${tgt_isa} = "arm64" ] || [ ${tgt_isa} = "armv8" ]; then
+        aarch64_march_flag_neon="-march=armv8-a"
+        aarch64_march_flag_neon_dotprod="-march=armv8.2-a+dotprod"
+        aarch64_march_flag_neon_i8mm="-march=armv8.2-a+dotprod+i8mm"
+        aarch64_march_flag_sve="-march=armv8.2-a+dotprod+i8mm+sve"
+        for ext in ${ARCH_EXT_LIST_AARCH64}; do
+          if [ "$cc_is_gnu_like" = "yes" ]; then
+            # Check the compiler supports the -march flag for the extension.
+            # This needs to happen after toolchain/OS inspection so we handle
+            # $CROSS etc correctly when checking for flags, else these will
+            # always fail.
+            flag="$(eval echo \$"aarch64_march_flag_${ext}")"
+            if ! check_cflags "${flag}" || ! check_cxxflags "${flag}"; then
+              disable_exts="yes"
+            fi
+          fi
+          # Disable higher order extensions to simplify dependencies.
+          if [ "$disable_exts" = "yes" ]; then
+            if ! disabled $ext; then
+              RTCD_OPTIONS="${RTCD_OPTIONS}--disable-${ext} "
+              disable_feature $ext
+            fi
+          elif disabled $ext; then
+            disable_exts="yes"
+          else
+            soft_enable $ext
+          fi
+        done
+        check_neon_sve_bridge_compiles
+      fi
+
       ;;
     mips*)
       link_with_cc=gcc
