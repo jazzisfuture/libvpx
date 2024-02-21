@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "0cde485d_e4c4a8c3",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-21T02:27:18Z",
+      "side": 1,
+      "message": "Anonymous unions are a useful language extension. It is used in the `YV12_BUFFER_CONFIG` struct in libaom. I think we should allow this extension.",
+      "revId": "8d6a1a27b84d88a1b0fabe0fce796bc186ae8157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e0bf6a02_60632671",
         "filename": "vp9/encoder/vp9_context_tree.h",
         "patchSetId": 1
