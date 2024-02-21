@@ -73,6 +73,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "8721cf08_0f55754c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-21T23:15:14Z",
+      "side": 1,
+      "message": "\u003e James: I think it is fine to make this change in libvpx; your call. But we should allow anonymous unions in libaom, because they are heavily used in the `YV12_BUFFER_CONFIG` struct.\n\nWe had some discussion about this and formally moving to C11 in libaom at least might be the best option.",
+      "parentUuid": "2e96d3d8_1f8c3897",
+      "revId": "8d6a1a27b84d88a1b0fabe0fce796bc186ae8157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e0bf6a02_60632671",
         "filename": "vp9/encoder/vp9_context_tree.h",
         "patchSetId": 1
