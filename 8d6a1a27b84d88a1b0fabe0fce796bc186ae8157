@@ -38,6 +38,41 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b2261367_a6dea253",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-21T17:17:05Z",
+      "side": 1,
+      "message": "I am afraid that `-Wpedantic` is too strict. Some widely supported language extensions are convenient.\n\nRe: https://chromium-review.googlesource.com/c/webm/libvpx/+/5291961: I seem to remember some compiler (maybe MSVC? I didn\u0027t check) rejected the `\u003d {}` struct initializer when I tried it before.\n\nIt s a good idea to upgrade to C11.",
+      "parentUuid": "08f688d4_04b1b51c",
+      "revId": "8d6a1a27b84d88a1b0fabe0fce796bc186ae8157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e96d3d8_1f8c3897",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-21T17:17:05Z",
+      "side": 1,
+      "message": "James: I think it is fine to make this change in libvpx; your call. But we should allow anonymous unions in libaom, because they are heavily used in the `YV12_BUFFER_CONFIG` struct.",
+      "revId": "8d6a1a27b84d88a1b0fabe0fce796bc186ae8157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e0bf6a02_60632671",
         "filename": "vp9/encoder/vp9_context_tree.h",
         "patchSetId": 1
@@ -49,6 +84,30 @@
       "writtenOn": "2024-02-21T00:45:58Z",
       "side": 1,
       "message": "suggestions welcome. We use this style in the libwebp decode api.",
+      "range": {
+        "startLine": 93,
+        "startChar": 4,
+        "endLine": 93,
+        "endChar": 5
+      },
+      "revId": "8d6a1a27b84d88a1b0fabe0fce796bc186ae8157",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9dec219_cafaafab",
+        "filename": "vp9/encoder/vp9_context_tree.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-21T17:17:05Z",
+      "side": 1,
+      "message": "`u` is a commonly used name for this kind of union.",
+      "parentUuid": "e0bf6a02_60632671",
       "range": {
         "startLine": 93,
         "startChar": 4,
