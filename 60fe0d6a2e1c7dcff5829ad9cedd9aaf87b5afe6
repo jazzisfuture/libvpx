@@ -1,0 +1,123 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f4d7d416_5eb8781a",
+        "filename": "test/altref_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T20:39:13Z",
+      "side": 1,
+      "message": "Sorry if I wasn\u0027t clear. I don\u0027t think this test should be built when realtime-only is configured.",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cf5b8531_13a76604",
+        "filename": "test/config_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T20:39:13Z",
+      "side": 1,
+      "message": "I think `ONE_PASS_TEST_MODES` and the related defines might need an update with `CONFIG_REALTIME_ONLY`.",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "693c54ae_296180d4",
+        "filename": "test/cpu_speed_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 157,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T20:39:13Z",
+      "side": 1,
+      "message": "This can be `ONE_PASS_TEST_MODES` once that define is updated.",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "978048b2_09127823",
+        "filename": "test/level_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T20:39:13Z",
+      "side": 1,
+      "message": "Level targeting might not be well supported. Marco is this something that should be fixed?",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "64deeadd_1f7362e5",
+        "filename": "test/realtime_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T20:39:13Z",
+      "side": 1,
+      "message": "instead of marking these disabled, you could use `GTEST_SKIP()` with an informative message.",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cec683f0_9daa25ed",
+        "filename": "test/vp9_ethread_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T20:39:13Z",
+      "side": 1,
+      "message": "this can be moved to `ONE_PASS_TEST_MODES`",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "aced4b16_8c6a6012",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T20:39:13Z",
+      "side": 1,
+      "message": "This is unexpected (to me). Jerome any comments?",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
