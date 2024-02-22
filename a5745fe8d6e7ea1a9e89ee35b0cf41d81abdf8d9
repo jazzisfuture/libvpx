@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "72035bb9_f56080ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2024-02-22T18:21:55Z",
+      "side": 1,
+      "message": "The new test failure seems unrelated to my patch. Any ideas?",
+      "revId": "a5745fe8d6e7ea1a9e89ee35b0cf41d81abdf8d9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
