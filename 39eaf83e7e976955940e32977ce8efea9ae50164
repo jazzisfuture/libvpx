@@ -16,6 +16,24 @@
       "message": "This will disable all NEON with `--target\u003darm64-win64-vs17` for example. I don\u0027t think SVE works there, but in some earlier testing it didn\u0027t seem like [`/arch`](https://learn.microsoft.com/en-us/cpp/build/reference/arch-arm64?view\u003dmsvc-170) was needed to get dotprod to compile.",
       "revId": "39eaf83e7e976955940e32977ce8efea9ae50164",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6f17f19b_297cd814",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1244,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2024-02-22T16:32:10Z",
+      "side": 1,
+      "message": "A quick test on godbolt suggests that you\u0027re right that we don\u0027t need an explicit /arch to compile stuff, although I don\u0027t have a windows device available to test on.\n\nI\u0027ve tried to restrict the compiler tests to compilers that are gnu-like, we might have to do some similar kind of testing for msvc eventually...",
+      "parentUuid": "4340905a_fabd44ef",
+      "revId": "39eaf83e7e976955940e32977ce8efea9ae50164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
