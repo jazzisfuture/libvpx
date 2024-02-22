@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d6d682d0_e3c9ecd0",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T23:05:42Z",
+      "side": 1,
+      "message": "I think it might be possible to replace some of this with `check_gcc_machine_option()`",
+      "revId": "25cf5e0ba1e0777a7b675845c1df14f79aed57ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

@@ -34,6 +34,24 @@
       "parentUuid": "4340905a_fabd44ef",
       "revId": "39eaf83e7e976955940e32977ce8efea9ae50164",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "785cf508_026ce2e5",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1244,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-22T23:05:42Z",
+      "side": 1,
+      "message": "\u003e A quick test on godbolt suggests that you\u0027re right that we don\u0027t need an explicit /arch to compile stuff, although I don\u0027t have a windows device available to test on.\n\u003e \n\nI run something nightly locally that doesn\u0027t touch any of the Arm flags. I just need to use `--disable-libyuv`.\n\n\u003e I\u0027ve tried to restrict the compiler tests to compilers that are gnu-like, we might have to do some similar kind of testing for msvc eventually...\n\nYou can test the configure step without a Windows machine. `--target\u003dx86_64-win64-vs17` will generate the config and `make` will generate the projects.",
+      "parentUuid": "6f17f19b_297cd814",
+      "revId": "39eaf83e7e976955940e32977ce8efea9ae50164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
