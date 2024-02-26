@@ -16,6 +16,24 @@
       "message": "I think it might be possible to replace some of this with `check_gcc_machine_option()`",
       "revId": "25cf5e0ba1e0777a7b675845c1df14f79aed57ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "791218ba_6321cdcc",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 4
+      },
+      "lineNbr": 1252,
+      "author": {
+        "id": 1571352
+      },
+      "writtenOn": "2024-02-26T16:26:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "d6d682d0_e3c9ecd0",
+      "revId": "25cf5e0ba1e0777a7b675845c1df14f79aed57ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
