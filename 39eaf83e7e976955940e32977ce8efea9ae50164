@@ -70,6 +70,24 @@
       "parentUuid": "785cf508_026ce2e5",
       "revId": "39eaf83e7e976955940e32977ce8efea9ae50164",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1c799d3b_76c4b727",
+        "filename": "build/make/configure.sh",
+        "patchSetId": 2
+      },
+      "lineNbr": 1244,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-26T21:06:23Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "24b98e56_e3d2b2d4",
+      "revId": "39eaf83e7e976955940e32977ce8efea9ae50164",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
