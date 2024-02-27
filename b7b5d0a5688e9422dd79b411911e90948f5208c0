@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "90cb92d6_b661cbba",
+        "filename": "vp8/common/threading.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-27T21:50:14Z",
+      "side": 1,
+      "message": "We are not affected by this bug because current code always passed value\u003d0 to sem_init():\n\n```\n$ find . -name \"*\" -a -type f | xargs grep sem_init\n./vp8/common/threading.h:#define sem_init(sem, sem_attr1, sem_init_value) \\\n./vp8/common/threading.h:#define sem_init(X, Y, Z) \\\n./vp8/encoder/ethreading.c:      sem_init(\u0026cpi-\u003eh_event_start_encoding[ithread], 0, 0);\n./vp8/encoder/ethreading.c:      sem_init(\u0026cpi-\u003eh_event_end_encoding[ithread], 0, 0);\n./vp8/encoder/ethreading.c:      sem_init(\u0026cpi-\u003eh_event_start_lpf, 0, 0);\n./vp8/encoder/ethreading.c:      sem_init(\u0026cpi-\u003eh_event_end_lpf, 0, 0);\n./vp8/decoder/threading.c:    if (sem_init(\u0026pbi-\u003eh_event_end_decoding, 0, 0)) {\n./vp8/decoder/threading.c:      if (sem_init(\u0026pbi-\u003eh_event_start_decoding[ithread], 0, 0)) break;\n$\n```",
+      "revId": "b7b5d0a5688e9422dd79b411911e90948f5208c0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
