@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "212ef99c_c233e805",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-02-27T19:52:56Z",
+      "side": 1,
+      "message": "Thanks for working through this. I confirmed this fixes the build on Debian 10.",
+      "revId": "a16a7cfb5a60f8fd06f06e3f332cfc02231624f7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
