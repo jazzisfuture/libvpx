@@ -1,6 +1,7 @@
 {
   "comments": [
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_68c4175e",
         "filename": "vpx/src/vpx_decoder.c",
@@ -20,10 +21,10 @@
         "endChar": 21
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_7d2bf7db",
         "filename": "vpx/src/vpx_decoder.c",
@@ -44,10 +45,10 @@
         "endChar": 21
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_48d67310",
         "filename": "vpx/vpx_decoder.h",
@@ -67,10 +68,10 @@
         "endChar": 30
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_5d303b46",
         "filename": "vpx/vpx_decoder.h",
@@ -91,10 +92,10 @@
         "endChar": 30
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_68dd3726",
         "filename": "vpx/vpx_decoder.h",
@@ -114,10 +115,10 @@
         "endChar": 32
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_3d356f36",
         "filename": "vpx/vpx_decoder.h",
@@ -138,10 +139,10 @@
         "endChar": 32
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_48ff9376",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -161,10 +162,10 @@
         "endChar": 7
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_a80f3f86",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -184,10 +185,10 @@
         "endChar": 49
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_3de7aff6",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -208,10 +209,10 @@
         "endChar": 49
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_08310be5",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -231,10 +232,10 @@
         "endChar": 37
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_57c9ee96",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -255,10 +256,10 @@
         "endChar": 37
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "e8f8a0fc_5e43d1ee",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -279,10 +280,10 @@
         "endChar": 37
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_c833a346",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -302,10 +303,10 @@
         "endChar": 18
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_1decf3d6",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -326,10 +327,10 @@
         "endChar": 18
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_482b1375",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -349,10 +350,10 @@
         "endChar": 14
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_fdd02709",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -373,10 +374,10 @@
         "endChar": 14
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_e8ff8745",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -396,10 +397,10 @@
         "endChar": 62
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_ddcd6b6f",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -420,10 +421,10 @@
         "endChar": 62
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_28120f7b",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -443,10 +444,10 @@
         "endChar": 38
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_bdda9f25",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -467,10 +468,10 @@
         "endChar": 38
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_2845ef93",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -490,10 +491,10 @@
         "endChar": 66
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_7d04176e",
         "filename": "vpx/vpx_frame_buffer.h",
@@ -514,10 +515,10 @@
         "endChar": 66
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_28604f07",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -537,10 +538,10 @@
         "endChar": 20
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_a821ffe9",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -560,10 +561,10 @@
         "endChar": 17
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_9d45a3a5",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -584,10 +585,10 @@
         "endChar": 17
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_1d3ab326",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -608,10 +609,10 @@
         "endChar": 20
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_489e732f",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -631,10 +632,10 @@
         "endChar": 24
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_7d12d7a5",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -655,10 +656,10 @@
         "endChar": 24
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_c8856302",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -678,10 +679,10 @@
         "endChar": 21
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_5d171b94",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -702,10 +703,10 @@
         "endChar": 21
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "c8e03c3f_08b46bab",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -725,10 +726,10 @@
         "endChar": 31
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
       "key": {
         "uuid": "08f7b548_3d0c4f84",
         "filename": "vpx_scale/generic/yv12config.c",
@@ -749,8 +750,176 @@
         "endChar": 31
       },
       "revId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
-      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba",
-      "unresolved": false
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
+  "submitRequirementResults": [
+    {
+      "submitRequirement": {
+        "name": "Code-Owners",
+        "description": {
+          "value": "User with the code owner override approved the change"
+        },
+        "applicabilityExpression": {
+          "value": {
+            "expressionString": "has:enabled_code-owners"
+          }
+        },
+        "submittabilityExpression": {
+          "expressionString": "has:approval_code-owners"
+        },
+        "overrideExpression": {
+          "value": {
+            "expressionString": "label:Owners-Override\u003d+1"
+          }
+        },
+        "allowOverrideInChildProjects": true
+      },
+      "applicabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"has:enabled_code-owners"},"status":"PASS","errorMessage":{"value":null},"passingAtoms":["has:enabled_code-owners"],"failingAtoms":[]}
+      },
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"has:approval_code-owners"},"status":"PASS","errorMessage":{"value":null},"passingAtoms":["has:approval_code-owners"],"failingAtoms":[]}
+      },
+      "overrideExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Owners-Override=+1"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Owners-Override=+1"]}
+      },
+      "patchSetCommitId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
+    },
+    {
+      "submitRequirement": {
+        "name": "Code-Review",
+        "description": {
+          "value": "At least one maximum vote for label \u0027Code-Review\u0027 is required"
+        },
+        "applicabilityExpression": {},
+        "submittabilityExpression": {
+          "expressionString": "label:Code-Review\u003dMAX,user\u003dnon_uploader AND -label:Code-Review\u003dMIN"
+        },
+        "overrideExpression": {
+          "value": {
+            "expressionString": "label:Bot-Commit\u003d+1 AND -label:Code-Review\u003dMIN"
+          }
+        },
+        "allowOverrideInChildProjects": true
+      },
+      "applicabilityExpressionResult": {},
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Code-Review=MAX,user=non_uploader AND -label:Code-Review=MIN"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Code-Review=MAX,user=non_uploader","label:Code-Review=MIN"]}
+      },
+      "overrideExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Bot-Commit=+1 AND -label:Code-Review=MIN"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Bot-Commit=+1","label:Code-Review=MIN"]}
+      },
+      "patchSetCommitId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
+    },
+    {
+      "submitRequirement": {
+        "name": "Commit-Queue",
+        "description": {
+          "value": "Submit requirement for the \u0027Commit-Queue\u0027 label"
+        },
+        "applicabilityExpression": {
+          "value": {
+            "expressionString": "is:false"
+          }
+        },
+        "submittabilityExpression": {
+          "expressionString": "is:true"
+        },
+        "overrideExpression": {},
+        "allowOverrideInChildProjects": true
+      },
+      "applicabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"is:false"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["is:false"]}
+      },
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"is:true"},"status":"NOT_EVALUATED","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":[]}
+      },
+      "overrideExpressionResult": {},
+      "patchSetCommitId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
+    },
+    {
+      "submitRequirement": {
+        "name": "Review-Enforcement",
+        "description": {
+          "value": "Two Google employees must approve the change. Uploading the change or voting positively on Code-Review count as approval."
+        },
+        "applicabilityExpression": {
+          "value": {
+            "expressionString": "is:review-enforced_gerrit"
+          }
+        },
+        "submittabilityExpression": {
+          "expressionString": "is:review-enforcement-satisfied_gerrit"
+        },
+        "overrideExpression": {},
+        "allowOverrideInChildProjects": false
+      },
+      "applicabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"is:review-enforced_gerrit"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["is:review-enforced_gerrit"]}
+      },
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"is:review-enforcement-satisfied_gerrit"},"status":"NOT_EVALUATED","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":[]}
+      },
+      "overrideExpressionResult": {},
+      "patchSetCommitId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
+    },
+    {
+      "submitRequirement": {
+        "name": "Verified",
+        "description": {
+          "value": "CI or human verified the change"
+        },
+        "applicabilityExpression": {
+          "value": {
+            "expressionString": "-branch:refs/meta/config"
+          }
+        },
+        "submittabilityExpression": {
+          "expressionString": "label:Verified\u003dMAX AND -label:Verified\u003dMIN"
+        },
+        "overrideExpression": {
+          "value": {
+            "expressionString": "label:Bot-Commit\u003d+1"
+          }
+        },
+        "allowOverrideInChildProjects": true
+      },
+      "applicabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"-branch:refs/meta/config"},"status":"PASS","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["branch:refs/meta/config"]}
+      },
+      "submittabilityExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Verified=MAX AND -label:Verified=MIN"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Verified=MAX","label:Verified=MIN"]}
+      },
+      "overrideExpressionResult": {
+        "value": {"expression":{"expressionString":"label:Bot-Commit=+1"},"status":"FAIL","errorMessage":{"value":null},"passingAtoms":[],"failingAtoms":["label:Bot-Commit=+1"]}
+      },
+      "patchSetCommitId": "36e9a928fddfb9973fad084d40af22b974b02fd5",
+      "legacy": {
+        "value": false
+      },
+      "forced": {},
+      "hidden": {}
     }
   ]
 }
