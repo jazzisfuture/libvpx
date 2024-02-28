@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d8c6384_d8082e0f",
+        "filename": "vp8/encoder/encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 811,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-02-28T19:01:13Z",
+      "side": 1,
+      "message": "Using the reproducer testcase in bug chromium:324459561, I can interrupt this `sem_wait()` call by typing Ctrl-C repeatedly. But this does not result in crash. I did not look into why.",
+      "revId": "c7757cae625f9e86d39b22580f833feb1d580bc3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
