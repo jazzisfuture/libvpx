@@ -16,6 +16,24 @@
       "message": "Optional: Maybe list `--disable-sve` on a separate line?",
       "revId": "032e782d34ce65ffb2c747dea726636f196f9fe5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6eed58f9_864547e9",
+        "filename": "build/make/Android.mk",
+        "patchSetId": 1
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-01T02:33:33Z",
+      "side": 1,
+      "message": "Done. I wasn\u0027t sure since it is related to Arm in general, but it makes sense either way.",
+      "parentUuid": "3a9b2191_280d0999",
+      "revId": "032e782d34ce65ffb2c747dea726636f196f9fe5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
