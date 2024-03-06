@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d46ee59e_39a4fa7c",
+        "filename": "build/make/Android.mk",
+        "patchSetId": 2
+      },
+      "lineNbr": 18,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-06T00:32:15Z",
+      "side": 1,
+      "message": "aarch64 is an accepted alias, but this should be arm64 to match what is documented by configure and the README.",
+      "range": {
+        "startLine": 18,
+        "startChar": 30,
+        "endLine": 18,
+        "endChar": 37
+      },
+      "revId": "099fd1b788ec18b31f12181efd95f29e58f4dfca",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
