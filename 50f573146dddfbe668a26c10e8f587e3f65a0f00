@@ -16,6 +16,24 @@
       "message": "Optional: This header can be included outside `#if CONFIG_MULTITHREAD`. It is included that way in other files.",
       "revId": "50f573146dddfbe668a26c10e8f587e3f65a0f00",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "58b43931_2a6b35c3",
+        "filename": "vp8/encoder/encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-07T21:52:46Z",
+      "side": 1,
+      "message": "\u003e Optional: This header can be included outside `#if CONFIG_MULTITHREAD`. It is included that way in other files.\n\nyes, it has its own check (`#if CONFIG_OS_SUPPORT \u0026\u0026 CONFIG_MULTITHREAD`). I\u0027ll move it, though it\u0027s a bit strange to have a difference between it and ethreading.h.",
+      "parentUuid": "3764e90c_3223ca83",
+      "revId": "50f573146dddfbe668a26c10e8f587e3f65a0f00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
