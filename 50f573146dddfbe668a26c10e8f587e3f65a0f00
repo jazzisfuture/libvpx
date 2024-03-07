@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3764e90c_3223ca83",
+        "filename": "vp8/encoder/encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-07T21:32:08Z",
+      "side": 1,
+      "message": "Optional: This header can be included outside `#if CONFIG_MULTITHREAD`. It is included that way in other files.",
+      "revId": "50f573146dddfbe668a26c10e8f587e3f65a0f00",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
