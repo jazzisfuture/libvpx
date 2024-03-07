@@ -19,6 +19,7 @@
 #include "encodemv.h"
 #if CONFIG_MULTITHREAD
 #include "ethreading.h"
+#include "vp8/common/threading.h"
 #endif
 #include "vp8/common/common.h"
 #include "onyx_int.h"
