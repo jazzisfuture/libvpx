@@ -208,6 +208,24 @@
       "message": "This is unexpected (to me). Jerome any comments?",
       "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "689fbd1b_3ab47da2",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-03-08T19:33:31Z",
+      "side": 1,
+      "message": "This test / file is only for the callbacks defined for two pass rate control. So this file should be excluded from CONFIG_REALTIME_ONLY completely...",
+      "parentUuid": "aced4b16_8c6a6012",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
