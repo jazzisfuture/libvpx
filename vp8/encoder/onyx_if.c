@@ -2005,6 +2005,7 @@ struct VP8_COMP *vp8_create_compressor(const VP8_CONFIG *oxcf) {
 
 #if CONFIG_MULTITHREAD
   if (vp8cx_create_encoder_threads(cpi)) {
+    cpi->common.error.setjmp = 0;
     vp8_remove_compressor(&cpi);
     return 0;
   }
@@ -5265,8 +5266,6 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
 
 #endif
 #endif
-
-  cpi->common.error.setjmp = 0;
 
   return 0;
 }
