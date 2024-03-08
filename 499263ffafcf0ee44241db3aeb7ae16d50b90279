@@ -33,6 +33,24 @@
       "message": "I have mixed feelings about mixing these. We could update the header or move this after this block.",
       "revId": "499263ffafcf0ee44241db3aeb7ae16d50b90279",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2cafa9a_653ba8aa",
+        "filename": "vp8/encoder/encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T01:18:14Z",
+      "side": 1,
+      "message": "\u003e I have mixed feelings about mixing these. We could update the header or move this after this block.\n\nclang-format can\u0027t sort this (or around it).",
+      "parentUuid": "5c1e27fa_48d28c7a",
+      "revId": "499263ffafcf0ee44241db3aeb7ae16d50b90279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
