@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2e772df4_4d309701",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:16:37Z",
+      "side": 1,
+      "message": "Cheng, James: I am porting my libaom CL https://aomedia-review.googlesource.com/c/aom/+/187902 to libvpx. This CL is preparing for that.",
+      "revId": "ec06dcc3141d67da5b956426d70534b070a58c8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0abf4f78_abb41019",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 929,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:16:37Z",
+      "side": 1,
+      "message": "`setjmp()` is called here.",
+      "revId": "ec06dcc3141d67da5b956426d70534b070a58c8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5d523dde_830801ec",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1365,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:16:37Z",
+      "side": 1,
+      "message": "`setjmp()` is called here.",
+      "revId": "ec06dcc3141d67da5b956426d70534b070a58c8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
