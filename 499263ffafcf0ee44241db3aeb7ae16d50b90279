@@ -16,6 +16,23 @@
       "message": "This is only because I saw this in the last change. There are plenty of other areas, but if we were going to do this we could make an include-cleaner pass followed by enabling include sorting on clang-format.",
       "revId": "499263ffafcf0ee44241db3aeb7ae16d50b90279",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c1e27fa_48d28c7a",
+        "filename": "vp8/encoder/encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T00:56:39Z",
+      "side": 1,
+      "message": "I have mixed feelings about mixing these. We could update the header or move this after this block.",
+      "revId": "499263ffafcf0ee44241db3aeb7ae16d50b90279",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
