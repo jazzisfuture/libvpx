@@ -604,6 +604,7 @@ static THREADFN thread_decoding_proc(void *p_data) {
         }
         xd->error_info.setjmp = 1;
         mt_decode_mb_rows(pbi, xd, ithread + 1);
+        xd->error_info.setjmp = 0;
       }
     }
   }
@@ -904,5 +905,6 @@ int vp8mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd) {
   for (i = 0; i < pbi->decoding_thread_count + 1; ++i)
     vp8_sem_wait(&pbi->h_event_end_decoding); /* add back for each frame */
 
+  xd->error_info.setjmp = 0;
   return 0;
 }
