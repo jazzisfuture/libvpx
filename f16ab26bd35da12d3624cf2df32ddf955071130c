@@ -1,0 +1,163 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f6464afd_99c259bc",
+        "filename": "test/cq_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "how about `GTEST_SKIP() \u003c\u003c \"Non-zero g_lag_in_frames is unsupported with CONFIG_REALTIME_ONLY.\"` instead of disabling the test?",
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5410e943_1dd90a5f",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 741,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "make this a `GTEST_SKIP()` as well. I think the message may be more informative in the log.",
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dabb94a2_90f1329c",
+        "filename": "test/encode_test_driver.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 36,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "This is not a great idea since it leaves the encoder in an undefined state. (That\u0027s more of a broader discussion about Init() vs. factory functions.)\n\nI think with `HandleEncoderInitResult()` you\u0027re trying to skip the test. It would be better to remove the tests or skip them than have this I think.",
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "98e0fa49_41cf863a",
+        "filename": "test/error_resilience_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "`GTEST_SKIP()`",
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "87b9f804_f4199ce8",
+        "filename": "test/frame_size_tests.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 193,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "`GTEST_SKIP()`",
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7038fc5c_c283b31a",
+        "filename": "test/keyframe_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "can this be defined similar to `ONE_PASS_TEST_MODES`?",
+      "range": {
+        "startLine": 158,
+        "startChar": 41,
+        "endLine": 158,
+        "endChar": 55
+      },
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "527942fd_d9ec8588",
+        "filename": "test/realtime_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "prefer `defined(CHROMIUM)` or `#ifdef CHROMIUM` to avoid warnings about using undefined macros.",
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b83ea073_4f0228b9",
+        "filename": "test/realtime_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "add `// defined(CHROMIUM)` since this is a medium length `#if`.",
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b63d12fa_1f8cd389",
+        "filename": "test/vp9_ethread_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 171,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-08T20:48:27Z",
+      "side": 1,
+      "message": "`GTEST_SKIP()`",
+      "revId": "f16ab26bd35da12d3624cf2df32ddf955071130c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
