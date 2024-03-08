@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c3311f63_1072fa7b",
+        "filename": "vp8/decoder/onyxd_if.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 455,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:46:51Z",
+      "side": 1,
+      "message": "The callers of this function will either zero the `fb-\u003epbi` array or free `fb`, so it is harmless to leave a dangling pointer here. But it is better to eliminate that concern.",
+      "revId": "04534c621504b2f7cbd5f028e90ab86ef6823da2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
