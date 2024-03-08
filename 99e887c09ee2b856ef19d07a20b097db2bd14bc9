@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "005e36a0_280df517",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 5269,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:42:15Z",
+      "side": 0,
+      "message": "`setjmp()` was not called in this function (`vp8_get_compressed_data()`), so we should not reset `setjmp` to 0 here.",
+      "revId": "99e887c09ee2b856ef19d07a20b097db2bd14bc9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

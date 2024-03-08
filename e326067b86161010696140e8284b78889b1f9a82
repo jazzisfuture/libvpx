@@ -1,0 +1,123 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e20a896_7c784ab0",
+        "filename": "vp8/decoder/onyxd_if.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 431,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:42:15Z",
+      "side": 1,
+      "message": "This is just for clarity. `fb-\u003epbi[0]` will be freed in the next line.",
+      "revId": "e326067b86161010696140e8284b78889b1f9a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cbc53509_8731e3b1",
+        "filename": "vp8/decoder/threading.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 612,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:42:15Z",
+      "side": 1,
+      "message": "Alternatively, we can reset `xd-\u003eerror_info.setjmp` to 0 before returning from the function. But the proposed change makes it clear that we are wrapping the `mt_decode_mb_rows()` call, which may call `vpx_internal_error()`.",
+      "revId": "e326067b86161010696140e8284b78889b1f9a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "acfb253c_4b6faf9c",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1766,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:42:15Z",
+      "side": 1,
+      "message": "`setjmp()` is called here.",
+      "revId": "e326067b86161010696140e8284b78889b1f9a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d2094fe_f37cf197",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2008,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:42:15Z",
+      "side": 1,
+      "message": "This is for clarify. `cpi` will be freed in the next line.",
+      "revId": "e326067b86161010696140e8284b78889b1f9a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bee7230_a55afa93",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 938,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:42:15Z",
+      "side": 1,
+      "message": "`setjmp()` is called here.",
+      "revId": "e326067b86161010696140e8284b78889b1f9a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5c71809c_b2d2e892",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 987,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:42:15Z",
+      "side": 1,
+      "message": "`vp8_get_compressed_data()` (line 982) was resetting `ctx-\u003ecpi-\u003ecommon.error.setjmp` to 0 before returning, so we may have depended on that here. But it is clearer to reset `ctx-\u003ecpi-\u003ecommon.error.setjmp` here, in the function where we called `setjmp()`.",
+      "revId": "e326067b86161010696140e8284b78889b1f9a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f5e41f3f_03c09ae2",
+        "filename": "vp8/vp8_dx_iface.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 491,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T23:42:15Z",
+      "side": 1,
+      "message": "This is just for clarify. `pc` is equal to `\u0026pbi-\u003ecommon`.",
+      "revId": "e326067b86161010696140e8284b78889b1f9a82",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
