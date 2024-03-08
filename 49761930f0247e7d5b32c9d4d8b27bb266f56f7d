@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c05af9f9_3ab7e871",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 7
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-08T00:35:21Z",
+      "side": 1,
+      "message": "James: Please review this CL in three steps.\n\n1. Review vp8/common/threading.h carefully.\n2. In the other files, check that the `vp8_` prefix was added to `sem_xxx()` calls.\n3. Check that the while loops around `sem_wait()` calls were replaced by our `vp8_sem_wait()` wrapper.",
+      "revId": "49761930f0247e7d5b32c9d4d8b27bb266f56f7d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
