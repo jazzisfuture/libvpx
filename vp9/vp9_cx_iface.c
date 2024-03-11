@@ -1383,24 +1383,26 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
 
   if (res == VPX_CODEC_OK) {
     unsigned int lib_flags = 0;
-    YV12_BUFFER_CONFIG sd;
+    int64_t dst_time_stamp;
     size_t size, cx_data_sz;
     unsigned char *cx_data;
-
-    if (!ctx->pts_offset_initialized) {
-      ctx->pts_offset = pts;
-      ctx->pts_offset_initialized = 1;
-    }
-    pts -= ctx->pts_offset;
-    int64_t dst_time_stamp = timebase_units_to_ticks(timestamp_ratio, pts);
-
-    cpi->svc.timebase_fac = timebase_units_to_ticks(timestamp_ratio, 1);
-    cpi->svc.time_stamp_superframe = dst_time_stamp;
 
     // Set up internal flags
     if (ctx->base.init_flags & VPX_CODEC_USE_PSNR) cpi->b_calculate_psnr = 1;
 
     if (img != NULL) {
+      YV12_BUFFER_CONFIG sd;
+
+      if (!ctx->pts_offset_initialized) {
+        ctx->pts_offset = pts;
+        ctx->pts_offset_initialized = 1;
+      }
+      pts -= ctx->pts_offset;
+      dst_time_stamp = timebase_units_to_ticks(timestamp_ratio, pts);
+
+      cpi->svc.timebase_fac = timebase_units_to_ticks(timestamp_ratio, 1);
+      cpi->svc.time_stamp_superframe = dst_time_stamp;
+
       const int64_t dst_end_time_stamp =
           timebase_units_to_ticks(timestamp_ratio, pts + duration);
       res = image2yuvconfig(img, &sd);
