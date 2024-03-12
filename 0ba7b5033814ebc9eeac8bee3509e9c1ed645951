@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97d070f8_1787d978",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 902,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-12T18:09:46Z",
+      "side": 1,
+      "message": "Ideally we should also ignore the `duration` parameter (and the `deadline` parameter) when flusing the encoder. `duration` is still used here. I am not familiar with the `pick_quickcompress_mode()` function, so I didn\u0027t touch it in this CL.",
+      "revId": "0ba7b5033814ebc9eeac8bee3509e9c1ed645951",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
