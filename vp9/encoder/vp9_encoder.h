@@ -924,7 +924,7 @@ typedef struct VP9_COMP {
 
   int last_coded_width;
   int last_coded_height;
-
+  int image_bps;
   int use_svc;
 
   SVC svc;
