@@ -792,12 +792,14 @@ TEST(EncodeAPI, ConfigLargeTargetBitrateVp9) {
 class VP9Encoder {
  public:
   explicit VP9Encoder(int speed)
-      : speed_(speed), bit_depth_(VPX_BITS_8), fmt_(VPX_IMG_FMT_I420) {}
+      : speed_(speed), bit_depth_(VPX_BITS_8), fmt_(VPX_IMG_FMT_I420),
+        row_mt_(0) {}
   // The image format `fmt` must not have the VPX_IMG_FMT_HIGHBITDEPTH bit set.
   // If bit_depth > 8, we will set the VPX_IMG_FMT_HIGHBITDEPTH bit before
   // passing the image format to vpx_img_alloc().
-  VP9Encoder(int speed, vpx_bit_depth_t bit_depth, vpx_img_fmt_t fmt)
-      : speed_(speed), bit_depth_(bit_depth), fmt_(fmt) {}
+  VP9Encoder(int speed, vpx_bit_depth_t bit_depth, vpx_img_fmt_t fmt,
+             int row_mt)
+      : speed_(speed), bit_depth_(bit_depth), fmt_(fmt), row_mt_(row_mt) {}
   ~VP9Encoder();
 
   void Configure(unsigned int threads, unsigned int width, unsigned int height,
@@ -813,6 +815,7 @@ class VP9Encoder {
   vpx_codec_ctx_t enc_;
   int frame_index_ = 0;
   vpx_enc_deadline_t deadline_ = 0;
+  int row_mt_ = 0;
 };
 
 VP9Encoder::~VP9Encoder() {
@@ -854,7 +857,9 @@ void VP9Encoder::Configure(unsigned int threads, unsigned int width,
         vpx_codec_enc_init(&enc_, iface, &cfg_,
                            high_bit_depth ? VPX_CODEC_USE_HIGHBITDEPTH : 0),
         VPX_CODEC_OK);
+    ASSERT_EQ(vpx_codec_enc_init(&enc_, iface, &cfg_, 0), VPX_CODEC_OK);
     ASSERT_EQ(vpx_codec_control(&enc_, VP8E_SET_CPUUSED, speed_), VPX_CODEC_OK);
+    ASSERT_EQ(vpx_codec_control(&enc_, VP9E_SET_ROW_MT, row_mt_), VPX_CODEC_OK);
     initialized_ = true;
     return;
   }
@@ -1229,6 +1234,48 @@ TEST(EncodeAPI, Buganizer319964497) {
   encoder.Encode(/*key_frame=*/false);
 }
 
+TEST(EncodeAPI, Buganizer329088759_RowMT0) {
+  VP9Encoder encoder(8, VPX_BITS_8, VPX_IMG_FMT_I444, 0);
+  encoder.Configure(/*threads=*/8, /*width=*/1686, /*height=*/398, VPX_VBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/true);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Configure(/*threads=*/0, /*width=*/1686, /*height=*/1, VPX_VBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/true);
+  encoder.Configure(/*threads=*/0, /*width=*/1482, /*height=*/113, VPX_CBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/true);
+  encoder.Configure(/*threads=*/0, /*width=*/881, /*height=*/59, VPX_CBR,
+                    VPX_DL_REALTIME);
+  encoder.Configure(/*threads=*/13, /*width=*/1271, /*height=*/385, VPX_CBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Configure(/*threads=*/2, /*width=*/1, /*height=*/62, VPX_VBR,
+                    VPX_DL_REALTIME);
+}
+
+TEST(EncodeAPI, Buganizer329088759_RowMT1) {
+  VP9Encoder encoder(8, VPX_BITS_8, VPX_IMG_FMT_I444, 1);
+  encoder.Configure(/*threads=*/8, /*width=*/1686, /*height=*/398, VPX_VBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/true);
+  encoder.Encode(/*key_frame=*/false);
+  // Needs to set threads to non-zero to repro the issue.
+  encoder.Configure(/*threads=*/2, /*width=*/1686, /*height=*/1, VPX_VBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/true);
+  encoder.Configure(/*threads=*/2, /*width=*/1482, /*height=*/113, VPX_CBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/true);
+  encoder.Configure(/*threads=*/2, /*width=*/881, /*height=*/59, VPX_CBR,
+                    VPX_DL_REALTIME);
+  encoder.Configure(/*threads=*/13, /*width=*/1271, /*height=*/385, VPX_CBR,
+                    VPX_DL_REALTIME);
+  encoder.Encode(/*key_frame=*/false);
+  encoder.Configure(/*threads=*/2, /*width=*/1, /*height=*/62, VPX_VBR,
+                    VPX_DL_REALTIME);
+}
 #endif  // CONFIG_VP9_ENCODER
 
 }  // namespace

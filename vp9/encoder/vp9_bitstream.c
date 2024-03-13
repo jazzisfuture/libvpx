@@ -987,7 +987,7 @@ static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr) {
   int tile_col = 0;
 
   if (!cpi->vp9_bitstream_worker_data ||
-      cpi->vp9_bitstream_worker_data[1].dest_size >
+      cpi->vp9_bitstream_worker_data[1].dest_size !=
           (cpi->oxcf.width * cpi->oxcf.height)) {
     vp9_bitstream_encode_tiles_buffer_dealloc(cpi);
     encode_tiles_buffer_alloc(cpi);
