@@ -962,6 +962,13 @@ void vp9_bitstream_encode_tiles_buffer_dealloc(VP9_COMP *const cpi) {
   }
 }
 
+const size_t kOffsetSize = 100;
+static int frame_alloc_size(VP9_COMP *const cpi) {
+  return cpi->Source->y_crop_width * cpi->Source->y_crop_height +
+         2 * cpi->Source->uv_crop_width * cpi->Source->uv_crop_height +
+         kOffsetSize;
+}
+
 static void encode_tiles_buffer_alloc(VP9_COMP *const cpi) {
   VP9_COMMON *const cm = &cpi->common;
   int i;
@@ -971,8 +978,7 @@ static void encode_tiles_buffer_alloc(VP9_COMP *const cpi) {
                   vpx_memalign(16, worker_data_size));
   memset(cpi->vp9_bitstream_worker_data, 0, worker_data_size);
   for (i = 1; i < cpi->num_workers; ++i) {
-    cpi->vp9_bitstream_worker_data[i].dest_size =
-        cpi->oxcf.width * cpi->oxcf.height;
+    cpi->vp9_bitstream_worker_data[i].dest_size = frame_alloc_size(cpi);
     CHECK_MEM_ERROR(&cm->error, cpi->vp9_bitstream_worker_data[i].dest,
                     vpx_malloc(cpi->vp9_bitstream_worker_data[i].dest_size));
   }
@@ -987,8 +993,7 @@ static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr) {
   int tile_col = 0;
 
   if (!cpi->vp9_bitstream_worker_data ||
-      cpi->vp9_bitstream_worker_data[1].dest_size >
-          (cpi->oxcf.width * cpi->oxcf.height)) {
+      cpi->vp9_bitstream_worker_data[1].dest_size != frame_alloc_size(cpi)) {
     vp9_bitstream_encode_tiles_buffer_dealloc(cpi);
     encode_tiles_buffer_alloc(cpi);
   }
