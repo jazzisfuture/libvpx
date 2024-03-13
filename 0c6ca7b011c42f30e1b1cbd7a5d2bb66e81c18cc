@@ -16,6 +16,24 @@
       "message": "It is better to pass the `vpx_img_fmt_t` to the constructor. I will take care of that and you can rebase this CL on top of that.",
       "revId": "0c6ca7b011c42f30e1b1cbd7a5d2bb66e81c18cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd214999_8270881e",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 794,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-13T18:33:41Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "bb9bb903_09c36727",
+      "revId": "0c6ca7b011c42f30e1b1cbd7a5d2bb66e81c18cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
