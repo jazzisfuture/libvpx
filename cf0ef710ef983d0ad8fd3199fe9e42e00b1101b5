@@ -54,6 +54,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "b027dbc6_ab8b4976",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 798,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-13T01:17:13Z",
+      "side": 1,
+      "message": "You are right. I looked into this. If we use saturation arithmetic with the multiplication in line 802, then after the division the final result will always be smaller than `UINT64_MAX`, but the actual final result may be greater than `UINT64_MAX`. It is simpler to just return an error.",
+      "parentUuid": "eb50a909_c235d52c",
+      "revId": "cf0ef710ef983d0ad8fd3199fe9e42e00b1101b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "fce798c1_d9e4f995",
         "filename": "vp9/vp9_cx_iface.c",
         "patchSetId": 2
