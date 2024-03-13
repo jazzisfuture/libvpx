@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2ef55c34_08ade885",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 5
+      },
+      "lineNbr": 867,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-13T22:51:19Z",
+      "side": 1,
+      "message": "This is false in the fuzzer currently. I\u0027m going to send a patch to enable it. Your test may pass with this enabled.",
+      "revId": "9d963d7bdf62ff15a65a67c56871af81b15b79e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
