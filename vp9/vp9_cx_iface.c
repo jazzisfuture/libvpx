@@ -1336,6 +1336,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
   if (img != NULL) {
     res = validate_img(ctx, img);
     if (res == VPX_CODEC_OK) {
+      cpi->image_bps = get_image_bps(img);
       // There's no codec control for multiple alt-refs so check the encoder
       // instance for its status to determine the compressed data size.
       data_sz = ctx->cfg.g_w * ctx->cfg.g_h * get_image_bps(img) / 8 *
