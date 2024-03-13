@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c0faa738_ed626c24",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-13T19:07:20Z",
+      "side": 1,
+      "message": "Marco: Please rebase your CL https://chromium-review.googlesource.com/c/webm/libvpx/+/5370376 on top of this CL.\n\nIn your test, change\n\n```\n  VP9Encoder encoder(7);\n```\n\nto\n\n```\n  VP9Encoder encoder(7, VPX_BITS_8, VPX_IMG_FMT_I444);\n```\n\nand then call `Configure()` and `Encode()` instead of `Configure444()` and `Encode444()`.",
+      "revId": "c32fc9ef1d3722e0df8851d3c7d6fd6b76090a03",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
