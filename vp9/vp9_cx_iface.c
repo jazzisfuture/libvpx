@@ -111,7 +111,6 @@ struct vpx_codec_alg_priv {
   vpx_codec_priv_t base;
   vpx_codec_enc_cfg_t cfg;
   struct vp9_extracfg extra_cfg;
-  vpx_rational64_t timestamp_ratio;
   vpx_codec_pts_t pts_offset;
   unsigned char pts_offset_initialized;
   VP9EncoderConfig oxcf;
@@ -1141,10 +1140,6 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
 
     if (res == VPX_CODEC_OK) {
       priv->pts_offset_initialized = 0;
-      // TODO(angiebird): Replace priv->timestamp_ratio by
-      // oxcf->g_timebase_in_ts
-      priv->timestamp_ratio = get_g_timebase_in_ts(priv->cfg.g_timebase);
-
       set_encoder_config(&priv->oxcf, &priv->cfg, &priv->extra_cfg);
 #if CONFIG_VP9_HIGHBITDEPTH
       priv->oxcf.use_highbitdepth =
@@ -1185,8 +1180,9 @@ static void pick_quickcompress_mode(vpx_codec_alg_priv_t *ctx,
         VPX_STATIC_ASSERT(TICKS_PER_SEC > 1000000 &&
                           (TICKS_PER_SEC % 1000000) == 0);
 
-        duration_us = duration * (uint64_t)ctx->timestamp_ratio.num /
-                      (ctx->timestamp_ratio.den * (TICKS_PER_SEC / 1000000));
+        duration_us =
+            duration * (uint64_t)ctx->oxcf.g_timebase_in_ts.num /
+            (ctx->oxcf.g_timebase_in_ts.den * (TICKS_PER_SEC / 1000000));
 
         // If the deadline is more that the duration this frame is to be shown,
         // use good quality mode. Otherwise use realtime mode.
@@ -1323,7 +1319,7 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
   volatile vpx_enc_frame_flags_t flags = enc_flags;
   volatile vpx_codec_pts_t pts = pts_val;
   VP9_COMP *const cpi = ctx->cpi;
-  const vpx_rational64_t *const timestamp_ratio = &ctx->timestamp_ratio;
+  const vpx_rational64_t *const timebase_in_ts = &ctx->oxcf.g_timebase_in_ts;
   size_t data_sz;
   vpx_codec_cx_pkt_t pkt;
   memset(&pkt, 0, sizeof(pkt));
@@ -1398,13 +1394,13 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
       }
       pts -= ctx->pts_offset;
       const int64_t dst_time_stamp =
-          timebase_units_to_ticks(timestamp_ratio, pts);
+          timebase_units_to_ticks(timebase_in_ts, pts);
 
-      cpi->svc.timebase_fac = timebase_units_to_ticks(timestamp_ratio, 1);
+      cpi->svc.timebase_fac = timebase_units_to_ticks(timebase_in_ts, 1);
       cpi->svc.time_stamp_superframe = dst_time_stamp;
 
       const int64_t dst_end_time_stamp =
-          timebase_units_to_ticks(timestamp_ratio, pts + duration);
+          timebase_units_to_ticks(timebase_in_ts, pts + duration);
       res = image2yuvconfig(img, &sd);
 
       // Store the original flags in to the frame buffer. Will extract the
@@ -1506,10 +1502,10 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
             if (ctx->output_cx_pkt_cb.output_cx_pkt) {
               pkt.kind = VPX_CODEC_CX_FRAME_PKT;
               pkt.data.frame.pts =
-                  ticks_to_timebase_units(timestamp_ratio, dst_time_stamp) +
+                  ticks_to_timebase_units(timebase_in_ts, dst_time_stamp) +
                   ctx->pts_offset;
               pkt.data.frame.duration = (unsigned long)ticks_to_timebase_units(
-                  timestamp_ratio, dst_end_time_stamp - dst_time_stamp);
+                  timebase_in_ts, dst_end_time_stamp - dst_time_stamp);
               pkt.data.frame.flags = get_frame_pkt_flags(cpi, lib_flags);
               pkt.data.frame.buf = ctx->pending_cx_data;
               pkt.data.frame.sz = size;
@@ -1526,10 +1522,10 @@ static vpx_codec_err_t encoder_encode(vpx_codec_alg_priv_t *ctx,
           // Add the frame packet to the list of returned packets.
           pkt.kind = VPX_CODEC_CX_FRAME_PKT;
           pkt.data.frame.pts =
-              ticks_to_timebase_units(timestamp_ratio, dst_time_stamp) +
+              ticks_to_timebase_units(timebase_in_ts, dst_time_stamp) +
               ctx->pts_offset;
           pkt.data.frame.duration = (unsigned long)ticks_to_timebase_units(
-              timestamp_ratio, dst_end_time_stamp - dst_time_stamp);
+              timebase_in_ts, dst_end_time_stamp - dst_time_stamp);
           pkt.data.frame.flags = get_frame_pkt_flags(cpi, lib_flags);
           pkt.data.frame.width[cpi->svc.spatial_layer_id] = cpi->common.width;
           pkt.data.frame.height[cpi->svc.spatial_layer_id] = cpi->common.height;
