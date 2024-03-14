@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7a49061c_a8e741c8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T16:59:39Z",
+      "side": 1,
+      "message": "The comment for `vpx_codec_encode()` says:\n\n```\n * Encodes a video frame at the given \"presentation time.\" The presentation\n * time stamp (PTS) \\ref MUST be strictly increasing.\n```\n\nHowever, this does not seem to be enforced.\n\nRe: restricting ranges in the public API: I think it makes sense to restrict the two `unsigned long` parameters `duration` and `deadline` to be at most `UINT32_MAX`, so that their ranges are independent of the size of `unsigned long`. (And in libvpx 2.0.0 change their types to `uint32_t` or `unsigned int`.)\n\nRe: pts values wrapping due to a long running live presentation: I assume `vpx_codec_pts_t` is defined as `int64_t` so that `pts` will never wrap in practice.",
+      "parentUuid": "2db77696_f06757cb",
+      "revId": "cf0ef710ef983d0ad8fd3199fe9e42e00b1101b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "eb50a909_c235d52c",
         "filename": "vp8/vp8_cx_iface.c",
         "patchSetId": 2
@@ -83,6 +101,30 @@
       "writtenOn": "2023-12-15T20:39:57Z",
       "side": 1,
       "message": "this `#if` format is somewhat unfortunate for brace completion. The condition could be broken out to a variable.",
+      "range": {
+        "startLine": 1415,
+        "startChar": 70,
+        "endLine": 1415,
+        "endChar": 72
+      },
+      "revId": "cf0ef710ef983d0ad8fd3199fe9e42e00b1101b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0ad4df94_e3b7fc4c",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1415,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T16:59:39Z",
+      "side": 1,
+      "message": "I rewrote this as two if statements and put the first if statement inside `#if`.",
+      "parentUuid": "fce798c1_d9e4f995",
       "range": {
         "startLine": 1415,
         "startChar": 70,

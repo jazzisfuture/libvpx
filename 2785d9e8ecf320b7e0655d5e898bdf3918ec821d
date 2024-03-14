@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "28f9fcf5_97cac92e",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T16:59:39Z",
+      "side": 1,
+      "message": "This CL is essentially the same as these two libaom CLs, which you reviewed, with the addition of `pick_quickcompress_mode()` functions in VP8 and VP9.",
+      "revId": "2785d9e8ecf320b7e0655d5e898bdf3918ec821d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bdda5fae_c0ac03d8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T16:59:39Z",
+      "side": 1,
+      "message": "Please review. Thanks.",
+      "revId": "2785d9e8ecf320b7e0655d5e898bdf3918ec821d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
