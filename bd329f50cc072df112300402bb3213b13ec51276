@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "195dedee_9919446d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 11
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T20:30:20Z",
+      "side": 1,
+      "message": "I added the original authors Vignesh and Ranjit as reviewers.",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6516180e_25a3586a",
@@ -71,6 +88,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "7ad07796_9cd70a4a",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 965,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T20:30:20Z",
+      "side": 1,
+      "message": "Update: This buffer receives an encoded tile. So there is no frame header overhead.\n\nI think it may be better to round up the width and height to some power of 2, instead of a fixed offset.",
+      "parentUuid": "739434ab_842bba17",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "e7078437_0bd60c8a",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 11
@@ -82,6 +117,24 @@
       "writtenOn": "2024-03-14T19:34:33Z",
       "side": 1,
       "message": "Optional: It may be better to call this function \"encode_tiles_buffer_alloc_size\" to match the name of its caller.",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b757000f_93c96802",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 966,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T20:30:20Z",
+      "side": 1,
+      "message": "Update: This buffer receives an encoded tile, so the function name should not mention \"frame\".",
+      "parentUuid": "e7078437_0bd60c8a",
       "revId": "bd329f50cc072df112300402bb3213b13ec51276",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
