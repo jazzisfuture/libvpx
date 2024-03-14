@@ -154,6 +154,23 @@
       "message": "IMPORTANT: Please double-check that `cpi-\u003eSource` is the right one to use. I don\u0027t know `cpi` well enough. It has multiple `YV12_BUFFER_CONFIG` fields; I don\u0027t know what they are used for:\n\n```\n  YV12_BUFFER_CONFIG *Source;\n  YV12_BUFFER_CONFIG *Last_Source;  // NULL for first frame and alt_ref frames\n  YV12_BUFFER_CONFIG *un_scaled_source;\n  YV12_BUFFER_CONFIG scaled_source;\n  YV12_BUFFER_CONFIG *unscaled_last_source;\n  YV12_BUFFER_CONFIG scaled_last_source;\n#ifdef ENABLE_KF_DENOISE\n  YV12_BUFFER_CONFIG raw_unscaled_source;\n  YV12_BUFFER_CONFIG raw_scaled_source;\n#endif\n  YV12_BUFFER_CONFIG *raw_source_frame;\n```",
       "revId": "bd329f50cc072df112300402bb3213b13ec51276",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b24598bd_643f7792",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 969,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T20:37:28Z",
+      "side": 1,
+      "message": "In addition to the three planes, we also need to consider high bit depths.",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
