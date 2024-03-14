@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4621eb1c_dd7db2a5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 12
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T21:30:11Z",
+      "side": 1,
+      "message": "There are unresolved comments.",
+      "revId": "dbcf0f5359a46f818ab667e78e0ca92540727dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "602071b0_37c5e8de",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 800,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T21:30:11Z",
+      "side": 1,
+      "message": "Declare `row_mt` as `unsigned int`.",
+      "revId": "dbcf0f5359a46f818ab667e78e0ca92540727dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
