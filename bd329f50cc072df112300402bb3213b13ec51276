@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6516180e_25a3586a",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 11
+      },
+      "lineNbr": 800,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T19:34:33Z",
+      "side": 1,
+      "message": "Nit: Let\u0027s make `row_mt` the second parameter, to match James\u0027s change to vp9_encoder_fuzz_test.cc (in the internal cl/615586142).",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0b3d90ec_c1c19c66",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 11
+      },
+      "lineNbr": 801,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T19:34:33Z",
+      "side": 1,
+      "message": "Nit: Declare `row_mt` as `unsigned int`.",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03b29c4f_1cc8fce9",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 11
+      },
+      "lineNbr": 813,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T19:34:33Z",
+      "side": 1,
+      "message": "Nit: Add `const`. Remove `\u003d 0`. Move this after `const int speed_;`.",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "739434ab_842bba17",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 965,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T19:34:33Z",
+      "side": 1,
+      "message": "Nit: Move this into the `frame_alloc_size()` function. Add `static`.",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e7078437_0bd60c8a",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 966,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T19:34:33Z",
+      "side": 1,
+      "message": "Optional: It may be better to call this function \"encode_tiles_buffer_alloc_size\" to match the name of its caller.",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6ff1749c_b3d34026",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 967,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T19:34:33Z",
+      "side": 1,
+      "message": "IMPORTANT: Please double-check that `cpi-\u003eSource` is the right one to use. I don\u0027t know `cpi` well enough. It has multiple `YV12_BUFFER_CONFIG` fields; I don\u0027t know what they are used for:\n\n```\n  YV12_BUFFER_CONFIG *Source;\n  YV12_BUFFER_CONFIG *Last_Source;  // NULL for first frame and alt_ref frames\n  YV12_BUFFER_CONFIG *un_scaled_source;\n  YV12_BUFFER_CONFIG scaled_source;\n  YV12_BUFFER_CONFIG *unscaled_last_source;\n  YV12_BUFFER_CONFIG scaled_last_source;\n#ifdef ENABLE_KF_DENOISE\n  YV12_BUFFER_CONFIG raw_unscaled_source;\n  YV12_BUFFER_CONFIG raw_scaled_source;\n#endif\n  YV12_BUFFER_CONFIG *raw_source_frame;\n```",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
