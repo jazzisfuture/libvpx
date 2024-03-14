@@ -248,6 +248,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "cf8a5f16_746e8524",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 967,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-14T22:30:16Z",
+      "side": 1,
+      "message": "changed the logic",
+      "parentUuid": "6ff1749c_b3d34026",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "b24598bd_643f7792",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 11
@@ -259,6 +277,24 @@
       "writtenOn": "2024-03-14T20:37:28Z",
       "side": 1,
       "message": "In addition to the three planes, we also need to consider high bit depths.",
+      "revId": "bd329f50cc072df112300402bb3213b13ec51276",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a0d7a150_345cc270",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 969,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-14T22:30:16Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "b24598bd_643f7792",
       "revId": "bd329f50cc072df112300402bb3213b13ec51276",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
