@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ade40acc_29aec168",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 812,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-14T19:01:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f06c6aa2_75294d74",
+      "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b4aaf65_e2d19c63",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-03-14T18:54:20Z",
       "side": 1,
       "message": "Delete this line. (This is a merge error.)",
+      "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d5bbf18f_e881eebb",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 860,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-14T19:01:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b4aaf65_e2d19c63",
       "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
