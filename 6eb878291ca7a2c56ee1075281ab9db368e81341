@@ -1,0 +1,106 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b781630_69ba24b2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 10
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T18:54:20Z",
+      "side": 1,
+      "message": "The existing condition either is a typo or is intended to shrink the dest_size. I think it is more likely a typo, but it is fine to keep the shrinking behavior.",
+      "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f06c6aa2_75294d74",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 812,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T18:54:20Z",
+      "side": 1,
+      "message": "Add `row_mt_` after this line. Declare it as `const unsigned int`:\n\n```\n  const unsigned int row_mt_;\n```",
+      "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2b4aaf65_e2d19c63",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 860,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T18:54:20Z",
+      "side": 1,
+      "message": "Delete this line. (This is a merge error.)",
+      "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "599198c0_b94056f3",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 1237,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T18:54:20Z",
+      "side": 1,
+      "message": "Nit: Remove the underscore in the test name in this line and line 1258.\n\nSee https://github.com/google/googletest/blob/main/docs/faq.md#why-should-test-suite-names-and-test-names-not-contain-underscore",
+      "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4af6acf_2ff2c7b5",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 10
+      },
+      "lineNbr": 1278,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T18:54:20Z",
+      "side": 1,
+      "message": "Nit: Add a blank line after this line.",
+      "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b0d5dfae_a8d8bcca",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 10
+      },
+      "lineNbr": 975,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-14T18:54:20Z",
+      "side": 1,
+      "message": "I verified this matches the condition at lines 990-991.",
+      "revId": "6eb878291ca7a2c56ee1075281ab9db368e81341",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
