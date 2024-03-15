@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "82f30a50_37c20e5e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1129564
+      },
+      "writtenOn": "2024-03-15T00:08:31Z",
+      "side": 1,
+      "message": "Similar to the other cl, it\u0027s your choice to add an assertion.",
+      "revId": "2a8f3b481d11a80e4a26f3ec060ac7b8f7dc7a69",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
