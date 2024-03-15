@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "47060995_590f66fe",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 15
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-15T18:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "0db58ffa_5d3b747d",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "04964171_1e43b91f",
         "filename": "/PATCHSET_LEVEL",
         "patchSetId": 15
@@ -52,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ddae64a0_450ed6a9",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 15
+      },
+      "lineNbr": 1278,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-15T18:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b70f69c1_88eb5b30",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "074b1b88_e0c9112c",
@@ -65,6 +101,24 @@
       "writtenOn": "2024-03-15T17:57:57Z",
       "side": 1,
       "message": "We can compute `image_bps` as follows:\n\n```\n  VP9_COMMON *const cm \u003d \u0026cpi-\u003ecommon;\n  int image_bps \u003d (8 + 2 * (8 \u003e\u003e (cm-\u003esubsampling_x + cm-\u003esubsampling_y))) *\n                  (1 + (cm-\u003ebit_depth \u003e 8));\n```\n\nNote: The last expression can alternatively be `((cm-\u003ebit_depth + 7) / 8)`.\n\nI don\u0027t think we need to take `VPXMAX(8, image_bps)`.",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "431b4c15_d227de37",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 966,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-15T18:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "074b1b88_e0c9112c",
       "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -99,6 +153,24 @@
       "writtenOn": "2024-03-15T17:57:57Z",
       "side": 1,
       "message": "It is not necessary to add the `image_bps` field. The bit depth and chroma subsampling information is in `cpi-\u003ecommon`:\n\ncpi-\u003ecommon.bit_depth\ncpi-\u003ecommon.subsampling_x\ncpi-\u003ecommon.subsampling_y",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac835dea_f5e5884a",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 15
+      },
+      "lineNbr": 927,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-15T18:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4883b45a_9496f5a0",
       "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

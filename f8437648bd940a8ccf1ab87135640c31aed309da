@@ -69,6 +69,24 @@
       "parentUuid": "a390e568_db889ead",
       "revId": "f8437648bd940a8ccf1ab87135640c31aed309da",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "151999ae_c0ce07fb",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 968,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-15T18:53:01Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1ed42070_3fcd21a0",
+      "revId": "f8437648bd940a8ccf1ab87135640c31aed309da",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
