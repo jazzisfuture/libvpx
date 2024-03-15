@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "04964171_1e43b91f",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 15
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1177966
+      },
+      "writtenOn": "2024-03-15T12:58:10Z",
+      "side": 1,
+      "message": "The change looks correct to us. \n\nAlternatively, the condition for reallocation can be modified as below to avoid reallocations when the frame size is smaller than dest_size:\n```\n      cpi-\u003evp9_bitstream_worker_data[1].dest_size \u003c\n          encode_tiles_buffer_alloc_size(cpi)\n```\nThough above condition avoids the reallocations at run-time when resolution is reduced, we feel that the approach in the current CL tries to keep average run-time memory consumption low.",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
