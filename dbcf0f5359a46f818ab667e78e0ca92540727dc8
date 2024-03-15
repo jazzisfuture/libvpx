@@ -33,6 +33,24 @@
       "message": "Declare `row_mt` as `unsigned int`.",
       "revId": "dbcf0f5359a46f818ab667e78e0ca92540727dc8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5e79eae3_93554d82",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 12
+      },
+      "lineNbr": 800,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-15T00:01:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "602071b0_37c5e8de",
+      "revId": "dbcf0f5359a46f818ab667e78e0ca92540727dc8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
