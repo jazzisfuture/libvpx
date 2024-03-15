@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07908178_a9a920a6",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 19
+      },
+      "lineNbr": 969,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-15T22:52:12Z",
+      "side": 1,
+      "message": "I used the following code to test this function:\n\n```\nstatic int get_image_bps_old(vpx_img_fmt_t fmt) {\n  switch (fmt) {\n    case VPX_IMG_FMT_YV12:\n    case VPX_IMG_FMT_NV12:\n    case VPX_IMG_FMT_I420: return 12;\n    case VPX_IMG_FMT_I422: return 16;\n    case VPX_IMG_FMT_I444: return 24;\n    case VPX_IMG_FMT_I440: return 16;\n    case VPX_IMG_FMT_I42016: return 24;\n    case VPX_IMG_FMT_I42216: return 32;\n    case VPX_IMG_FMT_I44416: return 48;\n    case VPX_IMG_FMT_I44016: return 32;\n    default: assert(0 \u0026\u0026 \"Invalid image format\"); break;\n  }\n  return 0;\n}\n  \nstatic int get_image_bps(vpx_bit_depth_t bit_depth, int subsampling_x, int subsampling_y) {\n  const int image_bps \u003d\n      (8 + 2 * (8 \u003e\u003e (subsampling_x + subsampling_y))) *\n      (1 + (bit_depth \u003e 8));\n  return image_bps; \n} \n  \nTEST(EncodeAPI, GetImageBps) {\n  EXPECT_EQ(get_image_bps(VPX_BITS_8, 1, 1), get_image_bps_old(VPX_IMG_FMT_I420));\n  EXPECT_EQ(get_image_bps(VPX_BITS_8, 1, 0), get_image_bps_old(VPX_IMG_FMT_I422));\n  EXPECT_EQ(get_image_bps(VPX_BITS_8, 0, 0), get_image_bps_old(VPX_IMG_FMT_I444));\n  EXPECT_EQ(get_image_bps(VPX_BITS_8, 0, 1), get_image_bps_old(VPX_IMG_FMT_I440));\n\n  EXPECT_EQ(get_image_bps(VPX_BITS_10, 1, 1), get_image_bps_old(VPX_IMG_FMT_I42016));\n  EXPECT_EQ(get_image_bps(VPX_BITS_10, 1, 0), get_image_bps_old(VPX_IMG_FMT_I42216));\n  EXPECT_EQ(get_image_bps(VPX_BITS_10, 0, 0), get_image_bps_old(VPX_IMG_FMT_I44416));\n  EXPECT_EQ(get_image_bps(VPX_BITS_10, 0, 1), get_image_bps_old(VPX_IMG_FMT_I44016));\n  \n  EXPECT_EQ(get_image_bps(VPX_BITS_12, 1, 1), get_image_bps_old(VPX_IMG_FMT_I42016));\n  EXPECT_EQ(get_image_bps(VPX_BITS_12, 1, 0), get_image_bps_old(VPX_IMG_FMT_I42216));\n  EXPECT_EQ(get_image_bps(VPX_BITS_12, 0, 0), get_image_bps_old(VPX_IMG_FMT_I44416));\n  EXPECT_EQ(get_image_bps(VPX_BITS_12, 0, 1), get_image_bps_old(VPX_IMG_FMT_I44016));\n}\n```",
+      "revId": "c29e63728316486082dd6083c2062434b441b77d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
