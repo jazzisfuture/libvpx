@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "0db58ffa_5d3b747d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 15
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-15T17:57:57Z",
+      "side": 1,
+      "message": "Add b/329179808?",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "04964171_1e43b91f",
@@ -14,6 +31,74 @@
       "writtenOn": "2024-03-15T12:58:10Z",
       "side": 1,
       "message": "The change looks correct to us. \n\nAlternatively, the condition for reallocation can be modified as below to avoid reallocations when the frame size is smaller than dest_size:\n```\n      cpi-\u003evp9_bitstream_worker_data[1].dest_size \u003c\n          encode_tiles_buffer_alloc_size(cpi)\n```\nThough above condition avoids the reallocations at run-time when resolution is reduced, we feel that the approach in the current CL tries to keep average run-time memory consumption low.",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b70f69c1_88eb5b30",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 15
+      },
+      "lineNbr": 1278,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-15T17:57:57Z",
+      "side": 1,
+      "message": "Please add a test for b/329179808. It is bit depth 10.\n\nNote: It would be good to add a test for b/329674887 as well, but its detailed report doesn\u0027t have the reproducer testcase in human-readable form.",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "074b1b88_e0c9112c",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 966,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-15T17:57:57Z",
+      "side": 1,
+      "message": "We can compute `image_bps` as follows:\n\n```\n  VP9_COMMON *const cm \u003d \u0026cpi-\u003ecommon;\n  int image_bps \u003d (8 + 2 * (8 \u003e\u003e (cm-\u003esubsampling_x + cm-\u003esubsampling_y))) *\n                  (1 + (cm-\u003ebit_depth \u003e 8));\n```\n\nNote: The last expression can alternatively be `((cm-\u003ebit_depth + 7) / 8)`.\n\nI don\u0027t think we need to take `VPXMAX(8, image_bps)`.",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "096bc1cd_f07155f7",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 15
+      },
+      "lineNbr": 1182,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-15T17:57:57Z",
+      "side": 1,
+      "message": "Note that all the `cm` fields we need to compute `image_bps` are used in this function, so those `cm` fields are set properly when we write the bitstream.",
+      "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4883b45a_9496f5a0",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 15
+      },
+      "lineNbr": 927,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-15T17:57:57Z",
+      "side": 1,
+      "message": "It is not necessary to add the `image_bps` field. The bit depth and chroma subsampling information is in `cpi-\u003ecommon`:\n\ncpi-\u003ecommon.bit_depth\ncpi-\u003ecommon.subsampling_x\ncpi-\u003ecommon.subsampling_y",
       "revId": "3eb5778ae04ea810b873509ceb4b806f6d6cbcc4",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
