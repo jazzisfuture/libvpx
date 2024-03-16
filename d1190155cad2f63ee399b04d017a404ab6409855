@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "04ccc5d7_1471dc9d",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-16T21:20:18Z",
+      "side": 1,
+      "message": "Add the `Bug: b/329088759, b/329674887, b/329179808` line. This CL is part of the bug fix.",
+      "revId": "d1190155cad2f63ee399b04d017a404ab6409855",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "351bb2a5_e14e42a9",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-16T21:20:18Z",
+      "side": 1,
+      "message": "Thanks for the quick fix. I suggest two changes.",
+      "revId": "d1190155cad2f63ee399b04d017a404ab6409855",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0f97be67_29e2203b",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 971,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-16T21:20:18Z",
+      "side": 1,
+      "message": "Nit: It\u0027s better to cast the first operand, so that all the operations are performed using `int64_t`:\n\n```\n      (int64_t)cpi-\u003eoxcf.width * cpi-\u003eoxcf.height * image_bps / 8;\n```",
+      "revId": "d1190155cad2f63ee399b04d017a404ab6409855",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
