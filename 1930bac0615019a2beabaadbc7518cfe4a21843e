@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "b6172006_b725bda9",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-03-19T17:57:56Z",
+      "side": 1,
+      "message": "They\u0027re not directly related, even though that test case is the only place where these IO functions are used.\n\nI\u0027m not sure if that test case is still needed since we already have end to end testing. I\u0027ll need to take another look. But removing these IO functions from libvpx isn\u0027t related to the reason why the test case was disabled.",
+      "parentUuid": "eb851882_859b22f6",
+      "revId": "1930bac0615019a2beabaadbc7518cfe4a21843e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "fa75464b_8f042f8d",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-03-19T17:53:16Z",
       "side": 1,
       "message": "Optional: The parenthese are not needed. They can be omitted.",
+      "revId": "1930bac0615019a2beabaadbc7518cfe4a21843e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7c28c36d_d80a2a8d",
+        "filename": "vpx/vpx_tpl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-03-19T17:57:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa75464b_8f042f8d",
       "revId": "1930bac0615019a2beabaadbc7518cfe4a21843e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
