@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14542fb2_89dd8fcc",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-19T17:53:16Z",
+      "side": 1,
+      "message": "These functions were added in https://chromium-review.googlesource.com/c/webm/libvpx/+/4509477. Since you are the original author, I trust your judgment that they can be removed.",
+      "revId": "1930bac0615019a2beabaadbc7518cfe4a21843e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eb851882_859b22f6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-19T17:53:16Z",
+      "side": 1,
+      "message": "Should we add b/306182152? Please search for \"TODO: b/306182152\" in Google\u0027s internal repository.",
+      "revId": "1930bac0615019a2beabaadbc7518cfe4a21843e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fa75464b_8f042f8d",
+        "filename": "vpx/vpx_tpl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 33,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-19T17:53:16Z",
+      "side": 1,
+      "message": "Optional: The parenthese are not needed. They can be omitted.",
+      "revId": "1930bac0615019a2beabaadbc7518cfe4a21843e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
