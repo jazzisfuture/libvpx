@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5eace90b_e7a2ef6c",
+        "filename": "test/altref_test.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-19T19:22:41Z",
+      "side": 1,
+      "message": "This isn\u0027t strictly needed in this change. Let\u0027s remove it to keep the size of the change down.",
+      "revId": "dcd33b942cd450f4a39bbff71c2a45cd09aafd8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ed3008d_af15f297",
+        "filename": "test/bench.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-19T19:22:41Z",
+      "side": 1,
+      "message": "Is this needed for the Chrome build? It could be done in a separate change otherwise.",
+      "revId": "dcd33b942cd450f4a39bbff71c2a45cd09aafd8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9780048c_639acf2c",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 8
+      },
+      "lineNbr": 849,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-19T19:22:41Z",
+      "side": 1,
+      "message": "this is somewhat redundant given the text in `GTEST_SKIP`",
+      "revId": "dcd33b942cd450f4a39bbff71c2a45cd09aafd8c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

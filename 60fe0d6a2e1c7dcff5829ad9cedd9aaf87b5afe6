@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a435c5ad_b154e4ac",
+        "filename": "test/config_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 52,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-19T19:22:41Z",
+      "side": 1,
+      "message": "\u003e I think this case still needs to be disabled in a realtime config. It doesn\u0027t seem to allow for any lagged frames.\n\u003e \n\u003e Expected equality of these values:\n\u003e   VPX_CODEC_OK\n\u003e     Which is: 0\n\u003e   res_enc\n\u003e     Which is: 8\n\u003e g_lag_in_frames out of range [..0]\n\nMarco confirmed this was expected behavior for now.",
+      "parentUuid": "3a8e4fb2_7931f520",
+      "revId": "60fe0d6a2e1c7dcff5829ad9cedd9aaf87b5afe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "693c54ae_296180d4",
