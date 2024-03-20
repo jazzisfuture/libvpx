@@ -15,6 +15,9 @@
 extern "C" {
 #endif
 
+#define MIN_TILE_WIDTH_B64 4
+#define MAX_TILE_WIDTH_B64 64
+
 struct VP9Common;
 
 typedef struct TileInfo {
