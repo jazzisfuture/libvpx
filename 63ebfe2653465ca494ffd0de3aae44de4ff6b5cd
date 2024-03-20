@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae91ab1a_74422b03",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-20T18:20:34Z",
+      "side": 1,
+      "message": "Please review the new patchset. I also added `const` to a function parameter and local variable.",
+      "revId": "63ebfe2653465ca494ffd0de3aae44de4ff6b5cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
