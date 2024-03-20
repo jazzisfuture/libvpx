@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55d5b6e9_a618127a",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 966,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-20T03:08:48Z",
+      "side": 1,
+      "message": "See my comment at line 1089.",
+      "revId": "a4b66e9b61f9caac1ecd973c56c110d3404f16a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "edc23c6a_6daf2876",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1089,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-20T03:08:48Z",
+      "side": 1,
+      "message": "This is the only call to `encode_tiles_mt()`. Note that `encode_tiles_mt()` is called only if `tile_cols \u003e 1`. So the buffers are used only when there are multiple tiles.",
+      "revId": "a4b66e9b61f9caac1ecd973c56c110d3404f16a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
