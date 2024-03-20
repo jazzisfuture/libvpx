@@ -962,13 +962,16 @@ void vp9_bitstream_encode_tiles_buffer_dealloc(VP9_COMP *const cpi) {
   }
 }
 
+// This function returns the size of the buffers that are used only when there
+// are multiple tiles, so the tile width is at most MAX_TILE_WIDTH_B64 * 64.
 static int encode_tiles_buffer_alloc_size(const VP9_COMP *cpi) {
   const VP9_COMMON *cm = &cpi->common;
   const int image_bps =
       (8 + 2 * (8 >> (cm->subsampling_x + cm->subsampling_y))) *
       (1 + (cm->bit_depth > 8));
+  const int max_tile_width = VPXMIN(cpi->oxcf.width, MAX_TILE_WIDTH_B64 * 64);
   const int64_t size =
-      (int64_t)cpi->oxcf.width * cpi->oxcf.height * image_bps / 8;
+      (int64_t)max_tile_width * cpi->oxcf.height * image_bps / 8;
   return (int)size;
 }
 
