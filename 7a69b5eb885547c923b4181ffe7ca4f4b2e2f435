@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3a0ef384_5d69f1d1",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 735,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-03-20T23:44:24Z",
+      "side": 1,
+      "message": "Sorry for the churn, this CL is wrong.\n\n`gf_picture[frame_idx].ref_frame[]` is the frame index in the GOP, not the buf index. See the function `init_gop_frames` in this file.\n\n`best_rf_idx` is actually already the buf index. The ref frame is directly taken from the array `ref_frame[rf_idx]`.",
+      "range": {
+        "startLine": 735,
+        "startChar": 0,
+        "endLine": 735,
+        "endChar": 46
+      },
+      "revId": "7a69b5eb885547c923b4181ffe7ca4f4b2e2f435",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
