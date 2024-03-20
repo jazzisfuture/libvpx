@@ -732,7 +732,7 @@ static void mode_estimation(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
     tpl_stats->ref_frame_index = gf_picture[frame_idx].ref_frame[best_rf_idx];
   }
   tpl_stats->mv.as_int = best_mv.as_int;
-  *ref_frame_idx = best_rf_idx;
+  *ref_frame_idx = tpl_stats->ref_frame_index;
 }
 
 #if CONFIG_NON_GREEDY_MV
