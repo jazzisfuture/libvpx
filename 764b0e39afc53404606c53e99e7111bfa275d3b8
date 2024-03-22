@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee2d704f_34196ccb",
+        "filename": "vpx_dsp/bitwriter.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T22:33:21Z",
+      "side": 1,
+      "message": "This is modeled after `vpx_reader_init()`.\n\n```\nint vpx_reader_init(vpx_reader *r, const uint8_t *buffer, size_t size,\n                    vpx_decrypt_cb decrypt_cb, void *decrypt_state) {\n  if (size \u0026\u0026 !buffer) {\n    return 1;\n  } else {\n    r-\u003ebuffer_end \u003d buffer + size;\n    r-\u003ebuffer \u003d buffer;\n    r-\u003evalue \u003d 0;\n    r-\u003ecount \u003d -8;\n    r-\u003erange \u003d 255;\n    r-\u003edecrypt_cb \u003d decrypt_cb;\n    r-\u003edecrypt_state \u003d decrypt_state;\n    vpx_reader_fill(r);\n    return vpx_read_bit(r) !\u003d 0;  // marker bit\n  }\n}\n```",
+      "revId": "764b0e39afc53404606c53e99e7111bfa275d3b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "18b96f94_cfc0f309",
+        "filename": "vpx_dsp/bitwriter.h",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T22:33:21Z",
+      "side": 1,
+      "message": "The changes to `vpx_writer` are modeled after `vpx_reader`.\n\n```\ntypedef struct {\n  // Be careful when reordering this struct, it may impact the cache negatively.\n  BD_VALUE value;\n  unsigned int range;\n  int count;\n  const uint8_t *buffer_end;\n  const uint8_t *buffer;\n  vpx_decrypt_cb decrypt_cb;\n  void *decrypt_state;\n  uint8_t clear_buffer[sizeof(BD_VALUE) + 1];\n} vpx_reader;\n\nint vpx_reader_init(vpx_reader *r, const uint8_t *buffer, size_t size,\n                    vpx_decrypt_cb decrypt_cb, void *decrypt_state);\n```",
+      "revId": "764b0e39afc53404606c53e99e7111bfa275d3b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
