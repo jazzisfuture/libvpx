@@ -26,6 +26,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e340de4c_777044a6",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 948,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T23:31:26Z",
+      "side": 1,
+      "message": "I will remove this TODO comment after your review. This TODO comment assumes that `vpx_writer` will call `vpx_internal_error()` to report a buffer overflow error. I just realized that `vpx_writer` can also stop writing if it reaches the end of buffer, and `vpx_stop_encode()` can be modified to report if there was a buffer overflow error.",
+      "revId": "764b0e39afc53404606c53e99e7111bfa275d3b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "5190c65c_b75f8dde",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 3
