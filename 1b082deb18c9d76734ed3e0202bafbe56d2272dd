@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bd431547_9b114a1a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T14:52:04Z",
+      "side": 1,
+      "message": "In patchset 2 I resolved the merge conflict in patchset 1 incorrectly. I included the context for a change. That context is the unit test for another bug. So that test failed in patchset 2. I removed that test in patchset 3.",
+      "revId": "1b082deb18c9d76734ed3e0202bafbe56d2272dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
