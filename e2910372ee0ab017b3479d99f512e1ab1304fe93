@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "2f623ba2_fc924505",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1364,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T00:51:34Z",
+      "side": 1,
+      "message": "The `dest_size` parameter will be used in the next CL (https://chromium-review.googlesource.com/c/webm/libvpx/+/5386498).",
+      "revId": "e2910372ee0ab017b3479d99f512e1ab1304fe93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "5b421a80_99bf21b1",
         "filename": "vp9/simple_encode.h",
         "patchSetId": 2
