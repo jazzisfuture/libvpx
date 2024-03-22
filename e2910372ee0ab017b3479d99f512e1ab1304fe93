@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "5b421a80_99bf21b1",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 532,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T00:49:01Z",
+      "side": 1,
+      "message": "The reason to declare these two data members as const (immutable after construction) is to prove that the `get_max_coding_data_byte_size(frame_width_, frame_height_)` call at line vp9/simple_encode.cc:1224 in the original code must be equal to `encode_frame_result-\u003emax_coding_data_byte_size` in the new code.",
+      "revId": "e2910372ee0ab017b3479d99f512e1ab1304fe93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ef769677_7291485f",
         "filename": "vp9/vp9_cx_iface.c",
         "patchSetId": 2
