@@ -3,6 +3,97 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "9a7a24e4_20290534",
+        "filename": "test/vp9_boolcoder_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T22:42:40Z",
+      "side": 1,
+      "message": "I will change `kBufferSize` to `sizeof(bw_buffer)` after your review.",
+      "range": {
+        "startLine": 56,
+        "startChar": 41,
+        "endLine": 56,
+        "endChar": 52
+      },
+      "revId": "764b0e39afc53404606c53e99e7111bfa275d3b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5190c65c_b75f8dde",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1057,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T22:42:40Z",
+      "side": 1,
+      "message": "The original code returns 0 to indicate an error. But the caller doesn\u0027t check if the return value is 0. So I changed the code to call `vpx_internal_error()` to report an error.",
+      "revId": "764b0e39afc53404606c53e99e7111bfa275d3b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e57e60cc_b5eb42ca",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1131,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T22:42:40Z",
+      "side": 1,
+      "message": "The check at line 1118 ensures that it is safe to write 4 bytes to `data_ptr + total_size` here.",
+      "revId": "764b0e39afc53404606c53e99e7111bfa275d3b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a22bb4a_a4af1155",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1390,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T22:42:40Z",
+      "side": 1,
+      "message": "I verified that `vp9_pack_bitstream()` is only called by `encoder_encode()`, after `encoder_encode()` has set up the jump buffer in `cm-\u003eerror`. Therefore `vp9_pack_bitstream()` and the functions it calls can call `vpx_internal_error(\u0026cm-\u003eerror, ...)` to report an error.",
+      "revId": "764b0e39afc53404606c53e99e7111bfa275d3b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4f695fc3_9f3229b0",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1426,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T22:42:40Z",
+      "side": 1,
+      "message": "I will add curly braces to this if statement after your review.",
+      "revId": "764b0e39afc53404606c53e99e7111bfa275d3b8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ee2d704f_34196ccb",
         "filename": "vpx_dsp/bitwriter.c",
         "patchSetId": 3
