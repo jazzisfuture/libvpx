@@ -34,6 +34,24 @@
       "parentUuid": "1478ace6_01528bff",
       "revId": "9a3cb979dab2f5df5d2a9b46b62376259502a340",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24cf0a1a_290f0890",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T04:34:51Z",
+      "side": 1,
+      "message": "This bug fix was not requested to be merged to M122. But when cherry-picking a commit to an older branch, it is sometimes necessary to cherry-pick additional prerequisite commits. This commit is a partial prerequisite. Since the bug fix is in M123, it is safe to cherry-pick this commit completely to M122.",
+      "parentUuid": "9c8168ab_7d2d79a7",
+      "revId": "9a3cb979dab2f5df5d2a9b46b62376259502a340",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
