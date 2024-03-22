@@ -54,6 +54,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1be782cf_2e8cd3a8",
+        "filename": "vp9/simple_encode.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 532,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T04:14:12Z",
+      "side": 1,
+      "message": "I reverted this optional change so that the diffs are simpler.",
+      "parentUuid": "5b421a80_99bf21b1",
+      "revId": "e2910372ee0ab017b3479d99f512e1ab1304fe93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "ef769677_7291485f",
         "filename": "vp9/vp9_cx_iface.c",
         "patchSetId": 2
@@ -82,6 +100,24 @@
       "writtenOn": "2024-03-22T01:00:06Z",
       "side": 1,
       "message": "Eventually this TODO should be able to be removed or the comment refined.",
+      "revId": "e2910372ee0ab017b3479d99f512e1ab1304fe93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ccf39e2_a4a92709",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1458,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T04:14:12Z",
+      "side": 1,
+      "message": "Good idea. I added the new bug number to the TODO comment.",
+      "parentUuid": "5ae92448_6142168f",
       "revId": "e2910372ee0ab017b3479d99f512e1ab1304fe93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
