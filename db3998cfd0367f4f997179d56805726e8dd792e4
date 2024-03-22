@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d17323a_7bf30712",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T00:41:21Z",
+      "side": 1,
+      "message": "Marco: I messed up again. I accidentally added patchset 5 to your CL.\n\nI was doing an experiment: I cherry-picked the CL that added the VP8Encoder class, and then cherry-picked the \"Add high bit depths, 4:2:2, 4:4:4 to VP9Encoder\" CL on top of that one. But it is again considered the same as your CL. Sorry.\n\nBut I think we can just use patchset 5 of this CL. Which means we will cherry-pick an additional CL (VP8Encoder and the sem_wait EINTR bug fix).",
+      "revId": "db3998cfd0367f4f997179d56805726e8dd792e4",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
