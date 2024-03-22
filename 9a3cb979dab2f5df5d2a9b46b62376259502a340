@@ -16,6 +16,24 @@
       "message": "Cherry-picking this bug fix makes it easier to cherry-pick the three CLs that Marco needs to cherry-pick.",
       "revId": "9a3cb979dab2f5df5d2a9b46b62376259502a340",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c8168ab_7d2d79a7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-22T02:23:04Z",
+      "side": 1,
+      "message": "Was this bug also requested to be merged to M122? Otherwise don\u0027t think we should cherry-pick another bug into this merge request.",
+      "parentUuid": "1478ace6_01528bff",
+      "revId": "9a3cb979dab2f5df5d2a9b46b62376259502a340",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
