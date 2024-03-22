@@ -67,6 +67,23 @@
       "message": "Note that `cx_data_sz` is the size of the `cx_data` buffer. So we pass `cx_data` and `cx_data_sz` together to the `vp9_get_compressed_data()` calls below.",
       "revId": "e2910372ee0ab017b3479d99f512e1ab1304fe93",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ae92448_6142168f",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1458,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-22T01:00:06Z",
+      "side": 1,
+      "message": "Eventually this TODO should be able to be removed or the comment refined.",
+      "revId": "e2910372ee0ab017b3479d99f512e1ab1304fe93",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
