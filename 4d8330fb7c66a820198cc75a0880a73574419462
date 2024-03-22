@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df1555f8_bf587905",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 347,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T00:29:21Z",
+      "side": 1,
+      "message": "We don\u0027t need this block of code (lines 347-437), which comes from a different CL (https://chromium-review.googlesource.com/c/webm/libvpx/+/5299569).",
+      "revId": "4d8330fb7c66a820198cc75a0880a73574419462",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}

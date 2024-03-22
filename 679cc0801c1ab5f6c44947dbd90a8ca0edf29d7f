@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "758352c6_268f54a4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-22T00:29:21Z",
+      "side": 1,
+      "message": "Marco: I didn\u0027t mean to modify your CL directly. Sorry about that.\n\nI checked this CL by creating a cherry-pick CL myself using the Web UI and then checking out that CL locally. But when I fixed the conflicts and pushed that CL to Gerrit, it is apparently considered the same as this CL!\n\nPlease check the diffs between patchset 1 (your CL) and patchset 4. Thanks.",
+      "revId": "679cc0801c1ab5f6c44947dbd90a8ca0edf29d7f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
