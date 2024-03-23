@@ -20,13 +20,14 @@ void vpx_start_encode(vpx_writer *br, uint8_t *source, size_t size) {
   br->lowvalue = 0;
   br->range = 255;
   br->count = -24;
-  br->buffer = source;
-  br->buffer_end = source + size;
   br->pos = 0;
+  br->error = 0;
+  br->buffer = source;
+  br->size = size;
   vpx_write_bit(br, 0);
 }
 
-void vpx_stop_encode(vpx_writer *br) {
+int vpx_stop_encode(vpx_writer *br) {
   int i;
 
 #if CONFIG_BITSTREAM_DEBUG
@@ -35,9 +36,17 @@ void vpx_stop_encode(vpx_writer *br) {
   for (i = 0; i < 32; i++) vpx_write_bit(br, 0);
 
   // Ensure there's no ambigous collision with any index marker bytes
-  if ((br->buffer[br->pos - 1] & 0xe0) == 0xc0) br->buffer[br->pos++] = 0;
+  if (!br->error && (br->buffer[br->pos - 1] & 0xe0) == 0xc0) {
+    if (br->pos < br->size) {
+      br->buffer[br->pos++] = 0;
+    } else {
+      br->error = -1;
+    }
+  }
 
 #if CONFIG_BITSTREAM_DEBUG
   bitstream_queue_set_skip_write(0);
 #endif
+
+  return br->error;
 }
