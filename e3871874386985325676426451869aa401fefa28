@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "86807164_e7ce1a3c",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1031,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-23T19:29:26Z",
+      "side": 0,
+      "message": "Both `data_size` and `offset` are of the `size_t` type. If `data-\u003edest_size` is of the `int` type, `MSVC emits the following warning:\n\nvp9\\encoder\\vp9_bitstream.c(1031,37): warning C4267: \u0027\u003d\u0027: conversion from \u0027size_t\u0027 to \u0027int\u0027, possible loss of data\n\nFix this warning by declaring `data-\u003edest_size` as `size_t`.",
+      "revId": "e3871874386985325676426451869aa401fefa28",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
