@@ -65,7 +65,7 @@ TEST(VP9, TestBitIO) {
           vpx_write(&bw, bit, static_cast<int>(probas[i]));
         }
 
-        vpx_stop_encode(&bw);
+        GTEST_ASSERT_EQ(vpx_stop_encode(&bw), 1);
         // vpx_reader_fill() may read into uninitialized data that
         // isn't used meaningfully, but may trigger an MSan warning.
         memset(bw_buffer + bw.pos, 0, sizeof(BD_VALUE) - 1);
