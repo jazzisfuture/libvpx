@@ -29,13 +29,14 @@ typedef struct vpx_writer {
   unsigned int lowvalue;
   unsigned int range;
   int count;
+  int error;
   unsigned int pos;
+  unsigned int size;
   uint8_t *buffer;
-  const uint8_t *buffer_end;
 } vpx_writer;
 
 void vpx_start_encode(vpx_writer *br, uint8_t *source, size_t size);
-void vpx_stop_encode(vpx_writer *br);
+int vpx_stop_encode(vpx_writer *br);
 
 static INLINE VPX_NO_UNSIGNED_SHIFT_CHECK void vpx_write(vpx_writer *br,
                                                          int bit,
@@ -78,18 +79,25 @@ static INLINE VPX_NO_UNSIGNED_SHIFT_CHECK void vpx_write(vpx_writer *br,
   if (count >= 0) {
     int offset = shift - count;
 
-    if ((lowvalue << (offset - 1)) & 0x80000000) {
-      int x = br->pos - 1;
+    if (!br->error) {
+      if ((lowvalue << (offset - 1)) & 0x80000000) {
+        int x = br->pos - 1;
 
-      while (x >= 0 && br->buffer[x] == 0xff) {
-        br->buffer[x] = 0;
-        x--;
+        while (x >= 0 && br->buffer[x] == 0xff) {
+          br->buffer[x] = 0;
+          x--;
+        }
+
+        // TODO(wtc): How to prove 0 <= x < br->size?
+        br->buffer[x] += 1;
       }
 
-      br->buffer[x] += 1;
+      if (br->pos < br->size) {
+        br->buffer[br->pos++] = (lowvalue >> (24 - offset)) & 0xff;
+      } else {
+        br->error = -1;
+      }
     }
-
-    br->buffer[br->pos++] = (lowvalue >> (24 - offset)) & 0xff;
     lowvalue <<= offset;
     shift = count;
     lowvalue &= 0xffffff;
