@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b4007808_35ae1137",
+        "filename": "vp8/encoder/bitstream.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 411,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-25T21:50:37Z",
+      "side": 1,
+      "message": "The local variable `pc` is defined here.",
+      "revId": "c9bd57353178aeb5e733d9ac695b4890e6e557ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1967d4a5_44173d9d",
+        "filename": "vp8/encoder/bitstream.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1006,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-25T21:50:37Z",
+      "side": 1,
+      "message": "The local variable `pc` is defined here.",
+      "revId": "c9bd57353178aeb5e733d9ac695b4890e6e557ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eb51058a_92f26b0e",
+        "filename": "vp8/encoder/bitstream.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1246,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-25T21:50:37Z",
+      "side": 1,
+      "message": "In addition to using the local varable `pc`, this `memcpy()` call can be replaced as a struct assignment.",
+      "revId": "c9bd57353178aeb5e733d9ac695b4890e6e557ef",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
