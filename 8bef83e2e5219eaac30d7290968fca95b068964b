@@ -3,6 +3,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "7be76805_80d76025",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 6
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T23:36:49Z",
+      "side": 1,
+      "message": "Please review the new tests. Thanks for the review!",
+      "revId": "8bef83e2e5219eaac30d7290968fca95b068964b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "8449c227_6832737d",
         "filename": "vpx_dsp/bitwriter.c",
         "patchSetId": 6
@@ -14,6 +31,30 @@
       "writtenOn": "2024-03-26T22:49:15Z",
       "side": 1,
       "message": "The extra check is fine, though may not be strictly necessary. If we have br-\u003eerror then br-\u003epos should be br-\u003esize, so we\u0027ll end up flagging the error again. This is called infrequently though, so the extra check makes sense for correctness.",
+      "range": {
+        "startLine": 42,
+        "startChar": 6,
+        "endLine": 42,
+        "endChar": 16
+      },
+      "revId": "8bef83e2e5219eaac30d7290968fca95b068964b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "73c35fe9_a6e7f009",
+        "filename": "vpx_dsp/bitwriter.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T23:36:49Z",
+      "side": 1,
+      "message": "Thanks for the suggestion. I think I added the `!br-\u003eerror` check to guard against the `br-\u003esize \u003d\u003d 0` case. In patchset 7 I added a test (VP9.TestBitIOBufferSize0) for that case.",
+      "parentUuid": "8449c227_6832737d",
       "range": {
         "startLine": 42,
         "startChar": 6,
@@ -55,6 +96,24 @@
       "side": 1,
       "message": "\u003e Does anyone know how to prove the buffer index `x` is \u003e\u003d 0 here?\n\u003e \n\u003e When we exit the while loop at line 91, we know `x \u003c 0` or `br-\u003ebuffer[x] !\u003d 0xff`. So without knowing additional information, `x` may be \u003c 0 here.\n\n`vpx_start_encode()` writes an initial 0. We could then accumulate in position 0. The only related check is in [vp9_boolcoder_test.cc](https://chromium.googlesource.com/webm/libvpx/+/d2ba3a22b44d351ca49e7e3a7fe3901e0d475cb1/test/vp9_boolcoder_test.cc#74). From https://chromium-review.googlesource.com/c/webm/libvpx/+/57900.",
       "parentUuid": "90a898d9_af6c508f",
+      "revId": "8bef83e2e5219eaac30d7290968fca95b068964b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79e456e5_15dd4195",
+        "filename": "vpx_dsp/bitwriter.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T23:36:49Z",
+      "side": 1,
+      "message": "Thanks for the info.\n\nWhen `vpx_start_encode()` returns, `br-\u003epos` is equal to 0. The `vpx_write_bit(br, 0)` call at the end of `vpx_start_encode()` does not write a byte to `br-\u003ebuffer`.",
+      "parentUuid": "81909cfd_e3a435e3",
       "revId": "8bef83e2e5219eaac30d7290968fca95b068964b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
