@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "90a898d9_af6c508f",
+        "filename": "vpx_dsp/bitwriter.h",
+        "patchSetId": 6
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T21:49:25Z",
+      "side": 1,
+      "message": "Does anyone know how to prove the buffer index `x` is \u003e\u003d 0 here?\n\nWhen we exit the while loop at line 91, we know `x \u003c 0` or `br-\u003ebuffer[x] !\u003d 0xff`. So without knowing additional information, `x` may be \u003c 0 here.",
+      "revId": "8bef83e2e5219eaac30d7290968fca95b068964b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
