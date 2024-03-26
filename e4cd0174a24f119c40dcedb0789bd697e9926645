@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "74aa3a30_2cbc174c",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 5958,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-26T19:52:28Z",
+      "side": 1,
+      "message": "Should this be moved to `vp9_init_tile_data()`?",
+      "revId": "e4cd0174a24f119c40dcedb0789bd697e9926645",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "00d949b1_7c47ca85",
