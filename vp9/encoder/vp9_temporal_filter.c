@@ -22,6 +22,7 @@
 #include "vp9/encoder/vp9_extend.h"
 #include "vp9/encoder/vp9_firstpass.h"
 #include "vp9/encoder/vp9_mcomp.h"
+#include "vp9/encoder/vp9_multi_thread.h"
 #include "vp9/encoder/vp9_encoder.h"
 #include "vp9/encoder/vp9_quantize.h"
 #include "vp9/encoder/vp9_ratectrl.h"
@@ -1018,6 +1019,12 @@ static void temporal_filter_iterate_c(VP9_COMP *cpi) {
   const int tile_cols = 1 << cm->log2_tile_cols;
   const int tile_rows = 1 << cm->log2_tile_rows;
   int tile_row, tile_col;
+
+  if (cpi->tile_data != NULL && cpi->allocated_tiles < tile_cols * tile_rows) {
+    // vp9_init_tile_data(cpi) will free and reallocate cpi->tile_data, so
+    // we need to free the row mt memory in cpi->tile_data first.
+    vp9_row_mt_mem_dealloc(cpi);
+  }
   vp9_init_tile_data(cpi);
 
   for (tile_row = 0; tile_row < tile_rows; ++tile_row) {

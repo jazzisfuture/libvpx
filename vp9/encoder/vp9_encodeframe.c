@@ -5854,6 +5854,7 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
 
   if (cpi->tile_data == NULL || cpi->allocated_tiles < tile_cols * tile_rows) {
     if (cpi->tile_data != NULL) vpx_free(cpi->tile_data);
+    cpi->allocated_tiles = 0;
     CHECK_MEM_ERROR(
         &cm->error, cpi->tile_data,
         vpx_malloc(tile_cols * tile_rows * sizeof(*cpi->tile_data)));
@@ -5954,6 +5955,11 @@ static void encode_tiles(VP9_COMP *cpi) {
   const int tile_rows = 1 << cm->log2_tile_rows;
   int tile_col, tile_row;
 
+  if (cpi->tile_data != NULL && cpi->allocated_tiles < tile_cols * tile_rows) {
+    // vp9_init_tile_data(cpi) will free and reallocate cpi->tile_data, so
+    // we need to free the row mt memory in cpi->tile_data first.
+    vp9_row_mt_mem_dealloc(cpi);
+  }
   vp9_init_tile_data(cpi);
 
   for (tile_row = 0; tile_row < tile_rows; ++tile_row)
