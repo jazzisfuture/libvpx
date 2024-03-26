@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ee57efa7_c4c4d1dc",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 5845,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T19:25:57Z",
+      "side": 1,
+      "message": "This is `vp9_init_tile_data()`. Note that at line 5856, it frees `cpi-\u003etile_data` if `cpi-\u003etile_data !\u003d NULL \u0026\u0026 cpi-\u003eallocated_tiles \u003c tile_cols * tile_rows`.\n\nIn vp9/encoder/vp9_ethread.c we will check the same condition to determine whether the `vp9_init_tile_data(cpi)` call will free `cpi-\u003etile_data`.",
+      "revId": "200fe3bfd010d6752b97b5bb035b3c3b372ee3cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2bd38d7e_cba8d3ed",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 5857,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T19:25:57Z",
+      "side": 1,
+      "message": "This change is a cleanup change. If the allocation of `cpi-\u003etile_data` fails, we should not leave with `cpi-\u003etile_data` being null and `cpi-\u003eallocated_tiles` being nonzero.",
+      "revId": "200fe3bfd010d6752b97b5bb035b3c3b372ee3cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5ff655c0_0bcf77c3",
+        "filename": "vp9/encoder/vp9_multi_thread.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 149,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T19:25:57Z",
+      "side": 1,
+      "message": "This change is a cleanup change. The pointer `row_mt_info` cannot be NULL, so the null pointer check can be deleted.",
+      "revId": "200fe3bfd010d6752b97b5bb035b3c3b372ee3cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
