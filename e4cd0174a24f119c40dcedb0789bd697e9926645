@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ad8359a5_76f74e87",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T19:52:06Z",
+      "side": 1,
+      "message": "Please review patchset 2. I just realized the `vp9_init_tile_data(cpi)` calls in `encode_tiles()` and `temporal_filter_iterate_c()` should receive the same treatment.",
+      "revId": "e4cd0174a24f119c40dcedb0789bd697e9926645",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "00d949b1_7c47ca85",
+        "filename": "vp9/encoder/vp9_ethread.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 486,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T19:52:06Z",
+      "side": 1,
+      "message": "Note that all the `vp9_init_tile_data(cpi)` calls need to receive the same treatment. The other `vp9_init_tile_data(cpi)` calls in this file are in this if-else pattern. The `vp9_init_tile_data(cpi)` call in the if branch is safe because it is preceded by vp9_row_mt_mem_dealloc(cpi). The reason why the `vp9_init_tile_data(cpi)` call in the else branch is also safe is the following:\n\nIf we get to the else branch, we know `multi_thread_ctxt-\u003eallocated_tile_cols \u003e\u003d tile_cols` and `multi_thread_ctxt-\u003eallocated_tile_rows \u003e\u003d tile_rows`. Since `cpi-\u003eallocated_tiles` is equal to `multi_thread_ctxt-\u003eallocated_tile_cols * multi_thread_ctxt-\u003eallocated_tile_rows`, we know `cpi-\u003eallocated_tiles \u003e\u003d tile_cols * tile_rows`. This implies that the `vp9_init_tile_data(cpi)` call will NOT free and reallocate `cpi-\u003etile_data`.",
+      "revId": "e4cd0174a24f119c40dcedb0789bd697e9926645",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
