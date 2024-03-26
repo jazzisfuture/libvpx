@@ -5854,6 +5854,7 @@ void vp9_init_tile_data(VP9_COMP *cpi) {
 
   if (cpi->tile_data == NULL || cpi->allocated_tiles < tile_cols * tile_rows) {
     if (cpi->tile_data != NULL) vpx_free(cpi->tile_data);
+    cpi->allocated_tiles = 0;
     CHECK_MEM_ERROR(
         &cm->error, cpi->tile_data,
         vpx_malloc(tile_cols * tile_rows * sizeof(*cpi->tile_data)));

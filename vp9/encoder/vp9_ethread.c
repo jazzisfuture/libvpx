@@ -198,9 +198,15 @@ void vp9_encode_free_mt_data(struct VP9_COMP *cpi) {
 void vp9_encode_tiles_mt(VP9_COMP *cpi) {
   VP9_COMMON *const cm = &cpi->common;
   const int tile_cols = 1 << cm->log2_tile_cols;
+  const int tile_rows = 1 << cm->log2_tile_rows;
   const int num_workers = VPXMIN(cpi->oxcf.max_threads, tile_cols);
   int i;
 
+  if (cpi->tile_data != NULL && cpi->allocated_tiles < tile_cols * tile_rows) {
+    // vp9_init_tile_data(cpi) will free and reallocate cpi->tile_data, so
+    // we need to free the row mt memory in cpi->tile_data first.
+    vp9_row_mt_mem_dealloc(cpi);
+  }
   vp9_init_tile_data(cpi);
 
   create_enc_workers(cpi, num_workers);
