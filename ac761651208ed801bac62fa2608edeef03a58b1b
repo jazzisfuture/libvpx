@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "575778c1_61330db6",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 5888,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T22:31:10Z",
+      "side": 1,
+      "message": "This variable (`sb_rows`) is loop-invariant. Move it outside the for loop.",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "673fd137_ba17ff73",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 4
+      },
+      "lineNbr": 343,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T22:31:10Z",
+      "side": 1,
+      "message": "Nit: Since this `sb_rows` field is closely related to `row_base_thresh_freq_fact`, I suggest moving this field right below `row_base_thresh_freq_fact`.\n\nAdd a comment to describe its relation to `row_base_thresh_freq_fact`, e.g., \"The value of sb_rows when row_base_thresh_freq_fact is allocated.\" Alternatively, we can say \"The row_base_thresh_freq_fact array has sb_rows * BLOCK_SIZES * MAX_MODES elements.\"",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d0a1cec8_8515adfd",
+        "filename": "vp9/encoder/vp9_multi_thread.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T22:31:10Z",
+      "side": 1,
+      "message": "Why is this `sb_rows` different from the `sb_rows` at lines 58-59?\n\nThey differ by 1.",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "106cec16_9e224450",
+        "filename": "vp9/encoder/vp9_multi_thread.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T22:31:10Z",
+      "side": 1,
+      "message": "We should be able to delete this if statement (lines 109-111). It is redundant with lines 5889-5892 in vp9/encoder/vp9_encodeframe.c.\n\nNote that this function (`vp9_row_mt_mem_alloc`) is always called after a `vp9_init_tile_data()` call.",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
