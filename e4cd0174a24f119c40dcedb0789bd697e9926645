@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "81679109_bcd8ce2e",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 5958,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-26T20:52:59Z",
+      "side": 1,
+      "message": "Done. There are pros and cons for both approaches.\n\nMoving this to `vp9_init_tile_data()` has the big advantage that it is obviously correct. The downside is that we will make an extra call to `vp9_row_mt_mem_dealloc(cpi)` in the following code (in the if branch) if `vp9_init_tile_data(cpi)` needs to reallocate `cpi-\u003etile_data`:\n\n```\n  if (multi_thread_ctxt-\u003eallocated_tile_cols \u003c tile_cols ||\n      multi_thread_ctxt-\u003eallocated_tile_rows \u003c tile_rows ||\n      multi_thread_ctxt-\u003eallocated_vert_unit_rows \u003c cm-\u003emb_rows) {\n    vp9_row_mt_mem_dealloc(cpi);\n    vp9_init_tile_data(cpi);\n    vp9_row_mt_mem_alloc(cpi);\n  } else {\n    vp9_init_tile_data(cpi);\n  }\n```\n\nSince it is uncommon to reallocate `cpi-\u003etile_data`, I think it is good to go for obvious correctness.",
+      "parentUuid": "74aa3a30_2cbc174c",
+      "revId": "e4cd0174a24f119c40dcedb0789bd697e9926645",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "00d949b1_7c47ca85",
         "filename": "vp9/encoder/vp9_ethread.c",
         "patchSetId": 2
