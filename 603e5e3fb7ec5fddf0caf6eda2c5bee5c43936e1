@@ -16,6 +16,24 @@
       "message": "I verified that `write_modes()` and the functions it calls do not call `vpx_internal_error()`.",
       "revId": "603e5e3fb7ec5fddf0caf6eda2c5bee5c43936e1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c56bffd7_ab9f46d2",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 950,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T16:51:14Z",
+      "side": 1,
+      "message": "Note to self: These are the functions I inspected:\n\n```\nOK set_partition_probs\nOK frame_is_intra_only\nOK mi_cols_aligned_to_sb\nOK vp9_zero\nOK write_modes_sb\nOK write_partition\nOK partition_plane_context\nOK get_subsize\nOK write_modes_b\nOK update_partition_context\nOK set_mi_row_col\nOK write_mb_modes_kf\nOK pack_inter_mode_mvs\nOK pack_mb_tokens\nOK vpx_write\nOK vpx_write_bit\nOK vp9_write_tree\nOK is_inter_block\nOK has_second_ref\nOK vp9_get_pred_prob_seg_id\nOK vp9_get_pred_context_seg_id\nOK write_segment_id\nOK write_skip\nOK vp9_get_intra_inter_prob\nOK write_selected_tx_size\nOK write_intra_mode\nOK write_ref_frames\nOK write_inter_mode\nOK vp9_write_token\nOK get_pred_context_switchable_interp\nOK vp9_encode_mv\nOK segfeature_active\nOK vp9_get_mv_joint\nOK use_mv_hp\nOK mv_joint_vertical\nOK mv_joint_horizontal\nOK encode_mv_component\nOK vp9_get_mv_class\nOK mv_class_base\nOK vp9_get_reference_mode_prob\nOK vp9_get_reference_mode_context\nOK vp9_get_pred_prob_comp_ref_p\nOK vp9_get_pred_context_comp_ref_p\nOK vp9_get_pred_prob_single_ref_p1\nOK vp9_get_pred_context_single_ref_p1\nOK vp9_get_pred_prob_single_ref_p2\nOK vp9_get_pred_context_single_ref_p2\nOK get_tx_probs\nOK get_tx_size_context\nOK vp9_get_skip_prob\nOK vp9_get_skip_context\nOK get_y_mode_probs\nOK vp9_above_block_mode\nOK vp9_left_block_mode\nOK get_y_mode\n```",
+      "parentUuid": "09ae47fb_dd14504d",
+      "revId": "603e5e3fb7ec5fddf0caf6eda2c5bee5c43936e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
