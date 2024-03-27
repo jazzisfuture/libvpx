@@ -339,6 +339,7 @@ typedef struct TileDataEnc {
 
   // Used for adaptive_rd_thresh with row multithreading
   int *row_base_thresh_freq_fact;
+  int sb_rows;
   MV firstpass_top_mv;
 } TileDataEnc;
 
