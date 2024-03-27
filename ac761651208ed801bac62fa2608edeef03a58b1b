@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "69c097f5_a892088a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T17:21:44Z",
+      "side": 1,
+      "message": "I still don\u0027t fully understand the row_base_thresh_freq_fact code. My suggestions aim to preserve the current behavior when `sb_rows` doesn\u0027t change.",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "575778c1_61330db6",
@@ -14,6 +31,24 @@
       "writtenOn": "2024-03-26T22:31:10Z",
       "side": 1,
       "message": "This variable (`sb_rows`) is loop-invariant. Move it outside the for loop.",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a126e02a_f5195512",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 5888,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T17:21:44Z",
+      "side": 1,
+      "message": "1) One way to handle this is to move this if statement into a separate for loop.\n\nSpecifically, delete lines 5886-5893, and add the folllwing for loop at the end of this function:\n\n```\n  if (cpi-\u003esf.adaptive_rd_thresh_row_mt) {\n    const int sb_rows \u003d\n        (mi_cols_aligned_to_sb(cm-\u003emi_rows) \u003e\u003e MI_BLOCK_SIZE_LOG2) + 1;\n    for (tile_row \u003d 0; tile_row \u003c tile_rows; ++tile_row) {\n      for (tile_col \u003d 0; tile_col \u003c tile_cols; ++tile_col) {\n        TileDataEnc *this_tile \u003d\n            \u0026cpi-\u003etile_data[tile_row * tile_cols + tile_col];\n        if (this_tile-\u003erow_base_thresh_freq_fact \u003d\u003d NULL ||\n            sb_rows \u003e this_tile-\u003esb_rows) {\n          vp9_row_mt_alloc_rd_thresh(cpi, this_tile);\n        }\n      }\n    }\n  }\n```\n\n2) A second way to handle this is to perform the buffer size check inside `vp9_row_mt_alloc_rd_thresh()`.\n\nSpecifically, change lines 5886-5893 to\n\n```\n      if (cpi-\u003esf.adaptive_rd_thresh_row_mt) {\n        vp9_row_mt_alloc_rd_thresh(cpi, this_tile);\n      }\n```\n\nAnd then change the beginning of the `vp9_row_mt_alloc_rd_thresh()` function to:\n\n```\nvoid vp9_row_mt_alloc_rd_thresh(VP9_COMP *const cpi,\n                                TileDataEnc *const this_tile) {\n  VP9_COMMON *const cm \u003d \u0026cpi-\u003ecommon;\n  const int sb_rows \u003d\n      (mi_cols_aligned_to_sb(cm-\u003emi_rows) \u003e\u003e MI_BLOCK_SIZE_LOG2) + 1;\n  int i;\n\n  if (this_tile-\u003erow_base_thresh_freq_fact !\u003d NULL) {\n    // I wonder if we should test equality here: sb_rows \u003d\u003d this_tile-\u003esb_rows\n    if (sb_rows \u003c\u003d this_tile-\u003esb_rows) {\n      return;\n    }\n    vpx_free(this_tile-\u003erow_base_thresh_freq_fact);\n    this_tile-\u003erow_base_thresh_freq_fact \u003d NULL;\n  }\n  CHECK_MEM_ERROR(\n```",
+      "parentUuid": "575778c1_61330db6",
       "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
