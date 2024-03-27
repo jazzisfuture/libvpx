@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7f5043be_109322eb",
+        "filename": "vpx_dsp/bitwriter.h",
+        "patchSetId": 9
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T16:09:55Z",
+      "side": 1,
+      "message": "In the original code, the subtraction is done in unsigned int and then the difference is implicitly cast to `int`. In the new code I cast `br-\u003epos` to int so that the subtraction is done in signed int.",
+      "revId": "73703c188b81f41bae59a72c9c86f8383587e994",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
