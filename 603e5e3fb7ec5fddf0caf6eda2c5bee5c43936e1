@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "09ae47fb_dd14504d",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 950,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T02:33:05Z",
+      "side": 1,
+      "message": "I verified that `write_modes()` and the functions it calls do not call `vpx_internal_error()`.",
+      "revId": "603e5e3fb7ec5fddf0caf6eda2c5bee5c43936e1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
