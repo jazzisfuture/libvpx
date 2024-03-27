@@ -101,13 +101,6 @@ void vp9_row_mt_mem_alloc(VP9_COMP *cpi) {
   for (tile_col = 0; tile_col < tile_cols; tile_col++) {
     TileDataEnc *this_tile = &cpi->tile_data[tile_col];
     vp9_row_mt_sync_mem_alloc(&this_tile->row_mt_sync, cm, jobs_per_tile_col);
-    if (cpi->sf.adaptive_rd_thresh_row_mt) {
-      if (this_tile->row_base_thresh_freq_fact != NULL) {
-        vpx_free(this_tile->row_base_thresh_freq_fact);
-        this_tile->row_base_thresh_freq_fact = NULL;
-      }
-      vp9_row_mt_alloc_rd_thresh(cpi, this_tile);
-    }
   }
 
   // Assign the sync pointer of tile row zero for every tile row > 0
@@ -116,6 +109,20 @@ void vp9_row_mt_mem_alloc(VP9_COMP *cpi) {
       TileDataEnc *this_tile = &cpi->tile_data[tile_row * tile_cols + tile_col];
       TileDataEnc *this_col_tile = &cpi->tile_data[tile_col];
       this_tile->row_mt_sync = this_col_tile->row_mt_sync;
+    }
+  }
+
+  if (cpi->sf.adaptive_rd_thresh_row_mt) {
+    for (tile_row = 0; tile_row < tile_rows; ++tile_row) {
+      for (tile_col = 0; tile_col < tile_cols; ++tile_col) {
+        TileDataEnc *this_tile =
+            &cpi->tile_data[tile_row * tile_cols + tile_col];
+        if (this_tile->row_base_thresh_freq_fact != NULL) {
+          vpx_free(this_tile->row_base_thresh_freq_fact);
+          this_tile->row_base_thresh_freq_fact = NULL;
+        }
+        vp9_row_mt_alloc_rd_thresh(cpi, this_tile);
+      }
     }
   }
 
