@@ -34,6 +34,24 @@
       "parentUuid": "0b7299ee_b81f9bf3",
       "revId": "d5a1f7979376288caed64ae010a08024d6661bf8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "427c5eb3_09dffebb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-27T00:57:51Z",
+      "side": 1,
+      "message": "\u003e I will be happy to change to that convention. I used that convention in earlier patchsets of this CL.\n\u003e \n\u003e I chose the bool style because that\u0027s the convention used by the worker thread hook function. But `vpx_writer` isn\u0027t closely related to the worker thread interface.\n\nThe worker thread hook came from libwebp and I didn\u0027t convert it when copying it over.",
+      "parentUuid": "f0995e22_4c5d8c6f",
+      "revId": "d5a1f7979376288caed64ae010a08024d6661bf8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
