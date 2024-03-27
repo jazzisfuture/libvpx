@@ -52,6 +52,24 @@
       "parentUuid": "f0995e22_4c5d8c6f",
       "revId": "d5a1f7979376288caed64ae010a08024d6661bf8",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ae15524e_a8b72134",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 7
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T01:19:27Z",
+      "side": 1,
+      "message": "I see. I will switch to the 0:success -1:failure convention tomorrow.",
+      "parentUuid": "427c5eb3_09dffebb",
+      "revId": "d5a1f7979376288caed64ae010a08024d6661bf8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
