@@ -73,6 +73,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "3c822cf7_1d179b2d",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 5888,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T22:17:34Z",
+      "side": 1,
+      "message": "In patchset 9, we have:\n\n```\nvoid vp9_row_mt_alloc_rd_thresh(VP9_COMP *const cpi,\n                                TileDataEnc *const this_tile) {\n  ...\n\n  if (this_tile-\u003erow_base_thresh_freq_fact !\u003d NULL) {\n    if (sb_rows \u003c\u003d this_tile-\u003esb_rows) {\n      return;\n    }\n    vpx_free(this_tile-\u003erow_base_thresh_freq_fact);\n    this_tile-\u003erow_base_thresh_freq_fact \u003d NULL;\n  }\n```\n\nSo we are still checking `sb_rows \u003c\u003d this_tile-\u003esb_rows`. This seems to contradict your comment that \"We should check equaliy here (sb_rows \u003d\u003d this_tile-\u003esb_rows)\".\n\nChecking `sb_rows \u003c\u003d this_tile-\u003esb_rows` means we will reuse a larger `row_base_thresh_freq_fact` buffer.\n\nChecking `sb_rows \u003d\u003d this_tile-\u003esb_rows` means we will not reuse a larger buffer.",
+      "parentUuid": "3aefc6f6_cbe5ab7a",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "673fd137_ba17ff73",
         "filename": "vp9/encoder/vp9_encoder.h",
         "patchSetId": 4
@@ -173,6 +191,24 @@
       "side": 1,
       "message": "Removed the +1, locally the new tests passes, let see if all tests pass.",
       "parentUuid": "a2d418c3_203ed07a",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "992055cc_bd5f95b1",
+        "filename": "vp9/encoder/vp9_multi_thread.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T22:17:34Z",
+      "side": 1,
+      "message": "I searched for \" sb_rows \u003d \" in libvpx. I confirm Jerome\u0027s statement. The value of `sb_rows` should be `mi_cols_aligned_to_sb(cm-\u003emi_rows) \u003e\u003e MI_BLOCK_SIZE_LOG2`, without the `+ 1`.\n\nNote: An equivalent form is `cm-\u003emi_rows + MI_BLOCK_SIZE - 1) / MI_BLOCK_SIZE`.\n\nIf it is necessary to add 1 in `vp9_row_mt_alloc_rd_thresh()`, I suggest we use the standard definition of `sb_rows` and use `sb_rows + 1` in the allocation size.",
+      "parentUuid": "2644f363_1f3f9a5c",
       "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },

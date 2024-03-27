@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7792a827_6e742f77",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 9
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-27T22:17:34Z",
+      "side": 1,
+      "message": "Add \"b:\" before the bug number.\n\n```\nBug: b:331108922\n```",
+      "revId": "2b8fd0ad66277c9d425e0f8b3d4e6a5b52e8a9fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
