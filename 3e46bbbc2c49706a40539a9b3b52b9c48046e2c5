@@ -50,6 +50,24 @@
       "message": "Please check if the members are in the right order for memory performance.",
       "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dfab5220_aa4629ad",
+        "filename": "vpx_dsp/bitwriter_buffer.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-28T17:11:31Z",
+      "side": 1,
+      "message": "\u003e Please check if the members are in the right order for memory performance.\n\n`vpx_wb_write_bit` reads `error`, then `bit_offset`, `size` and `bit_buffer`. This isn\u0027t inlined, but we could check the assembly or see if we can get a cachegrind report.",
+      "parentUuid": "195aa8ab_e45e9474",
+      "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
