@@ -89,6 +89,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c286a30_548fc01d",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 5888,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-03-28T16:37:10Z",
+      "side": 1,
+      "message": "Will keep it as is (only re-alloc when sb_rows \u003e this_tile-\u003esb_rows), to avoid re-allocation (and reset) on every frame/layer for spatial layers. To fix/improve the spatial layer case would mean making row_base_thresh_freq_fact layer dependent, which would be a separate change,",
+      "parentUuid": "3c822cf7_1d179b2d",
+      "revId": "ac761651208ed801bac62fa2608edeef03a58b1b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "673fd137_ba17ff73",
