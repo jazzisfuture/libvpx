@@ -2340,6 +2340,35 @@ static void ext_rc_define_gf_group_structure(
   gf_group->max_layer_depth = 2;
 }
 
+static void ext_rc_update_ref_frame_index(VP9_COMP *cpi,
+                                          vpx_rc_gop_decision_t *gop_decision) {
+  TWO_PASS *const twopass = &cpi->twopass;
+  GF_GROUP *const gf_group = &twopass->gf_group;
+  const int key_frame = cpi->common.frame_type == KEY_FRAME;
+
+  for (int frame_index = 1; frame_index < gop_decision->gop_coding_frames;
+       frame_index++) {
+    const int ext_frame_index = key_frame ? frame_index : frame_index - 1;
+    for (int ref_frame = 0; ref_frame < 3; ref_frame++) {
+      vpx_rc_ref_frame_t *const ext_ref_frame =
+          &gop_decision->ref_frame_list[ext_frame_index];
+      const int ref_index = ext_ref_frame->index[ref_frame];
+      switch (ext_ref_frame->name[ref_frame]) {
+        case VPX_RC_LAST_FRAME:
+          gf_group->ext_rc_ref[frame_index].last_index = ref_index;
+          break;
+        case VPX_RC_GOLDEN_FRAME:
+          gf_group->ext_rc_ref[frame_index].golden_index = ref_index;
+          break;
+        case VPX_RC_ALTREF_FRAME:
+          gf_group->ext_rc_ref[frame_index].altref_index = ref_index;
+          break;
+        default: break;
+      }
+    }
+  }
+}
+
 static void allocate_gf_group_bits(VP9_COMP *cpi, int64_t gf_group_bits,
                                    int gf_arf_bits) {
   VP9EncoderConfig *const oxcf = &cpi->oxcf;
@@ -3643,6 +3672,9 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
           gop_decision.gop_coding_frames - rc->source_alt_ref_pending;
       rc->frames_till_gf_update_due = rc->baseline_gf_interval;
       ext_rc_define_gf_group_structure(cpi, &gop_decision);
+      // Store the ref frame index for last, golden and altref from the external
+      // RC to be used in vp9_update_reference_frames().
+      ext_rc_update_ref_frame_index(cpi, &gop_decision);
     }
   } else {
     // Keyframe and section processing.

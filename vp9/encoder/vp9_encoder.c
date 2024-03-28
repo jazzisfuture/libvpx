@@ -3297,16 +3297,26 @@ static void update_ref_frames(VP9_COMP *cpi) {
   BufferPool *const pool = cm->buffer_pool;
   GF_GROUP *const gf_group = &cpi->twopass.gf_group;
 
-  if (cpi->rc.show_arf_as_gld) {
-    int tmp = cpi->alt_fb_idx;
-    cpi->alt_fb_idx = cpi->gld_fb_idx;
-    cpi->gld_fb_idx = tmp;
-  } else if (cm->show_existing_frame) {
-    // Pop ARF.
-    cpi->lst_fb_idx = cpi->alt_fb_idx;
-    cpi->alt_fb_idx =
-        stack_pop(gf_group->arf_index_stack, gf_group->stack_size);
-    --gf_group->stack_size;
+  if (cpi->ext_ratectrl.ready &&
+      (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
+      cpi->ext_ratectrl.funcs.get_gop_decision != NULL) {
+    // +1 here since this is for the next frame
+    const int gf_index = gf_group->index + 1;
+    cpi->lst_fb_idx = gf_group->ext_rc_ref[gf_index].last_index;
+    cpi->gld_fb_idx = gf_group->ext_rc_ref[gf_index].golden_index;
+    cpi->alt_fb_idx = gf_group->ext_rc_ref[gf_index].altref_index;
+  } else {
+    if (cpi->rc.show_arf_as_gld) {
+      int tmp = cpi->alt_fb_idx;
+      cpi->alt_fb_idx = cpi->gld_fb_idx;
+      cpi->gld_fb_idx = tmp;
+    } else if (cm->show_existing_frame) {
+      // Pop ARF.
+      cpi->lst_fb_idx = cpi->alt_fb_idx;
+      cpi->alt_fb_idx =
+          stack_pop(gf_group->arf_index_stack, gf_group->stack_size);
+      --gf_group->stack_size;
+    }
   }
 
   // At this point the new frame has been encoded.
