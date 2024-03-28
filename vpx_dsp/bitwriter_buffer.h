@@ -19,9 +19,19 @@ extern "C" {
 
 struct vpx_write_bit_buffer {
   uint8_t *bit_buffer;
+  // Size of bit_buffer in bytes.
+  size_t size;
+  // We maintain the invariant that bit_offset <= INT_MAX and
+  // bit_offset <= size * CHAR_BIT, i.e., bit_offset can be cast to int safely
+  // and we never write beyond the end of bit_buffer. If bit_offset would be
+  // incremented so that bit_offset > INT_MAX or bit_offset > size * CHAR_BIT,
+  // leave bit_offset unchanged and set error to 1.
   size_t bit_offset;
+  // Whether there has been an error.
+  int error;
 };
 
+// Must not be called if wb->error is true.
 size_t vpx_wb_bytes_written(const struct vpx_write_bit_buffer *wb);
 
 void vpx_wb_write_bit(struct vpx_write_bit_buffer *wb, int bit);

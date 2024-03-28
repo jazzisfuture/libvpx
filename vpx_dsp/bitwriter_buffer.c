@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <assert.h>
 #include <limits.h>
 #include <stdlib.h>
 
@@ -15,17 +16,23 @@
 #include "./bitwriter_buffer.h"
 
 size_t vpx_wb_bytes_written(const struct vpx_write_bit_buffer *wb) {
+  assert(!wb->error);
   return wb->bit_offset / CHAR_BIT + (wb->bit_offset % CHAR_BIT > 0);
 }
 
 void vpx_wb_write_bit(struct vpx_write_bit_buffer *wb, int bit) {
+  if (wb->error) return;
   const int off = (int)wb->bit_offset;
   const int p = off / CHAR_BIT;
   const int q = CHAR_BIT - 1 - off % CHAR_BIT;
+  if (off == INT_MAX || (size_t)p >= wb->size) {
+    wb->error = 1;
+    return;
+  }
   if (q == CHAR_BIT - 1) {
     wb->bit_buffer[p] = bit << q;
   } else {
-    wb->bit_buffer[p] &= ~(1 << q);
+    assert((wb->bit_buffer[p] & (1 << q)) == 0);
     wb->bit_buffer[p] |= bit << q;
   }
   wb->bit_offset = off + 1;
