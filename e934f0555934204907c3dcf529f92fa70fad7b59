@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0b6836b7_18e5c98b",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2879,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-28T21:28:43Z",
+      "side": 1,
+      "message": "Coverity says:\n\n\u003e 3. assignment: Assigning: cm-\u003etx_mode \u003d xd-\u003elossless ? ONLY_4X4 : read_tx_mode(\u0026r). The value of cm-\u003etx_mode is now between 0 and 7 (inclusive).\n\nThe 0 to 7 range is incorrect. The assertion added in this CL is intended to correct that.",
+      "revId": "e934f0555934204907c3dcf529f92fa70fad7b59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "61fbba73_c42fa5e9",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2881,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-28T21:28:43Z",
+      "side": 1,
+      "message": "Coverity says:\n\n\u003e CID 1584457: (#1 of 1): Out-of-bounds access (OVERRUN)\n5. overrun-call: Overrunning callee\u0027s array of size 5 by passing argument cm-\u003etx_mode (which evaluates to 7) in call to read_coef_probs.",
+      "revId": "e934f0555934204907c3dcf529f92fa70fad7b59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
