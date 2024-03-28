@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c257b905_cf736239",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3907,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-28T19:31:54Z",
+      "side": 1,
+      "message": "`VPX_CODEC_CORRUPT_FRAME` is defined as follows:\n\n```\n  /*!\\brief The coded data for this stream is corrupt or incomplete\n   *\n   * There was a problem decoding the current frame.  This return code\n   * should only be used for failures that prevent future pictures from\n   * being properly decoded. This error \\ref MAY be treated as fatal to the\n   * stream or \\ref MAY be treated as fatal to the current GOP. If decoding\n   * is continued for the current GOP, artifacts may be present.\n   */\n  VPX_CODEC_CORRUPT_FRAME,\n```\n\nIt is clearly a decoder error. `VPX_CODEC_ERROR` isn\u0027t informative, but I can\u0027t find a better error code.",
+      "revId": "fff09422bed6b931e49cd5838df1a48097905851",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
