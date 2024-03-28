@@ -104,6 +104,24 @@
       "parentUuid": "af26367b_3ba194fc",
       "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5fa3e63e_1f905eb2",
+        "filename": "vpx_dsp/bitwriter_buffer.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-28T19:10:31Z",
+      "side": 1,
+      "message": "I checked the VP9 specification. It is not easy to calculate the maximum size of tile_info().\n\nI modified the libvpx source code to make the output buffers too small and tested the two new `vpx_internal_error()` calls in this CL and the vpx_internal_error()` call after an `encode_tile_worker` failure. There are no memory leaks.",
+      "parentUuid": "c287a9ae_29ac8cb4",
+      "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
