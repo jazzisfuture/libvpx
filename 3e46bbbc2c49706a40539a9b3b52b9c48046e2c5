@@ -68,6 +68,24 @@
       "parentUuid": "195aa8ab_e45e9474",
       "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "af26367b_3ba194fc",
+        "filename": "vpx_dsp/bitwriter_buffer.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-28T17:54:34Z",
+      "side": 1,
+      "message": "Thank you. I placed the struct members in that order. I also removed the `off \u003d\u003d INT_MAX` check. Given how `vpx_write_bit_buffer` is used in libvpx, `wb-\u003ebit_offset` will never reach `INT_MAX`.\n\nSince `vpx_write_bit_buffer` is only used to write the uncompressed header in VP9, I can try to calculate an upper bound on the uncompressed header size, and just check that size before using `vpx_write_bit_buffer` in `vp9_pack_bitstream()`. Then no changes to `vpx_write_bit_buffer` are needed.\n\nAnother idea is to optimize `vpx_wb_write_literal()` so that it writes multiple bits or a whole byte at a time.",
+      "parentUuid": "dfab5220_aa4629ad",
+      "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
