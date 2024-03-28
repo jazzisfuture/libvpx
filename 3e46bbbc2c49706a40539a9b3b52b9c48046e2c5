@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1ec5f6ca_0f48f360",
+        "filename": "vpx_dsp/bitwriter_buffer.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 25,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-28T01:13:23Z",
+      "side": 1,
+      "message": "Note that we cast `wb-\u003ebit_offset` to `int` here. This is why I check `off \u003d\u003d INT_MAX` at line 28.",
+      "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "25f6e213_a624ee75",
+        "filename": "vpx_dsp/bitwriter_buffer.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-28T01:13:23Z",
+      "side": 1,
+      "message": "The following statement in the original code sets bit `q` to 0:\n\n```\n    wb-\u003ebit_buffer[p] \u0026\u003d ~(1 \u003c\u003c q);\n```\n\nI claim that bit `q` must be 0, so I deleted that statement.",
+      "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "195aa8ab_e45e9474",
+        "filename": "vpx_dsp/bitwriter_buffer.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-28T01:13:23Z",
+      "side": 1,
+      "message": "Please check if the members are in the right order for memory performance.",
+      "revId": "3e46bbbc2c49706a40539a9b3b52b9c48046e2c5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
