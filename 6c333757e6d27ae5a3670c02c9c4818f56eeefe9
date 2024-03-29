@@ -16,6 +16,24 @@
       "message": "This assertion ensures that the memmove() call at line 1454 and the subtraction at line 1457 are safe.\n\nI wonder if this assertion will be counter-productive because it may prevent a static analyzer from checking whether `ctx-\u003epending_cx_data_sz` is not too big. James, what do you think?",
       "revId": "6c333757e6d27ae5a3670c02c9c4818f56eeefe9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "996d7f61_3b53c4d8",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1453,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-29T01:09:43Z",
+      "side": 1,
+      "message": "\u003e This assertion ensures that the memmove() call at line 1454 and the subtraction at line 1457 are safe.\n\u003e \n\u003e I wonder if this assertion will be counter-productive because it may prevent a static analyzer from checking whether `ctx-\u003epending_cx_data_sz` is not too big. James, what do you think?\n\nI\u0027m not sure how that would be caught with an analyzer. This should be OK.",
+      "parentUuid": "45f35ea6_868721ac",
+      "revId": "6c333757e6d27ae5a3670c02c9c4818f56eeefe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
