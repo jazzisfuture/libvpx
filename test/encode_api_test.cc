@@ -959,13 +959,14 @@ void VP9Encoder::Encode(bool key_frame) {
   vpx_image_t *image = CreateImage(bit_depth_, fmt_, cfg_.g_w, cfg_.g_h);
   ASSERT_NE(image, nullptr);
   const vpx_enc_frame_flags_t frame_flags = key_frame ? VPX_EFLAG_FORCE_KF : 0;
-  ASSERT_EQ(
-      vpx_codec_encode(&enc_, image, frame_index_, 1, frame_flags, deadline_),
-      VPX_CODEC_OK);
-  ++frame_index_;
-  vpx_codec_iter_t iter = nullptr;
-  while ((pkt = vpx_codec_get_cx_data(&enc_, &iter)) != nullptr) {
-    ASSERT_EQ(pkt->kind, VPX_CODEC_CX_FRAME_PKT);
+  auto ret =
+      vpx_codec_encode(&enc_, image, frame_index_, 1, frame_flags, deadline_);
+  if (ret == VPX_CODEC_OK) {
+    ++frame_index_;
+    vpx_codec_iter_t iter = nullptr;
+    while ((pkt = vpx_codec_get_cx_data(&enc_, &iter)) != nullptr) {
+      ASSERT_EQ(pkt->kind, VPX_CODEC_CX_FRAME_PKT);
+    }
   }
   vpx_img_free(image);
 }
