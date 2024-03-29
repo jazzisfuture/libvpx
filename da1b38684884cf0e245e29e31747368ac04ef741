@@ -33,6 +33,24 @@
       "message": "James: Do you know what is a good initializer for this two-dimensional array of `struct buf_2d`?",
       "revId": "da1b38684884cf0e245e29e31747368ac04ef741",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50f7a922_73896da4",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3455,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-03-29T22:53:36Z",
+      "side": 1,
+      "message": "\u003e James: Do you know what is a good initializer for this two-dimensional array of `struct buf_2d`?\n\n`{ 0 }` is enough, though this form is more common in the code base. Search for `\\[.*\\]\\[.*\\]\\s\u003d\\s{\\s0` and `\\[.*\\]\\[.*\\]\\s\u003d\\s{\\s{` for example.\n\nSee:\nhttps://en.cppreference.com/w/c/language/array_initialization\nhttps://en.cppreference.com/w/c/language/initialization#Empty_initialization",
+      "parentUuid": "3774d0d4_e07583a6",
+      "revId": "da1b38684884cf0e245e29e31747368ac04ef741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
