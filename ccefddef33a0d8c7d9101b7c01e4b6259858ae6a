@@ -1,5 +1,40 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "aacf72fc_34a43e38",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2570,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-29T18:16:27Z",
+      "side": 1,
+      "message": "Note the initializer used here. This is a one-dimensional array. `yv12_mb` is a two-dimensional array.",
+      "revId": "ccefddef33a0d8c7d9101b7c01e4b6259858ae6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6d73b332_e8f59728",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3455,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-29T18:16:27Z",
+      "side": 1,
+      "message": "Thank you for also fixing the `vp9_rd_pick_inter_mode_sub8x8()` function. I found the same `yv12_mb` variable in the `vp9_pick_inter_mode_sub8x8()` function in vp9/encoder/vp9_pickmode.c. Please make the same fix to that function.\n\nSince this is an array of the `buf_2d` struct, I am worried that this initializer is not portable. I compiled this code with both gcc and clang, and there are no warnings. So the only open question is MSVC.",
+      "revId": "ccefddef33a0d8c7d9101b7c01e4b6259858ae6a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
