@@ -26,6 +26,30 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d82ee3e4_c15231f1",
+        "filename": "vp9/decoder/vp9_decodeframe.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-29T18:25:31Z",
+      "side": 1,
+      "message": "Done. I was trying to show that the sum of a value \u003c\u003d 3 and another value \u003c\u003d 1 is \u003c\u003d 4. But your suggestion is clearer for the consumer, who will use the return value as the index for an array of size TX_MODES.",
+      "parentUuid": "228e5fcd_43df0e4b",
+      "range": {
+        "startLine": 71,
+        "startChar": 16,
+        "endLine": 71,
+        "endChar": 21
+      },
+      "revId": "e934f0555934204907c3dcf529f92fa70fad7b59",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "0b6836b7_18e5c98b",
         "filename": "vp9/decoder/vp9_decodeframe.c",
         "patchSetId": 2
