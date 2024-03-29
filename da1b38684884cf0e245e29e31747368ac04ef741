@@ -51,6 +51,24 @@
       "parentUuid": "3774d0d4_e07583a6",
       "revId": "da1b38684884cf0e245e29e31747368ac04ef741",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6dd8cdd0_44d7bc67",
+        "filename": "vp9/encoder/vp9_rdopt.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 3455,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-03-29T23:54:47Z",
+      "side": 1,
+      "message": "Thank you, James.\n\nJingning: Please feel free to use the simpler initializer `\u003d { 0 }`.",
+      "parentUuid": "50f7a922_73896da4",
+      "revId": "da1b38684884cf0e245e29e31747368ac04ef741",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
