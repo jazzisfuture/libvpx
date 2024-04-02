@@ -16,6 +16,24 @@
       "message": "The original initializer that Jingning used, `\u003d { 0 }`, also fixes the warning.\n\nWould you prefer that instead?",
       "revId": "af3a5cfbe32e9d25b0f186b90477afc9e4694c9c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "eed00090_6ad7575e",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1701,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-04-02T22:31:20Z",
+      "side": 1,
+      "message": "\u003e The original initializer that Jingning used, `\u003d { 0 }`, also fixes the warning.\n\u003e \n\u003e Would you prefer that instead?\n\n`\u003d { 0 }` seems simpler and is well supported.",
+      "parentUuid": "44b3fe63_39489bf3",
+      "revId": "af3a5cfbe32e9d25b0f186b90477afc9e4694c9c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
