@@ -38,6 +38,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "e369f36f_aaaaf117",
+        "filename": "vp9/encoder/vp9_ethread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-04T20:27:23Z",
+      "side": 1,
+      "message": "Yes. The reason I looked into an alternative place to define the macro is that the corresponding libaom header, av1/encoder/ethread.h, did not work. See my libaom CL https://aomedia-review.googlesource.com/c/aom/+/187361. But in libaom I can\u0027t even define this macro in av1/encoder/encoder.h. So I will go ahead and submit this CL.",
+      "parentUuid": "d6774850_b6217523",
+      "revId": "2d01ec97f82d2e46757dcaa80dd1e39e8244c5bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "31378667_e4716530",
         "filename": "vp9/vp9_cx_iface.c",
         "patchSetId": 2
