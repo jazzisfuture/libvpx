@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "035655fc_6f1fd94a",
+        "filename": "vp9/encoder/vp9_ethread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-04T17:32:02Z",
+      "side": 1,
+      "message": "Another reasonable header to define `MAX_NUM_THREADS` is vp9/encoder/vp9_encoder.h because it uses `MAX_NUM_THREADS` in a struct definition.\n\n```\ntypedef struct MultiThreadHandle {\n  int allocated_tile_rows;\n  int allocated_tile_cols;\n  int allocated_vert_unit_rows;\n\n  // Frame level params\n  int num_tile_vert_sbs[MAX_NUM_TILE_ROWS];\n\n  // Job Queue structure and handles\n  JobQueue *job_queue;\n\n  int jobs_per_tile_col;\n\n  RowMTInfo row_mt_info[MAX_NUM_TILE_COLS];\n  int thread_id_to_tile_id[MAX_NUM_THREADS];  // Mapping of threads to tiles\n} MultiThreadHandle;\n```",
+      "revId": "2d01ec97f82d2e46757dcaa80dd1e39e8244c5bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "31378667_e4716530",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-04T17:32:02Z",
+      "side": 1,
+      "message": "`MAX_NUM_THREADS` is used at line 195, so we include vp9/encoder/vp9_ethread.h for its definition.",
+      "revId": "2d01ec97f82d2e46757dcaa80dd1e39e8244c5bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "45eab898_52b2ccdb",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-04T17:32:02Z",
+      "side": 1,
+      "message": "`MAX_NUM_THREADS` is used here.",
+      "revId": "2d01ec97f82d2e46757dcaa80dd1e39e8244c5bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
