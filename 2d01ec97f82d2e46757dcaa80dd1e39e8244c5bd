@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d6774850_b6217523",
+        "filename": "vp9/encoder/vp9_ethread.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-04-04T17:47:12Z",
+      "side": 1,
+      "message": "\u003e Another reasonable header to define `MAX_NUM_THREADS` is vp9/encoder/vp9_encoder.h because it uses `MAX_NUM_THREADS` in a struct definition.\n\u003e \n\u003e ```\n\u003e typedef struct MultiThreadHandle {\n\u003e   int allocated_tile_rows;\n\u003e   int allocated_tile_cols;\n\u003e   int allocated_vert_unit_rows;\n\u003e \n\u003e   // Frame level params\n\u003e   int num_tile_vert_sbs[MAX_NUM_TILE_ROWS];\n\u003e \n\u003e   // Job Queue structure and handles\n\u003e   JobQueue *job_queue;\n\u003e \n\u003e   int jobs_per_tile_col;\n\u003e \n\u003e   RowMTInfo row_mt_info[MAX_NUM_TILE_COLS];\n\u003e   int thread_id_to_tile_id[MAX_NUM_THREADS];  // Mapping of threads to tiles\n\u003e } MultiThreadHandle;\n\u003e ```\n\nThis header might be slightly better given the association with threads.",
+      "parentUuid": "035655fc_6f1fd94a",
+      "revId": "2d01ec97f82d2e46757dcaa80dd1e39e8244c5bd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "31378667_e4716530",
         "filename": "vp9/vp9_cx_iface.c",
         "patchSetId": 2
