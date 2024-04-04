@@ -52,6 +52,23 @@
       "parentUuid": "31c37774_e8c5f586",
       "revId": "0752960c6a02e33a79c1e9bb6d518170281b022f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24846ad0_37e66a3f",
+        "filename": "vpx_util/vpx_pthread.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 29,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-04T18:17:06Z",
+      "side": 1,
+      "message": "The inclusion of \u003cerrno.h\u003e was dropped when vpx_util/vpx_pthread.h was added in https://chromium-review.googlesource.com/c/webm/libvpx/+/5287627. I suggested to Peter Kasting that we omit \u003cerrno.h\u003e because I didn\u0027t notice the use of `EBUSY`. Sorry!",
+      "revId": "0752960c6a02e33a79c1e9bb6d518170281b022f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
