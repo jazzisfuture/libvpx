@@ -37,6 +37,40 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "a7886e48_870490d0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T01:26:45Z",
+      "side": 1,
+      "message": "The diffs between the three patchsets show how I transformed aom_image_test.cc to vpx_image_test.cc.",
+      "revId": "3dbab0e66479e1b5368d4b7a069051dba85843cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c072b222_fdd06d1e",
+        "filename": "test/test.mk",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T01:26:45Z",
+      "side": 1,
+      "message": "I added vpx_image_test.cc here because the test uses only the public API.",
+      "revId": "3dbab0e66479e1b5368d4b7a069051dba85843cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "1db3282f_0ef10066",
         "filename": "test/vpx_image_test.cc",
         "patchSetId": 3
