@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8e5f8712_733fb7b4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T14:37:56Z",
+      "side": 1,
+      "message": "James: For bug chromium:332382766, there are two libaom CLs to port to libvpx. Since this code is quite tricky, I decided to port them separately so that it\u0027s easier to check correctness by comparing with the libaom CLs.\n\nThis is a port of the first libaom CL.",
+      "revId": "2e32276277c0b1739707c5e861c96cf78794f1a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b8c120aa_80aad0fc",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T14:37:56Z",
+      "side": 1,
+      "message": "In libvpx there are two copies of this code. The second copy is at lines 111-115. So the same changes are repeated there.\n\nNote that I included the `(uint64_t)` cast in line 87, which is missing in the original libaom CL.",
+      "revId": "2e32276277c0b1739707c5e861c96cf78794f1a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
