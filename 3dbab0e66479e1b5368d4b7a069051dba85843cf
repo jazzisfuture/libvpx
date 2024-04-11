@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6a2c26da_2ee92752",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T01:21:00Z",
+      "side": 1,
+      "message": "James: I am preparing for porting https://aomedia-review.googlesource.com/c/aom/+/188761 to libvpx.",
+      "revId": "3dbab0e66479e1b5368d4b7a069051dba85843cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1db3282f_0ef10066",
+        "filename": "test/vpx_image_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T01:21:00Z",
+      "side": 1,
+      "message": "Lines 22-23 were originally:\n\n```\n  img.img_data \u003d (unsigned char *)\"\";\n```\n\nBut it caused a compiler warning:\n\n```\n../libvpx/test/vpx_image_test.cc: In member function ‘virtual void VpxImageTest_VpxImgWrapInvalidAlign_Test::TestBody()’:\n../libvpx/test/vpx_image_test.cc:22:18: warning: cast from type ‘const char*’ to type ‘unsigned char*’ casts away qualifiers [-Wcast-qual]\n   22 |   img.img_data \u003d (unsigned char *)\"\";\n      |                  ^~~~~~~~~~~~~~~~~~~\n```",
+      "revId": "3dbab0e66479e1b5368d4b7a069051dba85843cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e98d6554_e99bf5aa",
+        "filename": "test/vpx_image_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T01:21:00Z",
+      "side": 1,
+      "message": "Lines 69-70 were originally:\n\n```\n  EXPECT_EQ(img.stride[AOM_PLANE_V], 0);\n  EXPECT_EQ(img.planes[AOM_PLANE_V], nullptr);\n```\n\nThese two lines have been adjusted to match how NV12 is represented in libvpx.",
+      "revId": "3dbab0e66479e1b5368d4b7a069051dba85843cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
