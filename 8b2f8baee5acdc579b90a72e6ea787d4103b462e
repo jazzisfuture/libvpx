@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e741a295_e8d0c9cb",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T23:02:04Z",
+      "side": 1,
+      "message": "The code in the `else` block comes from lines 114-120 in the original code.",
+      "revId": "8b2f8baee5acdc579b90a72e6ea787d4103b462e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a86ea404_efaaed0d",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T23:02:04Z",
+      "side": 1,
+      "message": "This block of code (lines 107-111) is the same as lines 122-126 in the original code.",
+      "revId": "8b2f8baee5acdc579b90a72e6ea787d4103b462e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
