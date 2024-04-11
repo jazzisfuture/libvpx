@@ -106,6 +106,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "4059e298_f2b06383",
+        "filename": "test/vpx_image_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T02:13:53Z",
+      "side": 1,
+      "message": "Ah, you\u0027re right. I forgot this is C++ code, so we have `const_cast` available.\n\nBut it also requires a `reinterpret_cast`.\n\n```\n   img.img_data \u003d reinterpret_cast\u003cunsigned char *\u003e(const_cast\u003cchar *\u003e(\"\"));\n```",
+      "parentUuid": "e0659c4f_2a0f6d3f",
+      "revId": "3dbab0e66479e1b5368d4b7a069051dba85843cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e98d6554_e99bf5aa",
         "filename": "test/vpx_image_test.cc",
         "patchSetId": 3
@@ -135,6 +153,24 @@
       "side": 1,
       "message": "\u003e Lines 69-70 were originally:\n\u003e \n\u003e ```\n\u003e   EXPECT_EQ(img.stride[AOM_PLANE_V], 0);\n\u003e   EXPECT_EQ(img.planes[AOM_PLANE_V], nullptr);\n\u003e ```\n\u003e \n\u003e These two lines have been adjusted to match how NV12 is represented in libvpx.\n\nI wonder why they\u0027re different.",
       "parentUuid": "e98d6554_e99bf5aa",
+      "revId": "3dbab0e66479e1b5368d4b7a069051dba85843cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c4cdb45f_b023dade",
+        "filename": "test/vpx_image_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 70,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-11T02:13:53Z",
+      "side": 1,
+      "message": "When Jerome ported the libvpx NV12 code to libaom, I changed the libaom code to be more similar to how NV12 is represented in Chrome and WebRTC (two planes: Y and UV). We never ported the new representation back to libvpx.",
+      "parentUuid": "ad52b8c2_df8af92c",
       "revId": "3dbab0e66479e1b5368d4b7a069051dba85843cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
