@@ -33,6 +33,24 @@
       "message": "`s` is used in the calculation of `alloc_size` here.\n\nIn libaom, `stride_in_bytes` is used instead of `s`. However, libaom also divide by `bit_depth`, which is either 16 or 8, to address this issue.\n\nI will think about how to best clean this up in libvpx. This CL is a quick and simple fix.",
       "revId": "74c70af01667733483dc69298b8921779f5f6ff3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "15737753_6bdd5220",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-04-12T23:17:34Z",
+      "side": 1,
+      "message": "\u003e `s` is used in the calculation of `alloc_size` here.\n\u003e \n\u003e In libaom, `stride_in_bytes` is used instead of `s`. However, libaom also divide by `bit_depth`, which is either 16 or 8, to address this issue.\n\u003e \n\n```\n    const uint64_t alloc_size \u003d\n        (fmt \u0026 AOM_IMG_FMT_PLANAR)\n            ? (uint64_t)(h + 2 * border) * stride_in_bytes * bps / bit_depth\n            : (uint64_t)(h + 2 * border) * stride_in_bytes;\n```\n\n\u003e I will think about how to best clean this up in libvpx. This CL is a quick and simple fix.\n\nThis looks correct.",
+      "parentUuid": "29e62818_5269639d",
+      "revId": "74c70af01667733483dc69298b8921779f5f6ff3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
