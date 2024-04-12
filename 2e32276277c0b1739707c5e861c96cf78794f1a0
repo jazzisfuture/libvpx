@@ -20,6 +20,23 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "1c602c0c_d297403c",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-12T23:06:21Z",
+      "side": 1,
+      "message": "Compared with line 87 in the orignal code, this line doubles the value of `s` for high bit depths. But `s` is used later at line 116 in the calculation of `alloc_size`. So this line introduced a bug for high bit depths: `alloc_size` is twice as big.\n\nI wrote a quick fix for this bug in https://chromium-review.googlesource.com/c/webm/libvpx/+/5449900.",
+      "revId": "2e32276277c0b1739707c5e861c96cf78794f1a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "b8c120aa_80aad0fc",
         "filename": "vpx/src/vpx_image.c",
         "patchSetId": 3
