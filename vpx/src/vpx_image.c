@@ -146,8 +146,10 @@ static vpx_image_t *img_alloc_helper(vpx_image_t *img, vpx_img_fmt_t fmt,
   img->stride[VPX_PLANE_Y] = img->stride[VPX_PLANE_ALPHA] = stride_in_bytes;
   img->stride[VPX_PLANE_U] = img->stride[VPX_PLANE_V] = stride_in_bytes >> xcs;
 
-  /* Default viewport to entire image */
-  if (!vpx_img_set_rect(img, 0, 0, d_w, d_h)) return img;
+  /* Default viewport to entire image. (This vpx_img_set_rect call always
+   * succeeds.) */
+  vpx_img_set_rect(img, 0, 0, d_w, d_h);
+  return img;
 
 fail:
   vpx_img_free(img);
