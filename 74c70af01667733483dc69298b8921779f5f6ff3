@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "06439573_00b0154f",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 112,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-12T23:00:28Z",
+      "side": 1,
+      "message": "Please verify that lines 107-112 should be as close to the original code (quoted below) as possible for the two variables `s` and `stride_in_bytes`:\n\n```\n  s \u003d (fmt \u0026 VPX_IMG_FMT_PLANAR) ? w : bps * w / 8;\n  s \u003d (s + stride_align - 1) \u0026 ~(stride_align - 1);\n  stride_in_bytes \u003d (fmt \u0026 VPX_IMG_FMT_HIGHBITDEPTH) ? s * 2 : s;\n```",
+      "revId": "74c70af01667733483dc69298b8921779f5f6ff3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "29e62818_5269639d",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-12T23:00:28Z",
+      "side": 1,
+      "message": "`s` is used in the calculation of `alloc_size` here.\n\nIn libaom, `stride_in_bytes` is used instead of `s`. However, libaom also divide by `bit_depth`, which is either 16 or 8, to address this issue.\n\nI will think about how to best clean this up in libvpx. This CL is a quick and simple fix.",
+      "revId": "74c70af01667733483dc69298b8921779f5f6ff3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
