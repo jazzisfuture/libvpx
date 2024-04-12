@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fb48bbcc_e25c4488",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-12T21:41:21Z",
+      "side": 1,
+      "message": "In `img_alloc_helper()`, `buf_align` is only used here, when `img_data` is null (line 124).",
+      "revId": "6f8651b3ee38c5670481cd13d0c0b1aa65be0ce8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
