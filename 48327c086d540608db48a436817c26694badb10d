@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c18a4f44_87a89d7d",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 176,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-12T21:57:52Z",
+      "side": 1,
+      "message": "`vpx_img_set_rect()` can only fail if this condition is false.\n\n`img_alloc_helper()` calls `vpx_img_set_rect()` with `x\u003d0`, `y\u003d0`, `w\u003dd_w`, and `h\u003dd_h`. So this condition is true because `0 + d_w \u003c\u003d img-\u003ew` and `0 + d_h \u003c\u003d img-\u003eh` are true.",
+      "revId": "48327c086d540608db48a436817c26694badb10d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
