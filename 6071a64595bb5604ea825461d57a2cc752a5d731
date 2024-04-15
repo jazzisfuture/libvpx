@@ -16,6 +16,24 @@
       "message": "While working on aom_image.c, I found that if the calculation of `w` or `h` overflows, the `aom_img_set_rect()` calls fails. This is why I added the two assertions here -- if these two conditions are true, the `vpx_img_set_rect()` call will succeed.\n\nDo you think we should also assert the `vpx_img_set_rect()` call returns 0?",
       "revId": "6071a64595bb5604ea825461d57a2cc752a5d731",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "a819fcc7_78371b48",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-04-15T20:18:02Z",
+      "side": 1,
+      "message": "\u003e While working on aom_image.c, I found that if the calculation of `w` or `h` overflows, the `aom_img_set_rect()` calls fails. This is why I added the two assertions here -- if these two conditions are true, the `vpx_img_set_rect()` call will succeed.\n\u003e \n\u003e Do you think we should also assert the `vpx_img_set_rect()` call returns 0?\n\nTo support the claim, it\u0027s reasonable.",
+      "parentUuid": "168b3699_f56ef706",
+      "revId": "6071a64595bb5604ea825461d57a2cc752a5d731",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
