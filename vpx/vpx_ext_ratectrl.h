@@ -50,6 +50,7 @@ extern "C" {
  * the QP, GOP and the rdmult.
  */
 typedef enum vpx_rc_type {
+  VPX_RC_NONE = 0,
   VPX_RC_QP = 1 << 0,
   VPX_RC_GOP = 1 << 1,
   VPX_RC_RDMULT = 1 << 2,
@@ -514,6 +515,11 @@ typedef struct vpx_rc_funcs {
    * Delete the external rate control model.
    */
   vpx_rc_delete_model_cb_fn_t delete_model;
+
+  /*!
+   * Rate control log path.
+   */
+  char* rate_ctrl_log_path;
   /*!
    * Private data for the external rate control model.
    */
