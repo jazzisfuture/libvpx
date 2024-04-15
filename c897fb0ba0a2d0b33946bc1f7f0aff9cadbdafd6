@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "192643e3_6be10382",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1082,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-04-15T20:22:44Z",
+      "side": 1,
+      "message": "Deepa: Thank you so much for tracking this down and fixing this!\n\nOptopnal: It would be good if we could differentiate the \"worker had error\" and \"output buffer full\" cases. On the other hand, if workers can only fail because the output buffer is full, then this is fine.",
+      "revId": "c897fb0ba0a2d0b33946bc1f7f0aff9cadbdafd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
