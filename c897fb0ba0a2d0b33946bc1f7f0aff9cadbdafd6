@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f0cffd7f_b262f3bd",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2024-04-16T11:36:53Z",
+      "side": 1,
+      "message": "Done. Thank you for the suggestion.",
+      "parentUuid": "45e96dab_efbee939",
+      "revId": "c897fb0ba0a2d0b33946bc1f7f0aff9cadbdafd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "192643e3_6be10382",
         "filename": "vp9/encoder/vp9_bitstream.c",
         "patchSetId": 2
@@ -31,6 +49,24 @@
       "writtenOn": "2024-04-15T20:22:44Z",
       "side": 1,
       "message": "Deepa: Thank you so much for tracking this down and fixing this!\n\nOptopnal: It would be good if we could differentiate the \"worker had error\" and \"output buffer full\" cases. On the other hand, if workers can only fail because the output buffer is full, then this is fine.",
+      "revId": "c897fb0ba0a2d0b33946bc1f7f0aff9cadbdafd6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f0b1e6b8_28f99788",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1082,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2024-04-16T11:36:53Z",
+      "side": 1,
+      "message": "Here the workers fail only when the output buffer is full (i.e., worker-\u003ehad_error is set to 1 when either the output bitstream buffer or the thread/tile specific bitstream buffer is full).",
+      "parentUuid": "192643e3_6be10382",
       "revId": "c897fb0ba0a2d0b33946bc1f7f0aff9cadbdafd6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
