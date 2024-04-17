@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "516d0e0e_4fe5c31c",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-04-17T04:10:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1d490505_794fb996",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 43
+      },
+      "revId": "55dea193b9e1c246ae2cd14814866e3fa529015d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "195a97c7_bcf5b781",
@@ -37,6 +61,30 @@
       "writtenOn": "2024-04-16T14:41:59Z",
       "side": 1,
       "message": "Check `ext_ratectrl-\u003elog_file` is not NULL after `fopen`\n\nif it is, an error needs to be returned here.",
+      "range": {
+        "startLine": 56,
+        "startChar": 29,
+        "endLine": 56,
+        "endChar": 34
+      },
+      "revId": "55dea193b9e1c246ae2cd14814866e3fa529015d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "77779ab5_ce23b14e",
+        "filename": "vp9/encoder/vp9_ext_ratectrl.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-04-17T04:10:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "195a97c7_bcf5b781",
       "range": {
         "startLine": 56,
         "startChar": 29,
