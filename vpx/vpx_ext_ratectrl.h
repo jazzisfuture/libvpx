@@ -50,6 +50,7 @@ extern "C" {
  * the QP, GOP and the rdmult.
  */
 typedef enum vpx_rc_type {
+  VPX_RC_NONE = 0,
   VPX_RC_QP = 1 << 0,
   VPX_RC_GOP = 1 << 1,
   VPX_RC_RDMULT = 1 << 2,
