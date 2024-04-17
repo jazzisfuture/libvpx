@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "6b06a4af_bdbfe8f4",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 5425,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-04-17T17:34:13Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "96ceba96_5c610a3f",
+      "revId": "4215f516a8d208418675316c520073a9898389ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "725294ac_ccf4f461",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-04-17T12:59:24Z",
       "side": 1,
       "message": "this line is too long",
+      "revId": "4215f516a8d208418675316c520073a9898389ff",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ef434a0e_ded19fae",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 5746,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-04-17T17:34:13Z",
+      "side": 1,
+      "message": "Yep,\nI didn\u0027t set up clang-format properly.\nDone",
+      "parentUuid": "725294ac_ccf4f461",
       "revId": "4215f516a8d208418675316c520073a9898389ff",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
