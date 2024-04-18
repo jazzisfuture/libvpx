@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "918a8445_a6185def",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 8
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-04-18T16:24:33Z",
+      "side": 1,
+      "message": "Can you add a comment above explaining what `VPX_RC_NONE` is for?",
+      "range": {
+        "startLine": 53,
+        "startChar": 2,
+        "endLine": 53,
+        "endChar": 13
+      },
+      "revId": "5187052b9f13fcd139351ae2ca76f2586882c1cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
