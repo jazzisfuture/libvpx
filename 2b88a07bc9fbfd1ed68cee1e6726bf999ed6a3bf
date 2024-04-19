@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c71511c9_46b9fe44",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 5748,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-04-19T17:56:05Z",
+      "side": 0,
+      "message": "it didn\u0027t look like this trailing space was necessary, but I can restore it if needed.",
+      "range": {
+        "startLine": 5748,
+        "startChar": 51,
+        "endLine": 5748,
+        "endChar": 52
+      },
+      "revId": "2b88a07bc9fbfd1ed68cee1e6726bf999ed6a3bf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
