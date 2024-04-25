@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "14e294a2_01523523",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-04-25T22:21:17Z",
+      "side": 1,
+      "message": "Updated the value to 1 to match the default given for the Codec Parameter String.",
+      "revId": "63b9c2c0e2aeaa2964b7b64d803a198003dcb853",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
