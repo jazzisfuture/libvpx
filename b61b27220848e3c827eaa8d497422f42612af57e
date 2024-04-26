@@ -16,6 +16,24 @@
       "message": "It seems the older version of gcc used by jenkins missed this.",
       "revId": "b61b27220848e3c827eaa8d497422f42612af57e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1fee095d_997d23d5",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-04-26T23:35:40Z",
+      "side": 1,
+      "message": "\u003e It seems the older version of gcc used by jenkins missed this.\n\nIt looks like it was listed, but somewhere along the way the threshold for warnings got removed:\n\nhttps://build.webmproject.org/jenkins/job/libvpx__per-commit_compile/43156/gcc/",
+      "parentUuid": "e865c198_12ca00c1",
+      "revId": "b61b27220848e3c827eaa8d497422f42612af57e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
