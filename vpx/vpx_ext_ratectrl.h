@@ -38,7 +38,7 @@ extern "C" {
 #define VPX_RC_MAX_REF_FRAMES 4
 
 /*!\brief The control type of the inference API.
- * In VPX_RC_NONE mode, the external rate control doesn't determines anything.
+ * In VPX_RC_NONE mode, the external rate control doesn't determine anything.
  * This mode is used as baseline.
  * In VPX_RC_QP mode, the external rate control model determines the
  * quantization parameter (QP) for each frame.
