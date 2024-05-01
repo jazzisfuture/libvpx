@@ -22,6 +22,23 @@
       },
       "revId": "cda9142da3b81210b37f4ed3b2d12e24f56ac785",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5535c02c_27a5e05f",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-01T20:33:45Z",
+      "side": 1,
+      "message": "Optional/nit: I think \"Corresponds\" (a verb) sounds better than \"Correspondent\" (an adjective) here.\n\nNote: In https://chromium-review.googlesource.com/c/webm/libvpx/+/5506514, James suggested \"Corresponding\", which also sounds than \"Correspondent\".",
+      "revId": "cda9142da3b81210b37f4ed3b2d12e24f56ac785",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
