@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd1c9b3b_82324cda",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-05-01T20:58:41Z",
+      "side": 1,
+      "message": "Yes, I will send a cherry-pick CL with ffmpeg soon.",
+      "parentUuid": "d5e54b1f_1f6f702f",
+      "revId": "5e404068e83d5fb22fff8b7593d1cfb87210e4a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1adbea62_b2243b7d",
@@ -31,6 +49,30 @@
       "writtenOn": "2024-05-01T19:52:20Z",
       "side": 1,
       "message": "is this right? `gf_group-\u003emax_layer_depth` is set to 2, but this will set the overlay layer depth to 5.",
+      "range": {
+        "startLine": 2311,
+        "startChar": 0,
+        "endLine": 2311,
+        "endChar": 58
+      },
+      "revId": "5e404068e83d5fb22fff8b7593d1cfb87210e4a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fe92f9f8_0aa87434",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2311,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-05-01T20:58:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "1adbea62_b2243b7d",
       "range": {
         "startLine": 2311,
         "startChar": 0,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1040356c_06af5e60",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2346,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-05-01T20:58:41Z",
+      "side": 1,
+      "message": "Yep, the current setting key frame and overlay frame is always a zero position.\nIt might not always be the case.\nIn the end, we might move the overlay frame to the end of GOP,\nI\u0027s good to keep the frame_idx as function parameter.",
+      "parentUuid": "0fdad29c_54bbfbcd",
+      "range": {
+        "startLine": 2346,
+        "startChar": 37,
+        "endLine": 2346,
+        "endChar": 38
+      },
+      "revId": "5e404068e83d5fb22fff8b7593d1cfb87210e4a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "0bc89673_e001bbec",
@@ -87,6 +153,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "318ed6eb_70cb635a",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2348,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-05-01T20:58:41Z",
+      "side": 1,
+      "message": "See above comment.",
+      "parentUuid": "0bc89673_e001bbec",
+      "range": {
+        "startLine": 2348,
+        "startChar": 41,
+        "endLine": 2348,
+        "endChar": 42
+      },
+      "revId": "5e404068e83d5fb22fff8b7593d1cfb87210e4a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "857b155a_9799f738",
@@ -100,6 +190,30 @@
       "writtenOn": "2024-05-01T19:52:20Z",
       "side": 1,
       "message": "same here\n\nmaybe add a comment saying we assume arf frame will always be the one after key/overlay",
+      "range": {
+        "startLine": 2351,
+        "startChar": 35,
+        "endLine": 2351,
+        "endChar": 36
+      },
+      "revId": "5e404068e83d5fb22fff8b7593d1cfb87210e4a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "05d1ed8f_4d524415",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2351,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-05-01T20:58:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "857b155a_9799f738",
       "range": {
         "startLine": 2351,
         "startChar": 35,
