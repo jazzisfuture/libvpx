@@ -92,6 +92,30 @@
       },
       "revId": "22b801ee7b2b1134022636e74e983f9df5dca921",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f160515f_d0580d48",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-01T20:25:23Z",
+      "side": 1,
+      "message": "Done. I added a newline to match some of the other comments.",
+      "parentUuid": "92da5101_e7dac2c6",
+      "range": {
+        "startLine": 370,
+        "startChar": 5,
+        "endLine": 370,
+        "endChar": 10
+      },
+      "revId": "22b801ee7b2b1134022636e74e983f9df5dca921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
