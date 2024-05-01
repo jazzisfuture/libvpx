@@ -29,7 +29,6 @@
 #include "vpx/vpx_encoder.h"
 #include "vpx/vpx_image.h"
 #include "vpx/vpx_tpl.h"
-#include "vpx_ports/msvc.h"
 
 namespace {
 
