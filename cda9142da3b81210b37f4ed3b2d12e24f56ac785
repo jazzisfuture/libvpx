@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "60da6ff7_c52e37dd",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-01T20:41:44Z",
+      "side": 1,
+      "message": "Right. I\u0027ll rebase when your CL is submitted.",
+      "parentUuid": "30184a12_f19ebafe",
+      "range": {
+        "startLine": 53,
+        "startChar": 39,
+        "endLine": 53,
+        "endChar": 49
+      },
+      "revId": "cda9142da3b81210b37f4ed3b2d12e24f56ac785",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "5535c02c_27a5e05f",
@@ -37,6 +61,24 @@
       "writtenOn": "2024-05-01T20:33:45Z",
       "side": 1,
       "message": "Optional/nit: I think \"Corresponds\" (a verb) sounds better than \"Correspondent\" (an adjective) here.\n\nNote: In https://chromium-review.googlesource.com/c/webm/libvpx/+/5506514, James suggested \"Corresponding\", which also sounds than \"Correspondent\".",
+      "revId": "cda9142da3b81210b37f4ed3b2d12e24f56ac785",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "84f49406_dc87411c",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-01T20:41:44Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5535c02c_27a5e05f",
       "revId": "cda9142da3b81210b37f4ed3b2d12e24f56ac785",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
