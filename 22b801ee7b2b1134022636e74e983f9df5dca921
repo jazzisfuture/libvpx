@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "75e56419_2d92f639",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-01T19:52:17Z",
+      "side": 1,
+      "message": "Jerome, can you add a `\\file` description here?\n\n```suggestion\n\n/*\n * \\file\n * This file defines the external rate control API.\n */\n```\n\n(The suggested comment is reasonable, if a bit short. Take a look at the other public header files.)",
+      "revId": "22b801ee7b2b1134022636e74e983f9df5dca921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2c8508f6_f595c181",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 359,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-01T19:52:17Z",
+      "side": 1,
+      "message": "Jerome, please document these two",
+      "revId": "22b801ee7b2b1134022636e74e983f9df5dca921",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
