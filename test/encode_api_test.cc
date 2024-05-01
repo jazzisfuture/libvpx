@@ -447,13 +447,15 @@ void VP8Encoder::Encode(bool key_frame) {
 TEST(EncodeAPI, Chromium324459561) {
   VP8Encoder encoder(-12);
 
-  encoder.Configure(11, 1685, 652, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(11, 1685, 652, VPX_CBR, VPX_DL_REALTIME));
 
   encoder.Encode(true);
   encoder.Encode(true);
   encoder.Encode(true);
 
-  encoder.Configure(0, 1685, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1685, 1, VPX_VBR, VPX_DL_REALTIME));
 }
 
 TEST(EncodeAPI, VP8GlobalHeaders) {
@@ -995,12 +997,14 @@ void VP9Encoder::Encode(bool key_frame) {
 // This is a test case from clusterfuzz.
 TEST(EncodeAPI, PrevMiCheckNullptr) {
   VP9Encoder encoder(0);
-  encoder.Configure(0, 1554, 644, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1554, 644, VPX_VBR, VPX_DL_REALTIME));
 
   // First step: encode, without forcing KF.
   encoder.Encode(false);
   // Second step: change config
-  encoder.Configure(0, 1131, 644, VPX_CBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1131, 644, VPX_CBR, VPX_DL_GOOD_QUALITY));
   // Third step: encode, without forcing KF
   encoder.Encode(false);
 }
@@ -1012,16 +1016,19 @@ TEST(EncodeAPI, MultipleChangeConfigResize) {
   VP9Encoder encoder(3);
 
   // Set initial config.
-  encoder.Configure(3, 41, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(3, 41, 1, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode first frame.
   encoder.Encode(true);
 
   // Change config.
-  encoder.Configure(16, 31, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 31, 1, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Change config again.
-  encoder.Configure(0, 17, 1, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 17, 1, VPX_CBR, VPX_DL_REALTIME));
 
   // Encode 2nd frame with new config, set delta frame.
   encoder.Encode(false);
@@ -1038,7 +1045,8 @@ TEST(EncodeAPI, DynamicDeadlineChange) {
   VP9Encoder encoder(5);
 
   // Set initial config, in particular set deadline to GOOD mode.
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 1st frame.
   encoder.Encode(true);
@@ -1047,7 +1055,7 @@ TEST(EncodeAPI, DynamicDeadlineChange) {
   encoder.Encode(false);
 
   // Change config: change deadline to REALTIME.
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode 3rd frame with new config, set key frame.
   encoder.Encode(true);
@@ -1059,13 +1067,14 @@ TEST(EncodeAPI, DynamicDeadlineChange) {
   encoder.Encode(true);
 
   // Change config: change deadline to BEST.
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_BEST_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_BEST_QUALITY));
 
   // Encode 6th frame with new config, set delta frame.
   encoder.Encode(false);
 
   // Change config: change deadline to REALTIME.
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode 7th frame with new config, set delta frame.
   encoder.Encode(false);
@@ -1081,7 +1090,8 @@ TEST(EncodeAPI, Buganizer310340241) {
   VP9Encoder encoder(-6);
 
   // Set initial config, in particular set deadline to GOOD mode.
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 1st frame.
   encoder.Encode(true);
@@ -1090,7 +1100,7 @@ TEST(EncodeAPI, Buganizer310340241) {
   encoder.Encode(false);
 
   // Change config: change deadline to REALTIME.
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode 3rd frame with new config, set key frame.
   encoder.Encode(true);
@@ -1099,12 +1109,16 @@ TEST(EncodeAPI, Buganizer310340241) {
 // This is a test case from clusterfuzz: based on b/312517065.
 TEST(EncodeAPI, Buganizer312517065) {
   VP9Encoder encoder(4);
-  encoder.Configure(0, 1060, 437, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1060, 437, VPX_CBR, VPX_DL_REALTIME));
   encoder.Encode(true);
-  encoder.Configure(10, 33, 437, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(10, 33, 437, VPX_VBR, VPX_DL_GOOD_QUALITY));
   encoder.Encode(false);
-  encoder.Configure(6, 327, 269, VPX_VBR, VPX_DL_GOOD_QUALITY);
-  encoder.Configure(15, 1060, 437, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(6, 327, 269, VPX_VBR, VPX_DL_GOOD_QUALITY));
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(15, 1060, 437, VPX_CBR, VPX_DL_REALTIME));
   encoder.Encode(false);
 }
 
@@ -1115,25 +1129,29 @@ TEST(EncodeAPI, Buganizer311489136) {
   VP9Encoder encoder(1);
 
   // Set initial config.
-  encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode first frame.
   encoder.Encode(true);
 
   // Change config.
-  encoder.Configure(3, 1678, 202, VPX_CBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(3, 1678, 202, VPX_CBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 2nd frame with new config, set delta frame.
   encoder.Encode(false);
 
   // Change config again.
-  encoder.Configure(8, 1037, 476, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(8, 1037, 476, VPX_CBR, VPX_DL_REALTIME));
 
   // Encode 3rd frame with new config, set delta frame.
   encoder.Encode(false);
 
   // Change config again.
-  encoder.Configure(0, 580, 620, VPX_CBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 580, 620, VPX_CBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 4th frame with same config, set delta frame.
   encoder.Encode(false);
@@ -1146,22 +1164,26 @@ TEST(EncodeAPI, Buganizer312656387) {
   VP9Encoder encoder(1);
 
   // Set initial config.
-  encoder.Configure(16, 1, 1024, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 1, 1024, VPX_CBR, VPX_DL_REALTIME));
 
   // Change config.
-  encoder.Configure(15, 1, 1024, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(15, 1, 1024, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode first frame.
   encoder.Encode(true);
 
   // Change config again.
-  encoder.Configure(14, 1, 595, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(14, 1, 595, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 2nd frame with new config.
   encoder.Encode(true);
 
   // Change config again.
-  encoder.Configure(2, 1, 1024, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(2, 1, 1024, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 3rd frame with new config, set delta frame.
   encoder.Encode(false);
@@ -1174,13 +1196,15 @@ TEST(EncodeAPI, Buganizer310329177) {
   VP9Encoder encoder(6);
 
   // Set initial config.
-  encoder.Configure(10, 41, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(10, 41, 1, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode first frame.
   encoder.Encode(true);
 
   // Change config.
-  encoder.Configure(16, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 1, 1, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode 2nd frame with new config, set delta frame.
   encoder.Encode(false);
@@ -1193,13 +1217,13 @@ TEST(EncodeAPI, Buganizer311394513) {
   VP9Encoder encoder(-7);
 
   // Set initial config.
-  encoder.Configure(0, 5, 9, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(encoder.Configure(0, 5, 9, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode first frame.
   encoder.Encode(false);
 
   // Change config.
-  encoder.Configure(5, 2, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(encoder.Configure(5, 2, 1, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode 2nd frame with new config.
   encoder.Encode(true);
@@ -1209,16 +1233,19 @@ TEST(EncodeAPI, Buganizer311985118) {
   VP9Encoder encoder(0);
 
   // Set initial config, in particular set deadline to GOOD mode.
-  encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 1st frame.
   encoder.Encode(false);
 
   // Change config: change threads and width.
-  encoder.Configure(0, 1574, 620, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1574, 620, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Change config: change threads, width and height.
-  encoder.Configure(16, 837, 432, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 837, 432, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 2nd frame.
   encoder.Encode(false);
@@ -1231,13 +1258,15 @@ TEST(EncodeAPI, Buganizer314857577) {
   VP9Encoder encoder(4);
 
   // Set initial config.
-  encoder.Configure(12, 1060, 437, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(12, 1060, 437, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode first frame.
   encoder.Encode(false);
 
   // Change config.
-  encoder.Configure(16, 1060, 1, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 1060, 1, VPX_CBR, VPX_DL_REALTIME));
 
   // Encode 2nd frame with new config.
   encoder.Encode(false);
@@ -1246,7 +1275,8 @@ TEST(EncodeAPI, Buganizer314857577) {
   encoder.Encode(true);
 
   // Change config.
-  encoder.Configure(15, 33, 437, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(15, 33, 437, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 4th frame with new config.
   encoder.Encode(true);
@@ -1255,10 +1285,12 @@ TEST(EncodeAPI, Buganizer314857577) {
   encoder.Encode(false);
 
   // Change config.
-  encoder.Configure(5, 327, 269, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(5, 327, 269, VPX_VBR, VPX_DL_REALTIME));
 
   // Change config.
-  encoder.Configure(15, 1060, 437, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(15, 1060, 437, VPX_CBR, VPX_DL_REALTIME));
 
   // Encode 6th frame with new config.
   encoder.Encode(false);
@@ -1267,7 +1299,8 @@ TEST(EncodeAPI, Buganizer314857577) {
   encoder.Encode(false);
 
   // Change config.
-  encoder.Configure(4, 1060, 437, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(4, 1060, 437, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode 8th frame with new config.
   encoder.Encode(false);
@@ -1276,12 +1309,14 @@ TEST(EncodeAPI, Buganizer314857577) {
 TEST(EncodeAPI, Buganizer312875957PredBufferStride) {
   VP9Encoder encoder(-1);
 
-  encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_REALTIME));
   encoder.Encode(true);
   encoder.Encode(false);
-  encoder.Configure(0, 456, 486, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 456, 486, VPX_VBR, VPX_DL_REALTIME));
   encoder.Encode(true);
-  encoder.Configure(0, 1678, 620, VPX_CBR, 1000000);
+  ASSERT_NO_FATAL_FAILURE(encoder.Configure(0, 1678, 620, VPX_CBR, 1000000));
   encoder.Encode(false);
   encoder.Encode(false);
 }
@@ -1293,25 +1328,29 @@ TEST(EncodeAPI, Buganizer311294795) {
   VP9Encoder encoder(1);
 
   // Set initial config.
-  encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(12, 1678, 620, VPX_VBR, VPX_DL_REALTIME));
 
   // Encode first frame.
   encoder.Encode(false);
 
   // Change config.
-  encoder.Configure(16, 632, 620, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 632, 620, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 2nd frame with new config
   encoder.Encode(true);
 
   // Change config.
-  encoder.Configure(16, 1678, 342, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 1678, 342, VPX_VBR, VPX_DL_GOOD_QUALITY));
 
   // Encode 3rd frame with new config.
   encoder.Encode(false);
 
   // Change config.
-  encoder.Configure(0, 1574, 618, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1574, 618, VPX_VBR, VPX_DL_REALTIME));
   // Encode more frames with new config.
   encoder.Encode(false);
   encoder.Encode(false);
@@ -1319,8 +1358,10 @@ TEST(EncodeAPI, Buganizer311294795) {
 
 TEST(EncodeAPI, Buganizer317105128) {
   VP9Encoder encoder(-9);
-  encoder.Configure(0, 1, 1, VPX_CBR, VPX_DL_GOOD_QUALITY);
-  encoder.Configure(16, 1920, 1, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1, 1, VPX_CBR, VPX_DL_GOOD_QUALITY));
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 1920, 1, VPX_CBR, VPX_DL_REALTIME));
 }
 
 TEST(EncodeAPI, Buganizer319964497) {
@@ -1383,22 +1424,27 @@ TEST(EncodeAPI, Buganizer329088759RowMT1) {
 
 TEST(EncodeAPI, Buganizer331086799) {
   VP9Encoder encoder(6, 1, VPX_BITS_8, VPX_IMG_FMT_I420);
-  encoder.Configure(0, 1385, 1, VPX_CBR, VPX_DL_REALTIME);
-  encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1385, 1, VPX_CBR, VPX_DL_REALTIME));
+  ASSERT_NO_FATAL_FAILURE(encoder.Configure(0, 1, 1, VPX_VBR, VPX_DL_REALTIME));
   encoder.Encode(false);
-  encoder.Configure(16, 1385, 1, VPX_VBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(16, 1385, 1, VPX_VBR, VPX_DL_GOOD_QUALITY));
   encoder.Encode(false);
   encoder.Encode(false);
-  encoder.Configure(0, 1, 1, VPX_CBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(encoder.Configure(0, 1, 1, VPX_CBR, VPX_DL_REALTIME));
   encoder.Encode(true);
 }
 
 TEST(EncodeAPI, Buganizer331108729) {
   VP9Encoder encoder(1, 1, VPX_BITS_8, VPX_IMG_FMT_I422);
-  encoder.Configure(0, 1919, 260, VPX_VBR, VPX_DL_REALTIME);
-  encoder.Configure(9, 440, 1, VPX_CBR, VPX_DL_GOOD_QUALITY);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(0, 1919, 260, VPX_VBR, VPX_DL_REALTIME));
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(9, 440, 1, VPX_CBR, VPX_DL_GOOD_QUALITY));
   encoder.Encode(true);
-  encoder.Configure(8, 1919, 260, VPX_VBR, VPX_DL_REALTIME);
+  ASSERT_NO_FATAL_FAILURE(
+      encoder.Configure(8, 1919, 260, VPX_VBR, VPX_DL_REALTIME));
   encoder.Encode(false);
 }
 
