@@ -81,6 +81,23 @@
       },
       "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "87ce7fe1_9be11505",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1378,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-02T18:58:14Z",
+      "side": 1,
+      "message": "In libaom, these two lines read:\n\n```\n  const int tile_mb_cols \u003d\n      (tile_info-\u003emi_col_end - tile_info-\u003emi_col_start + 2) \u003e\u003e 2;\n  const int tile_mb_row \u003d (mi_row - tile_info-\u003emi_row_start + 2) \u003e\u003e 2;\n```\n\nNote that the calculation of `mb_row` (`tile_mb_row`) differs in whether a rounding term is added.",
+      "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
