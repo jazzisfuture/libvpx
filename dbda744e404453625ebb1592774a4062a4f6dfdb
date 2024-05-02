@@ -16,6 +16,47 @@
       "message": "Hi Wan-Teh, looks like the ASAN error was gone with this fix. Could you also check that?",
       "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7e3f2632_00bb4da6",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-02T18:42:46Z",
+      "side": 1,
+      "message": "Thank you for the fix. I verified that the ASan error is gone with this fix.",
+      "parentUuid": "f9db09d9_e4e8b7e0",
+      "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ed71eb6_8d5f0633",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1355,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-02T18:42:46Z",
+      "side": 1,
+      "message": "Could you add a comment to explain why we need to align to this particular power of 2?\n\nFor example, why don\u0027t we need to align to the power of `MI_BLOCK_SIZE_LOG2`, which would mean a multiple of superblock size (64x64)?\n\nAligning to `MI_BLOCK_SIZE_LOG2 - 1` means a multiple of 32x32.",
+      "range": {
+        "startLine": 1355,
+        "startChar": 34,
+        "endLine": 1355,
+        "endChar": 56
+      },
+      "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
