@@ -57,6 +57,30 @@
       },
       "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7e1bf064_21066b9c",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1355,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-02T18:48:12Z",
+      "side": 1,
+      "message": "My previous comment has an error. I didn\u0027t realize that mb_rows and mb_cols are in units of 16 pixels (see the comment at line 1349), not 8 pixels. This extra power of 2 comes from the `\u003e\u003e 1` in lines 1364, 1365, and 1377, 1378.\n\nSo aligning to `MI_BLOCK_SIZE_LOG2 - 1` means a multiple of 64x64 (superblock size).\n\nDid I understand this correctly?",
+      "parentUuid": "8ed71eb6_8d5f0633",
+      "range": {
+        "startLine": 1355,
+        "startChar": 34,
+        "endLine": 1355,
+        "endChar": 56
+      },
+      "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
