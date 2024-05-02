@@ -36,6 +36,74 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "38a7445e_4227d129",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-02T22:25:46Z",
+      "side": 1,
+      "message": "Please wait for Bohan\u0027s review because I don\u0027t really understand this code. I suggest some changes to the comments.",
+      "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "156f517e_9f5822a4",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1346,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-02T22:25:46Z",
+      "side": 1,
+      "message": "Optional: These three functions (`get_token_alloc()`, `allocated_tokens()`, and `get_start_tok()`) are also in libaom but have different implementations. It would be good to study the differences between the libvpx and libaom implementations and make sure that libvpx is not missing some bug fixes that are in libaom.",
+      "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "93cc2839_f519c526",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1348,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-02T22:25:46Z",
+      "side": 1,
+      "message": "Do you think we can remove this TODO comment now?",
+      "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3258529b_cf03c026",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 1353,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-02T22:25:46Z",
+      "side": 1,
+      "message": "1) Nit/optional: Change \"Use aligned mb_rows and mb_cols\" to \"Align mb_rows and mb_cols to a multiple of superblock size\"?\n\n2) It would be good to explain why we need to align to a multiple of superblock size.\n\nNote: Are we confident that the new size is large enough? If we are not sure, it would be good to pass the tile_tok to its consumers for bounds checking. (No need to do that in this CL.)",
+      "revId": "dbda744e404453625ebb1592774a4062a4f6dfdb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8ed71eb6_8d5f0633",
