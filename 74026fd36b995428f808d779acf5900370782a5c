@@ -51,6 +51,24 @@
       "parentUuid": "b0ca05f3_9bbfe9e7",
       "revId": "74026fd36b995428f808d779acf5900370782a5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "18152cf7_47bffb12",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-03T20:41:48Z",
+      "side": 1,
+      "message": "We can try adding the following to the beginning of the `Encode()` method:\n\n```\n  assert(initialized_);\n```",
+      "parentUuid": "affcd549_d9996912",
+      "revId": "74026fd36b995428f808d779acf5900370782a5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
