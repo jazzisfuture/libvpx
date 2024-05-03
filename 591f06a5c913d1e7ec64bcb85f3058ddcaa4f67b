@@ -16,6 +16,24 @@
       "message": "LGTM. Thanks for fixing this!",
       "revId": "591f06a5c913d1e7ec64bcb85f3058ddcaa4f67b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7648aa7_44b394f0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-03T21:59:42Z",
+      "side": 1,
+      "message": "\u003e LGTM. Thanks for fixing this!\n\nThanks for taking a close look. I started by thinking `ASSERT_NO_FATAL_FAILURE()` would be enough. When it wasn\u0027t I didn\u0027t step back to think about other alternatives.\n\nclang-11 doesn\u0027t report the issue either, so now we can take a zero tolerance approach to static analysis errors.",
+      "parentUuid": "5f74dee4_7cf7dbb1",
+      "revId": "591f06a5c913d1e7ec64bcb85f3058ddcaa4f67b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
