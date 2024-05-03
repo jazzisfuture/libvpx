@@ -16,6 +16,23 @@
       "message": "This only works with clang-14+. clang-11 and clang-13 still report an issue. I didn\u0027t check clang-12.\n\n```\n../test/encode_api_test.cc:429:7: warning: 3rd function call argument is an uninitialized value [core.CallAndMessage]\n      CreateImage(VPX_BITS_8, VPX_IMG_FMT_I420, cfg_.g_w, cfg_.g_h);\n      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n../test/encode_api_test.cc:986:24: warning: 3rd function call argument is an uninitialized value [core.CallAndMessage]\n  vpx_image_t *image \u003d CreateImage(bit_depth_, fmt_, cfg_.g_w, cfg_.g_h);\n                       ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n```",
       "revId": "74026fd36b995428f808d779acf5900370782a5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0ca05f3_9bbfe9e7",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-03T20:31:40Z",
+      "side": 1,
+      "message": "Thanks for the CL. This fix is quite verbose and changes the simple design of the `VP8Encoder` and `VP9Encoder` classes. Can we fix the warnings about uninitialized `cfg_` members by adding suitable `assert()` statements? Or perhaps move this `vpx_codec_enc_config_default()` call to the constructor?",
+      "revId": "74026fd36b995428f808d779acf5900370782a5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
