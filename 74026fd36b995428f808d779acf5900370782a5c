@@ -33,6 +33,24 @@
       "message": "Thanks for the CL. This fix is quite verbose and changes the simple design of the `VP8Encoder` and `VP9Encoder` classes. Can we fix the warnings about uninitialized `cfg_` members by adding suitable `assert()` statements? Or perhaps move this `vpx_codec_enc_config_default()` call to the constructor?",
       "revId": "74026fd36b995428f808d779acf5900370782a5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "affcd549_d9996912",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-03T20:35:49Z",
+      "side": 1,
+      "message": "\u003e Thanks for the CL. This fix is quite verbose and changes the simple design of the `VP8Encoder` and `VP9Encoder` classes. Can we fix the warnings about uninitialized `cfg_` members by adding suitable `assert()` statements?\n\nI\u0027m not sure how we\u0027d assert that the values have been initialized in any other way. Another option might be to allow the initialization to go through and assert in this function later or change it to return a bool.\n\n\u003e Or perhaps move this `vpx_codec_enc_config_default()` call to the constructor?\n\nThe constructor can\u0027t assert, so we\u0027d need a factory function I guess.",
+      "parentUuid": "b0ca05f3_9bbfe9e7",
+      "revId": "74026fd36b995428f808d779acf5900370782a5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
