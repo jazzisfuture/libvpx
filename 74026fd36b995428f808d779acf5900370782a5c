@@ -69,6 +69,24 @@
       "parentUuid": "affcd549_d9996912",
       "revId": "74026fd36b995428f808d779acf5900370782a5c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d425bc7_25b8291a",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 3
+      },
+      "lineNbr": 401,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-03T20:44:25Z",
+      "side": 1,
+      "message": "\u003e We can try adding the following to the beginning of the `Encode()` method:\n\u003e \n\u003e ```\n\u003e   assert(initialized_);\n\u003e ```\n\nGood point, I wasn\u0027t thinking about the Encode call. I\u0027ll see if gtest ASSERTS work first.",
+      "parentUuid": "18152cf7_47bffb12",
+      "revId": "74026fd36b995428f808d779acf5900370782a5c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
