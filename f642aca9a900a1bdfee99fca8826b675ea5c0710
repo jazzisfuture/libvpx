@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "79978297_c1724adf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-08T22:36:19Z",
+      "side": 1,
+      "message": "We need to cherry-pick https://chromium-review.googlesource.com/c/webm/libvpx/+/5506616 first to fix the verification test failure.",
+      "revId": "f642aca9a900a1bdfee99fca8826b675ea5c0710",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
