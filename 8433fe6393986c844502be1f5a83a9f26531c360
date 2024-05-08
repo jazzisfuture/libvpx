@@ -33,6 +33,24 @@
       "message": "The `::` syntax is not valid in C, but most users of this header file should understand this syntax.",
       "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ac2e9c0d_cddc16de",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-08T22:53:52Z",
+      "side": 1,
+      "message": "\u003e The `::` syntax is not valid in C, but most users of this header file should understand this syntax.\n\nI forgot post a note. `vpx_rc_funcs_t#create_model()` works too if that seems better though that\u0027s more java style.",
+      "parentUuid": "02a9ee47_0f4a4015",
+      "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
