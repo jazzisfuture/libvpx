@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5aa88ff0_32cca968",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-08T21:57:11Z",
+      "side": 1,
+      "message": "LGTM. Thanks!",
+      "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "02a9ee47_0f4a4015",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-08T21:57:11Z",
+      "side": 1,
+      "message": "The `::` syntax is not valid in C, but most users of this header file should understand this syntax.",
+      "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
