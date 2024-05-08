@@ -105,6 +105,24 @@
       "parentUuid": "401e4e05_816b4d60",
       "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fced61c9_df2f9f4c",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-08T23:43:48Z",
+      "side": 1,
+      "message": "\u003e I didn\u0027t know that\u0027s doxygen syntax. We should use it.\n\nJust to note, using `#` only affects the source; doxygen will produce `::` in the html.",
+      "parentUuid": "8dab45a1_046eaf2c",
+      "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
