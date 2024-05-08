@@ -51,6 +51,24 @@
       "parentUuid": "02a9ee47_0f4a4015",
       "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0db0aae3_74f9db84",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-08T23:08:12Z",
+      "side": 1,
+      "message": "I remember Java uses a dot `.` instead of a double colon `::`. I think most users of this header are more likely to be familiar with the C++ syntax than the Java syntax.\n\nThe original comment is also clear to me, although I would probably remove the word \"defined\".",
+      "parentUuid": "ac2e9c0d_cddc16de",
+      "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
