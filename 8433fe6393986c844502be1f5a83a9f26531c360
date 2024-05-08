@@ -69,6 +69,24 @@
       "parentUuid": "ac2e9c0d_cddc16de",
       "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "401e4e05_816b4d60",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-08T23:16:55Z",
+      "side": 1,
+      "message": "\u003e I remember Java uses a dot `.` instead of a double colon `::`. I think most users of this header are more likely to be familiar with the C++ syntax than the Java syntax.\n\u003e \n\u003e The original comment is also clear to me, although I would probably remove the word \"defined\".\n\nI removed the latter half after I linkified this one. Here it\u0027s doxygen syntax to autolink the member:\n\nhttps://www.doxygen.nl/manual/autolink.html",
+      "parentUuid": "0db0aae3_74f9db84",
+      "revId": "8433fe6393986c844502be1f5a83a9f26531c360",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
