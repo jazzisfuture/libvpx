@@ -6330,6 +6330,18 @@ void vp9_init_encode_frame_result(ENCODE_FRAME_RESULT *encode_frame_result) {
 #endif  // CONFIG_RATE_CTRL
 }
 
+// Returns if TPL stats need to be calculated for the last GOP with external
+// rate control, when the last GOP doesn't have ARF and very few frames.
+static INLINE int ext_rc_tpl_pass(VP9_COMP *cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  RATE_CONTROL *const rc = &cpi->rc;
+  return cpi->ext_ratectrl.ready &&
+         cpi->ext_ratectrl.funcs.send_tpl_gop_stats != NULL &&
+         rc->frames_till_gf_update_due == rc->baseline_gf_interval &&
+         cm->frame_type != KEY_FRAME &&
+         cpi->twopass.gf_group.update_type[1] != ARF_UPDATE;
+}
+
 int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
                             size_t *size, uint8_t *dest, size_t dest_size,
                             int64_t *time_stamp, int64_t *time_end, int flush,
@@ -6590,9 +6602,10 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
 #if CONFIG_COLLECT_COMPONENT_TIMING
   start_timing(cpi, setup_tpl_stats_time);
 #endif
-  if (gf_group_index == 1 &&
-      cpi->twopass.gf_group.update_type[gf_group_index] == ARF_UPDATE &&
-      cpi->sf.enable_tpl_model) {
+  if ((gf_group_index == 1 &&
+       cpi->twopass.gf_group.update_type[gf_group_index] == ARF_UPDATE &&
+       cpi->sf.enable_tpl_model) ||
+      ext_rc_tpl_pass(cpi)) {
     vp9_init_tpl_buffer(cpi);
     vp9_estimate_tpl_qp_gop(cpi);
     vp9_setup_tpl_stats(cpi);
