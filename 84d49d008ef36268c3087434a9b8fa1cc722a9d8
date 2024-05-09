@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "5588a41f_737ed192",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 6335,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-09T18:30:36Z",
+      "side": 1,
+      "message": "I think I\u0027ll change the function for the general case when ext rc is used. Thanks for the suggestions!",
+      "parentUuid": "7dc208eb_843a1d16",
+      "range": {
+        "startLine": 6335,
+        "startChar": 18,
+        "endLine": 6335,
+        "endChar": 33
+      },
+      "revId": "84d49d008ef36268c3087434a9b8fa1cc722a9d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a339dc44_f0aa6b77",
@@ -37,6 +61,30 @@
       "writtenOn": "2024-05-09T18:20:50Z",
       "side": 1,
       "message": "If the current frame is key frame, but it is a very small key frame gop, then we should still do tpl for that. Maybe it is not needed to check this?",
+      "range": {
+        "startLine": 6341,
+        "startChar": 9,
+        "endLine": 6341,
+        "endChar": 39
+      },
+      "revId": "84d49d008ef36268c3087434a9b8fa1cc722a9d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "668c1f96_519461cd",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 6341,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-09T18:30:36Z",
+      "side": 1,
+      "message": "This was needed for the first GOP when it has key frame. TPL will be calculated twice without this condition (because the original conditions are also satisfied on the ARF in this GOP).\n\nI agree with the 2nd point in your comment above. It\u0027ll be easier to read if we do two cases separately:\n\n- If it\u0027s using external RC, we do TPL for every GOP at the start of it\n- If it\u0027s not using external RC, just use the original conditions.\n\nThe condition I can think of for **start of a GOP** in this case is `rc-\u003eframe_till_gf_update_due \u003d\u003d rc-\u003ebaseline_gf_interval`. I\u0027m not sure if other conditions are needed considering if key frame or arf frame is used. \n\nCurrently we start doing TPL on ARF frame which means `rc-\u003eframe_till_gf_update_due \u003d\u003d rc-\u003ebaseline_gf_interval - 1` with key and overlay in front of it. I\u0027ll play with it a bit.",
+      "parentUuid": "a339dc44_f0aa6b77",
       "range": {
         "startLine": 6341,
         "startChar": 9,
