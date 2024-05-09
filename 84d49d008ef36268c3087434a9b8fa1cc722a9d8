@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7dc208eb_843a1d16",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 6335,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-05-09T18:20:50Z",
+      "side": 1,
+      "message": "This function name is a bit confusing to me, as it doesn\u0027t convey info on \"last gop\" and \"no arf\". I guess we can do it better in two ways:\n1. Change the function name to reflect its function.\n2. Change the function for general case: when ext rc is used, and when this is the start of a gop, we should always do tpl.",
+      "range": {
+        "startLine": 6335,
+        "startChar": 18,
+        "endLine": 6335,
+        "endChar": 33
+      },
+      "revId": "84d49d008ef36268c3087434a9b8fa1cc722a9d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a339dc44_f0aa6b77",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 6341,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-05-09T18:20:50Z",
+      "side": 1,
+      "message": "If the current frame is key frame, but it is a very small key frame gop, then we should still do tpl for that. Maybe it is not needed to check this?",
+      "range": {
+        "startLine": 6341,
+        "startChar": 9,
+        "endLine": 6341,
+        "endChar": 39
+      },
+      "revId": "84d49d008ef36268c3087434a9b8fa1cc722a9d8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
