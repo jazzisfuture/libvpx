@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "dae84814_c714e4eb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-10T21:53:18Z",
+      "side": 1,
+      "message": "Hi Jerome,\n\nWe can abandon this CL now. It has been replaced by https://chromium-review.googlesource.com/c/webm/libvpx/+/5379025.",
+      "revId": "6f41e968fd8852e367c563f0e3c27638e261f42c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "1a297322_443259aa",
