@@ -34,6 +34,24 @@
       "parentUuid": "168b3699_f56ef706",
       "revId": "6071a64595bb5604ea825461d57a2cc752a5d731",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96944dc9_ddb86382",
+        "filename": "vpx/src/vpx_image.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-10T22:13:19Z",
+      "side": 1,
+      "message": "Done. Made the same change to libaom in https://aomedia-review.googlesource.com/c/aom/+/190011.",
+      "parentUuid": "a819fcc7_78371b48",
+      "revId": "6071a64595bb5604ea825461d57a2cc752a5d731",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
