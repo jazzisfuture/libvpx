@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fa326be1_5e8312d2",
+        "filename": "vpx/vpx_decoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-11T15:27:19Z",
+      "side": 1,
+      "message": "The `sz` member of `vpx_codec_stream_info_t` is declared here.",
+      "revId": "a4dc35955593b2a1f3a9453bdda2111470862f6b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
