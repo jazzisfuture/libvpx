@@ -33,6 +33,24 @@
       "message": "Remya: I just realized that this `vpx_internal_error()` call is potentially problematic. You do NOT need to fix this issue.\n\nHowever, since this is the first thread (see the `i \u003d\u003d 0` test at line 1022), I think it is fine to call `vpx_internal_error()` here because we have not launched any worker thread yet (line 1039).\n\nDo you think my analysis is correct?",
       "revId": "611d9ba0a55df154ff5cb7a97d41a41103265f5e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "be1caf8b_877cd101",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1028,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-13T21:15:23Z",
+      "side": 1,
+      "message": "Deepa: My apologies for getting your name wrong!",
+      "parentUuid": "0cdee8b5_87995ba3",
+      "revId": "611d9ba0a55df154ff5cb7a97d41a41103265f5e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
