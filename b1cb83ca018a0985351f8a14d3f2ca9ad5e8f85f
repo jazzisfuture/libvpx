@@ -16,6 +16,23 @@
       "message": "The static analyze failure should be fixed by the CL in the relation chain next up.",
       "revId": "b1cb83ca018a0985351f8a14d3f2ca9ad5e8f85f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c20fa8f1_19913774",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1079,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-14T18:20:31Z",
+      "side": 1,
+      "message": "The changes to this for loop introduced bug webm:1847. Please also cherry-pick https://chromium-review.googlesource.com/c/webm/libvpx/+/5454911.",
+      "revId": "b1cb83ca018a0985351f8a14d3f2ca9ad5e8f85f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
