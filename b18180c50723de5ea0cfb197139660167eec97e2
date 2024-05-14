@@ -58,6 +58,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f0be69b8_8cd96f3b",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1053,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2024-05-14T11:44:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c05aa32f_4f888fec",
+      "range": {
+        "startLine": 1052,
+        "startChar": 0,
+        "endLine": 1053,
+        "endChar": 26
+      },
+      "revId": "b18180c50723de5ea0cfb197139660167eec97e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "dc741d21_54b50339",
@@ -75,6 +99,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c05a5ba3_4a57bcc8",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1067,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2024-05-14T11:44:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "dc741d21_54b50339",
+      "revId": "b18180c50723de5ea0cfb197139660167eec97e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "de0831b4_b9804bff",
@@ -88,6 +130,24 @@
       "writtenOn": "2024-05-10T21:51:43Z",
       "side": 1,
       "message": "Nit: This is equivalent to `error \u003d 1;`",
+      "revId": "b18180c50723de5ea0cfb197139660167eec97e2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d31e2a54_071c338e",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1075,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2024-05-14T11:44:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "de0831b4_b9804bff",
       "revId": "b18180c50723de5ea0cfb197139660167eec97e2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }

@@ -16,6 +16,24 @@
       "message": "The libvpx__static_analysis warning on this line:\n\n```\n../libvpx/vp9/encoder/vp9_bitstream.c:1420:5: warning: Value stored to \u0027data_size\u0027 is never read [deadcode.DeadStores]\n    data_size -\u003d uncompressed_hdr_size;\n    ^   \n```\n\nhae been fixed in https://chromium-review.googlesource.com/c/webm/libvpx/+/5506723. Please rebase this CL to the current tip of the main branch.",
       "revId": "4249ba7a4e6ce59a526e529dd70e99e36e8185f2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3d9cc35c_269aa7e4",
+        "filename": "vp9/encoder/vp9_bitstream.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 1420,
+      "author": {
+        "id": 1273230
+      },
+      "writtenOn": "2024-05-14T11:44:45Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "33595231_425e22fb",
+      "revId": "4249ba7a4e6ce59a526e529dd70e99e36e8185f2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
