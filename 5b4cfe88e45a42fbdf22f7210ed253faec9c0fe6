@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "80f95c4c_33c6e0ae",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-16T19:15:35Z",
+      "side": 1,
+      "message": "LGTM. It would be good to add a unit test. I will try to convert the reproducer testcase to a unit test if I have time.",
+      "revId": "5b4cfe88e45a42fbdf22f7210ed253faec9c0fe6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
