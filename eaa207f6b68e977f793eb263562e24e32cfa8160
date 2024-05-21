@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8888dbfb_b0ae052a",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-21T19:55:10Z",
+      "side": 1,
+      "message": "Optional: We can add the fix to bug chromium:332382766 here.",
+      "revId": "eaa207f6b68e977f793eb263562e24e32cfa8160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
