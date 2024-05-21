@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d3b9c318_e920cfa1",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-21T18:53:30Z",
+      "side": 1,
+      "message": "I am cherry-picking this commit as a prerequisite for cherry-picking the fix for bug chromium:332382766.",
+      "revId": "b9c4f1951f50724940b9131aa40b17a3ba2fc1be",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
