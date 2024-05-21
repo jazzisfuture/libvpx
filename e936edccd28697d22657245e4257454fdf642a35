@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6558d5a6_806a11f7",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-05-21T23:05:40Z",
+      "side": 1,
+      "message": "LGTM!",
+      "revId": "e936edccd28697d22657245e4257454fdf642a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "09d20509_f19dacf3",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2352,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-05-21T23:05:40Z",
+      "side": 1,
+      "message": "Nit: Could just set `int frame_index \u003d 1` here.",
+      "range": {
+        "startLine": 2352,
+        "startChar": 2,
+        "endLine": 2352,
+        "endChar": 16
+      },
+      "revId": "e936edccd28697d22657245e4257454fdf642a35",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
