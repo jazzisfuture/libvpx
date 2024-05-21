@@ -2343,17 +2343,21 @@ static void ext_rc_define_gf_group_structure(
   const int key_frame = gop_decision->use_key_frame;
   const int show_frame_count = gop_decision->gop_coding_frames - 1;
 
+  int frame_index = 0;
   if (key_frame) {
     gf_group_set_key_frame(gf_group, 0);
   } else {
     gf_group_set_overlay_frame(gf_group, 0);
   }
+  ++frame_index;
 
-  // We assume arf is always used to keep the logic simple for now.
-  gf_group_set_arf_frame(gf_group, 1, show_frame_count);
+  if (gop_decision->use_alt_ref) {
+    assert(frame_index < gop_decision->gop_coding_frames);
+    gf_group_set_arf_frame(gf_group, 1, show_frame_count);
+    ++frame_index;
+  }
 
-  for (int frame_index = 2; frame_index < gop_decision->gop_coding_frames;
-       frame_index++) {
+  for (; frame_index < gop_decision->gop_coding_frames; frame_index++) {
     gf_group_set_inter_normal_frame(gf_group, frame_index);
   }
   gf_group->max_layer_depth = MAX_ARF_LAYERS - 1;
@@ -3626,6 +3630,7 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     twopass->fr_content_type = FC_GRAPHICS_ANIMATION;
   else
     twopass->fr_content_type = FC_NORMAL;
+
 
   // If the external rate control model for GOP is used, the gop decisions
   // are overwritten, including whether to use key frame in this GF group,
