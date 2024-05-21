@@ -34,6 +34,24 @@
       "parentUuid": "1e25887e_15c5e1c1",
       "revId": "4365d27049866ad2d94ab26dba595e266162f7b5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "96b4c20f_db4a7190",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-21T18:59:17Z",
+      "side": 1,
+      "message": "Should we put the notice in an \"Upgrading\" section as in the other releases?",
+      "parentUuid": "019a9ca5_c2130e9d",
+      "revId": "4365d27049866ad2d94ab26dba595e266162f7b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
