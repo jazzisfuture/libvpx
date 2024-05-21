@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "1e25887e_15c5e1c1",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 3,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-21T18:10:34Z",
+      "side": 1,
+      "message": "Please see lines 100-101 for the v1.13.1 release. Should we add a similar notice here?\n\nNote: ABI compatibility is implied in a patch release. So the notice can be omitted.",
+      "revId": "4365d27049866ad2d94ab26dba595e266162f7b5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
