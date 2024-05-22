@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d0782b81_d0425761",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-22T13:35:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "e8751d51_a3239d38",
+      "revId": "eaa207f6b68e977f793eb263562e24e32cfa8160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8888dbfb_b0ae052a",
@@ -31,6 +49,24 @@
       "writtenOn": "2024-05-21T19:55:10Z",
       "side": 1,
       "message": "Optional: We can add the fix to bug chromium:332382766 here.",
+      "revId": "eaa207f6b68e977f793eb263562e24e32cfa8160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a17a9e17_7504890c",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-22T13:35:16Z",
+      "side": 1,
+      "message": "I don\u0027t have access to it. What should I put in here?",
+      "parentUuid": "8888dbfb_b0ae052a",
       "revId": "eaa207f6b68e977f793eb263562e24e32cfa8160",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
