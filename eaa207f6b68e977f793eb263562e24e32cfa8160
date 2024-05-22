@@ -69,6 +69,24 @@
       "parentUuid": "8888dbfb_b0ae052a",
       "revId": "eaa207f6b68e977f793eb263562e24e32cfa8160",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "51ff858c_f61d0100",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-22T15:18:17Z",
+      "side": 1,
+      "message": "Sorry. I just gave you access to https://crbug.com/332382766.\n\nWe can say:\n\nFix to integer overflows in vpx_img_alloc() and vpx_img_wrap() (CVE-2024-5197).",
+      "parentUuid": "a17a9e17_7504890c",
+      "revId": "eaa207f6b68e977f793eb263562e24e32cfa8160",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
