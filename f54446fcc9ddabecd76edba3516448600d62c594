@@ -16,6 +16,24 @@
       "message": "Nit: Change to \"Upgrading\"? That\u0027s the section heading used in previous releases.",
       "revId": "f54446fcc9ddabecd76edba3516448600d62c594",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "48683727_c344c7de",
+        "filename": "CHANGELOG",
+        "patchSetId": 5
+      },
+      "lineNbr": 4,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-22T15:36:10Z",
+      "side": 1,
+      "message": "Good catch...",
+      "parentUuid": "264ecf15_af4eb4f8",
+      "revId": "f54446fcc9ddabecd76edba3516448600d62c594",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
