@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0821cb35_2850c636",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1423,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-23T22:01:09Z",
+      "side": 1,
+      "message": "This is the corresponding `#if`.",
+      "revId": "907185ebdcb496bbd5e8ad5fee87cf90500aa3fc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
