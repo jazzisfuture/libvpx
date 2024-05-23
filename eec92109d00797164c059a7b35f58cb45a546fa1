@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab702d8c_d97f29fe",
+        "filename": "vpx_ports/aarch64_cpudetect.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-23T22:22:55Z",
+      "side": 1,
+      "message": "this comment",
+      "range": {
+        "startLine": 95,
+        "startChar": 41,
+        "endLine": 95,
+        "endChar": 69
+      },
+      "revId": "eec92109d00797164c059a7b35f58cb45a546fa1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
