@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed37fba5_2029f55d",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1607,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-23T21:53:59Z",
+      "side": 1,
+      "message": "In libvpx I have to set `cfg.g_lag_in_frames` to 0 so that `cpi-\u003eframerate` is set to 0.1 based on the `pts\u003d0` and `duration\u003d300` values passed to the `vpx_codec_encode()`  call. I don\u0027t know why.",
+      "revId": "1f65facb63c8227156b5a276e506bb44a7c10608",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
