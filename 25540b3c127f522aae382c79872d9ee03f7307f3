@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93b02524_ac976e32",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 489,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-24T01:18:02Z",
+      "side": 1,
+      "message": "I found that we don\u0027t need to set `cfg.g_lag_in_frames` to 0 to reproduce the UBSan errors in the VP8 code. But I am keeping these to make the VP8 tests similar to the VP9 tests.",
+      "revId": "25540b3c127f522aae382c79872d9ee03f7307f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "6f1574b9_f3a19f55",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 494,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-24T01:18:02Z",
+      "side": 1,
+      "message": "I fixed the copy-and-paste errors in these comments. (These two VP8 tests were copied from the VP9 tests below.)",
+      "revId": "25540b3c127f522aae382c79872d9ee03f7307f3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
