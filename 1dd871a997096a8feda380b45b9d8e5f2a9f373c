@@ -46,6 +46,30 @@
       },
       "revId": "1dd871a997096a8feda380b45b9d8e5f2a9f373c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "71aca6f0_8444f1b9",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1270,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-28T16:59:54Z",
+      "side": 1,
+      "message": "Jerome: Do you think we should add `round()` to the corresponding code in VP9?",
+      "parentUuid": "5844bb60_f5d7ed66",
+      "range": {
+        "startLine": 1270,
+        "startChar": 6,
+        "endLine": 1270,
+        "endChar": 11
+      },
+      "revId": "1dd871a997096a8feda380b45b9d8e5f2a9f373c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
