@@ -16,6 +16,24 @@
       "message": "Delete this item. This fixes a bug (in a new test) introduced in the commit described at line 26.",
       "revId": "d0958764ecf7ceb21afdf85828a5564dafcb6e7c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7cb38d70_21e46c96",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-29T20:00:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "67638318_a65cb498",
+      "revId": "d0958764ecf7ceb21afdf85828a5564dafcb6e7c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
