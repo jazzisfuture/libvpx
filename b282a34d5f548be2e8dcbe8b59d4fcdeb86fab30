@@ -33,6 +33,24 @@
       "message": "Delete this item. This fixes a bug in the previous item. Since it fixes a bug in new code added in this release, it doesn\u0027t need to be mentioned.",
       "revId": "b282a34d5f548be2e8dcbe8b59d4fcdeb86fab30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7ebdf439_f71967ec",
+        "filename": "CHANGELOG",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-29T16:10:29Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "df8081eb_58c8ba40",
+      "revId": "b282a34d5f548be2e8dcbe8b59d4fcdeb86fab30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
