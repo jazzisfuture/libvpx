@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "fedbbf90_f78f0a37",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-29T19:30:42Z",
+      "side": 1,
+      "message": "New CL:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5582290",
+      "revId": "be3ea68f9e8d33b32c0e82e2143aeb26393c61ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a7827caf_c0d0137b",
@@ -18,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "bc280465_d5bbe861",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-29T19:30:42Z",
+      "side": 1,
+      "message": "My intention was to cover all of them with this. Maybe it can be re-written?",
+      "parentUuid": "a7827caf_c0d0137b",
+      "revId": "be3ea68f9e8d33b32c0e82e2143aeb26393c61ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "f1297ec0_f7298cd5",
@@ -31,6 +66,24 @@
       "writtenOn": "2024-05-29T18:21:07Z",
       "side": 1,
       "message": "I found some cherry-picks that are not mentioned.\n\nThese two should be added to the CHANGELOG:\n\nHandle EINTR from sem_wait():\nhttps://chromium.googlesource.com/webm/libvpx/+/7b9843099c13bc3bf9080d5ca214894b07180d39\nhttps://chromium.googlesource.com/webm/libvpx/+/1e5823f682ef360c72ea5246943f6b7502d82e42\n\nFix to integer overflow in vp8 encodeframe.c:\nhttps://chromium.googlesource.com/webm/libvpx/+/9b913654e86569cbdddc78c65a1f433c8e00f2a0\n\nI am less sure about the following:\n\nMake encoder know frame size increase from config:\nhttps://chromium.googlesource.com/webm/libvpx/+/105bc8ff185ce551391e75bb105b8fb2dc8f8f9d\n\nReason: This commit is not enough to allow us to increase the frame size in VP9 in general. (It does handle the specific case that James Zern reported.)\n\nMake img_alloc_helper() fail on VPX_IMG_FMT_NONE:\nhttps://chromium.googlesource.com/webm/libvpx/+/b9c4f1951f50724940b9131aa40b17a3ba2fc1be\n\nReason: This fixes an unimportant bug. The reason I cherry-picked this commit is that it is a prerequisite for some other commits that I wanted to cherry-pick.",
+      "revId": "be3ea68f9e8d33b32c0e82e2143aeb26393c61ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "884072d7_ebd63747",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-05-29T19:30:42Z",
+      "side": 1,
+      "message": "\u003e I found some cherry-picks that are not mentioned.\n\u003e \n\u003e These two should be added to the CHANGELOG:\n\u003e \n\u003e Handle EINTR from sem_wait():\n\u003e https://chromium.googlesource.com/webm/libvpx/+/7b9843099c13bc3bf9080d5ca214894b07180d39\n\u003e https://chromium.googlesource.com/webm/libvpx/+/1e5823f682ef360c72ea5246943f6b7502d82e42\n\u003e \n\u003e Fix to integer overflow in vp8 encodeframe.c:\n\u003e https://chromium.googlesource.com/webm/libvpx/+/9b913654e86569cbdddc78c65a1f433c8e00f2a0\n\u003e \n\nDone.\n\n\u003e I am less sure about the following:\n\u003e \n\u003e Make encoder know frame size increase from config:\n\u003e https://chromium.googlesource.com/webm/libvpx/+/105bc8ff185ce551391e75bb105b8fb2dc8f8f9d\n\u003e \n\u003e Reason: This commit is not enough to allow us to increase the frame size in VP9 in general. (It does handle the specific case that James Zern reported.)\n\u003e \n\u003e Make img_alloc_helper() fail on VPX_IMG_FMT_NONE:\n\u003e https://chromium.googlesource.com/webm/libvpx/+/b9c4f1951f50724940b9131aa40b17a3ba2fc1be\n\u003e \n\u003e Reason: This fixes an unimportant bug. The reason I cherry-picked this commit is that it is a prerequisite for some other commits that I wanted to cherry-pick.\n\nYeah, the reasons you mentioned here are exactly the same as mine for not adding them to CHANGELOG.",
+      "parentUuid": "f1297ec0_f7298cd5",
       "revId": "be3ea68f9e8d33b32c0e82e2143aeb26393c61ac",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
