@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <errno.h>
+
 #include "vpx_config.h"
 #include "vp8_rtcd.h"
 #if !defined(_WIN32) && CONFIG_OS_SUPPORT == 1
