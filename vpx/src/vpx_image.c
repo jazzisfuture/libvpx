@@ -207,14 +207,24 @@ int vpx_img_set_rect(vpx_image_t *img, unsigned int x, unsigned int y,
         img->planes[VPX_PLANE_V] = img->planes[VPX_PLANE_U] + 1;
       } else if (!(img->fmt & VPX_IMG_FMT_UV_FLIP)) {
         img->planes[VPX_PLANE_U] =
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
             data + uv_x * bytes_per_sample + uv_y * img->stride[VPX_PLANE_U];
+=======
+            data + (x >> img->x_chroma_shift) * bytes_per_sample +
+            (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
         data +=
             (size_t)(img->h >> img->y_chroma_shift) * img->stride[VPX_PLANE_U];
         img->planes[VPX_PLANE_V] =
             data + uv_x * bytes_per_sample + uv_y * img->stride[VPX_PLANE_V];
       } else {
         img->planes[VPX_PLANE_V] =
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
             data + uv_x * bytes_per_sample + uv_y * img->stride[VPX_PLANE_V];
+=======
+            data + (x >> img->x_chroma_shift) * bytes_per_sample +
+            (y >> img->y_chroma_shift) * img->stride[VPX_PLANE_V];
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
         data +=
             (size_t)(img->h >> img->y_chroma_shift) * img->stride[VPX_PLANE_V];
         img->planes[VPX_PLANE_U] =
