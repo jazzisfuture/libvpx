@@ -80,7 +80,7 @@
 #define HIGH_UNDERSHOOT_RATIO 2
 #define AV_WQ_FACTOR 4.0
 
-#define DOUBLE_DIVIDE_CHECK(x) ((x) < 0 ? (x)-0.000001 : (x) + 0.000001)
+#define DOUBLE_DIVIDE_CHECK(x) ((x) < 0 ? (x) - 0.000001 : (x) + 0.000001)
 
 #if ARF_STATS_OUTPUT
 unsigned int arf_count = 0;
@@ -3334,8 +3334,9 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
 
     // Default allocation based on bits left and relative
     // complexity of the section.
-    twopass->kf_group_bits = (int64_t)(
-        twopass->bits_left * (kf_group_err / twopass->normalized_score_left));
+    twopass->kf_group_bits =
+        (int64_t)(twopass->bits_left *
+                  (kf_group_err / twopass->normalized_score_left));
 
     // Clip based on maximum per frame rate defined by the user.
     max_grp_bits = (int64_t)max_bits * (int64_t)rc->frames_to_key;
@@ -3656,16 +3657,14 @@ void vp9_rc_get_second_pass_params(VP9_COMP *cpi) {
     }
 
     // A new GF group
-    if (rc->frames_till_gf_update_due == 0) {
-      vp9_zero(twopass->gf_group);
-      ++rc->gop_global_index;
-      if (gop_decision.use_alt_ref) {
-        rc->source_alt_ref_pending = 1;
-      }
-      rc->baseline_gf_interval =
-          gop_decision.gop_coding_frames - rc->source_alt_ref_pending;
-      ext_rc_define_gf_group_structure(&gop_decision, &twopass->gf_group);
+    vp9_zero(twopass->gf_group);
+    ++rc->gop_global_index;
+    if (gop_decision.use_alt_ref) {
+      rc->source_alt_ref_pending = 1;
     }
+    rc->baseline_gf_interval =
+        gop_decision.gop_coding_frames - rc->source_alt_ref_pending;
+    ext_rc_define_gf_group_structure(&gop_decision, &twopass->gf_group);
   } else {
     // Keyframe and section processing.
     if (rc->frames_to_key == 0 || (cpi->frame_flags & FRAMEFLAGS_KEY)) {
