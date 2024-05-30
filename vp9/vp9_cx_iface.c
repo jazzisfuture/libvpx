@@ -1145,6 +1145,13 @@ static vpx_codec_err_t encoder_init(vpx_codec_ctx_t *ctx,
     if (res == VPX_CODEC_OK) {
       priv->pts_offset_initialized = 0;
       priv->global_header_subsampling = -1;
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
+=======
+      // TODO(angiebird): Replace priv->timestamp_ratio by
+      // oxcf->g_timebase_in_ts
+      priv->timestamp_ratio = get_g_timebase_in_ts(priv->cfg.g_timebase);
+
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
       set_encoder_config(&priv->oxcf, &priv->cfg, &priv->extra_cfg);
 #if CONFIG_VP9_HIGHBITDEPTH
       priv->oxcf.use_highbitdepth =

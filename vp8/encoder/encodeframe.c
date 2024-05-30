@@ -7,6 +7,11 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
+=======
+#include <errno.h>
+#include <stdio.h>
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 #include <limits.h>
 #include <stdio.h>
 
@@ -803,7 +808,13 @@ void vp8_encode_frame(VP8_COMP *cpi) {
       }
       /* Wait for all the threads to finish. */
       for (i = 0; i < cpi->encoding_thread_count; ++i) {
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
         vp8_sem_wait(&cpi->h_event_end_encoding[i]);
+=======
+        errno = 0;
+        while (sem_wait(&cpi->h_event_end_encoding[i]) != 0 && errno == EINTR) {
+        }
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
       }
 
       for (mb_row = 0; mb_row < cm->mb_rows; ++mb_row) {

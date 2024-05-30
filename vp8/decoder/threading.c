@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <errno.h>
+
 #include "vpx_config.h"
 #include "vp8_rtcd.h"
 #if !defined(_WIN32) && CONFIG_OS_SUPPORT == 1
@@ -894,8 +896,16 @@ int vp8mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd) {
     // Wait for other threads to finish. This prevents other threads decoding
     // the current frame while the main thread starts decoding the next frame,
     // which causes a data race.
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
     for (i = 0; i < pbi->decoding_thread_count; ++i)
       vp8_sem_wait(&pbi->h_event_end_decoding);
+=======
+    for (i = 0; i < pbi->decoding_thread_count; ++i) {
+      errno = 0;
+      while (sem_wait(&pbi->h_event_end_decoding) != 0 && errno == EINTR) {
+      }
+    }
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
     return -1;
   }
 
@@ -903,8 +913,17 @@ int vp8mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd) {
   mt_decode_mb_rows(pbi, xd, 0);
   xd->error_info.setjmp = 0;
 
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
   for (i = 0; i < pbi->decoding_thread_count + 1; ++i)
     vp8_sem_wait(&pbi->h_event_end_decoding); /* add back for each frame */
+=======
+  for (i = 0; i < pbi->decoding_thread_count + 1; ++i) {
+    /* add back for each frame */
+    errno = 0;
+    while (sem_wait(&pbi->h_event_end_decoding) != 0 && errno == EINTR) {
+    }
+  }
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 
   return 0;
 }

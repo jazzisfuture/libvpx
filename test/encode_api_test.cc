@@ -11,14 +11,27 @@
 #include <cassert>
 #include <climits>
 #include <cstdint>
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
 #include <cstdio>
 #include <cstdlib>
+=======
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 #include <cstring>
 #include <initializer_list>
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
+=======
+#include <new>
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 #include <vector>
 
 #include "third_party/googletest/src/include/gtest/gtest.h"
 #include "test/acm_random.h"
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
+=======
+#include "test/codec_factory.h"
+#include "test/encode_test_driver.h"
+#include "test/i420_video_source.h"
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 #include "test/video_source.h"
 
 #include "./vpx_config.h"
@@ -26,6 +39,11 @@
 #include "vpx/vpx_codec.h"
 #include "vpx/vpx_encoder.h"
 #include "vpx/vpx_image.h"
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
+=======
+#include "vpx/vpx_tpl.h"
+#include "vpx_ports/msvc.h"
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 
 namespace {
 
@@ -371,6 +389,7 @@ class VP8Encoder {
   ~VP8Encoder();
 
   void Configure(unsigned int threads, unsigned int width, unsigned int height,
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
                  vpx_rc_mode end_usage, vpx_enc_deadline_t deadline);
   void Encode(bool key_frame);
 
@@ -392,6 +411,29 @@ VP8Encoder::~VP8Encoder() {
 void VP8Encoder::Configure(unsigned int threads, unsigned int width,
                            unsigned int height, vpx_rc_mode end_usage,
                            vpx_enc_deadline_t deadline) {
+=======
+                 vpx_rc_mode end_usage, unsigned long deadline);
+  void Encode(bool key_frame);
+
+ private:
+  const int speed_;
+  bool initialized_ = false;
+  vpx_codec_enc_cfg_t cfg_;
+  vpx_codec_ctx_t enc_;
+  int frame_index_ = 0;
+  unsigned long deadline_ = 0;
+};
+
+VP8Encoder::~VP8Encoder() {
+  if (initialized_) {
+    EXPECT_EQ(vpx_codec_destroy(&enc_), VPX_CODEC_OK);
+  }
+}
+
+void VP8Encoder::Configure(unsigned int threads, unsigned int width,
+                           unsigned int height, vpx_rc_mode end_usage,
+                           unsigned long deadline) {
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
   deadline_ = deadline;
 
   if (!initialized_) {
@@ -850,6 +892,7 @@ TEST(EncodeAPI, ConfigResizeBiggerAfterEncode) {
   }
 }
 
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
 TEST(EncodeAPI, PtsSmallerThanInitialPts) {
   for (const auto *iface : kCodecIfaces) {
     // Initialize libvpx encoder.
@@ -933,6 +976,8 @@ TEST(EncodeAPI, PtsOrDurationTooBig) {
   }
 }
 
+=======
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 #if CONFIG_VP9_ENCODER
 // Frame size needed to trigger the overflow exceeds the max buffer allowed on
 // 32-bit systems defined by VPX_MAX_ALLOCABLE_MEMORY
@@ -1550,7 +1595,11 @@ TEST(EncodeAPI, Buganizer331108922BitDepth12) {
                     VPX_DL_REALTIME);
   encoder.Encode(/*key_frame=*/false);
 }
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
 #endif  // CONFIG_VP9_HIGHBITDEPTH
+=======
+#endif
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 
 TEST(EncodeAPI, VP9GlobalHeaders) {
   constexpr int kWidth = 320;

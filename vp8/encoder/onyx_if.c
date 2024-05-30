@@ -55,6 +55,7 @@
 #endif
 
 #include <assert.h>
+#include <errno.h>
 #include <math.h>
 #include <stdio.h>
 #include <limits.h>
@@ -4407,7 +4408,13 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
     cpi->b_lpf_running = 1;
     /* wait for the filter_level to be picked so that we can continue with
      * stream packing */
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
     vp8_sem_wait(&cpi->h_event_end_lpf);
+=======
+    errno = 0;
+    while (sem_wait(&cpi->h_event_end_lpf) != 0 && errno == EINTR) {
+    }
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
   } else
 #endif
   {
@@ -5139,7 +5146,13 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
 #if CONFIG_MULTITHREAD
   /* wait for the lpf thread done */
   if (vpx_atomic_load_acquire(&cpi->b_multi_threaded) && cpi->b_lpf_running) {
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
     vp8_sem_wait(&cpi->h_event_end_lpf);
+=======
+    errno = 0;
+    while (sem_wait(&cpi->h_event_end_lpf) != 0 && errno == EINTR) {
+    }
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
     cpi->b_lpf_running = 0;
   }
 #endif
@@ -5271,6 +5284,11 @@ int vp8_get_compressed_data(VP8_COMP *cpi, unsigned int *frame_flags,
 #endif
 #endif
 
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
+=======
+  cpi->common.error.setjmp = 0;
+
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
   return 0;
 }
 

@@ -962,6 +962,7 @@ void vp9_bitstream_encode_tiles_buffer_dealloc(VP9_COMP *const cpi) {
   }
 }
 
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
 static size_t encode_tiles_buffer_alloc_size(const VP9_COMP *cpi) {
   const VP9_COMMON *cm = &cpi->common;
   const int image_bps =
@@ -974,6 +975,19 @@ static size_t encode_tiles_buffer_alloc_size(const VP9_COMP *cpi) {
 
 static void encode_tiles_buffer_alloc(VP9_COMP *const cpi,
                                       size_t buffer_alloc_size) {
+=======
+static int encode_tiles_buffer_alloc_size(VP9_COMP *const cpi) {
+  VP9_COMMON *const cm = &cpi->common;
+  const int image_bps =
+      (8 + 2 * (8 >> (cm->subsampling_x + cm->subsampling_y))) *
+      (1 + (cm->bit_depth > 8));
+  const int64_t size =
+      (int64_t)cpi->oxcf.width * cpi->oxcf.height * image_bps / 8;
+  return (int)size;
+}
+
+static void encode_tiles_buffer_alloc(VP9_COMP *const cpi) {
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
   VP9_COMMON *const cm = &cpi->common;
   int i;
   const size_t worker_data_size =
@@ -982,6 +996,11 @@ static void encode_tiles_buffer_alloc(VP9_COMP *const cpi,
                   vpx_memalign(16, worker_data_size));
   memset(cpi->vp9_bitstream_worker_data, 0, worker_data_size);
   for (i = 1; i < cpi->num_workers; ++i) {
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
+=======
+    cpi->vp9_bitstream_worker_data[i].dest_size =
+        encode_tiles_buffer_alloc_size(cpi);
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
     CHECK_MEM_ERROR(&cm->error, cpi->vp9_bitstream_worker_data[i].dest,
                     vpx_malloc(buffer_alloc_size));
     cpi->vp9_bitstream_worker_data[i].dest_size = buffer_alloc_size;
@@ -1000,7 +1019,12 @@ static size_t encode_tiles_mt(VP9_COMP *cpi, uint8_t *data_ptr,
 
   const size_t buffer_alloc_size = encode_tiles_buffer_alloc_size(cpi);
   if (!cpi->vp9_bitstream_worker_data ||
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
       cpi->vp9_bitstream_worker_data[1].dest_size != buffer_alloc_size) {
+=======
+      cpi->vp9_bitstream_worker_data[1].dest_size !=
+          encode_tiles_buffer_alloc_size(cpi)) {
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
     vp9_bitstream_encode_tiles_buffer_dealloc(cpi);
     encode_tiles_buffer_alloc(cpi, buffer_alloc_size);
   }

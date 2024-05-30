@@ -9,7 +9,10 @@
  */
 
 #include <climits>
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
 #include <cstdint>
+=======
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
 
 #include "vpx/vpx_image.h"
 #include "third_party/googletest/src/include/gtest/gtest.h"

@@ -460,10 +460,15 @@ EOF
 
     if [ ${compile_result} -ne 0 ]; then
       log_echo "  disabling sve: arm_neon_sve_bridge.h not supported by compiler"
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
       log_echo "  disabling sve2: arm_neon_sve_bridge.h not supported by compiler"
       disable_feature sve
       disable_feature sve2
       RTCD_OPTIONS="${RTCD_OPTIONS}--disable-sve --disable-sve2 "
+=======
+      disable_feature sve
+      RTCD_OPTIONS="${RTCD_OPTIONS}--disable-sve "
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
     fi
   fi
 }
@@ -1259,6 +1264,7 @@ EOF
         aarch64_arch_flag_neon_dotprod="arch=armv8.2-a+dotprod"
         aarch64_arch_flag_neon_i8mm="arch=armv8.2-a+dotprod+i8mm"
         aarch64_arch_flag_sve="arch=armv8.2-a+dotprod+i8mm+sve"
+<<<<<<< HEAD   (25540b Fix some UBSan errors in vp8_new_framerate())
         aarch64_arch_flag_sve2="arch=armv9-a+sve2"
         for ext in ${ARCH_EXT_LIST_AARCH64}; do
           if [ "$disable_exts" = "yes" ]; then
@@ -1282,6 +1288,28 @@ EOF
         if enabled sve; then
           check_neon_sve_bridge_compiles
         fi
+=======
+        for ext in ${ARCH_EXT_LIST_AARCH64}; do
+          if [ "$disable_exts" = "yes" ]; then
+            RTCD_OPTIONS="${RTCD_OPTIONS}--disable-${ext} "
+            soft_disable $ext
+          else
+            # Check the compiler supports the -march flag for the extension.
+            # This needs to happen after toolchain/OS inspection so we handle
+            # $CROSS etc correctly when checking for flags, else these will
+            # always fail.
+            flag="$(eval echo \$"aarch64_arch_flag_${ext}")"
+            check_gcc_machine_option "${flag}" "${ext}"
+            if ! enabled $ext; then
+              # Disable higher order extensions to simplify dependencies.
+              disable_exts="yes"
+              RTCD_OPTIONS="${RTCD_OPTIONS}--disable-${ext} "
+              soft_disable $ext
+            fi
+          fi
+        done
+        check_neon_sve_bridge_compiles
+>>>>>>> BRANCH (12f3a2 Update CHANGELOG)
       fi
 
       ;;
