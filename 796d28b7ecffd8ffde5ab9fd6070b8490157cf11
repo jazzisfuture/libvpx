@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "79b3ba5e_a91a091d",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-05-30T23:11:32Z",
+      "side": 1,
+      "message": "Yes.\n\nIf the previous GOP didn\u0027t use ARF, it wont insert an overlay frame at the beginning of next GOP.",
+      "parentUuid": "958e5bdc_19746d25",
+      "revId": "796d28b7ecffd8ffde5ab9fd6070b8490157cf11",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8f987f5e_b122adce",
