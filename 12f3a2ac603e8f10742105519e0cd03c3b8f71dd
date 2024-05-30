@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9a75cf1b_f3087dba",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-30T17:23:27Z",
+      "side": 1,
+      "message": "I just noticed that we forgot to update the release date. I think it is not worth fixing, because you have already created the v1.14.1 release tag.",
+      "revId": "12f3a2ac603e8f10742105519e0cd03c3b8f71dd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
