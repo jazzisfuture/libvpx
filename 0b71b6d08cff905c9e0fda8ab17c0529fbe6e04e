@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bccad780_0408f5b6",
+        "filename": "vp8/encoder/onyx_int.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 626,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-31T22:00:04Z",
+      "side": 1,
+      "message": "In libaom, `cpi-\u003ebytes` was split into `ppi-\u003etotal_bytes` and `cpi-\u003ebytes` when `AV1_PRIMARY` was split from `AV1_COMP`. libvpx\u0027s `cpi-\u003ebytes` is equivalent to libaom\u0027s `ppi-\u003etotal_bytes`.",
+      "revId": "0b71b6d08cff905c9e0fda8ab17c0529fbe6e04e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "59ae20ae_e5dcc329",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1587,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-31T22:00:04Z",
+      "side": 1,
+      "message": "This code was identified by searching for the comment \"Highest value allowed\" and the variable name `target_norm_bits_per_mb`.\n\nI also found the corresponding code in VP8 by searching for these. But the VP8 code is quite different, so I did not try to modify it.",
+      "revId": "0b71b6d08cff905c9e0fda8ab17c0529fbe6e04e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "68612647_fa471a2c",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1622,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-31T22:00:04Z",
+      "side": 1,
+      "message": "An alternative change is to leave the variable `bits_per_mb` as an `int` (the return type of `vp9_rc_bits_per_mb()`), and cast `bits_per_mb` to `uint64_t` here:\n\n```\n      if ((uint64_t)bits_per_mb \u003c\u003d target_norm_bits_per_mb) break;\n```\n\nWould you prefer that instead?",
+      "revId": "0b71b6d08cff905c9e0fda8ab17c0529fbe6e04e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "24b53e4e_9b265174",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2656,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-05-31T22:00:04Z",
+      "side": 1,
+      "message": "This code was identified by searching for \"vbrmax_section\".\n\nI also found the corresponding code in VP8 by searching for \"vbrmax_section\". But the VP8 code is quite different, so I did not try to modify it.",
+      "revId": "0b71b6d08cff905c9e0fda8ab17c0529fbe6e04e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
