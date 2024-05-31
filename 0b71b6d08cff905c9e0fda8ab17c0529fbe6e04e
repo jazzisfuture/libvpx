@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "03dcd0e3_d5a9c4ae",
+        "filename": "vp8/vp8_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-31T22:26:27Z",
+      "side": 1,
+      "message": "note `rc_target_bitrate` is capped here.",
+      "revId": "0b71b6d08cff905c9e0fda8ab17c0529fbe6e04e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "59ae20ae_e5dcc329",
@@ -54,6 +71,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "2cdd09e6_b9dd3a78",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1622,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-31T22:26:27Z",
+      "side": 1,
+      "message": "\u003e An alternative change is to leave the variable `bits_per_mb` as an `int` (the return type of `vp9_rc_bits_per_mb()`), and cast `bits_per_mb` to `uint64_t` here:\n\u003e \n\u003e ```\n\u003e       if ((uint64_t)bits_per_mb \u003c\u003d target_norm_bits_per_mb) break;\n\u003e ```\n\u003e \n\u003e Would you prefer that instead?\n\nI guess they\u0027re close enough together to understand why the type differs from the return of the function. This should be fine, though with the right warnings you might get a conversion warning for the signed -\u003e unsigned change without a cast.",
+      "parentUuid": "68612647_fa471a2c",
+      "revId": "0b71b6d08cff905c9e0fda8ab17c0529fbe6e04e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "24b53e4e_9b265174",
         "filename": "vp9/encoder/vp9_ratectrl.c",
         "patchSetId": 2
@@ -65,6 +100,23 @@
       "writtenOn": "2024-05-31T22:00:04Z",
       "side": 1,
       "message": "This code was identified by searching for \"vbrmax_section\".\n\nI also found the corresponding code in VP8 by searching for \"vbrmax_section\". But the VP8 code is quite different, so I did not try to modify it.",
+      "revId": "0b71b6d08cff905c9e0fda8ab17c0529fbe6e04e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "88bbac01_c65c5c6b",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 543,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-05-31T22:26:27Z",
+      "side": 1,
+      "message": "note `rc_target_bitrate` is capped here.",
       "revId": "0b71b6d08cff905c9e0fda8ab17c0529fbe6e04e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
