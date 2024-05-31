@@ -1593,8 +1593,8 @@ static int get_twopass_worst_quality(VP9_COMP *cpi, const double section_err,
     const int active_mbs = (int)VPXMAX(1, (double)num_mbs * active_pct);
     const double av_err_per_mb = section_err / active_pct;
     const double speed_term = 1.0 + 0.04 * oxcf->speed;
-    const int target_norm_bits_per_mb =
-        (int)(((uint64_t)target_rate << BPER_MB_NORMBITS) / active_mbs);
+    const uint64_t target_norm_bits_per_mb =
+        ((uint64_t)target_rate << BPER_MB_NORMBITS) / active_mbs;
     int q;
 
 // TODO(jimbankoski): remove #if here or above when this has been
@@ -1614,7 +1614,7 @@ static int get_twopass_worst_quality(VP9_COMP *cpi, const double section_err,
     for (q = rc->best_quality; q < rc->worst_quality; ++q) {
       const double factor =
           calc_correction_factor(av_err_per_mb, wq_err_divisor(cpi), q);
-      const int bits_per_mb = vp9_rc_bits_per_mb(
+      const uint64_t bits_per_mb = vp9_rc_bits_per_mb(
           INTER_FRAME, q,
           factor * speed_term * cpi->twopass.bpm_factor * noise_factor,
           cpi->common.bit_depth);
@@ -3338,8 +3338,9 @@ static void find_next_key_frame(VP9_COMP *cpi, int kf_show_idx) {
 
     // Default allocation based on bits left and relative
     // complexity of the section.
-    twopass->kf_group_bits = (int64_t)(
-        twopass->bits_left * (kf_group_err / twopass->normalized_score_left));
+    twopass->kf_group_bits =
+        (int64_t)(twopass->bits_left *
+                  (kf_group_err / twopass->normalized_score_left));
 
     // Clip based on maximum per frame rate defined by the user.
     max_grp_bits = (int64_t)max_bits * (int64_t)rc->frames_to_key;
