@@ -18,6 +18,23 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "9057d890_130aceef",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-04T20:54:14Z",
+      "side": 1,
+      "message": "James: I think the four instances in vp9/encoder/vp9_svc_layercontext.c should be modified in this CL. The other issues can be deal with in a separete CL.",
+      "revId": "9cfa688a38214a6c4359785788062c737970d17e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "a41fb0c7_abe868df",
