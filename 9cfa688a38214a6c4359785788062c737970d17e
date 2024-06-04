@@ -69,6 +69,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8ad0d5c5_e0092d2f",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2637,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-04T22:24:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "8fcd99ac_d90e800b",
+      "revId": "9cfa688a38214a6c4359785788062c737970d17e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "240b639f_cdff66c8",
