@@ -52,6 +52,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f04437c9_153ea1e9",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2201,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-04T22:30:00Z",
+      "side": 1,
+      "message": "Marco will take a look separately.",
+      "parentUuid": "a41fb0c7_abe868df",
+      "revId": "9cfa688a38214a6c4359785788062c737970d17e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8fcd99ac_d90e800b",
@@ -100,6 +118,24 @@
       "writtenOn": "2024-06-04T20:38:20Z",
       "side": 1,
       "message": "I wonder if we need a `round()` call here.\n\nSimilarly, we can inspect the use of the `framerate` parameter in `vp9_rc_get_default_max_gf_interval()` and `vp9_rc_get_default_min_gf_interval()`.",
+      "revId": "9cfa688a38214a6c4359785788062c737970d17e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "fbc7668f_e05978d5",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2781,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-04T22:30:00Z",
+      "side": 1,
+      "message": "Marco will take a look separately.",
+      "parentUuid": "240b639f_cdff66c8",
       "revId": "9cfa688a38214a6c4359785788062c737970d17e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
