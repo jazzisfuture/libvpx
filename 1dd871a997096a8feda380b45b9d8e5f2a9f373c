@@ -94,6 +94,30 @@
       },
       "revId": "1dd871a997096a8feda380b45b9d8e5f2a9f373c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "eca64b5a_18b5e751",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1270,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-04T19:44:50Z",
+      "side": 1,
+      "message": "\u003e Yes I think so.\n\u003e \n\u003e It was added to VP8 and AV1 because the division without rounding could lead to the result to be different by +-1, and the error can be accumulated through many frames and eventually it\u0027ll lead to different QP decisions in **RTC rate control library**.\n\u003e \n\u003e We observed this behavor in VP8 and AV1 RTC RC library, but it hasn\u0027t shown up for VP9. But I think it\u0027s good to have to prevent it from happening in the future.\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5598161",
+      "parentUuid": "7b25a851_dc7929cd",
+      "range": {
+        "startLine": 1270,
+        "startChar": 6,
+        "endLine": 1270,
+        "endChar": 11
+      },
+      "revId": "1dd871a997096a8feda380b45b9d8e5f2a9f373c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
