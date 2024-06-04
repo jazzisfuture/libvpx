@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4a48de5c_b3d6f3ba",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-04T20:30:07Z",
+      "side": 1,
+      "message": "James: Thanks for the fix. I found other code that needs the same fix.",
+      "revId": "9cfa688a38214a6c4359785788062c737970d17e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8fcd99ac_d90e800b",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2637,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-04T20:30:07Z",
+      "side": 1,
+      "message": "Using Code Search, you can find four other assignments of `avg_frame_bandwidth` in vp9/encoder/vp9_svc_layercontext.c. They should receive the same treatment.\n\nThey all look like this:\n\n```\n  lrc-\u003eavg_frame_bandwidth \u003d\n      (int)VPXMIN(lc-\u003etarget_bandwidth / lc-\u003eframerate, INT_MAX);\n```",
+      "revId": "9cfa688a38214a6c4359785788062c737970d17e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
