@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1e686f2b_6c5ef9b5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-05T21:57:27Z",
+      "side": 1,
+      "message": "James pointed this out during his review of https://chromium-review.googlesource.com/c/webm/libvpx/+/5590074/2.\n\nIn Paul\u0027s libaom CL (https://aomedia-review.googlesource.com/c/aom/+/190381), a larger maximum (2000000 kilobits per second) is used. I think it is fine for libaom to use a larger maximum.\n\nNote: libaom and libvpx also handle a value of `rc_target_bitrate` greater than the maximum differently. libaom reports an error, whereas libvpx internally caps the target bitrate to the maximum.",
+      "revId": "b94f635c1424198c200d6b7cb0f8343fbbb23313",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fc8dee04_ccd31f06",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 468,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-05T21:57:27Z",
+      "side": 1,
+      "message": "Do you think we should define what the \"raw\" bitrate means?",
+      "revId": "b94f635c1424198c200d6b7cb0f8343fbbb23313",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
