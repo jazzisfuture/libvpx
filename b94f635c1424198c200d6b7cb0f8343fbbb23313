@@ -33,6 +33,24 @@
       "message": "Do you think we should define what the \"raw\" bitrate means?",
       "revId": "b94f635c1424198c200d6b7cb0f8343fbbb23313",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "707f220f_dc6cd911",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 468,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-05T22:00:42Z",
+      "side": 1,
+      "message": "\u003e Do you think we should define what the \"raw\" bitrate means?\n\nThat might make sense.",
+      "parentUuid": "fc8dee04_ccd31f06",
+      "revId": "b94f635c1424198c200d6b7cb0f8343fbbb23313",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
