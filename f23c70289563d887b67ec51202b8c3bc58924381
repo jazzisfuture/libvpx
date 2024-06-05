@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0bf2ab33_f47b07c9",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2194,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-05T21:43:23Z",
+      "side": 1,
+      "message": "This code doesn\u0027t compile because the variables `bytes` and `count` are not declared. I did not deal with this issue.",
+      "revId": "f23c70289563d887b67ec51202b8c3bc58924381",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
