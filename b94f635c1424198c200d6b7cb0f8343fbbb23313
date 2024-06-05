@@ -69,6 +69,24 @@
       "parentUuid": "707f220f_dc6cd911",
       "revId": "b94f635c1424198c200d6b7cb0f8343fbbb23313",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "80d684e9_8753da46",
+        "filename": "vpx/vpx_encoder.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 468,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-05T23:51:49Z",
+      "side": 1,
+      "message": "\u003e Do you think \"uncompressed bitrate\" or \"raw (uncompressed) bitrate\" is clear enough?\n\u003e \n\u003e Or perhaps \"bitrate of the uncompressed frames\"?\n\nThe first one sounds good to me.",
+      "parentUuid": "dab129f8_6de3a8bf",
+      "revId": "b94f635c1424198c200d6b7cb0f8343fbbb23313",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
