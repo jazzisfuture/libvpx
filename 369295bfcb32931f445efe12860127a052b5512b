@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d3a2f90c_783b0130",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 2701,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-05T21:11:17Z",
+      "side": 1,
+      "message": "I copied this clamping of `fast_extra_bits` from Paul\u0027s libaom CL. But this clamping doesn\u0027t seem necessary in libvpx, because `fast_extra_bits` is not cast to `int` in the rest of the function, unlike in libaom.",
+      "revId": "369295bfcb32931f445efe12860127a052b5512b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
