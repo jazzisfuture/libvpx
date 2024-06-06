@@ -24,6 +24,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "458e7e81_495d6df8",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2856,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-06-06T21:58:21Z",
+      "side": 1,
+      "message": "Thanks for catch this.\nI didn\u0027t change the decision, so forgot about this part.",
+      "parentUuid": "83bbdfda_b1d063ed",
+      "range": {
+        "startLine": 2856,
+        "startChar": 22,
+        "endLine": 2856,
+        "endChar": 46
+      },
+      "revId": "9b2665a5c5e94fa730e6af7e66c6abaf5873ff46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "01e5005a_6d8229db",
@@ -37,6 +61,30 @@
       "writtenOn": "2024-06-06T21:39:53Z",
       "side": 1,
       "message": "If ext rc decided to use alt ref, but it is not allowed in vpx config, then we should error out.",
+      "range": {
+        "startLine": 2860,
+        "startChar": 17,
+        "endLine": 2860,
+        "endChar": 30
+      },
+      "revId": "9b2665a5c5e94fa730e6af7e66c6abaf5873ff46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "8b08694c_cb7febfc",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2860,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-06-06T21:58:21Z",
+      "side": 1,
+      "message": "I think the rate-control config should be set at webmrc level.\nSetting rate-control config on both libvpx and webmrc will create many necessary complexity.\nSo it\u0027s okay to just follow webmrc decision here.",
+      "parentUuid": "01e5005a_6d8229db",
       "range": {
         "startLine": 2860,
         "startChar": 17,
