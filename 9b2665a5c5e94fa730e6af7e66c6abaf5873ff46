@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "83bbdfda_b1d063ed",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2856,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-06-06T21:39:53Z",
+      "side": 1,
+      "message": "It looks like this function determines the gop length and whether to use arf frames in libvpx. When using ext rc we should bypass this as well, and set `gop_coding_frames` and `use_alt_ref` accordingly. \n\nThe `end_of_sequence` is also set from this function, but it seems it is not used anyways, so we can neglect it for now or just delete that.",
+      "range": {
+        "startLine": 2856,
+        "startChar": 22,
+        "endLine": 2856,
+        "endChar": 46
+      },
+      "revId": "9b2665a5c5e94fa730e6af7e66c6abaf5873ff46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "01e5005a_6d8229db",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2860,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-06-06T21:39:53Z",
+      "side": 1,
+      "message": "If ext rc decided to use alt ref, but it is not allowed in vpx config, then we should error out.",
+      "range": {
+        "startLine": 2860,
+        "startChar": 17,
+        "endLine": 2860,
+        "endChar": 30
+      },
+      "revId": "9b2665a5c5e94fa730e6af7e66c6abaf5873ff46",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
