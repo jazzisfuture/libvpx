@@ -22,6 +22,30 @@
       },
       "revId": "b27f79b4e02e2004d4e7ccdbaf9a73aaa422922f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "977b3df1_69145f84",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2973,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-06-08T00:16:00Z",
+      "side": 1,
+      "message": "Yep, it\u0027s a bit confusing.\nYou can look at line 2955\nrc-\u003ebaseline_gf_interval \u003d gop_coding_frames - rc-\u003esource_alt_ref_pending\n\nMy understanding is that \"baseline_gf_interval\" is the actual show_frame_count\n\"source_alt_ref_pending\" is the indicator of using alt_ref or not for this GOP.\n\nSo from line 2955, gop_coding_frames means number of coding frame in GOP including show/no show frames.\n\nAlso if you check ext_rc_define_gf_group_structure() which is a simplified version of define_gf_group_structure()\nI modified it in a way that it generate the same gf_group as define_gf_group_structure().\n\nWe have\ngf_group-\u003egf_group_size \u003d gop_decision-\u003egop_coding_frames\ngf_group_size is the number of coding frames in this GOP.",
+      "parentUuid": "c5d1533f_f975aeaf",
+      "range": {
+        "startLine": 2972,
+        "startChar": 28,
+        "endLine": 2973,
+        "endChar": 24
+      },
+      "revId": "b27f79b4e02e2004d4e7ccdbaf9a73aaa422922f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
