@@ -150,12 +150,14 @@ static void close_input_file(input_file_t *in) {
   }
 }
 
-static size_t read_input_file(input_file_t *in, unsigned char **y,
-                              unsigned char **u, unsigned char **v, int bd) {
+// Returns 1 on success, 0 on failure.
+static int read_input_file(input_file_t *in, unsigned char **y,
+                           unsigned char **u, unsigned char **v, int bd) {
   size_t r1 = 0;
   switch (in->type) {
     case Y4M:
       r1 = y4m_input_fetch_frame(&in->y4m, in->file, &in->img);
+      if (r1 == (size_t)-1) return 0;
       *y = in->img.planes[0];
       *u = in->img.planes[1];
       *v = in->img.planes[2];
@@ -175,7 +177,7 @@ static size_t read_input_file(input_file_t *in, unsigned char **y,
       break;
   }
 
-  return r1;
+  return r1 != 0;
 }
 
 static void ssim_parms_8x8(const uint8_t *s, int sp, const uint8_t *r, int rp,
@@ -399,31 +401,22 @@ int main(int argc, char *argv[]) {
   }
 
   while (1) {
-    size_t r1, r2;
+    int r1, r2;
     unsigned char *y[2], *u[2], *v[2];
 
     r1 = read_input_file(&in[0], &y[0], &u[0], &v[0], bit_depth);
+    if (r1 == 0) break;
 
-    if (r1) {
-      // Reading parts of file1.yuv that were not used in temporal layer.
-      if (tl_skips_remaining > 0) {
-        --tl_skips_remaining;
-        continue;
-      }
-      // Use frame, but skip |tl_skip| after it.
-      tl_skips_remaining = tl_skip;
+    // Reading parts of file1.yuv that were not used in temporal layer.
+    if (tl_skips_remaining > 0) {
+      --tl_skips_remaining;
+      continue;
     }
+    // Use frame, but skip |tl_skip| after it.
+    tl_skips_remaining = tl_skip;
 
     r2 = read_input_file(&in[1], &y[1], &u[1], &v[1], bit_depth);
-
-    if (r1 && r2 && r1 != r2) {
-      fprintf(stderr, "Failed to read data: %s [%d/%d]\n", strerror(errno),
-              (int)r1, (int)r2);
-      return_value = 1;
-      goto clean_up;
-    } else if (r1 == 0 || r2 == 0) {
-      break;
-    }
+    if (r2 == 0) break;
 #if CONFIG_VP9_HIGHBITDEPTH
 #define psnr_and_ssim(ssim, psnr, buf0, buf1, w, h)                           \
   do {                                                                        \
@@ -465,6 +458,13 @@ int main(int argc, char *argv[]) {
                   (h + 1) / 2);
 
     n_frames++;
+  }
+
+  if (ferror(in[0].file) || ferror(in[1].file)) {
+    fprintf(stderr, "Failed to read data from '%s'\n",
+            ferror(in[0].file) ? argv[1] : argv[2]);
+    return_value = 1;
+    goto clean_up;
   }
 
   if (framestats) {
