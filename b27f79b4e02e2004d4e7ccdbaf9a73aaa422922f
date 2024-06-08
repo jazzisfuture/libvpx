@@ -46,6 +46,30 @@
       },
       "revId": "b27f79b4e02e2004d4e7ccdbaf9a73aaa422922f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "94b2e576_a2c9aa98",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2973,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-06-08T00:55:40Z",
+      "side": 1,
+      "message": "If believe line 2955 is trying to determine the \"actual\" max gf interval (show frames). There are multiple places that indicates the gop_coding_frames should be show frame number. For example line 2881:\n`rc-\u003econstrained_gf_group \u003d (gop_coding_frames \u003e\u003d rc-\u003eframes_to_key) ? 1 : 0;\n`\nand also following that line:\n```\nconst int f_frames \u003d\n        (rc-\u003eframes_to_key - gop_coding_frames \u003e\u003d gop_coding_frames - 1)\n            ? gop_coding_frames - 1\n            : VPXMAX(0, rc-\u003eframes_to_key - gop_coding_frames);\n    const int b_frames \u003d gop_coding_frames - 1;\n```\n\nIt could be the case that gop_decision-\u003egop_coding_frames is the number of coding frames. But it looks to me gop_coding_frames in this function should be the number of shown frames.",
+      "parentUuid": "977b3df1_69145f84",
+      "range": {
+        "startLine": 2972,
+        "startChar": 28,
+        "endLine": 2973,
+        "endChar": 24
+      },
+      "revId": "b27f79b4e02e2004d4e7ccdbaf9a73aaa422922f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
