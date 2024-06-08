@@ -403,26 +403,24 @@ int main(int argc, char *argv[]) {
     unsigned char *y[2], *u[2], *v[2];
 
     r1 = read_input_file(&in[0], &y[0], &u[0], &v[0], bit_depth);
+    if (r1 == 0) break;
 
-    if (r1) {
-      // Reading parts of file1.yuv that were not used in temporal layer.
-      if (tl_skips_remaining > 0) {
-        --tl_skips_remaining;
-        continue;
-      }
-      // Use frame, but skip |tl_skip| after it.
-      tl_skips_remaining = tl_skip;
+    // Reading parts of file1.yuv that were not used in temporal layer.
+    if (tl_skips_remaining > 0) {
+      --tl_skips_remaining;
+      continue;
     }
+    // Use frame, but skip |tl_skip| after it.
+    tl_skips_remaining = tl_skip;
 
     r2 = read_input_file(&in[1], &y[1], &u[1], &v[1], bit_depth);
+    if (r2 == 0) break;
 
-    if (r1 && r2 && r1 != r2) {
+    if (r1 != r2) {
       fprintf(stderr, "Failed to read data: %s [%d/%d]\n", strerror(errno),
               (int)r1, (int)r2);
       return_value = 1;
       goto clean_up;
-    } else if (r1 == 0 || r2 == 0) {
-      break;
     }
 #if CONFIG_VP9_HIGHBITDEPTH
 #define psnr_and_ssim(ssim, psnr, buf0, buf1, w, h)                           \
