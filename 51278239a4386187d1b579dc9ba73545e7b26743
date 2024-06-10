@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "99acacfc_17844384",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 406,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T19:08:01Z",
+      "side": 1,
+      "message": "Optional: Inspection of `read_input_file()` shows that it may return `(size_t)-1` on failure. It seems that `read_input_file()` should return 0 instead on failure.",
+      "revId": "51278239a4386187d1b579dc9ba73545e7b26743",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c519d859_2f0cc5d4",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T19:08:01Z",
+      "side": 1,
+      "message": "Optional: This tries to preserve the original behavior, but in the new code, if we get here, we know `r1` is nonzero. So if `r2` is zero, it should be treated as an error. Agreed?\n\nAmong the three comments, this one is the most serious.",
+      "revId": "51278239a4386187d1b579dc9ba73545e7b26743",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b7300402_49cbef86",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T19:08:01Z",
+      "side": 1,
+      "message": "Optional: we should not use `errno` here. The C Standard does not require `fread()` to set `errno` on failure, although POSIX may require that. Also, we may get `r1 !\u003d r2` because of an invalid file, not because of a file I/O error. So we may get here without any `fread()` failure.",
+      "revId": "51278239a4386187d1b579dc9ba73545e7b26743",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
