@@ -71,6 +71,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "0eaa385f_85ea9994",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 417,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T21:48:44Z",
+      "side": 1,
+      "message": "In the original code, the `(r1 \u003d\u003d 0 || r2 \u003d\u003d 0)` path is a normal termination of this while loop. But I think `r1 !\u003d 0 \u0026\u0026 r2 \u003d\u003d 0` should be treated as an error.",
+      "parentUuid": "bf7368d8_a8aa892d",
+      "revId": "51278239a4386187d1b579dc9ba73545e7b26743",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "b7300402_49cbef86",
