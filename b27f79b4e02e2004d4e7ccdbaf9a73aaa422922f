@@ -70,6 +70,30 @@
       },
       "revId": "b27f79b4e02e2004d4e7ccdbaf9a73aaa422922f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d88652c0_5481f4f9",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2973,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-06-10T19:03:42Z",
+      "side": 1,
+      "message": "Here is my log of printing all the gop_coding_frames of each gf_group\nWe encode a video with --limit\u003d35 using libvpx baseline\n\ngop_index 0 gop_coding_frames 17\ngop_index 1 gop_coding_frames 9\ngop_index 2 gop_coding_frames 11\ngop_index 3 gop_coding_frames 1\n\nIt doesn\u0027t sum up to 35.\nIt sums up to 38 because each of the first 3 GOPs has an ARF.\n\nSometimes the code contradicts with itself. Here I think it seems like it\u0027s be assigned like \"show frame count\" but being used like \"coding frame count\".\n\nWe are trying to fix issue in an easy way because this part may not even be used by webmrc. We only call define_gf_group() to avoid needing to track down all the settings in it that might affect the coding performance. Also this fix will not affect the baseline.",
+      "parentUuid": "94b2e576_a2c9aa98",
+      "range": {
+        "startLine": 2972,
+        "startChar": 28,
+        "endLine": 2973,
+        "endChar": 24
+      },
+      "revId": "b27f79b4e02e2004d4e7ccdbaf9a73aaa422922f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
