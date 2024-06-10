@@ -20,6 +20,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "d35cf9fe_bf977790",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-10T23:05:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "49471780_80e38a19",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "e5d0a351_a4fb6a69",
         "filename": "tools/tiny_ssim.c",
         "patchSetId": 3
@@ -52,6 +70,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3193e84a_76914548",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-10T23:05:21Z",
+      "side": 1,
+      "message": "\u003e Optional: It seems clearer to call `ferror(in[0].file)` here instead of at line 463.\n\nI was trying to avoid the error message duplication, but you\u0027re right it doesn\u0027t save much.",
+      "parentUuid": "65b40196_d3e02c0e",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "66d92433_7fa333cf",
@@ -69,6 +105,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "07779e4f_ed08645d",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-10T23:05:21Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "66d92433_7fa333cf",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "20d01806_2f1c0199",
@@ -82,6 +136,24 @@
       "writtenOn": "2024-06-10T22:59:13Z",
       "side": 1,
       "message": "IMPORTANT: `ferror` cannot detect some of the errors from the `y4m_input_fetch_frame()` call, i.e., when the Y4M input file is malformed.",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d2ac0502_a4df5e3d",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 463,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-10T23:05:21Z",
+      "side": 1,
+      "message": "\u003e IMPORTANT: `ferror` cannot detect some of the errors from the `y4m_input_fetch_frame()` call, i.e., when the Y4M input file is malformed.\n\nIn that case the y4m module has some error output of its own, but we could change this code back to check for a -1 return.",
+      "parentUuid": "20d01806_2f1c0199",
       "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
