@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "49471780_80e38a19",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T22:59:13Z",
+      "side": 1,
+      "message": "Nit/optional: Should we clarify \"failure\" can be caused by either EOF or an error?",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e5d0a351_a4fb6a69",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T22:59:13Z",
+      "side": 1,
+      "message": "Note that the code assumes 4:2:0. Not sure if this is problematic.",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "65b40196_d3e02c0e",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 408,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T22:59:13Z",
+      "side": 1,
+      "message": "Optional: It seems clearer to call `ferror(in[0].file)` here instead of at line 463.",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66d92433_7fa333cf",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 419,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T22:59:13Z",
+      "side": 1,
+      "message": "Optional: It seems clearer to call `ferror(in[1].file)` here instead of at line 463.",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20d01806_2f1c0199",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 463,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T22:59:13Z",
+      "side": 1,
+      "message": "IMPORTANT: `ferror` cannot detect some of the errors from the `y4m_input_fetch_frame()` call, i.e., when the Y4M input file is malformed.",
+      "revId": "d82d9e8ab770d2e6f28c1060ea7449e6d8f55ca5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
