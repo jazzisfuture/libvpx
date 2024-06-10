@@ -67,6 +67,24 @@
       "message": "So at this point, both `r1` and `r2` must be equal to 1, so they cannot be different. We can delete this if statement.",
       "revId": "81eb9136e6857b19ef6e776ef4cd14e37b14539d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "42ad5ddd_14dc7039",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 420,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-06-10T22:20:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ed7dc716_a97604d6",
+      "revId": "81eb9136e6857b19ef6e776ef4cd14e37b14539d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
