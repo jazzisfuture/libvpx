@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ad396aaf_c41b3d2f",
+        "filename": "tools/tiny_ssim.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 422,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-10T21:52:05Z",
+      "side": 1,
+      "message": "Nit: We should call both `feof` and `ferror`. See https://en.cppreference.com/w/c/io/fread:\n\n\u003e `fread` does not distinguish between end-of-file and error, and callers must use `feof` and `ferror` to determine which occurred.",
+      "revId": "9e79b282c8ea0bcceb18998d91a1738c1915f623",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
