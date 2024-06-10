@@ -94,6 +94,30 @@
       },
       "revId": "b27f79b4e02e2004d4e7ccdbaf9a73aaa422922f",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2dbdced7_5cbd6a8b",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2973,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-06-10T21:59:14Z",
+      "side": 1,
+      "message": "Thanks for the info. I believe this is due to the fact that in vp9 we only have the arf and no internal arfs, so \"coding frame count\" is only 1 frame different than the show frame count. This whole function might have been built with that in mind.\n\nBut on the other hand from rc lib, it may not be guaranteed to have only one arf in a gop (for av1 we have multiple internal arfs). We might need to assert here that the gop info passed into vp9 should be constrained such that it only has one arf. \n\n\nOn another note, if this does not affect the baseline, then we probably don\u0027t need to add the following if check? \n\nI think checking for frame_stats and then break out means we can potentially actually hide the problem here. If the `gop_coding_frames` is indeed only 1 frame more than the show frame count, then it wouldn\u0027t be triggered. But when `gop_coding_frames` is not what we expect, then this if only hides the problem, rather than exposing it (and note the `gop_coding_frames` value is used as `1+show_frame_count` everywhere else in this function).",
+      "parentUuid": "d88652c0_5481f4f9",
+      "range": {
+        "startLine": 2972,
+        "startChar": 28,
+        "endLine": 2973,
+        "endChar": 24
+      },
+      "revId": "b27f79b4e02e2004d4e7ccdbaf9a73aaa422922f",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
