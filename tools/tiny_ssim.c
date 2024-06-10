@@ -418,8 +418,8 @@ int main(int argc, char *argv[]) {
     if (r2 == 0) break;
 
     if (r1 != r2) {
-      fprintf(stderr, "Failed to read data: %s [%d/%d]\n", strerror(errno),
-              (int)r1, (int)r2);
+      fprintf(stderr, "Failed to read data: %zu vs. %zu bytes, ferror: %d/%d\n",
+              r1, r2, ferror(in[0].file), ferror(in[1].file));
       return_value = 1;
       goto clean_up;
     }
