@@ -16,6 +16,24 @@
       "message": "Hi Angie,\n\nCoverity (a static analyzer) detected that these two statements assign a value to the same variable (`gf_group-\u003emax_layer_depth`), so the first statement has no effect.\n\nCould you take a look? Thanks.",
       "revId": "ed95b102c431ac3939f89faec32f65a7cefcbe9d",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2c95aa2_13625404",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 2374,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-06-12T18:52:49Z",
+      "side": 1,
+      "message": "Yep, I was trying to make this function match define_gf_group_structure().\nForgot to remove the line 2373.\nLet me fix it.",
+      "parentUuid": "5f0d2587_bce24b12",
+      "revId": "ed95b102c431ac3939f89faec32f65a7cefcbe9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
