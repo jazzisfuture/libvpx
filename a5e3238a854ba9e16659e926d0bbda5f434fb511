@@ -16,6 +16,24 @@
       "message": "This was discussed in https://chromium-review.googlesource.com/c/webm/libvpx/+/5407736. In portable C, we can\u0027t use an empty initializer list `{}`. I remember Microsoft Visual C++ does not accept that.\n\nWhich compiler warns about this?",
       "revId": "a5e3238a854ba9e16659e926d0bbda5f434fb511",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "a10c498f_77d72e61",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1701,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-06-12T21:57:05Z",
+      "side": 1,
+      "message": "This is my compile config.\n\nCC\u003d\"clang\" CXX\u003d\"clang++\" CFLAGS\u003d\"-fsanitize\u003daddress -fno-strict-aliasing -fno-omit-frame-pointer -fno-optimize-sibling-calls\" CXXFLAGS\u003d\"-fsanitize\u003daddress -fno-strict-aliasing -fno-omit-frame-pointer -fno-optimize-sibling-calls\" LDFLAGS\u003d\"-fsanitize\u003daddress\" ../configure --enable-debug\n\nHappy to drop this CL.\nJust thought it was an easy fix.",
+      "parentUuid": "08150993_49e1e97d",
+      "revId": "a5e3238a854ba9e16659e926d0bbda5f434fb511",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
