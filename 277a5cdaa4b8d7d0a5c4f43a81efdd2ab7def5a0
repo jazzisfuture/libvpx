@@ -1,5 +1,57 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "17c98fd2_da17a4eb",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2208,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-12T23:51:07Z",
+      "side": 1,
+      "message": "Note that `find_arf_order()` may set `gf_group-\u003emax_layer_depth` here.",
+      "revId": "277a5cdaa4b8d7d0a5c4f43a81efdd2ab7def5a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "47f84f4a_a3e36481",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2259,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-12T23:51:07Z",
+      "side": 1,
+      "message": "Note that `define_gf_group_structure()` sets `gf_group-\u003emax_layer_depth` to either 0 (at line 2271), or 1 (at line 2290), or some other value in the `find_arf_order()` call at line 2296.",
+      "revId": "277a5cdaa4b8d7d0a5c4f43a81efdd2ab7def5a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4be1da24_f26af863",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2374,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-12T23:51:07Z",
+      "side": 1,
+      "message": "Could you clarify this comment?\n\nAs I noted above, `define_gf_group_structure()` does not simply set `gf_group-\u003emax_layer_depth` to a hardcoded value. So I don\u0027t understand why the comment says this is matching the behavior of `define_gf_group_structure()`.",
+      "revId": "277a5cdaa4b8d7d0a5c4f43a81efdd2ab7def5a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
