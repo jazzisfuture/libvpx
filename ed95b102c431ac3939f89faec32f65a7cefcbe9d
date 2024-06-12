@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5f0d2587_bce24b12",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 2374,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-12T13:47:43Z",
+      "side": 1,
+      "message": "Hi Angie,\n\nCoverity (a static analyzer) detected that these two statements assign a value to the same variable (`gf_group-\u003emax_layer_depth`), so the first statement has no effect.\n\nCould you take a look? Thanks.",
+      "revId": "ed95b102c431ac3939f89faec32f65a7cefcbe9d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
