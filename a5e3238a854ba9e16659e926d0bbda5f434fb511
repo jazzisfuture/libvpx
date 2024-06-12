@@ -70,6 +70,24 @@
       "parentUuid": "7cb7c4a8_77acbbc1",
       "revId": "a5e3238a854ba9e16659e926d0bbda5f434fb511",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6147db37_7a6fa4ea",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1701,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-12T23:02:36Z",
+      "side": 1,
+      "message": "I also tested with clang-13/14/15 and clang++-13/14/15. There are no compiler warnings.",
+      "parentUuid": "5d6548ca_69040ede",
+      "revId": "a5e3238a854ba9e16659e926d0bbda5f434fb511",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
