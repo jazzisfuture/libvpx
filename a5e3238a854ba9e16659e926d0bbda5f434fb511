@@ -106,6 +106,24 @@
       "parentUuid": "6147db37_7a6fa4ea",
       "revId": "a5e3238a854ba9e16659e926d0bbda5f434fb511",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e06e4d9b_64b335bc",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1701,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-06-13T05:04:53Z",
+      "side": 1,
+      "message": "Yes, please abandon this CL. We should fix compiler warnings, but clang version 7.0.1 is too old. You can install clang as a system package.",
+      "parentUuid": "c4e59422_ab2b5c51",
+      "revId": "a5e3238a854ba9e16659e926d0bbda5f434fb511",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
