@@ -50,6 +50,24 @@
       "message": "Could you clarify this comment?\n\nAs I noted above, `define_gf_group_structure()` does not simply set `gf_group-\u003emax_layer_depth` to a hardcoded value. So I don\u0027t understand why the comment says this is matching the behavior of `define_gf_group_structure()`.",
       "revId": "277a5cdaa4b8d7d0a5c4f43a81efdd2ab7def5a0",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f397608e_b6d4aef2",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2374,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-06-14T21:26:34Z",
+      "side": 1,
+      "message": "Hi Wen-Teh,\nIt\u0027s hidden in find_arf_order()\ngf_group-\u003emax_layer_depth \u003d VPXMAX(gf_group-\u003emax_layer_depth, depth);\n\nfind_arf_order() is a recursive function, so it\u0027s harder to see how many recursive call will happen. I ran the code and dump the gf_group and check \"max_layer_depth\"\u0027s value.",
+      "parentUuid": "4be1da24_f26af863",
+      "revId": "277a5cdaa4b8d7d0a5c4f43a81efdd2ab7def5a0",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
