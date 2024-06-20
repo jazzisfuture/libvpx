@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b4d6ccb9_e4325a4c",
+        "filename": "vp9/encoder/vp9_ext_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 243,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-06-20T23:27:50Z",
+      "side": 1,
+      "message": "`rc_status` is never used. the return value should depend on `rc_status`",
+      "range": {
+        "startLine": 243,
+        "startChar": 9,
+        "endLine": 243,
+        "endChar": 21
+      },
+      "revId": "72e445f17ffdbda0475038f38b350933c3d9e2e5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
