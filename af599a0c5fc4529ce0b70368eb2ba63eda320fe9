@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e93a85fc_2a56a49f",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2670,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-01T20:55:44Z",
+      "side": 0,
+      "message": "`cpi-\u003etwopass.total_stats.count` is a `double`, and `cpi-\u003ecommon.current_video_frame` is an `unsigned int`. In theory, `cpi-\u003etwopass.total_stats.count` may become greater than `INT_MAX`, so it may be unsafe to cast it to `int`.\n\nHowever, if we remove the `int` cast, then `cpi-\u003etwopass.total_stats.count - cpi-\u003ecommon.current_video_frame` is calculated in `double`. And since `VPXMIN(16, ...)` is \u003c\u003d 16, it is safe to cast it to `int`.",
+      "revId": "af599a0c5fc4529ce0b70368eb2ba63eda320fe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3166dac0_9e94c8ea",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2688,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-01T20:55:44Z",
+      "side": 0,
+      "message": "Here is the derivation:\n\nThe expression on the right-hand side is first transformed to:\n\n```\n          (max_delta \u003c -vbr_bits_off_target) ? max_delta : -vbr_bits_off_target;\n```\n\nThen it is clear that it is equivalent to `VPXMIN(-vbr_bits_off_target, max_delta)`.",
+      "revId": "af599a0c5fc4529ce0b70368eb2ba63eda320fe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
