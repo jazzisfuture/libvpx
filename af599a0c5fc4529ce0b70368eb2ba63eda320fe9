@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3eed71a9_5e4e9cb8",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 4
+      },
+      "lineNbr": 2665,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-02T21:55:05Z",
+      "side": 1,
+      "message": "When I tried to port the libaom CL https://aomedia-review.googlesource.com/c/aom/+/191361 to VP9, I found that the signed integer overflows were all fixed by the changes to this file in this CL.\n\nThe command I tested, under UndefinedBehaviorSanitizer, is:\n\n```\n./vpxenc husky.yuv -o AV1_husky_2000000_10000000_10000000.webm --good \\\n  --cpu-used\u003d2 -v -t 0 -w 352 -h 288 --fps\u003d10000000/10000000 \\\n  --target-bitrate\u003d2000000 --limit\u003d150 --test-decode\u003dfatal --passes\u003d2 \\\n  --lag-in-frames\u003d25 --min-q\u003d0 --max-q\u003d63 --min-gf-interval\u003d4 \\\n  --max-gf-interval\u003d22 --arnr-maxframes\u003d7 --arnr-strength\u003d5 \\\n  --kf-max-dist\u003d9999 --aq-mode\u003d0 --undershoot-pct\u003d100 \\\n  --overshoot-pct\u003d100 --bias-pct\u003d50\n```\n\nThe `--lag-in-frames\u003d35` and `--max-gf-interval\u003d32` options need to be reduced to `--lag-in-frames\u003d25` and `--max-gf-interval\u003d22` for VP9.",
+      "revId": "af599a0c5fc4529ce0b70368eb2ba63eda320fe9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
