@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2582c162_1a9ef3b7",
+        "filename": "vp8/encoder/firstpass.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 316,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-03T16:34:56Z",
+      "side": 1,
+      "message": "The name of this function is modeled after `std::saturate_cast`:\nhttps://en.cppreference.com/w/cpp/numeric/saturate_cast",
+      "revId": "108fa1c5734a97fe5f44055a18f3f5dc785025a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
