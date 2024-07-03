@@ -31,7 +31,7 @@ static int init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   int frame_idx = 0;
   int i;
   int gld_index = -1;
-  int alt_index = -1;
+  int alt_index = -2;
   int lst_index = -1;
   int arf_index_stack[MAX_ARF_LAYERS];
   int arf_stack_size = 0;
@@ -39,11 +39,22 @@ static int init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   int pframe_qindex = cpi->tpl_stats[2].base_qindex;
   int frame_gop_offset = 0;
 
+  int init_gld_index = cpi->gld_fb_idx;
+  int init_lst_index = cpi->lst_fb_idx;
+  int init_alt_index = cpi->alt_fb_idx;
+
   RefCntBuffer *frame_bufs = cm->buffer_pool->frame_bufs;
   int8_t recon_frame_index[REFS_PER_FRAME + MAX_ARF_LAYERS];
 
   memset(recon_frame_index, -1, sizeof(recon_frame_index));
   stack_init(arf_index_stack, MAX_ARF_LAYERS);
+
+  int8_t frame_buf_index[FRAME_BUFFERS];
+  memset(frame_buf_index, -REFS_PER_FRAME, sizeof(frame_buf_index));
+
+  frame_buf_index[cpi->lst_fb_idx] = lst_index;
+  frame_buf_index[cpi->gld_fb_idx] = 0;
+  frame_buf_index[cpi->alt_fb_idx] = alt_index;
 
   for (i = 0; i < FRAME_BUFFERS; ++i) {
     if (frame_bufs[i].ref_count == 0) {
@@ -74,10 +85,13 @@ static int init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
 
   // Initialize Golden reference frame.
   gf_picture[0].frame = get_ref_frame_buffer(cpi, GOLDEN_FRAME);
-  for (i = 0; i < 3; ++i) gf_picture[0].ref_frame[i] = -1;
+  for (i = 0; i < 3; ++i) gf_picture[0].ref_frame[i] = -REFS_PER_FRAME;
   gf_picture[0].update_type = gf_group->update_type[0];
   gld_index = 0;
   ++*tpl_group_frames;
+
+  gf_picture[-1].frame = get_ref_frame_buffer(cpi, LAST_FRAME);
+  gf_picture[-2].frame = get_ref_frame_buffer(cpi, ALTREF_FRAME);
 
   // Initialize base layer ARF frame
   gf_picture[1].frame = cpi->Source;
@@ -153,6 +167,10 @@ static int init_gop_frames(VP9_COMP *cpi, GF_PICTURE *gf_picture,
     ++extend_frame_count;
     ++frame_gop_offset;
   }
+
+  cpi->lst_fb_idx = init_lst_index;
+  cpi->gld_fb_idx = init_gld_index;
+  cpi->alt_fb_idx = init_alt_index;
 
   return extend_frame_count;
 }
@@ -425,6 +443,8 @@ static void tpl_store_before_propagation(VpxTplBlockStats *tpl_block_stats,
 
 static void tpl_model_update_b(TplDepFrame *tpl_frame, TplDepStats *tpl_stats,
                                int mi_row, int mi_col, const BLOCK_SIZE bsize) {
+  if (tpl_stats->ref_frame_index < 0) return;
+
   TplDepFrame *ref_tpl_frame = &tpl_frame[tpl_stats->ref_frame_index];
   TplDepStats *ref_stats = ref_tpl_frame->tpl_stats_ptr;
   MV mv = tpl_stats->mv.as_mv;
@@ -1199,7 +1219,7 @@ static void mc_flow_dispenser(VP9_COMP *cpi, GF_PICTURE *gf_picture,
   // unavailable, the pointer will be set to Null.
   for (idx = 0; idx < MAX_INTER_REF_FRAMES; ++idx) {
     int rf_idx = gf_picture[frame_idx].ref_frame[idx];
-    if (rf_idx != -1) ref_frame[idx] = gf_picture[rf_idx].frame;
+    if (rf_idx != -REFS_PER_FRAME) ref_frame[idx] = gf_picture[rf_idx].frame;
   }
 
   xd->mi = cm->mi_grid_visible;
@@ -1546,7 +1566,8 @@ void vp9_estimate_tpl_qp_gop(VP9_COMP *cpi) {
 }
 
 void vp9_setup_tpl_stats(VP9_COMP *cpi) {
-  GF_PICTURE gf_picture[MAX_ARF_GOP_SIZE];
+  GF_PICTURE gf_picture_buf[MAX_ARF_GOP_SIZE + REFS_PER_FRAME];
+  GF_PICTURE *gf_picture = &gf_picture_buf[REFS_PER_FRAME];
   const GF_GROUP *gf_group = &cpi->twopass.gf_group;
   int tpl_group_frames = 0;
   int frame_idx;
