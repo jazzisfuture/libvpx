@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df230de0_513aaf4e",
+        "filename": "vpxenc.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1590,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-03T16:21:33Z",
+      "side": 1,
+      "message": "This can be reviewed as follows, without considering the UBSan errors:\n\nSince `stream-\u003econfig.cfg.g_w` and `stream-\u003econfig.cfg.g_h` are `unsigned int`, we perform all operations in `unsigned int` and store the results in `unsigned int`.\n\nThe results are passed to `vpx_img_alloc()`, which also take `unsigned int` parameters.",
+      "revId": "b46ae583d4a563c2f6216718e04ea83322ddfa4c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
