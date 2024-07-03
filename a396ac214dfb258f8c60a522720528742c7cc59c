@@ -16,6 +16,23 @@
       "message": "Marco: You can review this CL by comparing it with the corresponding libaom CL https://aomedia-review.googlesource.com/c/aom/+/191401. Thanks!",
       "revId": "a396ac214dfb258f8c60a522720528742c7cc59c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "384fb2b2_0d5e8b4b",
+        "filename": "rate_hist.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 53,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-03T16:17:57Z",
+      "side": 1,
+      "message": "`cfg-\u003erc_buf_sz` is `unsigned int`.\n\n`fps-\u003enum` and `fps-\u003eden` are `int`.\n\nWe cast the first operand to `int64_t` so that all operations are done in 64 bits. Then cast the result to `int` because `hist-\u003esamples` is `int`.",
+      "revId": "a396ac214dfb258f8c60a522720528742c7cc59c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
