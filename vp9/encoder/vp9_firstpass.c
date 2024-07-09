@@ -2980,11 +2980,17 @@ static void define_gf_group(VP9_COMP *cpi, int gf_start_show_idx) {
       // fps_get_frame_stats(). Here we mitigate the issue using break whenever
       // frame_stats == NULL. Show we set the upperbound to show frame count?
       if (frame_stats == NULL) {
-        vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
-                           "In define_gf_group(), frame_stats is NULL when "
-                           "calculating gf_group_err.");
+        if (cpi->ext_ratectrl.ready &&
+            (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_GOP) != 0 &&
+            cpi->ext_ratectrl.funcs.get_gop_decision != NULL) {
+          break;
+        } else {
+          vpx_internal_error(&cm->error, VPX_CODEC_ERROR,
+                             "In define_gf_group(), frame_stats is NULL when "
+                             "calculating gf_group_err.");
 
-        break;
+          break;
+        }
       }
       // Accumulate error score of frames in this gf group.
       gf_group_err += calc_norm_frame_score(oxcf, frame_info, frame_stats,
