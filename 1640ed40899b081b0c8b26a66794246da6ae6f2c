@@ -1,5 +1,57 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "23928d96_d90c999c",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 2996,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-09T22:35:50Z",
+      "side": 1,
+      "message": "It seems that we could also use a `continue` statement here and keep going in the loop. Would that be better?",
+      "revId": "1640ed40899b081b0c8b26a66794246da6ae6f2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "42056926_75f18dae",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 2997,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-09T22:35:50Z",
+      "side": 1,
+      "message": "Omit the \"else\" because the if block ends in a break statement.",
+      "revId": "1640ed40899b081b0c8b26a66794246da6ae6f2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8d531ef3_f6c7ad1b",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 3002,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-09T22:35:50Z",
+      "side": 1,
+      "message": "(This issue comes from the original code.) The `vpx_internal_error()` function does a long jump and does not return, so the `break` statement will not be reached and should be deleted.",
+      "revId": "1640ed40899b081b0c8b26a66794246da6ae6f2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
