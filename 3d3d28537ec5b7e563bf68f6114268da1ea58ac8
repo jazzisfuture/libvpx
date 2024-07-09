@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8a3ebd0b_122402df",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2986,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-07-09T18:42:38Z",
+      "side": 1,
+      "message": "line length.\n\nCould you explain in the comment why it is not critical for external rate control? For example, is it not used when external rate control is used, or for other reasons?",
+      "range": {
+        "startLine": 2986,
+        "startChar": 10,
+        "endLine": 2986,
+        "endChar": 82
+      },
+      "revId": "3d3d28537ec5b7e563bf68f6114268da1ea58ac8",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
