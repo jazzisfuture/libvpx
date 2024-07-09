@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "154b84c2_d251fd69",
+        "filename": "test/encode_perf_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-09T23:59:10Z",
+      "side": 0,
+      "message": "I verified that this file does not use any macro defined in vpx_config.h, so this can also be deleted.",
+      "revId": "1640ed40899b081b0c8b26a66794246da6ae6f2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
