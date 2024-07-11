@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8ff60042_9c467c42",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1345,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-11T23:45:45Z",
+      "side": 1,
+      "message": "I found that this is not equivalent to the original expression.\n\nFor examp[le, suppose `rc-\u003eprojected_frame_size` is 16 and `rc-\u003eavg_frame_bandwidth` is 5.\n\nThe original expression `rc-\u003eprojected_frame_size \u003e 3 * rc-\u003eavg_frame_bandwidth` is\n`16 \u003e 3 * 5`, which is true.\n\nBut the new expression `rc-\u003eprojected_frame_size / 3 \u003e rc-\u003eavg_frame_bandwidth` is `16 / 3 \u003e 5`, which is false.\n\nSo it is safer to cast to `int64_t`.",
+      "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
