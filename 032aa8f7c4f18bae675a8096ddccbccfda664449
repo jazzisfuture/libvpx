@@ -70,6 +70,24 @@
       "parentUuid": "ad54a1e0_b0576e84",
       "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "55f08527_ee8b940c",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1345,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-12T17:28:55Z",
+      "side": 1,
+      "message": "I do this kind of manipulation in overflow checks all the time, so I was really worried that it was incorrect.\n\nI worked out the details. There are two cases where this kind of manipulation is correct.\n\nIf we ignore overflows:\n\n1) `x \u003e\u003d 3 * y` is equivalent to `x / 3 \u003e\u003d * y`.\n\nNote: Overflow checks are of this form, so they are correct. For example, to check whether `a * b \u003e INT_MAX`, we check `a \u003e INT_MAX / b`.\n\n2) `x \u003e 3 * y` is equivalent to `(x + 2) / 3 \u003e * y`.\n\nNote: `(x + 2) / 3` means the ceiling of `x / 3.0`.",
+      "parentUuid": "13181539_2d8b324d",
+      "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
