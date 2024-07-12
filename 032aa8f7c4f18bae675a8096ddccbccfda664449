@@ -52,6 +52,24 @@
       "parentUuid": "30dad64a_11239a87",
       "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "13181539_2d8b324d",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1345,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-12T00:34:03Z",
+      "side": 1,
+      "message": "\u003e No, I think it\u0027s fine to do rc-\u003eprojected_frame_size / 3 \u003e rc-\u003eavg_frame_bandwidth\n\nThanks for confirming.",
+      "parentUuid": "ad54a1e0_b0576e84",
+      "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
