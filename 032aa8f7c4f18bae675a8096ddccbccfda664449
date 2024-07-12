@@ -16,6 +16,24 @@
       "message": "I found that this is not equivalent to the original expression.\n\nFor examp[le, suppose `rc-\u003eprojected_frame_size` is 16 and `rc-\u003eavg_frame_bandwidth` is 5.\n\nThe original expression `rc-\u003eprojected_frame_size \u003e 3 * rc-\u003eavg_frame_bandwidth` is\n`16 \u003e 3 * 5`, which is true.\n\nBut the new expression `rc-\u003eprojected_frame_size / 3 \u003e rc-\u003eavg_frame_bandwidth` is `16 / 3 \u003e 5`, which is false.\n\nSo it is safer to cast to `int64_t`.",
       "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "30dad64a_11239a87",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1345,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-12T00:14:26Z",
+      "side": 1,
+      "message": "\u003e I found that this is not equivalent to the original expression.\n\u003e \n\u003e For examp[le, suppose `rc-\u003eprojected_frame_size` is 16 and `rc-\u003eavg_frame_bandwidth` is 5.\n\u003e \n\u003e The original expression `rc-\u003eprojected_frame_size \u003e 3 * rc-\u003eavg_frame_bandwidth` is\n\u003e `16 \u003e 3 * 5`, which is true.\n\u003e \n\u003e But the new expression `rc-\u003eprojected_frame_size / 3 \u003e rc-\u003eavg_frame_bandwidth` is `16 / 3 \u003e 5`, which is false.\n\u003e \n\u003e So it is safer to cast to `int64_t`.\n\nMarco, do we care about the rounding difference for this?",
+      "parentUuid": "8ff60042_9c467c42",
+      "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
