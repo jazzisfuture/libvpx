@@ -88,6 +88,24 @@
       "parentUuid": "13181539_2d8b324d",
       "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "bdd4129e_69973442",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1345,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-12T17:58:30Z",
+      "side": 1,
+      "message": "\u003e I do this kind of manipulation in overflow checks all the time, so I was really worried that it was incorrect.\n\u003e \n\u003e I worked out the details. There are two cases where this kind of manipulation is correct.\n\u003e \n\u003e If we ignore overflows:\n\u003e \n\u003e 1) `x \u003e\u003d 3 * y` is equivalent to `x / 3 \u003e\u003d * y`.\n\u003e \n\u003e Note: Overflow checks are of this form, so they are correct. For example, to check whether `a * b \u003e INT_MAX`, we check `a \u003e INT_MAX / b`.\n\u003e \n\nThanks for verifying those checks.\n\n\u003e 2) `x \u003e 3 * y` is equivalent to `(x + 2) / 3 \u003e * y`.\n\u003e \n\u003e Note: `(x + 2) / 3` means the ceiling of `x / 3.0`.\n\nI added a note to the commit message to note we ignored rounding for this change based on Marco\u0027s comment.",
+      "parentUuid": "55f08527_ee8b940c",
+      "revId": "032aa8f7c4f18bae675a8096ddccbccfda664449",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
