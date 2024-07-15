@@ -1,5 +1,23 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "6b311363_24d026a2",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-15T19:37:27Z",
+      "side": 1,
+      "message": "This bug was later discovered in VP9 (https://chromium-review.googlesource.com/c/webm/libvpx/+/5545799) and AV1 (https://aomedia-review.googlesource.com/c/aom/+/191782).\n\nOur fixes for VP9 and AV1 seem to imply that it is not necessary to clamp `target` to `INT_MAX` here. Could you take a look?",
+      "revId": "80b1b5a7e99cd31d2962ba5b12d3d03d58ffe2ad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
