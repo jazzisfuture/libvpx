@@ -6978,19 +6978,11 @@ int vp9_set_size_literal(VP9_COMP *cpi, unsigned int width,
 #endif
   alloc_raw_frame_buffers(cpi);
   if (width) {
-    cm->width = width;
-    if (cm->width > cpi->initial_width) {
-      cm->width = cpi->initial_width;
-      printf("Warning: Desired width too large, changed to %d\n", cm->width);
-    }
+    cm->width = VPXMIN(width, cpi->initial_width);
   }
 
   if (height) {
-    cm->height = height;
-    if (cm->height > cpi->initial_height) {
-      cm->height = cpi->initial_height;
-      printf("Warning: Desired height too large, changed to %d\n", cm->height);
-    }
+    cm->height = VPXMIN(height, cpi->initial_height);
   }
   assert(cm->width <= cpi->initial_width);
   assert(cm->height <= cpi->initial_height);
