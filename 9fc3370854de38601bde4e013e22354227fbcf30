@@ -16,6 +16,24 @@
       "message": "I think this should be\n\n```\ncm-\u003ewidth \u003d VPXMIN(width, cpi-\u003einitial_width);\n```\n\nif you remove `cm-\u003ewidth \u003d width;`",
       "revId": "9fc3370854de38601bde4e013e22354227fbcf30",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4c51cbae_e3aa4d06",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 6980,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-07-15T19:28:36Z",
+      "side": 1,
+      "message": "Kept as it is due to type difference.",
+      "parentUuid": "5571905b_12d99c8d",
+      "revId": "9fc3370854de38601bde4e013e22354227fbcf30",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
