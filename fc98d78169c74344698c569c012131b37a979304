@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2f24342f_8536bbf1",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 6984,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-07-15T16:55:05Z",
+      "side": 1,
+      "message": "maybe clean this up too as\n\n```\ncm-\u003ewidth \u003d VPXMIN(cm-\u003ewidth, cpi-\u003einitial_width);\n```\n\nsame for `cm-\u003eheight` below.",
+      "range": {
+        "startLine": 6982,
+        "startChar": 4,
+        "endLine": 6984,
+        "endChar": 5
+      },
+      "revId": "fc98d78169c74344698c569c012131b37a979304",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
