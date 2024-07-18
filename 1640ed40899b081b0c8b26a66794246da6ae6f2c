@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8e205a1_2363eee2",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 2996,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-07-18T19:39:30Z",
+      "side": 1,
+      "message": "When frame_stats is null, it means show_idx is out of range.\nSo we should just break.",
+      "parentUuid": "23928d96_d90c999c",
+      "revId": "1640ed40899b081b0c8b26a66794246da6ae6f2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "42056926_75f18dae",
@@ -35,6 +53,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e33b2c9c_76454cf7",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 2997,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-07-18T19:39:30Z",
+      "side": 1,
+      "message": "Done here\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5722514",
+      "parentUuid": "42056926_75f18dae",
+      "revId": "1640ed40899b081b0c8b26a66794246da6ae6f2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "8d531ef3_f6c7ad1b",
@@ -48,6 +84,24 @@
       "writtenOn": "2024-07-09T22:35:50Z",
       "side": 1,
       "message": "(This issue comes from the original code.) The `vpx_internal_error()` function does a long jump and does not return, so the `break` statement will not be reached and should be deleted.",
+      "revId": "1640ed40899b081b0c8b26a66794246da6ae6f2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ef128ccc_c56ccc4e",
+        "filename": "vp9/encoder/vp9_firstpass.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 3002,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-07-18T19:39:30Z",
+      "side": 1,
+      "message": "Looks like the long jump is conditional.\nif (info-\u003esetjmp) longjmp(info-\u003ejmp, info-\u003eerror_code);\n\nNot sure if we should delete the break here.",
+      "parentUuid": "8d531ef3_f6c7ad1b",
       "revId": "1640ed40899b081b0c8b26a66794246da6ae6f2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
