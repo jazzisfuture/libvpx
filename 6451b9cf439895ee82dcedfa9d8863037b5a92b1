@@ -55,6 +55,41 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "5c16c626_372f4150",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1783,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-18T18:27:16Z",
+      "side": 1,
+      "message": "\u003e You already grouped all the control calls in one place. Is this comment out of date?\n\nI just meant that it was disrupted by the preparation of `svc_conf`.",
+      "parentUuid": "e9fedaae_5c27fbd9",
+      "revId": "6451b9cf439895ee82dcedfa9d8863037b5a92b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "07449ee6_c11a55f2",
+        "filename": "test/encode_api_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 1806,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-18T18:27:16Z",
+      "side": 1,
+      "message": "This one came from another parallel test case. It isn\u0027t necessary to reproduce the issue. I\u0027ll remove it in the next patch.",
+      "revId": "6451b9cf439895ee82dcedfa9d8863037b5a92b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "36b87534_340cc55c",
         "filename": "vp9/encoder/vp9_ratectrl.c",
         "patchSetId": 1
@@ -66,6 +101,24 @@
       "writtenOn": "2024-07-18T17:57:53Z",
       "side": 1,
       "message": "The `double` cast could be omitted for brevity because C\u0027s implicit conversion does the right thing. OK if you prefer the clarify of explicit casts.",
+      "revId": "6451b9cf439895ee82dcedfa9d8863037b5a92b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "5cdd1db1_11cafd6b",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-18T18:27:16Z",
+      "side": 1,
+      "message": "\u003e The `double` cast could be omitted for brevity because C\u0027s implicit conversion does the right thing. OK if you prefer the clarify of explicit casts.\n\nI\u0027ll drop it, I was being conservative with the potential for warnings.",
+      "parentUuid": "36b87534_340cc55c",
       "revId": "6451b9cf439895ee82dcedfa9d8863037b5a92b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
