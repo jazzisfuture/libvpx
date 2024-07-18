@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b032a37f_c2293d5e",
+        "filename": "README",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-18T23:31:37Z",
+      "side": 1,
+      "message": "here there are multiple components, so this instead could be:\n\nhttps://g-issues.webmproject.org/issues?q\u003dcomponentid:1618984\n\nor\n\nhttps://issues.webmproject.org/issues?q\u003dcomponentid:1618984%20status:open",
+      "revId": "9df596df6056ac91497453fcf1a8a0dba6a3838b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
