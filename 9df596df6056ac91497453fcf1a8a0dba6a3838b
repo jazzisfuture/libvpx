@@ -16,6 +16,24 @@
       "message": "here there are multiple components, so this instead could be:\n\nhttps://g-issues.webmproject.org/issues?q\u003dcomponentid:1618984\n\nor\n\nhttps://issues.webmproject.org/issues?q\u003dcomponentid:1618984%20status:open",
       "revId": "9df596df6056ac91497453fcf1a8a0dba6a3838b",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "789cc108_b64ef75c",
+        "filename": "README",
+        "patchSetId": 1
+      },
+      "lineNbr": 228,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-18T23:46:52Z",
+      "side": 1,
+      "message": "\u003e here there are multiple components, so this instead could be:\n\u003e \n\u003e https://g-issues.webmproject.org/issues?q\u003dcomponentid:1618984\n\u003e \n\u003e or\n\u003e \n\u003e https://issues.webmproject.org/issues?q\u003dcomponentid:1618984%20status:open\n\nWe can go with the simple option for now and see if we run into too many that are misplaced. The default create option provides a dropdown to select the component.",
+      "parentUuid": "b032a37f_c2293d5e",
+      "revId": "9df596df6056ac91497453fcf1a8a0dba6a3838b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
