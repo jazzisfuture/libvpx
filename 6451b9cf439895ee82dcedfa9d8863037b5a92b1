@@ -157,6 +157,24 @@
       "parentUuid": "efab98b4_495434ae",
       "revId": "6451b9cf439895ee82dcedfa9d8863037b5a92b1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a0e92a6_ba50f64f",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 296,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-18T20:36:39Z",
+      "side": 1,
+      "message": "\u003e \u003e I see. We have already used this form in libvpx and libaom.\n\u003e \u003e \n\u003e \u003e Note: The only concern is that the `round(lc-\u003etarget_bandwidth / lc-\u003eframerate)` expression is duplicated by the `VPXMIN` macro. We are counting on the compiler to eliminate the common subexpression.\n\u003e \n\u003e That is true. I can break that out to a const.\n\nDone.",
+      "parentUuid": "eebf9a43_46fc9f36",
+      "revId": "6451b9cf439895ee82dcedfa9d8863037b5a92b1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
