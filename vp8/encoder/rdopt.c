@@ -1564,21 +1564,31 @@ static void rd_update_mvcount(MACROBLOCK *x, int_mv *best_ref_mv) {
 
     for (i = 0; i < x->partition_info->count; ++i) {
       if (x->partition_info->bmi[i].mode == NEW4X4) {
-        x->MVcount[0][mv_max + ((x->partition_info->bmi[i].mv.as_mv.row -
-                                 best_ref_mv->as_mv.row) >>
-                                1)]++;
-        x->MVcount[1][mv_max + ((x->partition_info->bmi[i].mv.as_mv.col -
-                                 best_ref_mv->as_mv.col) >>
-                                1)]++;
+        const int row_val = ((x->partition_info->bmi[i].mv.as_mv.row -
+                              best_ref_mv->as_mv.row) >>
+                             1);
+        const int col_val = ((x->partition_info->bmi[i].mv.as_mv.col -
+                              best_ref_mv->as_mv.col) >>
+                             1);
+        if (row_val >= -mv_max && row_val <= mv_max &&
+            col_val >= -mv_max && col_val <= mv_max) {
+          x->MVcount[0][mv_max + row_val]++;
+          x->MVcount[1][mv_max + col_val]++;
+        }
       }
     }
   } else if (x->e_mbd.mode_info_context->mbmi.mode == NEWMV) {
-    x->MVcount[0][mv_max + ((x->e_mbd.mode_info_context->mbmi.mv.as_mv.row -
-                             best_ref_mv->as_mv.row) >>
-                            1)]++;
-    x->MVcount[1][mv_max + ((x->e_mbd.mode_info_context->mbmi.mv.as_mv.col -
-                             best_ref_mv->as_mv.col) >>
-                            1)]++;
+    const int row_val = ((x->e_mbd.mode_info_context->mbmi.mv.as_mv.row -
+                          best_ref_mv->as_mv.row) >>
+                         1);
+    const int col_val = ((x->e_mbd.mode_info_context->mbmi.mv.as_mv.col -
+                          best_ref_mv->as_mv.col) >>
+                         1);
+    if (row_val >= -mv_max && row_val <= mv_max &&
+        col_val >= -mv_max && col_val <= mv_max) {
+      x->MVcount[0][mv_max + row_val]++;
+      x->MVcount[1][mv_max + col_val]++;
+    }
   }
 }
 
@@ -1750,7 +1760,6 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
   int num00;
   int best_mode_index = 0;
   BEST_MODE best_mode;
-
   int i;
   int mode_index;
   int mdcounts[4];
@@ -2121,6 +2130,8 @@ void vp8_rd_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
           }
         }
 
+        vp8_clamp_mv(&best_ref_mv, x->mv_col_min, x->mv_col_max, x->mv_row_min,
+                     x->mv_row_max);
         x->mv_col_min = tmp_col_min;
         x->mv_col_max = tmp_col_max;
         x->mv_row_min = tmp_row_min;
