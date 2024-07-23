@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e9587e88_4bb4e402",
+        "filename": "vp8/encoder/firstpass.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1247,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-07-23T22:27:58Z",
+      "side": 0,
+      "message": "The first few lines of `vp8_new_framerate()` read:\n\n```\nvoid vp8_new_framerate(VP8_COMP *cpi, double framerate) {\n  if (framerate \u003c .1) framerate \u003d 30; \n\n  cpi-\u003eframerate \u003d framerate;\n  cpi-\u003eoutput_framerate \u003d framerate;\n```\n\n`cpi-\u003eframerate` and `cpi-\u003eoutput_framerate` are not modified in the rest of the `vp8_new_framerate()` function.",
+      "revId": "057e53d759ac05417bbc7880b1d2e2ac7f08fc67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
