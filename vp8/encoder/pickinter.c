@@ -380,12 +380,18 @@ static void update_mvcount(MACROBLOCK *x, int_mv *best_ref_mv) {
   /* Split MV modes currently not supported when RD is nopt enabled,
    * therefore, only need to modify MVcount in NEWMV mode. */
   if (xd->mode_info_context->mbmi.mode == NEWMV) {
-    x->MVcount[0][mv_max + ((xd->mode_info_context->mbmi.mv.as_mv.row -
-                             best_ref_mv->as_mv.row) >>
-                            1)]++;
-    x->MVcount[1][mv_max + ((xd->mode_info_context->mbmi.mv.as_mv.col -
-                             best_ref_mv->as_mv.col) >>
-                            1)]++;
+    const int row_val =
+        ((xd->mode_info_context->mbmi.mv.as_mv.row - best_ref_mv->as_mv.row) >>
+         1);
+    const int row_idx = mv_max + row_val;
+    const int col_val =
+        ((xd->mode_info_context->mbmi.mv.as_mv.col - best_ref_mv->as_mv.col) >>
+         1);
+    const int col_idx = mv_max + col_val;
+    if (row_idx >= 0 && row_idx < MVvals && col_idx >= 0 && col_idx < MVvals) {
+      x->MVcount[0][row_idx]++;
+      x->MVcount[1][col_idx]++;
+    }
   }
 }
 
@@ -1049,6 +1055,8 @@ void vp8_pick_inter_mode(VP8_COMP *cpi, MACROBLOCK *x, int recon_yoffset,
             }
           }
 
+          vp8_clamp_mv(&best_ref_mv, x->mv_col_min, x->mv_col_max,
+                       x->mv_row_min, x->mv_row_max);
           x->mv_col_min = tmp_col_min;
           x->mv_col_max = tmp_col_max;
           x->mv_row_min = tmp_row_min;
