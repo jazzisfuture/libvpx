@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e776ee8f_a1aed663",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-23T23:23:35Z",
+      "side": 1,
+      "message": "This is just for discussion purposes. I\u0027ll see about adding a unit test to reproduce the issue.",
+      "revId": "2ca724da755b4b72bd9e3bdbc8fe06a206068c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "32c1b75d_e4dd3ba2",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 335,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-23T23:23:35Z",
+      "side": 1,
+      "message": "This is from VP9\u0027s `DEFAULT_KF_BOOST`. It can be as large as `INT_MAX / 220` (see next comment).",
+      "revId": "2ca724da755b4b72bd9e3bdbc8fe06a206068c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab8737d0_ad292d3c",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 343,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-23T23:23:35Z",
+      "side": 1,
+      "message": "an alternative is to make this `(int)(int64_t)kf_boost * kf_boost_qadjustment[Q] / 100);` `kf_boost` is at most `19999984` and `kf_boost_qadjustment` up to `220`:\n\nhttps://source.chromium.org/chromium/chromium/src/+/main:third_party/libvpx/source/libvpx/vp8/encoder/ratectrl.c;l\u003d88;drc\u003d4f94206a537e68e2f656acafa8231415f37d8ce2",
+      "revId": "2ca724da755b4b72bd9e3bdbc8fe06a206068c6d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
