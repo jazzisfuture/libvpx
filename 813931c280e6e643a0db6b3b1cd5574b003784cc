@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a98f5a99_237ea35b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-24T20:37:11Z",
+      "side": 1,
+      "message": "I updated the asserts in the last patchset based on a comment from Wan-Teh.",
+      "revId": "813931c280e6e643a0db6b3b1cd5574b003784cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "651ebe0d_6cfd4071",
