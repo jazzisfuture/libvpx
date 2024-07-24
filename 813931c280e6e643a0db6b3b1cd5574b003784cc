@@ -33,6 +33,24 @@
       "message": "I suggest we store the final array indexes in `int` local variables. The expressions cannot overflow an `int`.\n\nThen we assert the array indexes are `\u003e\u003d 0` and `\u003c\u003d 2 * mv_max` (or equivalently, `\u003c MVvals`).",
       "revId": "813931c280e6e643a0db6b3b1cd5574b003784cc",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b1b97ea4_0fab5709",
+        "filename": "vp8/encoder/rdopt.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1572,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-24T20:37:25Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "651ebe0d_6cfd4071",
+      "revId": "813931c280e6e643a0db6b3b1cd5574b003784cc",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
