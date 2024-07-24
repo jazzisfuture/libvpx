@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2207f3bd_19d0a453",
+        "filename": "vp8/encoder/rdopt.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 2228,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-24T20:38:38Z",
+      "side": 1,
+      "message": "note a copy of `x-\u003ee_mbd.mode_info_context-\u003embmi.mv` is made here. I did not look into whether `need_to_clamp_best_mvs` would be set in this case.",
+      "revId": "a2d92dfee7e907b9e678c5e54acd4648f17c5730",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
