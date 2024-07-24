@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb62c1b4_318d7062",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-24T17:33:22Z",
+      "side": 1,
+      "message": "The test shows some additional errors with `-fsanitize\u003dinteger` (the original report is for `-fsanitize\u003dundefined`). Using an earlier clamp suggested by Marco clears these:\n\n```\n        vp8_clamp_mv(\u0026best_ref_mv, x-\u003emv_col_min, x-\u003emv_col_max, x-\u003emv_row_min,\n                     x-\u003emv_row_max);\n```",
+      "revId": "37c0b9fa81b0745168d8eba399db3774f80d9fa5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
