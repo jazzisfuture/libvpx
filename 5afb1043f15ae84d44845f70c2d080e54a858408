@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "98aab306_09ad31d1",
+        "filename": "vp8/encoder/rdopt.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1587,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-24T18:23:32Z",
+      "side": 1,
+      "message": "The clamps aren\u0027t enough. I can hit this assert with some general content encoding 1-pass speed\u003d0/1/2.",
+      "revId": "5afb1043f15ae84d44845f70c2d080e54a858408",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
