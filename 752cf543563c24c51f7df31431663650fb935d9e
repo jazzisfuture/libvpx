@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "f94ac7cc_da7c21dd",
+        "filename": "vp8/encoder/rdopt.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 2137,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-07-25T17:47:34Z",
+      "side": 1,
+      "message": "seems that here the best_ref_mv is at subpel scale and the limits are for pixel, so another fix is needed.",
+      "revId": "752cf543563c24c51f7df31431663650fb935d9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
