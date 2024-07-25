@@ -16,6 +16,24 @@
       "message": "seems that here the best_ref_mv is at subpel scale and the limits are for pixel, so another fix is needed.",
       "revId": "752cf543563c24c51f7df31431663650fb935d9e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2f2fb7a_a8294d95",
+        "filename": "vp8/encoder/rdopt.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 2137,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-07-25T19:00:34Z",
+      "side": 1,
+      "message": "\u003e seems that here the best_ref_mv is at subpel scale and the limits are for pixel, so another fix is needed.\n\nI removed the clamp here in favor of clamps in `vp8_find_best_*`.",
+      "parentUuid": "f94ac7cc_da7c21dd",
+      "revId": "752cf543563c24c51f7df31431663650fb935d9e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
