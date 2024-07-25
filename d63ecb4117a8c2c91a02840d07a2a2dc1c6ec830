@@ -1,5 +1,29 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "fe88a466_65d2ca2a",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-07-25T19:28:09Z",
+      "side": 1,
+      "message": "If it\u0027s key frame, why do we still need to setup ref_table with \"-REFS_PER_FRAME\"?\nMaybe add comment to explain it?",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 118,
+        "endChar": 49
+      },
+      "revId": "d63ecb4117a8c2c91a02840d07a2a2dc1c6ec830",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ],
   "submitRequirementResults": [
     {
       "submitRequirement": {
