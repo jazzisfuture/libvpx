@@ -46,6 +46,30 @@
       },
       "revId": "d63ecb4117a8c2c91a02840d07a2a2dc1c6ec830",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ed662074_a68dad11",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-07-26T17:26:14Z",
+      "side": 1,
+      "message": "Got it, thanks!",
+      "parentUuid": "240fb34f_7f2801dc",
+      "range": {
+        "startLine": 117,
+        "startChar": 0,
+        "endLine": 118,
+        "endChar": 49
+      },
+      "revId": "d63ecb4117a8c2c91a02840d07a2a2dc1c6ec830",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
