@@ -216,7 +216,7 @@ void EncoderTest::RunLoop(VideoSource *video) {
         again = true;
         switch (pkt->kind) {
           case VPX_CODEC_CX_FRAME_PKT:
-            has_cxdata = true;
+#if CONFIG_DECODERS
             if (decoder != nullptr && DoDecode()) {
               PreDecodeFrameHook(video, decoder.get());
               vpx_codec_err_t res_dec = decoder->DecodeFrame(
@@ -226,6 +226,8 @@ void EncoderTest::RunLoop(VideoSource *video) {
 
               has_dxdata = true;
             }
+#endif  // CONFIG_DECODERS
+            has_cxdata = true;
             ASSERT_GE(pkt->data.frame.pts, last_pts);
             last_pts = pkt->data.frame.pts;
             FramePktHook(pkt);

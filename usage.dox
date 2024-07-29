@@ -73,8 +73,16 @@
     the ABI is versioned. The ABI version number must be passed at
     initialization time to ensure the application is using a header file that
     matches the library. The current ABI version number is stored in the
-    preprocessor macros #VPX_CODEC_ABI_VERSION, #VPX_ENCODER_ABI_VERSION, and
-    #VPX_DECODER_ABI_VERSION. For convenience, each initialization function has
+    preprocessor macros:
+    \li #VPX_CODEC_ABI_VERSION
+    \if encoder
+    \li #VPX_ENCODER_ABI_VERSION
+    \endif
+    \if decoder
+    \li #VPX_DECODER_ABI_VERSION
+    \endif
+
+    For convenience, each initialization function has
     a wrapper macro that inserts the correct version number. These macros are
     named like the initialization methods, but without the _ver suffix.
 
@@ -122,7 +130,13 @@
     function are preserved. If, for the same frame, an application instead sets
     a <code>deadline</code> of 5000us, the decoder will see that it has 3000us
     remaining in its time slice when decoding completes. It could then choose to
-    run a set of \ref usage_postproc filters, and perhaps would return after
+    run a set of
+    \if decoder
+    \ref usage_postproc
+    \else
+    postprocessing
+    \endif
+    filters, and perhaps would return after
     4000us (instead of the allocated 5000us). In this case the deadline is met,
     and the semantics of the call are preserved, as before.
 

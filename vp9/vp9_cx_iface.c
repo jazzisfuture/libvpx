@@ -2264,6 +2264,7 @@ CODEC_INTERFACE(vpx_codec_vp9_cx) = {
   encoder_init,                                    // vpx_codec_init_fn_t
   encoder_destroy,                                 // vpx_codec_destroy_fn_t
   encoder_ctrl_maps,                               // vpx_codec_ctrl_fn_map_t
+#if CONFIG_DECODERS
   {
       // NOLINT
       NULL,  // vpx_codec_peek_si_fn_t
@@ -2272,6 +2273,7 @@ CODEC_INTERFACE(vpx_codec_vp9_cx) = {
       NULL,  // vpx_codec_frame_get_fn_t
       NULL   // vpx_codec_set_fb_fn_t
   },
+#endif  // CONFIG_DECODERS
   {
       // NOLINT
       1,                           // 1 cfg map
