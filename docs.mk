@@ -17,8 +17,13 @@ INSTALL_MAPS += %         %
 CODEC_DOX :=    mainpage.dox \
 		keywords.dox \
 		usage.dox \
-		usage_cx.dox \
-		usage_dx.dox \
+
+ifeq ($(CONFIG_DECODERS),yes)
+  CODEC_DOX += usage_dx.dox
+endif
+ifeq ($(CONFIG_ENCODERS),yes)
+  CODEC_DOX += usage_cx.dox
+endif
 
 # Other doxy files sourced in Markdown
 TXT_DOX = $(call enabled,TXT_DOX)

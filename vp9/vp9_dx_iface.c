@@ -728,6 +728,7 @@ CODEC_INTERFACE(vpx_codec_vp9_dx) = {
       decoder_get_frame,  // vpx_codec_frame_get_fn_t
       decoder_set_fb_fn,  // vpx_codec_set_fb_fn_t
   },
+#if CONFIG_ENCODERS
   {
       // NOLINT
       0,
@@ -739,4 +740,5 @@ CODEC_INTERFACE(vpx_codec_vp9_dx) = {
       NULL,  // vpx_codec_get_preview_frame_fn_t
       NULL   // vpx_codec_enc_mr_get_mem_loc_fn_t
   }
+#endif  // CONFIG_ENCODERS
 };

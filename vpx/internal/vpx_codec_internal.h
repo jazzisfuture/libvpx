@@ -44,11 +44,15 @@
  */
 #ifndef VPX_VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
 #define VPX_VPX_INTERNAL_VPX_CODEC_INTERNAL_H_
-#include "../vpx_decoder.h"
-#include "../vpx_encoder.h"
 #include <stdarg.h>
 
 #include "vpx_config.h"
+#if CONFIG_DECODERS
+#include "../vpx_decoder.h"
+#endif
+#if CONFIG_ENCODERS
+#include "../vpx_encoder.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,6 +102,7 @@ typedef vpx_codec_err_t (*vpx_codec_init_fn_t)(
  */
 typedef vpx_codec_err_t (*vpx_codec_destroy_fn_t)(vpx_codec_alg_priv_t *ctx);
 
+#if CONFIG_DECODERS
 /*!\brief parse stream info function pointer prototype
  *
  * Performs high level parsing of the bitstream. This function is called by the
@@ -134,6 +139,7 @@ typedef vpx_codec_err_t (*vpx_codec_peek_si_fn_t)(const uint8_t *data,
  */
 typedef vpx_codec_err_t (*vpx_codec_get_si_fn_t)(vpx_codec_alg_priv_t *ctx,
                                                  vpx_codec_stream_info_t *si);
+#endif  // CONFIG_DECODERS
 
 /*!\brief control function pointer prototype
  *
@@ -176,6 +182,7 @@ typedef const struct vpx_codec_ctrl_fn_map {
   vpx_codec_control_fn_t fn;
 } vpx_codec_ctrl_fn_map_t;
 
+#if CONFIG_DECODERS
 /*!\brief decode data function pointer prototype
  *
  * Processes a buffer of coded data. If the processing results in a new
@@ -248,7 +255,9 @@ typedef vpx_image_t *(*vpx_codec_get_frame_fn_t)(vpx_codec_alg_priv_t *ctx,
 typedef vpx_codec_err_t (*vpx_codec_set_fb_fn_t)(
     vpx_codec_alg_priv_t *ctx, vpx_get_frame_buffer_cb_fn_t cb_get,
     vpx_release_frame_buffer_cb_fn_t cb_release, void *cb_priv);
+#endif  // CONFIG_DECODERS
 
+#if CONFIG_ENCODERS
 typedef vpx_codec_err_t (*vpx_codec_encode_fn_t)(vpx_codec_alg_priv_t *ctx,
                                                  const vpx_image_t *img,
                                                  vpx_codec_pts_t pts,
@@ -284,6 +293,8 @@ typedef const struct vpx_codec_enc_cfg_map {
   vpx_codec_enc_cfg_t cfg;
 } vpx_codec_enc_cfg_map_t;
 
+#endif  // CONFIG_ENCODERS
+
 /*!\brief Decoder algorithm interface
  *
  * All decoders \ref MUST expose a variable of this type.
@@ -295,6 +306,7 @@ struct vpx_codec_iface {
   vpx_codec_init_fn_t init;           /**< \copydoc ::vpx_codec_init_fn_t */
   vpx_codec_destroy_fn_t destroy;     /**< \copydoc ::vpx_codec_destroy_fn_t */
   vpx_codec_ctrl_fn_map_t *ctrl_maps; /**< \copydoc ::vpx_codec_ctrl_fn_map_t */
+#if CONFIG_DECODERS
   struct vpx_codec_dec_iface {
     vpx_codec_peek_si_fn_t peek_si; /**< \copydoc ::vpx_codec_peek_si_fn_t */
     vpx_codec_get_si_fn_t get_si;   /**< \copydoc ::vpx_codec_get_si_fn_t */
@@ -303,6 +315,8 @@ struct vpx_codec_iface {
         get_frame;                   /**< \copydoc ::vpx_codec_get_frame_fn_t */
     vpx_codec_set_fb_fn_t set_fb_fn; /**< \copydoc ::vpx_codec_set_fb_fn_t */
   } dec;
+#endif  // CONFIG_DECODERS
+#if CONFIG_ENCODERS
   struct vpx_codec_enc_iface {
     int cfg_map_count;
     vpx_codec_enc_cfg_map_t
@@ -319,8 +333,10 @@ struct vpx_codec_iface {
     vpx_codec_enc_mr_get_mem_loc_fn_t
         mr_get_mem_loc; /**< \copydoc ::vpx_codec_enc_mr_get_mem_loc_fn_t */
   } enc;
+#endif  // CONFIG_ENCODERS
 };
 
+#if CONFIG_DECODERS
 /*!\brief Callback function pointer / user data pair storage */
 typedef struct vpx_codec_priv_cb_pair {
   union {
@@ -329,6 +345,7 @@ typedef struct vpx_codec_priv_cb_pair {
   } u;
   void *user_priv;
 } vpx_codec_priv_cb_pair_t;
+#endif  // CONFIG_DECODERS
 
 /*!\brief Instance private storage
  *
@@ -341,10 +358,13 @@ typedef struct vpx_codec_priv_cb_pair {
 struct vpx_codec_priv {
   const char *err_detail;
   vpx_codec_flags_t init_flags;
+#if CONFIG_DECODERS
   struct {
     vpx_codec_priv_cb_pair_t put_frame_cb;
     vpx_codec_priv_cb_pair_t put_slice_cb;
   } dec;
+#endif  // CONFIG_DECODERS
+#if CONFIG_ENCODERS
   struct {
     vpx_fixed_buf_t cx_data_dst_buf;
     unsigned int cx_data_pad_before;
@@ -352,8 +372,10 @@ struct vpx_codec_priv {
     vpx_codec_cx_pkt_t cx_data_pkt;
     unsigned int total_encoders;
   } enc;
+#endif  // CONFIG_ENCODERS
 };
 
+#if CONFIG_ENCODERS
 /*
  * Multi-resolution encoding internal configuration
  */
@@ -363,6 +385,7 @@ struct vpx_codec_priv_enc_mr_cfg {
   struct vpx_rational mr_down_sampling_factor;
   void *mr_low_res_mode_info;
 };
+#endif  // CONFIG_ENCODERS
 
 #undef VPX_CTRL_USE_TYPE
 #define VPX_CTRL_USE_TYPE(id, typ) \
@@ -392,6 +415,7 @@ struct vpx_codec_priv_enc_mr_cfg {
  * The following functions are intended to be used inside algorithms as
  * utilities for manipulating vpx_codec_* data structures.
  */
+#if CONFIG_ENCODERS
 struct vpx_codec_pkt_list {
   unsigned int cnt;
   unsigned int max;
@@ -416,6 +440,7 @@ int vpx_codec_pkt_list_add(struct vpx_codec_pkt_list *,
 
 const vpx_codec_cx_pkt_t *vpx_codec_pkt_list_get(
     struct vpx_codec_pkt_list *list, vpx_codec_iter_t *iter);
+#endif  // CONFIG_ENCODERS
 
 #include <stdio.h>
 #include <setjmp.h>

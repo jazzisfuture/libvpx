@@ -72,7 +72,7 @@ LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_ext_ratectrl_test.cc
 endif
 LIBVPX_TEST_SRCS-$(CONFIG_VP9_ENCODER) += ../vp9/simple_encode.h
 
-LIBVPX_TEST_SRCS-yes                   += decode_test_driver.cc
+LIBVPX_TEST_SRCS-$(CONFIG_DECODERS)    += decode_test_driver.cc
 LIBVPX_TEST_SRCS-yes                   += decode_test_driver.h
 LIBVPX_TEST_SRCS-$(CONFIG_ENCODERS)    += encode_test_driver.cc
 LIBVPX_TEST_SRCS-yes                   += encode_test_driver.h
@@ -234,7 +234,7 @@ RC_INTERFACE_TEST_SRCS-$(CONFIG_VP9_ENCODER) += vp9_ratectrl_rtc_test.cc
 RC_INTERFACE_TEST_SRCS-$(CONFIG_VP8_ENCODER) += vp8_ratectrl_rtc_test.cc
 RC_INTERFACE_TEST_SRCS-$(CONFIG_ENCODERS) += encode_test_driver.cc
 RC_INTERFACE_TEST_SRCS-$(CONFIG_ENCODERS) += encode_test_driver.h
-RC_INTERFACE_TEST_SRCS-yes += decode_test_driver.cc
+RC_INTERFACE_TEST_SRCS-$(CONFIG_DECODERS) += decode_test_driver.cc
 RC_INTERFACE_TEST_SRCS-yes += decode_test_driver.h
 RC_INTERFACE_TEST_SRCS-yes += codec_factory.h
 
