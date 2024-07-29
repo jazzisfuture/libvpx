@@ -73,8 +73,16 @@
     the ABI is versioned. The ABI version number must be passed at
     initialization time to ensure the application is using a header file that
     matches the library. The current ABI version number is stored in the
-    preprocessor macros #VPX_CODEC_ABI_VERSION, #VPX_ENCODER_ABI_VERSION, and
-    #VPX_DECODER_ABI_VERSION. For convenience, each initialization function has
+    preprocessor macros:
+    \li #VPX_CODEC_ABI_VERSION
+    \if encoder
+    \li #VPX_ENCODER_ABI_VERSION
+    \endif
+    \if decoder
+    \li #VPX_DECODER_ABI_VERSION
+    \endif
+
+    For convenience, each initialization function has
     a wrapper macro that inserts the correct version number. These macros are
     named like the initialization methods, but without the _ver suffix.
 
