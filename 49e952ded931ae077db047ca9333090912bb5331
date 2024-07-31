@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c9eea4da_dbf4efdf",
+        "filename": "vp9/encoder/vp9_ext_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1132564
+      },
+      "writtenOn": "2024-07-31T08:16:32Z",
+      "side": 1,
+      "message": "Remove const.",
+      "range": {
+        "startLine": 186,
+        "startChar": 4,
+        "endLine": 186,
+        "endChar": 10
+      },
+      "revId": "49e952ded931ae077db047ca9333090912bb5331",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
