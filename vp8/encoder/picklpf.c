@@ -51,6 +51,11 @@ static void yv12_copy_partial_frame(YV12_BUFFER_CONFIG *src_ybc,
   dst_y = dst_ybc->y_buffer + yoffset;
 
   memcpy(dst_y, src_y, ystride * linestocopy);
+  // The border will be used in vp8_loop_filter_partial_frame so it needs to be
+  // extended to avoid a valgrind warning.
+  if (yoffset < 0) {
+    memcpy(dst_y, dst_ybc->y_buffer, -yoffset * sizeof(*dst_y));
+  }
 }
 
 static int calc_partial_ssl_err(YV12_BUFFER_CONFIG *source,
