@@ -50,6 +50,16 @@ static void yv12_copy_partial_frame(YV12_BUFFER_CONFIG *src_ybc,
   src_y = src_ybc->y_buffer + yoffset;
   dst_y = dst_ybc->y_buffer + yoffset;
 
+  // The border will be used in vp8_loop_filter_partial_frame so it needs to be
+  // initialized to avoid a valgrind warning.
+  if (yoffset < 0) {
+    memset(src_y, 0, -yoffset * sizeof(*src_y));
+    memset(dst_y, 0, -yoffset * sizeof(*dst_y));
+  } else {
+    memset(src_ybc->y_buffer, 0, yoffset * sizeof(*src_ybc->y_buffer));
+    memset(dst_ybc->y_buffer, 0, yoffset * sizeof(*dst_ybc->y_buffer));
+  }
+
   memcpy(dst_y, src_y, ystride * linestocopy);
 }
 
