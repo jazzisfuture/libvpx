@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "082d2cf2_7f7f627b",
+        "filename": "vp8/encoder/picklpf.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 56,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-01T16:58:26Z",
+      "side": 1,
+      "message": "instead of memset, why not extend the first row and last column?",
+      "revId": "e655ac452ded1d1254d23065db1261daa487c9a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
