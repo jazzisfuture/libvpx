@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "1df09f0a_9a5fb4e8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-01T17:00:45Z",
+      "side": 1,
+      "message": "After fixing this other questions will be if the msan specific memsets are needed and whether a memset in `vpx_realloc_frame_buffer` was added for a similar reason.",
+      "revId": "e655ac452ded1d1254d23065db1261daa487c9a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "082d2cf2_7f7f627b",
