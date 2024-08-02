@@ -18,7 +18,7 @@
 #include "test/encode_test_driver.h"
 #include "test/util.h"
 #include "test/yuv_video_source.h"
-#include "third_party/googletest/src/include/gtest/gtest.h"
+#include "gtest/gtest.h"
 #if CONFIG_VP9_DECODER
 #include "vpx/vp8dx.h"
 #endif
