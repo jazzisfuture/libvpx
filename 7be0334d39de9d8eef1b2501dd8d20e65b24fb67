@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "baf0a4f0_c6d4ad43",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-08-02T18:04:38Z",
+      "side": 1,
+      "message": "Wan-Teh submitted the formatting already\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5759097",
+      "revId": "7be0334d39de9d8eef1b2501dd8d20e65b24fb67",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
