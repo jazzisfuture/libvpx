@@ -69,6 +69,24 @@
       "message": "`yoffset` might be sizable and here you\u0027re copying the first `yoffset` rows instead of extending the top row. Something like the following before line 53 might work:\n\n```c\nconst unsigned char *const top_row \u003d src_ybc-\u003ey_buffer;\nfor (int i \u003d yoffset; i \u003c 0; i +\u003d ystride, --linestocopy) {\n  memcpy(dst_y, top_row, ystride);\n  dst_y +\u003d ystride;\n  src_y +\u003d ystride;\n}\n```",
       "revId": "38f62b4048cb82302d4984b1c1cff5d255bf5cad",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "65268eb2_1ac988af",
+        "filename": "vp8/encoder/picklpf.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-08-02T19:00:37Z",
+      "side": 1,
+      "message": "Thanks! I guess I misunderstood what \"extension\" means...",
+      "parentUuid": "6d8ecc3a_5421a762",
+      "revId": "38f62b4048cb82302d4984b1c1cff5d255bf5cad",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
