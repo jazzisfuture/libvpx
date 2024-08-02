@@ -16,6 +16,24 @@
       "message": "Oh this is interesting.\n\nI thought `const` can be used in definition but not in declaration. Though in this case it probably doesn\u0027t matter. Is this a difference between clang \u0026 visual studio?",
       "revId": "08322cb280f038d3d3bf1c97f661237b6a339c31",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d1d1ef42_cdc9f5fa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-02T00:48:51Z",
+      "side": 1,
+      "message": "\u003e Oh this is interesting.\n\u003e \n\u003e I thought `const` can be used in definition but not in declaration. Though in this case it probably doesn\u0027t matter. Is this a difference between clang \u0026 visual studio?\n\nclang and gcc are more tolerant about this. It\u0027s valid in C++, but not C for Visual Studio. If you do const in both cases (as well as \u0027* const` you can end up with clang-tidy warnings.",
+      "parentUuid": "7ad0ffca_553c6f93",
+      "revId": "08322cb280f038d3d3bf1c97f661237b6a339c31",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
