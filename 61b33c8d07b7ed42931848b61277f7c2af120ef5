@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e69609f9_0992a0c8",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-06T01:46:55Z",
+      "side": 1,
+      "message": "The two static analysis warnings are fixed in the next two changes in this chain of commits.",
+      "revId": "61b33c8d07b7ed42931848b61277f7c2af120ef5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
