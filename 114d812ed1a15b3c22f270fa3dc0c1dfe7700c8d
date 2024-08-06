@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "92757fbf_bde32da4",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-06T01:45:55Z",
+      "side": 1,
+      "message": "The final static analysis warning is fixed in the next change.",
+      "revId": "114d812ed1a15b3c22f270fa3dc0c1dfe7700c8d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
