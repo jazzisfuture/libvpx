@@ -34,6 +34,24 @@
       "parentUuid": "b0f92ece_520adcae",
       "revId": "f821eebb4617aa11dc4039039e55e5a4912b8e36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4d1e093_71298789",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2199,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-06T17:31:29Z",
+      "side": 1,
+      "message": "\u003e I forgot to say that 10000000.0 would be clearer to someone like me who analyzes the code without a deeper understanding of the constant. We can make another pass to define a double constant, say `TICKS_PER_SEC_DOUBLE`, and replace 10000000.0 with it.\n\nI went with `10000000.0` in this pass. I can follow up with the define.",
+      "parentUuid": "773dd703_0097598d",
+      "revId": "f821eebb4617aa11dc4039039e55e5a4912b8e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
