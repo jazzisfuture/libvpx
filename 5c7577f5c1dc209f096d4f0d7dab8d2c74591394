@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0de7dd81_a8a41bd6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-08-06T18:20:09Z",
+      "side": 1,
+      "message": "Should we update the Version field in third_party/libwebm/README.libvpx?",
+      "revId": "5c7577f5c1dc209f096d4f0d7dab8d2c74591394",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
