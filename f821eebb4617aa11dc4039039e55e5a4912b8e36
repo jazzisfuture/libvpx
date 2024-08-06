@@ -52,6 +52,24 @@
       "parentUuid": "773dd703_0097598d",
       "revId": "f821eebb4617aa11dc4039039e55e5a4912b8e36",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c7497d7_4184e1d5",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2199,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-06T17:55:11Z",
+      "side": 1,
+      "message": "\u003e \u003e I forgot to say that 10000000.0 would be clearer to someone like me who analyzes the code without a deeper understanding of the constant. We can make another pass to define a double constant, say `TICKS_PER_SEC_DOUBLE`, and replace 10000000.0 with it.\n\u003e \n\u003e I went with `10000000.0` in this pass. I can follow up with the define.\n\nAs discussed offline, there are a few cases that divide `10000000.0` with a double, that look like they would cause this assertion to fail. The range shouldn\u0027t impact the 64-bit math, so for now we\u0027ll leave out the assertion.",
+      "parentUuid": "d4d1e093_71298789",
+      "revId": "f821eebb4617aa11dc4039039e55e5a4912b8e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
