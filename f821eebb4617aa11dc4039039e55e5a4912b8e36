@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b0f92ece_520adcae",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2199,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-08-06T15:54:22Z",
+      "side": 1,
+      "message": "Code Search shows that we use the double constant 10000000.0 directly. It does seem that 10000000.0 is `TICKS_PER_SEC` converted to double.\n\nDetails:\n\nThe value of `cpi-\u003eframerate` comes from two sources:\n1. The `vp9_new_framerate()` function. Almost all the callers of `vp9_new_framerate()` pass 10000000.0 / some-duration as the `framerate` argument. If we assume `some-duration` is at least 1, then `framerate \u003c\u003d 10000000.0`. Note: I haven\u0027t been able to prove that the assumption is true.\n2. `oxcf-\u003einit_framerate`: This is at most 180.",
+      "revId": "f821eebb4617aa11dc4039039e55e5a4912b8e36",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
