@@ -37,6 +37,24 @@
     {
       "unresolved": false,
       "key": {
+        "uuid": "91de5a53_ab425611",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 2198,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-06T02:14:05Z",
+      "side": 1,
+      "message": "\u003e Optional: Should we assert that framerate \u003c\u003d 10000000.0 here?\n\u003e \n\nGood point. I added `assert(framerate \u003c\u003d TICK_PER_SEC)` which I believe is the origin of this limit.\n\n\u003e I believe that is the basis of your statement that `16 + kf_boost` is at most `20000000` at line 2204.\n\nYes that was the reasoning.",
+      "parentUuid": "56750d6b_ad1fb058",
+      "revId": "2e939169e498d18bc0b106c4b32df8a0d04b3556",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
         "uuid": "52fa1b12_8c565de7",
         "filename": "vp9/encoder/vp9_ratectrl.c",
         "patchSetId": 1
