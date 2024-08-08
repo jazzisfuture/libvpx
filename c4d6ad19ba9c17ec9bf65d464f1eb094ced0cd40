@@ -34,6 +34,24 @@
       "parentUuid": "d676dd82_67eff018",
       "revId": "c4d6ad19ba9c17ec9bf65d464f1eb094ced0cd40",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ffc2bc35_7f3490eb",
+        "filename": "vp8/encoder/ratectrl.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 331,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-08-08T17:19:32Z",
+      "side": 1,
+      "message": "\u003e \u003e This calculation is also in VP9 and AV1. You can find it by searching for \"framerate - 16\" in libvpx and libaom.\n\u003e \u003e \n\u003e \u003e ```\n\u003e \u003e $ find . -name \"*\" -a -type f | xargs grep \"framerate - 16\"\n\u003e \u003e ```\n\u003e \u003e \n\u003e \u003e Should the fix below be ported to VP9 and AV1?\n\u003e \n\u003e https://chromium-review.googlesource.com/c/webm/libvpx/+/5762531\n\u003e \n\u003e AV1 carries the `int64_t` further and clamps the max rate result I believe.\n\nhttps://aomedia.googlesource.com/aom/+/d9408e2964b81870133fa3346414f48938bb8dbc/av1/encoder/ratectrl.c#2748:\n\n```c\nint av1_calc_iframe_target_size_one_pass_vbr(const AV1_COMP *const cpi) {\n  static const int kf_ratio \u003d 25;\n  const RATE_CONTROL *rc \u003d \u0026cpi-\u003erc;\n  const int64_t target \u003d (int64_t)rc-\u003eavg_frame_bandwidth * kf_ratio;\n  return av1_rc_clamp_iframe_target_size(cpi, target);\n}\n```\n\nhttps://aomedia.googlesource.com/aom/+/d9408e2964b81870133fa3346414f48938bb8dbc/av1/encoder/ratectrl.c#287:\n\n```c\nint av1_rc_clamp_iframe_target_size(const AV1_COMP *const cpi, int64_t target) {\n  const RATE_CONTROL *rc \u003d \u0026cpi-\u003erc;\n  const RateControlCfg *const rc_cfg \u003d \u0026cpi-\u003eoxcf.rc_cfg;\n  if (rc_cfg-\u003emax_intra_bitrate_pct) {\n    const int64_t max_rate \u003d\n        (int64_t)rc-\u003eavg_frame_bandwidth * rc_cfg-\u003emax_intra_bitrate_pct / 100;\n    target \u003d AOMMIN(target, max_rate);\n  }\n  if (target \u003e rc-\u003emax_frame_bandwidth) target \u003d rc-\u003emax_frame_bandwidth;\n  return (int)target;\n}\n```\n\n`rc-\u003emax_frame_bandwidth` is an int.",
+      "parentUuid": "2311e852_eb58ab23",
+      "revId": "c4d6ad19ba9c17ec9bf65d464f1eb094ced0cd40",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
