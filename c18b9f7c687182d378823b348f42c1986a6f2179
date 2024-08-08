@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d85951e2_b4659b1e",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 297,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-08-08T18:51:38Z",
+      "side": 0,
+      "message": "The local variable `bits` was added in https://chromium-review.googlesource.com/c/webm/libvpx/+/5719926 to avoid repeating the calculation in the `VPXMIN` macro expansion. The `saturate_cast_double_to_int()` inline function makes the local variable unnecessary.\n\nSimilarly for the other changes in this CL.",
+      "revId": "c18b9f7c687182d378823b348f42c1986a6f2179",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
