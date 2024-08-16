@@ -1194,6 +1194,19 @@ void vp9_temporal_filter_iterate_row_c(VP9_COMP *cpi, ThreadData *td,
 #endif  // CONFIG_VP9_HIGHBITDEPTH
     mb_y_offset += BW;
     mb_uv_offset += mb_uv_width;
+
+    if (arnr_filter_data->frame_diff.compute_diff) {
+      const int source_y_stride = f->y_stride;
+      const int filter_y_stride = dst->y_stride;
+      const int source_offset = mb_row * BH * source_y_stride + mb_col * BW;
+      const int filter_offset = mb_row * BH * filter_y_stride + mb_col * BW;
+      unsigned int sse = 0;
+      cpi->fn_ptr[TF_BLOCK].vf(f->y_buffer + source_offset, source_y_stride,
+                               dst->y_buffer + filter_offset, filter_y_stride,
+                               &sse);
+      arnr_filter_data->frame_diff.sum += sse;
+      arnr_filter_data->frame_diff.sse += sse * (int64_t)sse;
+    }
   }
 }
 
@@ -1307,7 +1320,40 @@ static void adjust_arnr_filter(VP9_COMP *cpi, int distance, int group_boost,
   *arnr_strength = strength;
 }
 
-void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
+// Compute number of blocks on either side of the frame.
+static int get_num_blocks(const int frame_length, const int mb_length) {
+  return (frame_length + mb_length - 1) / mb_length;
+}
+
+// Check to decide if we want to use filtered frames.
+static int filtered_frame_check(VP9_COMP *cpi, const FRAME_DIFF *frame_diff,
+                                int frame_height, int frame_width) {
+  int top_index = 0;
+  int bottom_index = 0;
+  const int qindex = vp9_rc_pick_q_and_bounds(cpi, &bottom_index, &top_index);
+  const int mb_rows = get_num_blocks(frame_height, BH);
+  const int mb_cols = get_num_blocks(frame_width, BW);
+  const int num_mbs = VPXMAX(1, mb_rows * mb_cols);
+  const float mean = (float)frame_diff->sum / num_mbs;
+  const float std = (float)sqrt((float)frame_diff->sse / num_mbs - mean * mean);
+
+  const VP9_COMMON *const cm = &cpi->common;
+  // Both HBD and LBD cases are handled here.
+#if CONFIG_VP9_HIGHBITDEPTH
+  const int ac_q =
+      vp9_ac_quant(qindex, 0, cm->bit_depth) >> (cpi->td.mb.e_mbd.bd - 8);
+#else
+  const int ac_q = vp9_ac_quant(qindex, 0, cm->bit_depth);
+#endif  // CONFIG_VP9_HIGHBITDEPTH
+
+  const float threshold = 6.0f * ac_q * ac_q;
+  const int is_diff_small = VPXMAX(mean, std) < threshold;
+  if (is_diff_small) return 1;
+
+  return 0;
+}
+
+int vp9_temporal_filter(VP9_COMP *cpi, int distance) {
   VP9_COMMON *const cm = &cpi->common;
   RATE_CONTROL *const rc = &cpi->rc;
   MACROBLOCKD *const xd = &cpi->td.mb.e_mbd;
@@ -1332,6 +1378,10 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
   arnr_filter_data->frame_count = frames_to_blur;
   arnr_filter_data->alt_ref_index = frames_to_blur_backward;
   arnr_filter_data->dst = &cpi->tf_buffer;
+  arnr_filter_data->frame_diff.sum = 0;
+  arnr_filter_data->frame_diff.sse = 0;
+  arnr_filter_data->frame_diff.compute_diff =
+      (distance == -1 && frames_to_blur > 1) ? 1 : 0;
 
   // Setup frame pointers, NULL indicates frame not included in filter.
   for (frame = 0; frame < frames_to_blur; ++frame) {
@@ -1414,4 +1464,13 @@ void vp9_temporal_filter(VP9_COMP *cpi, int distance) {
     temporal_filter_iterate_c(cpi);
   else
     vp9_temporal_filter_row_mt(cpi);
+
+  int use_filtered_frame = 0;
+  if (arnr_filter_data->frame_diff.compute_diff) {
+    use_filtered_frame =
+        filtered_frame_check(cpi, &arnr_filter_data->frame_diff,
+                             arnr_filter_data->dst->y_crop_height,
+                             arnr_filter_data->dst->y_crop_width);
+  }
+  return use_filtered_frame;
 }
