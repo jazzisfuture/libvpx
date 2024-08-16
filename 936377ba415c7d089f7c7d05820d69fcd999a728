@@ -87,6 +87,30 @@
       },
       "revId": "936377ba415c7d089f7c7d05820d69fcd999a728",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50e2d02b_67ae593d",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4510,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-08-16T20:40:46Z",
+      "side": 1,
+      "message": "Yeah indeed. But I agree that this is less of an issue in q mode since we don\u0027t use the actual coded bits. But nevertheless doesn\u0027t hurt to just use the provided qp from rc lib.",
+      "parentUuid": "4ed332ca_2f0fb007",
+      "range": {
+        "startLine": 4510,
+        "startChar": 4,
+        "endLine": 4510,
+        "endChar": 68
+      },
+      "revId": "936377ba415c7d089f7c7d05820d69fcd999a728",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
