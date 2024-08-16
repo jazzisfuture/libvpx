@@ -16,6 +16,29 @@
       "message": "The refactoring follows go/tott/705",
       "revId": "936377ba415c7d089f7c7d05820d69fcd999a728",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "20050877_fc619c25",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4510,
+      "author": {
+        "id": 1467232
+      },
+      "writtenOn": "2024-08-16T19:50:01Z",
+      "side": 1,
+      "message": "Even in q mode, rc lib still passes in frame qps for the tpl pass. Maybe we should respect that too?",
+      "range": {
+        "startLine": 4510,
+        "startChar": 4,
+        "endLine": 4510,
+        "endChar": 68
+      },
+      "revId": "936377ba415c7d089f7c7d05820d69fcd999a728",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
