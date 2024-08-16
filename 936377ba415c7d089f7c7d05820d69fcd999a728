@@ -39,6 +39,30 @@
       },
       "revId": "936377ba415c7d089f7c7d05820d69fcd999a728",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d36d7f0_286e1444",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4510,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-08-16T20:25:34Z",
+      "side": 1,
+      "message": "In Q mode, that qp is used to override in TPL here:\n\nhttps://chromium.googlesource.com/webm/libvpx/+/refs/heads/main/vp9/encoder/vp9_tpl_model.c#1738\n\nSince we only need TPL stats from TPL pass in Qmode, the qp used for actual encoding doesn\u0027t matter?",
+      "parentUuid": "20050877_fc619c25",
+      "range": {
+        "startLine": 4510,
+        "startChar": 4,
+        "endLine": 4510,
+        "endChar": 68
+      },
+      "revId": "936377ba415c7d089f7c7d05820d69fcd999a728",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
