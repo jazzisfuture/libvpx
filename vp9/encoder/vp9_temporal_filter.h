@@ -33,7 +33,7 @@ static const MV kZeroMv = { 0, 0 };
 #define SUB_BW 16
 
 void vp9_temporal_filter_init(void);
-void vp9_temporal_filter(VP9_COMP *cpi, int distance);
+void vp9_temporal_filter(VP9_COMP *cpi, int distance, YV12_BUFFER_CONFIG *dst);
 
 void vp9_temporal_filter_iterate_row_c(VP9_COMP *cpi, ThreadData *td,
                                        int mb_row, int mb_col_start,
