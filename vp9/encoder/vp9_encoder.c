@@ -4499,6 +4499,24 @@ static void rq_model_update(const RATE_QINDEX_HISTORY *rq_history,
 }
 #endif  // CONFIG_RATE_CTRL
 
+// Returns if we should override the QP for encoding with external rate control.
+static INLINE int override_encode_qp(const EXT_RATECTRL *ratectrl,
+                                     enum vpx_rc_mode rc_mode,
+                                     int tpl_with_external_rc) {
+  if (!ratectrl->ready) return 0;
+  if ((ratectrl->funcs.rc_type & VPX_RC_QP) == 0) return 0;
+  if (ratectrl->funcs.get_encodeframe_decision == NULL) return 0;
+  if (rc_mode == VPX_Q) {
+    // In TPL pass in Q mode, we don't override the QP for encoding.
+    return !tpl_with_external_rc;
+  } else if (rc_mode == VPX_VBR) {
+    // In VBR mode, both TPL passes and final encoding pass need encoding QP
+    // to be overridden.
+    return 1;
+  }
+  return 0;
+}
+
 static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest,
                                     size_t dest_size
 #if CONFIG_RATE_CTRL
@@ -4638,9 +4656,8 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest,
     }
 #endif  // CONFIG_RATE_CTRL
     const GF_GROUP *gf_group = &cpi->twopass.gf_group;
-    if (cpi->ext_ratectrl.ready && !cpi->tpl_with_external_rc &&
-        (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_QP) != 0 &&
-        cpi->ext_ratectrl.funcs.get_encodeframe_decision != NULL) {
+    if (override_encode_qp(&cpi->ext_ratectrl, oxcf->rc_mode,
+                           cpi->tpl_with_external_rc)) {
       vpx_codec_err_t codec_status;
       vpx_rc_encodeframe_decision_t encode_frame_decision;
       codec_status = vp9_extrc_get_encodeframe_decision(
