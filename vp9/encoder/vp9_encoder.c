@@ -6606,9 +6606,11 @@ int vp9_get_compressed_data(VP9_COMP *cpi, unsigned int *frame_flags,
   if (is_key_temporal_filter_enabled && source != NULL) {
     // Produce the filtered Key frame. Set distance to -1 since the key frame
     // is already popped out.
-    vp9_temporal_filter(cpi, -1);
-    vpx_extend_frame_borders(&cpi->tf_buffer);
-    force_src_buffer = &cpi->tf_buffer;
+    const int use_filtered_frame = vp9_temporal_filter(cpi, -1);
+    if (use_filtered_frame) {
+      vpx_extend_frame_borders(&cpi->tf_buffer);
+      force_src_buffer = &cpi->tf_buffer;
+    }
     cpi->un_scaled_source = cpi->Source =
         force_src_buffer ? force_src_buffer : &source->img;
   }

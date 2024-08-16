@@ -497,6 +497,14 @@ typedef struct {
   double max_cpb_size;  // in bits
 } LevelConstraint;
 
+// Sum and SSE source vs filtered frame difference returned by
+// temporal filter.
+typedef struct {
+  int64_t sum;
+  int64_t sse;
+  int8_t compute_diff;
+} FRAME_DIFF;
+
 typedef struct ARNRFilterData {
   YV12_BUFFER_CONFIG *frames[MAX_LAG_BUFFERS];
   int strength;
@@ -504,6 +512,7 @@ typedef struct ARNRFilterData {
   int alt_ref_index;
   struct scale_factors sf;
   YV12_BUFFER_CONFIG *dst;
+  FRAME_DIFF frame_diff;
 } ARNRFilterData;
 
 typedef struct EncFrameBuf {
