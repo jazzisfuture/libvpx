@@ -111,6 +111,30 @@
       },
       "revId": "936377ba415c7d089f7c7d05820d69fcd999a728",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0a189053_81a7fc27",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4510,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-08-16T20:51:51Z",
+      "side": 1,
+      "message": "I see. Thanks!\n\nI think the flag `tpl_with_external_rc` can be removed. The original purpose of this flag is to preserve L2E behavior. Since L2E has been removed internally, we can remove this flag and its codec control.\n\nI\u0027ll clean it up in the next CL.",
+      "parentUuid": "50e2d02b_67ae593d",
+      "range": {
+        "startLine": 4510,
+        "startChar": 4,
+        "endLine": 4510,
+        "endChar": 68
+      },
+      "revId": "936377ba415c7d089f7c7d05820d69fcd999a728",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
