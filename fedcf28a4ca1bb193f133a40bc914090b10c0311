@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9e2e9d53_9ca7a291",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-08-17T06:01:00Z",
+      "side": 1,
+      "message": "This probably needs to have an encoder control to turn it on and off, and off by default initially for visual quality reasons.",
+      "revId": "fedcf28a4ca1bb193f133a40bc914090b10c0311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
