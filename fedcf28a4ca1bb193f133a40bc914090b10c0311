@@ -16,6 +16,24 @@
       "message": "This probably needs to have an encoder control to turn it on and off, and off by default initially for visual quality reasons.",
       "revId": "fedcf28a4ca1bb193f133a40bc914090b10c0311",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2cda9ab0_5bc6a732",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 8
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2024-08-18T15:34:36Z",
+      "side": 1,
+      "message": "Yes, added the control and set if off for now. It is good to test it visually before turning it on. The positive sign is that ssim \u0026 vmaf both get good coding gains here.",
+      "parentUuid": "9e2e9d53_9ca7a291",
+      "revId": "fedcf28a4ca1bb193f133a40bc914090b10c0311",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
