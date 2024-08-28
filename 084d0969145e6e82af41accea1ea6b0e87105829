@@ -16,6 +16,24 @@
       "message": "Nit: Since `VPXMIN` is a macro, this complicated expression will appear twice in the macro expansion. I suggest we save the result of this expression in a local variable so that we don\u0027t depend on subexpression elimination performed by the compiler. For example,\n\n```\n  const int64_t sb64_target_rate \u003d ((int64_t)rc-\u003ethis_frame_target * 64 * 64) / (cm-\u003ewidth * cm-\u003eheight);\n  rc-\u003esb64_target_rate \u003d (int)VPXMIN(sb64_target_rate, INT_MAX);\n```\n\nNote that the outermost parentheses around the expression have been removed.",
       "revId": "084d0969145e6e82af41accea1ea6b0e87105829",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d20a2524_eb523f75",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 1724,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-08-28T01:26:46Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c17fb6a5_c0b384a8",
+      "revId": "084d0969145e6e82af41accea1ea6b0e87105829",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
