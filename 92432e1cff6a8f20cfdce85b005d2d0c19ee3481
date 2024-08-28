@@ -16,6 +16,24 @@
       "message": "This should be `/` or `:`",
       "revId": "92432e1cff6a8f20cfdce85b005d2d0c19ee3481",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "440deb9a_da4355a6",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-08-28T02:44:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "ab0fb1b5_a16df6c8",
+      "revId": "92432e1cff6a8f20cfdce85b005d2d0c19ee3481",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
