@@ -648,7 +648,7 @@ process_toolchain() {
         enabled werror && check_add_cflags -Werror
         check_add_cflags -Wall
         check_add_cflags -Wdisabled-optimization
-        check_add_cflags -Wextra-semi
+        check_add_cxxflags -Wextra-semi
         check_add_cflags -Wextra-semi-stmt
         check_add_cflags -Wfloat-conversion
         check_add_cflags -Wformat=2
@@ -657,9 +657,9 @@ process_toolchain() {
         check_add_cflags -Wtype-limits
         check_add_cflags -Wcast-qual
         check_add_cflags -Wvla
-        check_add_cflags -Wimplicit-function-declaration
+        add_cflags_only -Wimplicit-function-declaration
         check_add_cflags -Wmissing-declarations
-        check_add_cflags -Wmissing-prototypes
+        add_cflags_only -Wmissing-prototypes
         check_add_cflags -Wshadow
         check_add_cflags -Wstrict-prototypes
         check_add_cflags -Wuninitialized
