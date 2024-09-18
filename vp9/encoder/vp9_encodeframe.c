@@ -1027,8 +1027,6 @@ static int scale_partitioning_svc(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
   if (subsize_high < BLOCK_8X8) {
     set_block_size(cpi, x, xd, mi_row_high, mi_col_high, bsize_high);
   } else {
-    const int bsl = b_width_log2_lookup[bsize];
-    const int bs = (1 << bsl) >> 2;
     switch (partition_high) {
       case PARTITION_NONE:
         set_block_size(cpi, x, xd, mi_row_high, mi_col_high, bsize_high);
@@ -1050,16 +1048,18 @@ static int scale_partitioning_svc(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
         if (scale_partitioning_svc(cpi, x, xd, subsize_high, mi_row, mi_col,
                                    mi_row_high, mi_col_high))
           return 1;
-        if (scale_partitioning_svc(cpi, x, xd, subsize_high, mi_row + (bs >> 1),
-                                   mi_col, mi_row_high + bs_high, mi_col_high))
+        if (scale_partitioning_svc(cpi, x, xd, subsize_high,
+                                   mi_row + (bs_high >> 1), mi_col,
+                                   mi_row_high + bs_high, mi_col_high))
           return 1;
         if (scale_partitioning_svc(cpi, x, xd, subsize_high, mi_row,
-                                   mi_col + (bs >> 1), mi_row_high,
+                                   mi_col + (bs_high >> 1), mi_row_high,
                                    mi_col_high + bs_high))
           return 1;
-        if (scale_partitioning_svc(cpi, x, xd, subsize_high, mi_row + (bs >> 1),
-                                   mi_col + (bs >> 1), mi_row_high + bs_high,
-                                   mi_col_high + bs_high))
+        if (scale_partitioning_svc(
+                cpi, x, xd, subsize_high, mi_row + (bs_high >> 1),
+                mi_col + (bs_high >> 1), mi_row_high + bs_high,
+                mi_col_high + bs_high))
           return 1;
         break;
     }
