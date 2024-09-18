@@ -34,6 +34,24 @@
       "parentUuid": "d6ae8410_4e72b1bd",
       "revId": "ef83520d83ac385c7126677bffb482dcfff260a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "dc53cc30_a2deaf63",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1061,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-09-18T21:19:35Z",
+      "side": 1,
+      "message": "This pattern is also in libaom:\n\n```\n./av1/encoder/svc_layercontext.c:    if (avg_frame_bandwidth \u003e (3 * prev_avg_frame_bandwidth \u003e\u003e 1) ||\n./av1/encoder/rc_utils.h:      if (rc-\u003eavg_frame_bandwidth \u003e (3 * rc-\u003eprev_avg_frame_bandwidth \u003e\u003e 1) ||\n```",
+      "parentUuid": "66e1be6b_97b983cd",
+      "revId": "ef83520d83ac385c7126677bffb482dcfff260a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
