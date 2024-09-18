@@ -16,6 +16,24 @@
       "message": "I suggest searching for this pattern and fix all occurrences. Please run these two commands:\n\n```\nfind . -name \"*\" -a -type f  | xargs grep \" \u003e (3 \\*\"\nfind . -name \"*\" -a -type f  | xargs grep \" \u003e 3 \\*\"\n```",
       "revId": "ef83520d83ac385c7126677bffb482dcfff260a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "66e1be6b_97b983cd",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1061,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-09-18T21:17:50Z",
+      "side": 1,
+      "message": "I found a copy in vp9/encoder/vp9_encoder.c that needs the same fix:\n\n```\nvoid vp9_check_reset_rc_flag(VP9_COMP *cpi) {\n  ...\n    } else {\n      if (rc-\u003eavg_frame_bandwidth \u003e (3 * rc-\u003elast_avg_frame_bandwidth \u003e\u003e 1) ||\n          rc-\u003eavg_frame_bandwidth \u003c (rc-\u003elast_avg_frame_bandwidth \u003e\u003e 1)) {\n  ...\n}\n```\n\nNote: Not sure if the following code in vp9/encoder/vp9_svc_layercontext.c needs fixing:\n\n```\nif (scaling_factor_num \u003e (3 * scaling_factor_den) \u003e\u003e 2)\n```",
+      "parentUuid": "d6ae8410_4e72b1bd",
+      "revId": "ef83520d83ac385c7126677bffb482dcfff260a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
