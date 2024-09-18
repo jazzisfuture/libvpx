@@ -52,6 +52,24 @@
       "parentUuid": "66e1be6b_97b983cd",
       "revId": "ef83520d83ac385c7126677bffb482dcfff260a6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ce3e232a_215d5030",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1061,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-09-18T22:07:07Z",
+      "side": 1,
+      "message": "Done.",
+      "parentUuid": "dc53cc30_a2deaf63",
+      "revId": "ef83520d83ac385c7126677bffb482dcfff260a6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
