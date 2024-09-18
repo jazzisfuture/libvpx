@@ -16,6 +16,23 @@
       "message": "Thanks for the patch. `clang` may accept them in either case [1], but this is fine if gcc isn\u0027t rejecting them with `-Werror`. What version of gcc are you using?\n\n[1]: https://aomedia.googlesource.com/aom/+/a060e18065152ee450b35e0b3566195a61caf43e/build/cmake/aom_configure.cmake#347",
       "revId": "e120c427a3ef3c8fd41a4d92f25820763dd4e8b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "508c0e87_9c563a4c",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-09-18T19:18:34Z",
+      "side": 1,
+      "message": "Jerome, I forgot what repo this was on. There\u0027s no 2 reviewer requirement in place here yet.",
+      "revId": "e120c427a3ef3c8fd41a4d92f25820763dd4e8b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
