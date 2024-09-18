@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "984448b4_055bb59c",
+        "filename": "vpx_ports/aarch64_cpudetect.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-09-18T15:28:39Z",
+      "side": 1,
+      "message": "Should we convert the description in the commit message to a comment for the new code like this comment?",
+      "revId": "9be2409ac1848158b178e16d7afa55c97c79cfaf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
