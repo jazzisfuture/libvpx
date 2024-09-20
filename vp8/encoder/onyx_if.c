@@ -4563,7 +4563,10 @@ static void encode_frame_to_data_rate(VP8_COMP *cpi, size_t *size,
       }
 
       lc->total_actual_bits += cpi->projected_frame_size;
-      lc->total_target_vs_actual += bits_off_for_this_layer;
+      if (lc->total_target_vs_actual >= INT_MAX - bits_off_for_this_layer)
+        lc->total_target_vs_actual = INT_MAX;
+      else
+        lc->total_target_vs_actual += bits_off_for_this_layer;
       lc->buffer_level = lc->bits_off_target;
     }
   }
