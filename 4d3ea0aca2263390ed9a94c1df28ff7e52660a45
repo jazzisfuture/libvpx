@@ -86,6 +86,24 @@
       "parentUuid": "50dd27d9_6f1b5ad8",
       "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0855cbb8_0ee7f184",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4566,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-09-20T16:14:47Z",
+      "side": 1,
+      "message": "The test failure shows the clamping fix needs work because `bits_off_for_this_layer` may be negative. Let\u0027s try the `int64_t` fix.",
+      "parentUuid": "06bea53a_1b3ee892",
+      "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
