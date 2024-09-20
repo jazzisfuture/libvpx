@@ -1,6 +1,23 @@
 {
   "comments": [
     {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c467105_f8ccff43",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-09-20T16:12:10Z",
+      "side": 1,
+      "message": "Please remember to update it to the new solution.",
+      "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": false,
       "key": {
         "uuid": "068a6e3e_db671e01",
@@ -49,6 +66,24 @@
       "side": 1,
       "message": "Suggested int64_t above. Which option do you prefer.\n\nPrefer not to remove total_target_vs_actual, could be used for debugging/stats generation.",
       "parentUuid": "06bea53a_1b3ee892",
+      "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0d0bef78_911da1c1",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4566,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-09-20T16:12:10Z",
+      "side": 1,
+      "message": "Then let\u0027s declare it as int64_t, which is already used in VP9. Please change both instances of `total_target_vs_actual` in vp8/encoder/onyx_int.h.\n\nPlease also check if libaom has this code. (It doesn\u0027t seem to.) Thanks!",
+      "parentUuid": "50dd27d9_6f1b5ad8",
       "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
