@@ -33,6 +33,24 @@
       "message": "Nit: Use `\u003e` instead of `\u003e\u003d`\n\nBut I found that `lc-\u003etotal_target_vs_actual` is calculated but never used. Please double check. If that\u0027s the case, we should just delete `lc-\u003etotal_target_vs_actual`.\n\nAnother option is to declare `lc-\u003etotal_target_vs_actual` as `int64_t`, which is the type used in VP9. I suggest searching for \"total_target_vs_actual\" in the libvpx source tree and examining all instances.",
       "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "50dd27d9_6f1b5ad8",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4566,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-09-20T16:08:18Z",
+      "side": 1,
+      "message": "Suggested int64_t above. Which option do you prefer.\n\nPrefer not to remove total_target_vs_actual, could be used for debugging/stats generation.",
+      "parentUuid": "06bea53a_1b3ee892",
+      "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
