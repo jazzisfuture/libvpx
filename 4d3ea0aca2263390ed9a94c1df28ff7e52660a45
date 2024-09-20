@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "068a6e3e_db671e01",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-09-20T15:41:48Z",
+      "side": 1,
+      "message": "Another option is to change the type of total_target_vs_actual int64_t.",
+      "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
