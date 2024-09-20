@@ -104,6 +104,24 @@
       "parentUuid": "06bea53a_1b3ee892",
       "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "897ada3a_76ac3a87",
+        "filename": "vp8/encoder/onyx_if.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 4566,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-09-20T16:26:32Z",
+      "side": 1,
+      "message": "OK, in VP9 we have three fields:\n\n  int64_t total_actual_bits;\n  int64_t total_target_bits;\n  int64_t total_target_vs_actual;\n  \nand rc-\u003etotal_target_vs_actual is always equal to rc-\u003etotal_actual_bits - rc-\u003etotal_target_bits.\n\nIn libaom we only have total_actual_bits and total_target_bits, apparently because total_target_vs_actual is redundant.",
+      "parentUuid": "0855cbb8_0ee7f184",
+      "revId": "4d3ea0aca2263390ed9a94c1df28ff7e52660a45",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
