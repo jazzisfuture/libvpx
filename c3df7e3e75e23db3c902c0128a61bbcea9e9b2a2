@@ -16,6 +16,24 @@
       "message": "This looks good and doesn\u0027t introduce new failures as far as I can tell. I see some issues with some test vectors when not setting `VPX_SIMD_CAPS_MASK` under emulation (so picking up the SVE code). I\u0027ll investigate further and see if any unit tests are affected.",
       "revId": "c3df7e3e75e23db3c902c0128a61bbcea9e9b2a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f38f587f_e2f03611",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-09-23T23:34:43Z",
+      "side": 1,
+      "message": "\u003e This looks good and doesn\u0027t introduce new failures as far as I can tell. I see some issues with some test vectors when not setting `VPX_SIMD_CAPS_MASK` under emulation (so picking up the SVE code). I\u0027ll investigate further and see if any unit tests are affected.\n\n-\u003e https://chromium-review.googlesource.com/c/webm/libvpx/+/5884533",
+      "parentUuid": "5874016d_ea0f74f7",
+      "revId": "c3df7e3e75e23db3c902c0128a61bbcea9e9b2a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
