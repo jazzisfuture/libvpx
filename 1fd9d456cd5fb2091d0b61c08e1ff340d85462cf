@@ -16,6 +16,24 @@
       "message": "The Borg results for good encoding mode are as below\n`\ncpu     Resolution   Instruction Count \n                        Reduction(%)\n 0       LOWRES2           1.42\n 0       MIDRES2           2.15\n 0        HDRES2           2.93\n 0       Average           2.17\n `\n The instruction count reduction specified has been measured using command:\n `$ perf stat -e instructions:u ./vpxenc … `",
       "revId": "1fd9d456cd5fb2091d0b61c08e1ff340d85462cf",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1d1f59ac_6a93b14e",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2024-09-23T18:51:42Z",
+      "side": 1,
+      "message": "Looks good. Thanks for adding the avx2 SIMD functions.",
+      "parentUuid": "913f4479_c25d5fe7",
+      "revId": "1fd9d456cd5fb2091d0b61c08e1ff340d85462cf",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
