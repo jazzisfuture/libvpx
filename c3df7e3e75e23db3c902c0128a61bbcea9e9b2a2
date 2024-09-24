@@ -34,6 +34,24 @@
       "parentUuid": "5874016d_ea0f74f7",
       "revId": "c3df7e3e75e23db3c902c0128a61bbcea9e9b2a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0d250100_2e034030",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1247893
+      },
+      "writtenOn": "2024-09-24T14:13:26Z",
+      "side": 1,
+      "message": "Ok that\u0027s interesting - and thanks for fixing. What test/test suite failed? I\u0027m running ConvolveTest on SVE(2) enabled hardware and got no failures (for a hash prior to the fix.)\n\nAlso, are you able to migrate the per-patch libvpx CI to Axion instances to get full ISA extension test coverage? That CPU has DotProd, I8MM, SVE and SVE2.",
+      "parentUuid": "f38f587f_e2f03611",
+      "revId": "c3df7e3e75e23db3c902c0128a61bbcea9e9b2a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
