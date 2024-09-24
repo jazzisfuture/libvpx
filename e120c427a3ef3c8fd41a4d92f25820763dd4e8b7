@@ -69,6 +69,24 @@
       "parentUuid": "5d1d45ea_59231a52",
       "revId": "e120c427a3ef3c8fd41a4d92f25820763dd4e8b7",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "29e5eded_6a37da22",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-09-24T01:50:38Z",
+      "side": 1,
+      "message": "\u003e Hi James. This is with gcc-14.2.0, it was a warning on previous release too, not sure how far back\n\nDebian\u0027s builds of 12.2.0, 13.2.0 and 14.2.0 don\u0027t show this; `-Werror` causes them to fail the test as expected. I\u0027m curious what your config.log shows for `-Wmissing-prototypes`:\n\n```\ngcc-14 -m64 -DNDEBUG -O3 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE\u003d0 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS\u003d64 -Wall -Wdisabled-optimization -Wfloat-conversion -Wformat\u003d2 -Wpointer-arith -Wtype-limits -Wcast-qual -Wvla -Wimplicit-function-declaration -Werror -Wmissing-declarations -c -o /tmp/vpx-conf-165437-15726.o /tmp/vpx-conf-165437-15726.c\ncheck_cxxflags -Wmissing-prototypes\ncheck_cxx -Werror -Wmissing-prototypes\nBEGIN /tmp/vpx-conf-165437-15726.cc\n     1\tint x;\nEND /tmp/vpx-conf-165437-15726.cc\ng++-14 -m64 -DNDEBUG -O3 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE\u003d0 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS\u003d64 -Wall -Wdisabled-optimization -Wextra-semi -Wfloat-conversion -Wformat\u003d2 -Wpointer-arith -Wtype-limits -Wcast-qual -Wvla -Wmissing-declarations -Werror -Wmissing-prototypes -c -o /tmp/vpx-conf-165437-15726.o /tmp/vpx-conf-165437-15726.cc\ncc1plus: error: command-line option ‘-Wmissing-prototypes’ is valid for C/ObjC but not for C++ [-Werror]\ncc1plus: all warnings being treated as errors\ncheck_cflags -Wmissing-prototypes\ncheck_cc -Werror -Wmissing-prototypes\nBEGIN /tmp/vpx-conf-165437-15726.c\n     1\tint x;\nEND /tmp/vpx-conf-165437-15726.c\ngcc-14 -m64 -DNDEBUG -O3 -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE\u003d0 -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS\u003d64 -Wall -Wdisabled-optimization -Wfloat-conversion -Wformat\u003d2 -Wpointer-arith -Wtype-limits -Wcast-qual -Wvla -Wimplicit-function-declaration -Wmissing-declarations -Werror -Wmissing-prototypes -c -o /tmp/vpx-conf-165437-15726.o /tmp/vpx-conf-165437-15726.c\n```\n\nAre other `CFLAGS` / `CXXFLAGS` set in your environment?",
+      "parentUuid": "84a7ff3e_391c61f8",
+      "revId": "e120c427a3ef3c8fd41a4d92f25820763dd4e8b7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
