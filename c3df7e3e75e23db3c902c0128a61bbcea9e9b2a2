@@ -52,6 +52,24 @@
       "parentUuid": "f38f587f_e2f03611",
       "revId": "c3df7e3e75e23db3c902c0128a61bbcea9e9b2a2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "32031df8_5df65988",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-09-24T18:55:00Z",
+      "side": 1,
+      "message": "\u003e Ok that\u0027s interesting - and thanks for fixing. What test/test suite failed?\n\nIt was some private profile2/3 test vectors. I\u0027ll need to check on the licensing to be able to share the whole set.\n\n\u003e I\u0027m running ConvolveTest on SVE(2) enabled hardware and got no failures (for a hash prior to the fix.)\n\u003e \n\nYou\u0027re right, I ran the tests too when I started looking at this. That means we\u0027re missing coverage for the fallback condition:\n\n```\n  if (x_step_q4 !\u003d 16 || y_step_q4 !\u003d 16) {\n    vpx_highbd_convolve8_avg_c(src, src_stride, dst, dst_stride, filter, x0_q4,\n                               x_step_q4, y0_q4, y_step_q4, w, h, bd);\n    ...\n```\n\n\u003e Also, are you able to migrate the per-patch libvpx CI to Axion instances to get full ISA extension test coverage? That CPU has DotProd, I8MM, SVE and SVE2.\n\nThanks for mentioning it, I hadn\u0027t seen:\nhttps://cloud.google.com/blog/products/compute/introducing-googles-new-arm-based-cpu\nI\u0027ll take a look.",
+      "parentUuid": "0d250100_2e034030",
+      "revId": "c3df7e3e75e23db3c902c0128a61bbcea9e9b2a2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
