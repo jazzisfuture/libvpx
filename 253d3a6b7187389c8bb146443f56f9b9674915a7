@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89bf5815_d780663b",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 631,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-09-25T16:40:52Z",
+      "side": 1,
+      "message": "maybe clarify the comment for these fields in vpx/vpx_tpl.h as well?",
+      "range": {
+        "startLine": 631,
+        "startChar": 27,
+        "endLine": 631,
+        "endChar": 31
+      },
+      "revId": "253d3a6b7187389c8bb146443f56f9b9674915a7",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
