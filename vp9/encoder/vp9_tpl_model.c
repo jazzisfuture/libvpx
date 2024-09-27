@@ -1735,12 +1735,31 @@ void vp9_estimate_tpl_qp_gop(VP9_COMP *cpi) {
         (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_QP) != 0 &&
         cpi->ext_ratectrl.funcs.get_encodeframe_decision != NULL) {
       VP9_COMMON *cm = &cpi->common;
+      if (idx == gop_length) break;
+
       vpx_codec_err_t codec_status;
       const GF_GROUP *gf_group = &cpi->twopass.gf_group;
       vpx_rc_encodeframe_decision_t encode_frame_decision;
-      if (idx == gop_length) break;
+
+      int frame_height_sb = (cm->height + 63) / 64;
+      int frame_width_sb = (cm->width + 63) / 64;
+
+      CHECK_MEM_ERROR(
+          &cm->error, encode_frame_decision.sb_params_list,
+          vpx_calloc(frame_height_sb * frame_width_sb,
+                     sizeof(*encode_frame_decision.sb_params_list)));
+
       codec_status = vp9_extrc_get_encodeframe_decision(
           &cpi->ext_ratectrl, gf_group->index, &encode_frame_decision);
+
+      for (int idx = 0; idx < frame_height_sb * frame_width_sb; ++idx) {
+        cpi->sb_mul_scale[idx] =
+            (int64_t)((encode_frame_decision.sb_params_list[idx].rdmult *
+                       256) /
+                      (encode_frame_decision.rdmult + 1));
+      }
+      vpx_free(encode_frame_decision.sb_params_list);
+
       if (codec_status != VPX_CODEC_OK) {
         vpx_internal_error(&cm->error, codec_status,
                            "vp9_extrc_get_encodeframe_decision() failed");
