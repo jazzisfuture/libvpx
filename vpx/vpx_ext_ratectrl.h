@@ -132,6 +132,11 @@ typedef void *vpx_rc_model_t;
  */
 #define VPX_DEFAULT_RDMULT -1
 
+typedef struct sb_parameters {
+  int q_index;
+  int rdmult;
+} sb_params;
+
 /*!\brief Encode frame decision made by the external rate control model
  *
  * The encoder will receive the decision from the external rate control model
@@ -140,6 +145,7 @@ typedef void *vpx_rc_model_t;
 typedef struct vpx_rc_encodeframe_decision {
   int q_index; /**< Quantizer step index [0..255]*/
   int rdmult;  /**< Frame level Lagrangian multiplier*/
+  sb_params *sb_params_list;
 } vpx_rc_encodeframe_decision_t;
 
 /*!\brief Information for the frame to be encoded.
