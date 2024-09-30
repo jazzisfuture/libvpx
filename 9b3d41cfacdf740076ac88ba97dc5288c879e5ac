@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c5883dc3_f7c39e65",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1604232
+      },
+      "writtenOn": "2024-09-30T09:40:01Z",
+      "side": 1,
+      "message": "The results for good encoding mode by setting `--bit-depth\u003d10 –profile\u003d2`  are as below\n\n`cpu     Resolution   Instruction Count \n                        Reduction(%)\n 0       LOWRES2           0.84\n 0       MIDRES2           1.2\n 0        HDRES2           1.55\n 0       Average           1.19`\n \n The instruction count reduction specified has been measured using command:\n `$ perf stat -e instructions:u ./vpxenc …`",
+      "revId": "9b3d41cfacdf740076ac88ba97dc5288c879e5ac",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
