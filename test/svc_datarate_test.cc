@@ -634,8 +634,8 @@ class DatarateOnePassCbrSvc : public OnePassCbrSvc {
   bool denoiser_enable_layers_;
   int num_resize_up_;
   int num_resize_down_;
-  unsigned int prev_frame_width[VPX_MAX_LAYERS];
-  unsigned int prev_frame_height[VPX_MAX_LAYERS];
+  unsigned int prev_frame_width_[VPX_MAX_LAYERS];
+  unsigned int prev_frame_height_[VPX_MAX_LAYERS];
   bool ksvc_flex_noupd_tlenh_;
 
  private:
