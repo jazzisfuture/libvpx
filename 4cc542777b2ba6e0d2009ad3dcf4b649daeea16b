@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "e2e6f62f_9b2a2f60",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 8
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-10-02T22:18:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "b4fd8c80_20dbc54d",
+      "revId": "4cc542777b2ba6e0d2009ad3dcf4b649daeea16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "4dbef797_4979dd13",
@@ -31,6 +49,30 @@
       "writtenOn": "2024-10-02T20:55:09Z",
       "side": 1,
       "message": "`vpx_calloc` initializes the array to 0, so there\u0027s no need to call `memset`.",
+      "range": {
+        "startLine": 4657,
+        "startChar": 0,
+        "endLine": 4659,
+        "endChar": 33
+      },
+      "revId": "4cc542777b2ba6e0d2009ad3dcf4b649daeea16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2a6b8b16_01985917",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 4659,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-10-02T22:18:16Z",
+      "side": 1,
+      "message": "Somehow this step is needed to avoid a unit test failure that complained uninitialized values.",
+      "parentUuid": "4dbef797_4979dd13",
       "range": {
         "startLine": 4657,
         "startChar": 0,
@@ -64,6 +106,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "45f3e1a8_681b7495",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 5633,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-10-02T22:18:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "2b88d8cd_723de29a",
+      "range": {
+        "startLine": 5633,
+        "startChar": 0,
+        "endLine": 5633,
+        "endChar": 32
+      },
+      "revId": "4cc542777b2ba6e0d2009ad3dcf4b649daeea16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "805655ff_765902c5",
@@ -77,6 +143,30 @@
       "writtenOn": "2024-10-02T20:55:09Z",
       "side": 1,
       "message": "maybe it\u0027s better to move the declaration of `encode_frame_decision` out of the `for` loop, so the memory for `sb_params_list` only need to be allocated and freed once for the GOP, instead of allocating / freeing every frame.",
+      "range": {
+        "startLine": 1750,
+        "startChar": 0,
+        "endLine": 1750,
+        "endChar": 22
+      },
+      "revId": "4cc542777b2ba6e0d2009ad3dcf4b649daeea16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3ab3fa2b_aa3b926a",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 1750,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-10-02T22:18:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "805655ff_765902c5",
       "range": {
         "startLine": 1750,
         "startChar": 0,
