@@ -34,6 +34,24 @@
       "parentUuid": "60a28641_709a9983",
       "revId": "1c0ef97799e9f4cfd2c6b606c4a6cd08b457bfa3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3fe37bd3_d040fded",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1755,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-03T21:59:50Z",
+      "side": 0,
+      "message": "Yes, it\u0027s zero initialized by `vpx_calloc`. `vp9_extrc_get_encodeframe_decision` uses the same memory for each frame so it\u0027ll just overwrite.",
+      "parentUuid": "5b6b02f5_bd98f94b",
+      "revId": "1c0ef97799e9f4cfd2c6b606c4a6cd08b457bfa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
