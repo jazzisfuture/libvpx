@@ -16,6 +16,24 @@
       "message": "The removal of this `memset()` call is not equivalent to the original code, because thid `memset()` call is inside a for loop.\n\nIs it safe to remove `memset()` call?",
       "revId": "1c0ef97799e9f4cfd2c6b606c4a6cd08b457bfa3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b6b02f5_bd98f94b",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 1755,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T21:39:50Z",
+      "side": 0,
+      "message": "My previous comment has typos. Here is the corrected version:\n\nThe removal of this `memset()` call is not equivalent to the original code, because this `memset()` call is inside a for loop.\n\nIs it safe to remove this `memset()` call?",
+      "parentUuid": "60a28641_709a9983",
+      "revId": "1c0ef97799e9f4cfd2c6b606c4a6cd08b457bfa3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
