@@ -168,13 +168,13 @@ static int extrc_get_frame_type(FRAME_UPDATE_TYPE update_type) {
 }
 
 vpx_codec_err_t vp9_extrc_get_encodeframe_decision(
-    EXT_RATECTRL *ext_ratectrl, int gop_index,
+    EXT_RATECTRL *ext_ratectrl, int gop_index, int num_sb,
     vpx_rc_encodeframe_decision_t *encode_frame_decision) {
   assert(ext_ratectrl != NULL);
   assert(ext_ratectrl->ready && (ext_ratectrl->funcs.rc_type & VPX_RC_QP) != 0);
 
   vpx_rc_status_t rc_status = ext_ratectrl->funcs.get_encodeframe_decision(
-      ext_ratectrl->model, gop_index, encode_frame_decision);
+      ext_ratectrl->model, gop_index, num_sb, encode_frame_decision);
   if (rc_status == VPX_RC_ERROR) {
     return VPX_CODEC_ERROR;
   }
