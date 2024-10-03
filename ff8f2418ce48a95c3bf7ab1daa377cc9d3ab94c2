@@ -26,6 +26,30 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "f709b2fb_b466c2f7",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-10-03T21:12:27Z",
+      "side": 1,
+      "message": "I tested this only without the for loop below. The valgrind warnings persisted.\n\nThe sb_params_list below will also affect the rdmult on a per sb basis, shown in the valgrind.",
+      "parentUuid": "001e3a31_18ad31cd",
+      "range": {
+        "startLine": 178,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 60
+      },
+      "revId": "ff8f2418ce48a95c3bf7ab1daa377cc9d3ab94c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "feee9181_c3cbadbc",
         "filename": "vpx/vpx_ext_ratectrl.h",
         "patchSetId": 1
@@ -37,6 +61,24 @@
       "writtenOn": "2024-10-03T19:54:40Z",
       "side": 1,
       "message": "I suggest adding `int num_sb` as a new field to this struct. This way, the array `sb_params_list` and the array size `num_sb` are together.",
+      "revId": "ff8f2418ce48a95c3bf7ab1daa377cc9d3ab94c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d59e0782_121838a1",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1001914
+      },
+      "writtenOn": "2024-10-03T21:12:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "feee9181_c3cbadbc",
       "revId": "ff8f2418ce48a95c3bf7ab1daa377cc9d3ab94c2",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
