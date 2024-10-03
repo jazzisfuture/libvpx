@@ -1736,9 +1736,10 @@ void vp9_estimate_tpl_qp_gop(VP9_COMP *cpi) {
   const GF_GROUP *gf_group = &cpi->twopass.gf_group;
   vpx_rc_encodeframe_decision_t encode_frame_decision;
 
-  CHECK_MEM_ERROR(&cm->error, encode_frame_decision.sb_params_list,
-                  vpx_calloc(frame_height_sb * frame_width_sb,
-                             sizeof(*encode_frame_decision.sb_params_list)));
+  CHECK_MEM_ERROR(
+      &cm->error, encode_frame_decision.sb_params_list,
+      (sb_params *)vpx_calloc(frame_height_sb * frame_width_sb,
+                              sizeof(*encode_frame_decision.sb_params_list)));
 
   for (idx = gf_index; idx <= gop_length; ++idx) {
     TplDepFrame *tpl_frame = &cpi->tpl_stats[idx];
@@ -1750,10 +1751,6 @@ void vp9_estimate_tpl_qp_gop(VP9_COMP *cpi) {
         (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_QP) != 0 &&
         cpi->ext_ratectrl.funcs.get_encodeframe_decision != NULL) {
       if (idx == gop_length) break;
-
-      memset(encode_frame_decision.sb_params_list, 0,
-             sizeof(*encode_frame_decision.sb_params_list) * frame_height_sb *
-                 frame_width_sb);
 
       codec_status = vp9_extrc_get_encodeframe_decision(
           &cpi->ext_ratectrl, gf_group->index, &encode_frame_decision);
