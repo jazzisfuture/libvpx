@@ -16,6 +16,57 @@
       "message": "Jingning: Please see the nightly valgrind test failure:\nhttps://build.webmproject.org/jenkins/job/libvpx__unit_tests-valgrind/1941/",
       "revId": "67a45fc8dd32fe9ce0fae2d154006b7d39f78439",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7b392f4d_defa8979",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 4666,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T20:04:07Z",
+      "side": 1,
+      "message": "Note the position  of the `int64_t` cast here. This is related to my comment on the Coverity defect.",
+      "revId": "67a45fc8dd32fe9ce0fae2d154006b7d39f78439",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "c294710d_15178722",
+        "filename": "vp9/encoder/vp9_encoder.h",
+        "patchSetId": 9
+      },
+      "lineNbr": 806,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T20:04:07Z",
+      "side": 1,
+      "message": "Please store the array size in a new field, or document what the array size is.\n\nBased on the code in\n\n```\nstatic void init_sb_mul_scale_buffer(VP9_COMP *cpi) {\n  VP9_COMMON *cm \u003d \u0026cpi-\u003ecommon;\n\n  if (cpi-\u003emb_wiener_var_rows \u003e\u003d cm-\u003emb_rows \u0026\u0026\n      cpi-\u003emb_wiener_var_cols \u003e\u003d cm-\u003emb_cols)\n    return;\n\n  vpx_free(cpi-\u003esb_mul_scale);\n  cpi-\u003esb_mul_scale \u003d NULL;\n\n  CHECK_MEM_ERROR(\n      \u0026cm-\u003eerror, cpi-\u003esb_mul_scale,\n      vpx_calloc(cm-\u003emb_rows * cm-\u003emb_cols, sizeof(*cpi-\u003esb_mul_scale)));\n  cpi-\u003emb_wiener_var_rows \u003d cm-\u003emb_rows;\n  cpi-\u003emb_wiener_var_cols \u003d cm-\u003emb_cols;\n}\n```\n\nit seems that the array size is `mb_wiener_var_rows * mb_wiener_var_cols`. So we just need to document that.",
+      "revId": "67a45fc8dd32fe9ce0fae2d154006b7d39f78439",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "637045b8_6a374082",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 1764,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T20:04:07Z",
+      "side": 1,
+      "message": "There is a Coverity defect in line 1763:\n\n```\n\u003e\u003e\u003e     CID 1600060:  Integer handling issues  (OVERFLOW_BEFORE_WIDEN)\n\u003e\u003e\u003e     Potentially overflowing expression \"encode_frame_decision.sb_params_list[i].rdmult * 256\" with type \"int\" (32 bits, signed) is evaluated using 32-bit arithmetic, and then used in a context that expects an expression of type \"int64_t\" (64 bits, signed).\n```\n\nI think we should move the `int64_t` cast inside the parentheses. See vp9/encoder/vp9_encoder.c:4666.",
+      "revId": "67a45fc8dd32fe9ce0fae2d154006b7d39f78439",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
