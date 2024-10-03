@@ -4649,19 +4649,18 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest,
       int sb_size = num_8x8_blocks_wide_lookup[BLOCK_64X64] * MI_SIZE;
       int frame_height_sb = (cm->height + sb_size - 1) / sb_size;
       int frame_width_sb = (cm->width + sb_size - 1) / sb_size;
-      CHECK_MEM_ERROR(
-          &cm->error, encode_frame_decision.sb_params_list,
-          vpx_calloc(frame_height_sb * frame_width_sb,
-                     sizeof(*encode_frame_decision.sb_params_list)));
-
-      memset(encode_frame_decision.sb_params_list, 0,
-             sizeof(*encode_frame_decision.sb_params_list) * frame_height_sb *
-                 frame_width_sb);
+      CHECK_MEM_ERROR(&cm->error, encode_frame_decision.sb_params_list,
+                      (sb_params *)vpx_calloc(
+                          frame_height_sb * frame_width_sb,
+                          sizeof(*encode_frame_decision.sb_params_list)));
 
       codec_status = vp9_extrc_get_encodeframe_decision(
           &cpi->ext_ratectrl, gf_group->index, &encode_frame_decision);
 
       for (int idx = 0; idx < frame_height_sb * frame_width_sb; ++idx) {
+        fprintf(stderr, "%d %d\n",
+                encode_frame_decision.sb_params_list[idx].rdmult,
+                encode_frame_decision.rdmult);
         cpi->sb_mul_scale[idx] =
             (((int64_t)encode_frame_decision.sb_params_list[idx].rdmult * 256) /
              (encode_frame_decision.rdmult + 1));
