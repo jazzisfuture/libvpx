@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "0af04955_8553af89",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T22:50:38Z",
+      "side": 1,
+      "message": "Based on my analysis, I think this function should set `encode_frame_decision.sb_params_list[i].rdmult` to a meaningful value.",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4104e171_d668ff7e",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1763,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T22:50:38Z",
+      "side": 1,
+      "message": "Note that `encode_frame_decision.sb_params_list[i].rdmult` is used here. If `vp9_extrc_get_encodeframe_decision()` does not set `encode_frame_decision.sb_params_list[i].rdmult`, `encode_frame_decision.sb_params_list[i].rdmult` will be equal to 0, and `cpi-\u003esb_mul_scale[i]` will also be set to 0. Is that the right outcome?",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "3f176542_db3b5e97",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T22:50:38Z",
+      "side": 1,
+      "message": "The `q_index` field is initialized to 0 and then never used. Should we remove the `q_index` field?",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "cc85f4ef_2b29771f",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T22:50:38Z",
+      "side": 1,
+      "message": "affect \u003d\u003e effect",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ec2725ab_44f39d2d",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T22:50:38Z",
+      "side": 1,
+      "message": "I think it is better for `vp9_extrc_get_encodeframe_decision()` to set the `sb_params_list` array to meaningful values, because the caller of `vp9_extrc_get_encodeframe_decision()` will use `encode_frame_decision.sb_params_list[i].rdmult`.",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
