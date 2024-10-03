@@ -34,6 +34,24 @@
       "parentUuid": "9eb64d40_ff596aca",
       "revId": "3021715686a33eebb709069428f92dbec1d1cea1",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "21f2bd07_3dc95008",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-03T22:00:12Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "c05c3746_4b92412e",
+      "revId": "3021715686a33eebb709069428f92dbec1d1cea1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
