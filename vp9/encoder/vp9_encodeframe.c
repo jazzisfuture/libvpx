@@ -994,17 +994,20 @@ static int scale_partitioning_svc(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
       mi_col >= svc->mi_cols[svc->spatial_layer_id - 1])
     return 0;
 
+  // Do variance partitioning near frame boundary.
+  if (!has_rows || !has_cols) return 1;
+
   // Find corresponding (mi_col/mi_row) block down-scaled by 2x2.
   start_pos = mi_row * (svc->mi_stride[svc->spatial_layer_id - 1]) + mi_col;
   bsize_low = prev_part[start_pos];
-  // The block size is too big for boundaries. Do variance based partitioning.
-  if ((!has_rows || !has_cols) && bsize_low > BLOCK_16X16) return 1;
 
   // For reference frames: return 1 (do variance-based partitioning) if the
   // superblock is not low source sad and lower-resoln bsize is below 32x32.
-  if (!cpi->svc.non_reference_frame && !x->skip_low_source_sad &&
-      bsize_low < BLOCK_32X32)
+  // Otherwise always return 1 for bsize_low < 16X16.
+  if ((!cpi->svc.non_reference_frame && !x->skip_low_source_sad &&
+       bsize_low < BLOCK_32X32) || bsize_low < BLOCK_16X16) {
     return 1;
+  }
 
   // Scale up block size by 2x2. Force 64x64 for size larger than 32x32.
   if (bsize_low < BLOCK_32X32) {
