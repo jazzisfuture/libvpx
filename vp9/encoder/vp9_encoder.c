@@ -4654,10 +4654,6 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest,
           vpx_calloc(frame_height_sb * frame_width_sb,
                      sizeof(*encode_frame_decision.sb_params_list)));
 
-      memset(encode_frame_decision.sb_params_list, 0,
-             sizeof(*encode_frame_decision.sb_params_list) * frame_height_sb *
-                 frame_width_sb);
-
       codec_status = vp9_extrc_get_encodeframe_decision(
           &cpi->ext_ratectrl, gf_group->index, &encode_frame_decision);
 

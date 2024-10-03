@@ -1751,10 +1751,6 @@ void vp9_estimate_tpl_qp_gop(VP9_COMP *cpi) {
         cpi->ext_ratectrl.funcs.get_encodeframe_decision != NULL) {
       if (idx == gop_length) break;
 
-      memset(encode_frame_decision.sb_params_list, 0,
-             sizeof(*encode_frame_decision.sb_params_list) * frame_height_sb *
-                 frame_width_sb);
-
       codec_status = vp9_extrc_get_encodeframe_decision(
           &cpi->ext_ratectrl, gf_group->index, &encode_frame_decision);
 
