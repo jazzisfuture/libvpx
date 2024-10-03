@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "9eb64d40_ff596aca",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T21:37:33Z",
+      "side": 1,
+      "message": "It is not clear why encode_frame_decision.sb_params_list just needs to be zero-initialized. It would be good to add a comment to explain that.",
+      "revId": "3021715686a33eebb709069428f92dbec1d1cea1",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
