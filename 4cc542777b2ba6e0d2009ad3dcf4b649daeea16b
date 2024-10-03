@@ -83,6 +83,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "4647e5ab_e49915c0",
+        "filename": "vp9/encoder/vp9_encoder.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 4659,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-03T00:27:05Z",
+      "side": 1,
+      "message": "Acknowledged\n\nMaybe try adding `(sb_params *)` in front of `vpx_calloc` to cast to the right type. I can\u0027t reproduce the unit test failure. If it doesn\u0027t work, we can investigate later.",
+      "parentUuid": "2a6b8b16_01985917",
+      "range": {
+        "startLine": 4657,
+        "startChar": 0,
+        "endLine": 4659,
+        "endChar": 33
+      },
+      "revId": "4cc542777b2ba6e0d2009ad3dcf4b649daeea16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2b88d8cd_723de29a",
@@ -190,6 +214,30 @@
       "writtenOn": "2024-10-02T20:55:09Z",
       "side": 1,
       "message": "same here, `vpx_calloc` already initializes the array to 0",
+      "range": {
+        "startLine": 1755,
+        "startChar": 6,
+        "endLine": 1755,
+        "endChar": 12
+      },
+      "revId": "4cc542777b2ba6e0d2009ad3dcf4b649daeea16b",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ab8f03d2_ab27360f",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 8
+      },
+      "lineNbr": 1755,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-03T00:27:05Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "f573b0d8_5bdd8df6",
       "range": {
         "startLine": 1755,
         "startChar": 6,
