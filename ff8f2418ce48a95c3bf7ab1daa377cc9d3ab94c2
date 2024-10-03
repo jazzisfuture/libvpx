@@ -3,6 +3,29 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "001e3a31_18ad31cd",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-03T20:15:59Z",
+      "side": 1,
+      "message": "This is actually the only fix that\u0027s needed to clear the valgrind warning. All other fileds are already initialized by `memset` / `vpx_calloc` in vp9_encoder.c",
+      "range": {
+        "startLine": 178,
+        "startChar": 0,
+        "endLine": 179,
+        "endChar": 60
+      },
+      "revId": "ff8f2418ce48a95c3bf7ab1daa377cc9d3ab94c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "feee9181_c3cbadbc",
         "filename": "vpx/vpx_ext_ratectrl.h",
         "patchSetId": 1
