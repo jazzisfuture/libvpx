@@ -169,12 +169,20 @@ vpx_rc_status_t rc_test_send_tpl_gop_stats(
 }
 
 vpx_rc_status_t rc_test_get_encodeframe_decision(
-    vpx_rc_model_t rate_ctrl_model, const int frame_gop_index,
+    vpx_rc_model_t rate_ctrl_model, const int frame_gop_index, int num_sb,
     vpx_rc_encodeframe_decision_t *frame_decision) {
   RateControllerForTest *test_controller =
       static_cast<RateControllerForTest *>(rate_ctrl_model);
   frame_decision->q_index =
       test_controller->CalculateFrameDecision(frame_gop_index);
+  frame_decision->rdmult =
+      frame_decision->q_index * frame_decision->q_index / 2;
+
+  for (int i = 0; i < num_sb; ++i) {
+    frame_decision->sb_params_list[i].q_index = frame_decision->q_index;
+    frame_decision->sb_params_list[i].rdmult = frame_decision->rdmult;
+  }
+
   return VPX_RC_OK;
 }
 

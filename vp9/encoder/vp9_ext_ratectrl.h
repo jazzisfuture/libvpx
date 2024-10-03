@@ -40,7 +40,7 @@ vpx_codec_err_t vp9_extrc_send_tpl_stats(EXT_RATECTRL *ext_ratectrl,
                                          const VpxTplGopStats *tpl_gop_stats);
 
 vpx_codec_err_t vp9_extrc_get_encodeframe_decision(
-    EXT_RATECTRL *ext_ratectrl, int gop_index,
+    EXT_RATECTRL *ext_ratectrl, int gop_index, int num_sb,
     vpx_rc_encodeframe_decision_t *encode_frame_decision);
 
 vpx_codec_err_t vp9_extrc_update_encodeframe_result(EXT_RATECTRL *ext_ratectrl,
