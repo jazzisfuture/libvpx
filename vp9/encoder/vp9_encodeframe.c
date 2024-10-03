@@ -979,12 +979,6 @@ static int scale_partitioning_svc(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
   const int has_rows = (mi_row_high + bs_high) < cm->mi_rows;
   const int has_cols = (mi_col_high + bs_high) < cm->mi_cols;
 
-  const int row_boundary_block_scale_factor[BLOCK_SIZES] = { 13, 13, 13, 1, 0,
-                                                             1,  1,  0,  1, 1,
-                                                             0,  1,  0 };
-  const int col_boundary_block_scale_factor[BLOCK_SIZES] = { 13, 13, 13, 2, 2,
-                                                             0,  2,  2,  0, 2,
-                                                             2,  0,  0 };
   int start_pos;
   BLOCK_SIZE bsize_low;
   PARTITION_TYPE partition_high;
@@ -994,11 +988,12 @@ static int scale_partitioning_svc(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
       mi_col >= svc->mi_cols[svc->spatial_layer_id - 1])
     return 0;
 
+  // Do variance based partitioning on boundary,
+  if (!has_rows || !has_cols) return 1;
+
   // Find corresponding (mi_col/mi_row) block down-scaled by 2x2.
   start_pos = mi_row * (svc->mi_stride[svc->spatial_layer_id - 1]) + mi_col;
   bsize_low = prev_part[start_pos];
-  // The block size is too big for boundaries. Do variance based partitioning.
-  if ((!has_rows || !has_cols) && bsize_low > BLOCK_16X16) return 1;
 
   // For reference frames: return 1 (do variance-based partitioning) if the
   // superblock is not low source sad and lower-resoln bsize is below 32x32.
@@ -1011,14 +1006,6 @@ static int scale_partitioning_svc(VP9_COMP *cpi, MACROBLOCK *x, MACROBLOCKD *xd,
     bsize_high = bsize_low + 3;
   } else if (bsize_low >= BLOCK_32X32) {
     bsize_high = BLOCK_64X64;
-  }
-  // Scale up blocks on boundary.
-  if (!has_cols && has_rows) {
-    bsize_high = bsize_low + row_boundary_block_scale_factor[bsize_low];
-  } else if (has_cols && !has_rows) {
-    bsize_high = bsize_low + col_boundary_block_scale_factor[bsize_low];
-  } else if (!has_cols && !has_rows) {
-    bsize_high = bsize_low;
   }
 
   partition_high = partition_lookup[bsl_high][bsize_high];
