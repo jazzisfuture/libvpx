@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "feee9181_c3cbadbc",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 151,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T19:54:40Z",
+      "side": 1,
+      "message": "I suggest adding `int num_sb` as a new field to this struct. This way, the array `sb_params_list` and the array size `num_sb` are together.",
+      "revId": "ff8f2418ce48a95c3bf7ab1daa377cc9d3ab94c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8021eae3_d184bf22",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 472,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T19:54:40Z",
+      "side": 1,
+      "message": "Add a line for the new `num_sb` parameter. But instead of adding the `num_sb` parameter, please see my alternative suggestion at line 151 above.",
+      "revId": "ff8f2418ce48a95c3bf7ab1daa377cc9d3ab94c2",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
