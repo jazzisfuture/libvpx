@@ -20,6 +20,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "721cdfcf_dd3954f9",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1742,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-03T22:52:29Z",
+      "side": 1,
+      "message": "If `vp9_extrc_get_encodeframe_decision()` always sets `encode_frame_decision.sb_params_list`, we do not need to zero-initialize `encode_frame_decision.sb_params_list`. We can allocate it using `vpx_malloc()` instead.",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "4104e171_d668ff7e",
         "filename": "vp9/encoder/vp9_tpl_model.c",
         "patchSetId": 7
