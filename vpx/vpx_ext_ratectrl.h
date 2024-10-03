@@ -148,7 +148,12 @@ typedef struct sb_parameters {
 typedef struct vpx_rc_encodeframe_decision {
   int q_index;               /**< Quantizer step index [0..255]*/
   int rdmult;                /**< Frame level Lagrangian multiplier*/
-  sb_params *sb_params_list; /**< Superblock quantization parameters*/
+  /*!
+   * Optional: Superblock quantization parameters
+   * It is zero initialized by default. It has no effect if not set by external
+   * rate control.
+   */
+  sb_params *sb_params_list;
 } vpx_rc_encodeframe_decision_t;
 
 /*!\brief Information for the frame to be encoded.
