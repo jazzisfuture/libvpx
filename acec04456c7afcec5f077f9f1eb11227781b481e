@@ -39,6 +39,30 @@
       },
       "revId": "acec04456c7afcec5f077f9f1eb11227781b481e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "564b420f_69cbf90e",
+        "filename": "vp9/common/vp9_rtcd_defs.pl",
+        "patchSetId": 1
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1604232
+      },
+      "writtenOn": "2024-10-04T08:35:24Z",
+      "side": 1,
+      "message": "Thanks for pointing this out. We have taken care of your suggestion in https://chromium-review.googlesource.com/c/webm/libvpx/+/5904226",
+      "parentUuid": "b8357bf6_42089fab",
+      "range": {
+        "startLine": 198,
+        "startChar": 0,
+        "endLine": 208,
+        "endChar": 37
+      },
+      "revId": "acec04456c7afcec5f077f9f1eb11227781b481e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
