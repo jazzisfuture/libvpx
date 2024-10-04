@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "718970a3_f04bf5fb",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 1754,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-04T14:33:22Z",
+      "side": 1,
+      "message": "Consider a case where this for loop has five iterations. We zero-initialize the `sb_params_list` before the for loop starts.\n\nSuppose `vp9_extrc_get_encodeframe_decision()` sets `sb_params_list` in the second iteration but does not set `sb_params_list` in the third iteration.\n\nAfter the third `vp9_extrc_get_encodeframe_decision()` call, we will get the `sb_params_list` array set by the second `vp9_extrc_get_encodeframe_decision()` call. Is this the desired behavior?",
+      "parentUuid": "f114cd01_88e0b2a8",
+      "revId": "12417c20635d55d4dc0590d26f814d568fd053d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6420d6dc_ee4c241d",
@@ -67,6 +85,24 @@
       "side": 1,
       "message": "Done",
       "parentUuid": "6420d6dc_ee4c241d",
+      "revId": "12417c20635d55d4dc0590d26f814d568fd053d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1a36b906_7b89d80d",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 9
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-04T14:33:22Z",
+      "side": 1,
+      "message": "Thanks!",
+      "parentUuid": "1065395a_4e49f126",
       "revId": "12417c20635d55d4dc0590d26f814d568fd053d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
