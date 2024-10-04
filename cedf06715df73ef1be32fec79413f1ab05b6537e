@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "a686fa70_bdd7f167",
+        "filename": "test/vp9_ext_ratectrl_test.cc",
+        "patchSetId": 7
+      },
+      "lineNbr": 179,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-04T01:01:18Z",
+      "side": 1,
+      "message": "this function is just one possible implementation used for test. It doesn\u0027t have to set `sb_params_list`.",
+      "parentUuid": "0af04955_8553af89",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "721cdfcf_dd3954f9",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-10-03T22:52:29Z",
       "side": 1,
       "message": "If `vp9_extrc_get_encodeframe_decision()` always sets `encode_frame_decision.sb_params_list`, we do not need to zero-initialize `encode_frame_decision.sb_params_list`. We can allocate it using `vpx_malloc()` instead.",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "203890e5_075c64be",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1742,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-04T01:01:18Z",
+      "side": 1,
+      "message": "`vp9_extrc_get_encodeframe_decision()` does not always set `sb_params_list` for every frame. So it needs to be zero initialized.",
+      "parentUuid": "721cdfcf_dd3954f9",
       "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -69,6 +105,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c7d9c1c1_72eecda8",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 7
+      },
+      "lineNbr": 1763,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-04T01:01:18Z",
+      "side": 1,
+      "message": "Yes.",
+      "parentUuid": "4104e171_d668ff7e",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "3f176542_db3b5e97",
@@ -82,6 +136,24 @@
       "writtenOn": "2024-10-03T22:50:38Z",
       "side": 1,
       "message": "The `q_index` field is initialized to 0 and then never used. Should we remove the `q_index` field?",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "4dd42107_3025ec7c",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-04T01:01:18Z",
+      "side": 1,
+      "message": "I think Jingning wants to use this (possibly use per SB q_index) in the future.",
+      "parentUuid": "3f176542_db3b5e97",
       "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -103,6 +175,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "c6d2ec5c_141095f4",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-04T01:01:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "cc85f4ef_2b29771f",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "ec2725ab_44f39d2d",
@@ -116,6 +206,24 @@
       "writtenOn": "2024-10-03T22:50:38Z",
       "side": 1,
       "message": "I think it is better for `vp9_extrc_get_encodeframe_decision()` to set the `sb_params_list` array to meaningful values, because the caller of `vp9_extrc_get_encodeframe_decision()` will use `encode_frame_decision.sb_params_list[i].rdmult`.",
+      "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9c4830bf_46e47442",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 7
+      },
+      "lineNbr": 155,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-04T01:01:18Z",
+      "side": 1,
+      "message": "Zero is meaningful values for `sb_params_list`. It\u0027s the default.",
+      "parentUuid": "ec2725ab_44f39d2d",
       "revId": "cedf06715df73ef1be32fec79413f1ab05b6537e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
