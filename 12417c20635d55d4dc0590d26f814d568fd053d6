@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "f114cd01_88e0b2a8",
+        "filename": "vp9/encoder/vp9_tpl_model.c",
+        "patchSetId": 9
+      },
+      "lineNbr": 1754,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-04T14:25:16Z",
+      "side": 1,
+      "message": "So `vp9_extrc_get_encodeframe_decision()` doesn\u0027t have to set `sb_params_list`. The control is on the sequence level. In case of \n\n - It sets `sb_params_list`: every call will use the same memory, so all values in there will overwrite the previous ones.\n - It doesn\u0027t set `sb_params_list`: the zero initialization is the meaningful default value.\n \nSo `vp9_extrc_get_encodeframe_decision()` doesn\u0027t care if `sb_params_list` is zero initialized. It\u0027s the caller who needs to do that.",
+      "parentUuid": "167a854a_6ff386af",
+      "revId": "12417c20635d55d4dc0590d26f814d568fd053d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "6420d6dc_ee4c241d",
@@ -31,6 +49,24 @@
       "writtenOn": "2024-10-04T02:57:14Z",
       "side": 1,
       "message": "The word \"optional\" is not clear. I believe you mean `vpx_rc_funcs_t::get_encodeframe_decision()` must set `q_index` and `rdmult` but does not need to set `sb_params_list`. It would be good to clarify this.",
+      "revId": "12417c20635d55d4dc0590d26f814d568fd053d6",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "1065395a_4e49f126",
+        "filename": "vpx/vpx_ext_ratectrl.h",
+        "patchSetId": 9
+      },
+      "lineNbr": 152,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-04T14:25:16Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "6420d6dc_ee4c241d",
       "revId": "12417c20635d55d4dc0590d26f814d568fd053d6",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
