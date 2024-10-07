@@ -79,6 +79,23 @@
       },
       "revId": "6c950bf88662b67d0b196324bcf95fd3e5dc3a74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f40d334b_da510f3b",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 992,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-07T19:47:10Z",
+      "side": 1,
+      "message": "I don\u0027t really understand the code, but I verified that the other changes to this function are implied by this statement.",
+      "revId": "6c950bf88662b67d0b196324bcf95fd3e5dc3a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
