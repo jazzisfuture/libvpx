@@ -56,6 +56,29 @@
       "message": "I think `test-data.mk` and `test-data.sha1` need an update.",
       "revId": "6c950bf88662b67d0b196324bcf95fd3e5dc3a74",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "89b22597_fee7bedb",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 6
+      },
+      "lineNbr": 991,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-07T19:19:24Z",
+      "side": 1,
+      "message": "maybe it\u0027s clearer to say\n\n\"Do not scale partitioning from lower layers on the boundary. Do variance based partitioning instead.\"",
+      "range": {
+        "startLine": 991,
+        "startChar": 0,
+        "endLine": 991,
+        "endChar": 48
+      },
+      "revId": "6c950bf88662b67d0b196324bcf95fd3e5dc3a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
