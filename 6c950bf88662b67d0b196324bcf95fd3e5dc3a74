@@ -1,0 +1,61 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ecb5686a_fb8c2bf0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 6
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-10-07T19:07:25Z",
+      "side": 1,
+      "message": "It might be good to mention that this undoes some of the changes in https://chromium.googlesource.com/webm/libvpx/+/1aea1675c03bf8fdf51fa41bdd22e94bdddea404",
+      "revId": "6c950bf88662b67d0b196324bcf95fd3e5dc3a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d0805acc_ea2b6241",
+        "filename": "test/svc_datarate_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 1323,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-10-07T19:07:25Z",
+      "side": 1,
+      "message": "underscores are discouraged in test names:\n\nThere are requirements docs for AV1 specifically in Archived_Docs_Kavi_drive-download-20240927T023117Z-001.zip.",
+      "range": {
+        "startLine": 1323,
+        "startChar": 34,
+        "endLine": 1323,
+        "endChar": 35
+      },
+      "revId": "6c950bf88662b67d0b196324bcf95fd3e5dc3a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "d05d61b6_bd2d98a7",
+        "filename": "test/svc_datarate_test.cc",
+        "patchSetId": 6
+      },
+      "lineNbr": 1333,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-10-07T19:07:25Z",
+      "side": 1,
+      "message": "I think `test-data.mk` and `test-data.sha1` need an update.",
+      "revId": "6c950bf88662b67d0b196324bcf95fd3e5dc3a74",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
