@@ -16,6 +16,23 @@
       "message": "Marco: If the current code is correct, then this CL is a pure code transformation. But please see my question below.",
       "revId": "cac383f90104d4c0e06026dfc12f8c187bfde7b9",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "0f61d700_e163204b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-07T21:13:39Z",
+      "side": 1,
+      "message": "Hi Jerome,\n\nCould you please review this CL?\n\nAlthough this CL is correct in the sense that the new code is equivalent to the original code, I am wondering if the variables `bsl` and `bs` should be set to other values so that they are different from `bsl_high` and `bs_high`.",
+      "revId": "cac383f90104d4c0e06026dfc12f8c187bfde7b9",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
