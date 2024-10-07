@@ -34,6 +34,24 @@
       "parentUuid": "b1e0f107_3789eaa5",
       "revId": "696c488d3581ce5258d4e01093f5f50840e2e40c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "bd6aa886_2e879270",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1030,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-07T21:27:27Z",
+      "side": 0,
+      "message": "I think with marco\u0027s fix, if we don\u0027t do scaling partitioning on the boundary, it\u0027s also better to rename `bsl_high` and `bs_high` just to `bsl` and `bs`.",
+      "parentUuid": "7d25e509_c4ca3ef8",
+      "revId": "696c488d3581ce5258d4e01093f5f50840e2e40c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
