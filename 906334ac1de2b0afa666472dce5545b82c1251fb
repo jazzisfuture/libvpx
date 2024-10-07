@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "01122e3d_e8dd390a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1000884
+      },
+      "writtenOn": "2024-10-07T18:27:35Z",
+      "side": 1,
+      "message": "Looks good. Thanks for completing all SIMD work.",
+      "revId": "906334ac1de2b0afa666472dce5545b82c1251fb",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
