@@ -56,6 +56,24 @@
       "message": "Replace `-INT16_MAX` with `INT_MIN`.\n\nReplace `\u003e\u003e 1` with `/ 2`. `\u003e\u003e 1` is equivalent to `\u003e\u003e 1` only when the first operand is nonnegative.",
       "revId": "df97e8c0a99f4d615e4081800131da8919a2509e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "82d6bd41_35b7014c",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-08T18:20:42Z",
+      "side": 1,
+      "message": "The last sentence in my previous comment should read:\n\n`/ 2` is equivalent to `\u003e\u003e 1` only when the first operand is nonnegative.",
+      "parentUuid": "a4026096_e31dadbb",
+      "revId": "df97e8c0a99f4d615e4081800131da8919a2509e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
