@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "618a54de_b8844a5b",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-08T18:01:39Z",
+      "side": 1,
+      "message": "you can use `abs()` to simplify the condition a bit.",
+      "range": {
+        "startLine": 136,
+        "startChar": 8,
+        "endLine": 137,
+        "endChar": 53
+      },
+      "revId": "df97e8c0a99f4d615e4081800131da8919a2509e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
