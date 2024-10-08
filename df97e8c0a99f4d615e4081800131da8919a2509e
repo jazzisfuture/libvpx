@@ -18,6 +18,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "83708c9e_9fe04cda",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-08T18:31:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3f675358_953c85ab",
+      "revId": "df97e8c0a99f4d615e4081800131da8919a2509e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "618a54de_b8844a5b",
@@ -72,6 +90,48 @@
       "side": 1,
       "message": "The last sentence in my previous comment should read:\n\n`/ 2` is equivalent to `\u003e\u003e 1` only when the first operand is nonnegative.",
       "parentUuid": "a4026096_e31dadbb",
+      "revId": "df97e8c0a99f4d615e4081800131da8919a2509e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "116d8641_0d0729a0",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-08T18:31:10Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "82d6bd41_35b7014c",
+      "revId": "df97e8c0a99f4d615e4081800131da8919a2509e",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cb43e347_cf8952fe",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 12
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-08T18:31:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "618a54de_b8844a5b",
+      "range": {
+        "startLine": 136,
+        "startChar": 8,
+        "endLine": 137,
+        "endChar": 53
+      },
       "revId": "df97e8c0a99f4d615e4081800131da8919a2509e",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
