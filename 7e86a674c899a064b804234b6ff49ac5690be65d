@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c685e969_68f0df8b",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 992,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-10-08T18:53:21Z",
+      "side": 1,
+      "message": "You could move some of this to a function level comment at line 967 and say something like `// Returns 1 to indicate ...`",
+      "range": {
+        "startLine": 992,
+        "startChar": 42,
+        "endLine": 992,
+        "endChar": 50
+      },
+      "revId": "7e86a674c899a064b804234b6ff49ac5690be65d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "8b08d4d4_a00d1ad4",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 13
+      },
+      "lineNbr": 136,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-10-08T18:53:21Z",
+      "side": 1,
+      "message": "add `#include \u003cstdlib.h\u003e` to be safe.",
+      "range": {
+        "startLine": 136,
+        "startChar": 8,
+        "endLine": 136,
+        "endChar": 11
+      },
+      "revId": "7e86a674c899a064b804234b6ff49ac5690be65d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
