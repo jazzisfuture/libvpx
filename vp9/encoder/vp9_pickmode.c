@@ -128,15 +128,21 @@ static int mv_refs_rt(VP9_COMP *cpi, const VP9_COMMON *cm, const MACROBLOCK *x,
       !cpi->svc.layer_context[cpi->svc.temporal_layer_id].is_key_frame &&
       ref_frame == LAST_FRAME) {
     // Get base layer mv.
-    MV_REF *candidate =
-        &cm->prev_frame
-             ->mvs[(mi_col >> 1) + (mi_row >> 1) * (cm->mi_cols >> 1)];
-    if (candidate->mv[0].as_int != INVALID_MV) {
-      base_mv->as_mv.row = (candidate->mv[0].as_mv.row * 2);
-      base_mv->as_mv.col = (candidate->mv[0].as_mv.col * 2);
-      clamp_mv_ref(&base_mv->as_mv, xd);
-    } else {
-      base_mv->as_int = INVALID_MV;
+    if (mi_col < cm->mi_cols - (cm->mi_cols % 2) &&
+        mi_row < cm->mi_rows - (cm->mi_rows % 2)) {
+      MV_REF *candidate =
+          &cm->prev_frame
+               ->mvs[(mi_col >> 1) + (mi_row >> 1) * (cm->mi_cols >> 1)];
+      // Avoid using base_mv if scaled mv is out of range, for either component.
+      if (candidate->mv[0].as_int != INVALID_MV &&
+          abs(candidate->mv[0].as_mv.row) <= INT16_MAX >> 1 &&
+          abs(candidate->mv[0].as_mv.col) <= INT16_MAX >> 1) {
+        base_mv->as_mv.row = (candidate->mv[0].as_mv.row * 2);
+        base_mv->as_mv.col = (candidate->mv[0].as_mv.col * 2);
+        clamp_mv_ref(&base_mv->as_mv, xd);
+      } else {
+        base_mv->as_int = INVALID_MV;
+      }
     }
   }
 
