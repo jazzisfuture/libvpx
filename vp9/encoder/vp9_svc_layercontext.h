@@ -205,6 +205,10 @@ typedef struct SVC {
   // Flag to indicate SVC is dynamically switched to a single layer.
   int single_layer_svc;
   int resize_set;
+
+  // Keep track of previous framme mi_cols and mi_rows.
+  int prev_frame_mi_cols;
+  int prev_frame_mi_rows;
 } SVC;
 
 struct VP9_COMP;
