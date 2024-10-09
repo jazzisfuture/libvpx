@@ -71,6 +71,23 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "34e2eedf_023ef6f5",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T17:57:29Z",
+      "side": 1,
+      "message": "It would be good to understand why the motion vectors become so big in this test. I wonder if there is an underlying bug.",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "22cabdc2_87923389",
         "filename": "vp9/encoder/vp9_pickmode.c",
         "patchSetId": 2
