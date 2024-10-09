@@ -1,0 +1,89 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "cc6bd0a6_0b59a7ad",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T17:30:52Z",
+      "side": 1,
+      "message": "Marco: Please consider my review as supplemental because I don\u0027t really understand this code.",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4d78f82a_a958ade2",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T17:30:52Z",
+      "side": 1,
+      "message": "Include \u003cstdlib.h\u003e for `abs()`.",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "82f3345b_3e0d1a77",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T17:30:52Z",
+      "side": 1,
+      "message": "Optional: The expressions on the right-hand side of `\u003c` can be rewritten as `(cm-\u003emi_cols \u0026 ~1)` and `(cm-\u003emi_rows \u0026 ~1)`.\n\nNote: The `ALIGN_POWER_OF_TWO(value, 1)` macro is close but not quite.",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7c9cc585_9110c81a",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T17:30:52Z",
+      "side": 1,
+      "message": "The purpose of this check is not obvious to me. If it is obvious to James and Jerome, then this is fine. Otherwise it would be good to add a comment to explain why we need to check this condition.",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "22cabdc2_87923389",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T17:30:52Z",
+      "side": 1,
+      "message": "Marco: Could you inspect other occurrences of the MV `row * 2` and `col * 2` expressions and see if they need the same treatment?\n\nYou can run these four commands in a libvpx source tree:\n\n```\nfind . -name \"*\" -a -type f | xargs grep \"\\.row \\* 2\"\nfind . -name \"*\" -a -type f | xargs grep \"\\-\u003erow \\* 2\"\nfind . -name \"*\" -a -type f | xargs grep \"\\.col \\* 2\"\nfind . -name \"*\" -a -type f | xargs grep \"\\-\u003ecol \\* 2\"\n```\n\nNote: I ran these four commands in libaom and there are none.",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
