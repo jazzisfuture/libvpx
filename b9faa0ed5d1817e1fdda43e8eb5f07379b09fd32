@@ -20,6 +20,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "027b2d67_f149c63a",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T22:04:19Z",
+      "side": 1,
+      "message": "Yes the change is correct.",
+      "parentUuid": "26dae4a9_fa102eb0",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "2949f3b6_adfcdb8b",
         "filename": "vp9/encoder/vp9_pickmode.c",
         "patchSetId": 5
@@ -49,6 +67,24 @@
       "side": 1,
       "message": "Based on our in-person discussion, I suggest we calculate `prev_frame_mi_cols` and `prev_frame_mi_rows` here as follows:\n\n```\n  int prev_frame_mi_cols \u003d (cm-\u003emi_cols + 1) \u003e\u003e 1;\n  int prev_frame_mi_rows \u003d (cm-\u003emi_rows + 1) \u003e\u003e 1;\n```",
       "parentUuid": "2949f3b6_adfcdb8b",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "70426d4d_c5fbe450",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T22:04:19Z",
+      "side": 1,
+      "message": "This didn\u0027t work, the cm-\u003emi_cols/rows is set in vp9_set_mi_size(), and uses the aligned width/height, so the prev is not always (cm-\u003emi_cols/rows + 1)/2",
+      "parentUuid": "34db2570_403b3e0f",
       "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -94,6 +130,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "3269b831_aa727f73",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T22:04:19Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "5ecfb55f_3d4f295a",
+      "range": {
+        "startLine": 209,
+        "startChar": 28,
+        "endLine": 209,
+        "endChar": 34
+      },
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "db401c3c_8974b9f2",
@@ -107,6 +167,24 @@
       "writtenOn": "2024-10-09T20:37:13Z",
       "side": 1,
       "message": "It does not seem necessary to add these two fields. The encoder allocates the `cm-\u003eprev_frame-\u003emvs` array in the following code:\n\n```\nstatic INLINE void alloc_frame_mvs(VP9_COMMON *const cm, int buffer_idx) {\n  RefCntBuffer *const new_fb_ptr \u003d \u0026cm-\u003ebuffer_pool-\u003eframe_bufs[buffer_idx];\n  if (new_fb_ptr-\u003emvs \u003d\u003d NULL || new_fb_ptr-\u003emi_rows \u003c cm-\u003emi_rows ||\n      new_fb_ptr-\u003emi_cols \u003c cm-\u003emi_cols) {\n    vpx_free(new_fb_ptr-\u003emvs);\n    CHECK_MEM_ERROR(\u0026cm-\u003eerror, new_fb_ptr-\u003emvs,\n                    (MV_REF *)vpx_calloc(cm-\u003emi_rows * cm-\u003emi_cols,\n                                         sizeof(*new_fb_ptr-\u003emvs)));\n    new_fb_ptr-\u003emi_rows \u003d cm-\u003emi_rows;\n    new_fb_ptr-\u003emi_cols \u003d cm-\u003emi_cols;\n  }\n}\n```\n\nSo can we just use `cm-\u003eprev_frame-\u003emi_rows` and `cm-\u003eprev_frame-\u003emi_cols`?",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "4a003e7a_232ab568",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T22:04:19Z",
+      "side": 1,
+      "message": "We need the mi_cols/rows for the previous encoded frame/layer, whereas the above is for the current frame/layer.",
+      "parentUuid": "db401c3c_8974b9f2",
       "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
