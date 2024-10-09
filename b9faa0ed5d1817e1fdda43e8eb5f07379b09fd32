@@ -3,6 +3,40 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "26dae4a9_fa102eb0",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T20:37:13Z",
+      "side": 1,
+      "message": "IMPORTANT: When calculating the index, the original code uses `(cm-\u003emi_cols \u003e\u003e 1)` but the new code uses `cpi-\u003esvc.prev_frame_mi_cols`. Is this change correct?",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "2949f3b6_adfcdb8b",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T20:37:13Z",
+      "side": 1,
+      "message": "Please see my comment at vp9/encoder/vp9_svc_layercontext.h:211.\n\nIf we are checking if `index` is within array bounds, then we should be checking the condition `index \u003c cm-\u003eprev_frame-\u003emi_cols * cm-\u003eprev_frame-\u003emi_rows`.",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5ecfb55f_3d4f295a",
         "filename": "vp9/encoder/vp9_svc_layercontext.h",
         "patchSetId": 5
@@ -38,6 +72,23 @@
           ]
         }
       ],
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "db401c3c_8974b9f2",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T20:37:13Z",
+      "side": 1,
+      "message": "It does not seem necessary to add these two fields. The encoder allocates the `cm-\u003eprev_frame-\u003emvs` array in the following code:\n\n```\nstatic INLINE void alloc_frame_mvs(VP9_COMMON *const cm, int buffer_idx) {\n  RefCntBuffer *const new_fb_ptr \u003d \u0026cm-\u003ebuffer_pool-\u003eframe_bufs[buffer_idx];\n  if (new_fb_ptr-\u003emvs \u003d\u003d NULL || new_fb_ptr-\u003emi_rows \u003c cm-\u003emi_rows ||\n      new_fb_ptr-\u003emi_cols \u003c cm-\u003emi_cols) {\n    vpx_free(new_fb_ptr-\u003emvs);\n    CHECK_MEM_ERROR(\u0026cm-\u003eerror, new_fb_ptr-\u003emvs,\n                    (MV_REF *)vpx_calloc(cm-\u003emi_rows * cm-\u003emi_cols,\n                                         sizeof(*new_fb_ptr-\u003emvs)));\n    new_fb_ptr-\u003emi_rows \u003d cm-\u003emi_rows;\n    new_fb_ptr-\u003emi_cols \u003d cm-\u003emi_cols;\n  }\n}\n```\n\nSo can we just use `cm-\u003eprev_frame-\u003emi_rows` and `cm-\u003eprev_frame-\u003emi_cols`?",
       "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
