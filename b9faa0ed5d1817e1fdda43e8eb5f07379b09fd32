@@ -1,0 +1,45 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5ecfb55f_3d4f295a",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-10-09T19:42:29Z",
+      "side": 1,
+      "message": "frame",
+      "range": {
+        "startLine": 209,
+        "startChar": 28,
+        "endLine": 209,
+        "endChar": 34
+      },
+      "fixSuggestions": [
+        {
+          "fixId": "bd530f2e_a3314ae5",
+          "description": "prompt_to_edit API",
+          "replacements": [
+            {
+              "path": "vp9/encoder/vp9_svc_layercontext.h",
+              "range": {
+                "startLine": 209,
+                "startChar": 0,
+                "endLine": 210,
+                "endChar": 0
+              },
+              "replacement": "  // Keep track of previous frame mi_cols and mi_rows.\n"
+            }
+          ]
+        }
+      ],
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
