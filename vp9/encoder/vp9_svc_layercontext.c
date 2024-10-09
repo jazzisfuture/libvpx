@@ -422,6 +422,8 @@ void vp9_save_layer_context(VP9_COMP *const cpi) {
     lc->qindex_delta[1] = cr->qindex_delta[1];
     lc->qindex_delta[2] = cr->qindex_delta[2];
   }
+  cpi->svc.prev_frame_mi_cols = cpi->common.mi_cols;
+  cpi->svc.prev_frame_mi_rows = cpi->common.mi_rows;
 }
 
 #if !CONFIG_REALTIME_ONLY
