@@ -37,6 +37,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "34db2570_403b3e0f",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T21:03:18Z",
+      "side": 1,
+      "message": "Based on our in-person discussion, I suggest we calculate `prev_frame_mi_cols` and `prev_frame_mi_rows` here as follows:\n\n```\n  int prev_frame_mi_cols \u003d (cm-\u003emi_cols + 1) \u003e\u003e 1;\n  int prev_frame_mi_rows \u003d (cm-\u003emi_rows + 1) \u003e\u003e 1;\n```",
+      "parentUuid": "2949f3b6_adfcdb8b",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "5ecfb55f_3d4f295a",
         "filename": "vp9/encoder/vp9_svc_layercontext.h",
         "patchSetId": 5
