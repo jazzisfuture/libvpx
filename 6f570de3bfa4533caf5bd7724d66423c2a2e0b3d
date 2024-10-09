@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "b2276c0b_74919e6a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-10-09T18:40:03Z",
+      "side": 1,
+      "message": "I\u0027ll skip the TODO check when we\u0027re not on the main branch. That check was updated after this change.",
+      "revId": "6f570de3bfa4533caf5bd7724d66423c2a2e0b3d",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
