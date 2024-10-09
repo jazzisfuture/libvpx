@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "cd01d0e4_58720fee",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T19:22:31Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "4d78f82a_a958ade2",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "82f3345b_3e0d1a77",
@@ -69,6 +87,42 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "8385b39a_d0b141dc",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T19:22:31Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "82f3345b_3e0d1a77",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "e5e4ca9e_47d13a51",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T19:22:31Z",
+      "side": 1,
+      "message": "Update the patch and added comment.",
+      "parentUuid": "7c9cc585_9110c81a",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "34e2eedf_023ef6f5",
@@ -88,6 +142,24 @@
     {
       "unresolved": true,
       "key": {
+        "uuid": "ffb2d942_ddc4e417",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T19:22:31Z",
+      "side": 1,
+      "message": "Could be a bug, In the latest patch (with the check on the mvs array) I don\u0027t seem to get the integer overflow issue again. But I think its good to keep the integer overflow check just in case.",
+      "parentUuid": "34e2eedf_023ef6f5",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
         "uuid": "22cabdc2_87923389",
         "filename": "vp9/encoder/vp9_pickmode.c",
         "patchSetId": 2
@@ -99,6 +171,24 @@
       "writtenOn": "2024-10-09T17:30:52Z",
       "side": 1,
       "message": "Marco: Could you inspect other occurrences of the MV `row * 2` and `col * 2` expressions and see if they need the same treatment?\n\nYou can run these four commands in a libvpx source tree:\n\n```\nfind . -name \"*\" -a -type f | xargs grep \"\\.row \\* 2\"\nfind . -name \"*\" -a -type f | xargs grep \"\\-\u003erow \\* 2\"\nfind . -name \"*\" -a -type f | xargs grep \"\\.col \\* 2\"\nfind . -name \"*\" -a -type f | xargs grep \"\\-\u003ecol \\* 2\"\n```\n\nNote: I ran these four commands in libaom and there are none.",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "167dd453_6b422dfb",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 141,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-09T19:22:31Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "22cabdc2_87923389",
       "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
