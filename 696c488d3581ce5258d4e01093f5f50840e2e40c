@@ -52,6 +52,24 @@
       "parentUuid": "7d25e509_c4ca3ef8",
       "revId": "696c488d3581ce5258d4e01093f5f50840e2e40c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "35db5312_11202000",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 1
+      },
+      "lineNbr": 1030,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-09T21:26:48Z",
+      "side": 0,
+      "message": "Thanks. Marco incorporated these changes into https://chromium-review.googlesource.com/c/webm/libvpx/+/5908477, so I will abandon this CL.",
+      "parentUuid": "bd6aa886_2e879270",
+      "revId": "696c488d3581ce5258d4e01093f5f50840e2e40c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
