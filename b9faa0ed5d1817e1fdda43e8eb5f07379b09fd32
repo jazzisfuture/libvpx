@@ -112,6 +112,30 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "77dcc301_5100d414",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-10T22:12:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "f175b642_c313b39b",
+      "range": {
+        "startLine": 143,
+        "startChar": 60,
+        "endLine": 143,
+        "endChar": 61
+      },
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "bf127be1_59879d64",
@@ -125,6 +149,30 @@
       "writtenOn": "2024-10-10T21:12:32Z",
       "side": 1,
       "message": "same here.",
+      "range": {
+        "startLine": 144,
+        "startChar": 60,
+        "endLine": 144,
+        "endChar": 61
+      },
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9cfae20f_6b1e24a9",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-10T22:12:24Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "bf127be1_59879d64",
       "range": {
         "startLine": 144,
         "startChar": 60,
@@ -190,6 +238,30 @@
       "side": 1,
       "message": "Acknowledged",
       "parentUuid": "5ecfb55f_3d4f295a",
+      "range": {
+        "startLine": 209,
+        "startChar": 28,
+        "endLine": 209,
+        "endChar": 34
+      },
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "e65e399a_db3abdc0",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 209,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-10T22:12:24Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "3269b831_aa727f73",
       "range": {
         "startLine": 209,
         "startChar": 28,
