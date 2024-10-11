@@ -92,13 +92,26 @@ static INLINE int vp8_sem_wait(vp8_sem_t *sem) {
 
 #include "vpx_util/vpx_atomics.h"
 
+#include <time.h>
+void log_vp8_spin_wait_hist(long long t, long long cnt);
+
+static INLINE long long get_time() {
+  struct timespec cur;
+  clock_gettime(CLOCK_MONOTONIC, &cur);
+  return cur.tv_sec * 1000000000ll + cur.tv_nsec;
+}
+
 static INLINE void vp8_atomic_spin_wait(
     int mb_col, const vpx_atomic_int *last_row_current_mb_col,
     const int nsync) {
+  long long st = get_time(), cnt=0;
   while (mb_col > (vpx_atomic_load_acquire(last_row_current_mb_col) - nsync)) {
     x86_pause_hint();
     thread_sleep(0);
+    cnt++;
   }
+  long long ed = get_time();
+  log_vp8_spin_wait_hist(ed-st, cnt);
 }
 
 #endif /* CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD */
