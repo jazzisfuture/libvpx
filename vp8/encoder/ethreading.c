@@ -82,7 +82,7 @@ static THREADFN thread_encoding_proc(void *p_data) {
         int recon_y_stride = cm->yv12_fb[ref_fb_idx].y_stride;
         int recon_uv_stride = cm->yv12_fb[ref_fb_idx].uv_stride;
         int map_index = (mb_row * cm->mb_cols);
-        const vpx_atomic_int *last_row_current_mb_col;
+        vpx_atomic_int *last_row_current_mb_col;
         vpx_atomic_int *current_mb_col = &cpi->mt_current_mb_col[mb_row];
 
 #if (CONFIG_REALTIME_ONLY & CONFIG_ONTHEFLY_BITPACKING)
@@ -621,12 +621,11 @@ int vp8cx_create_encoder_threads(VP8_COMP *cpi) {
 }
 
 void vp8cx_remove_encoder_threads(VP8_COMP *cpi) {
+  int i;
   if (vpx_atomic_load_acquire(&cpi->b_multi_threaded)) {
     /* shutdown other threads */
     vpx_atomic_store_release(&cpi->b_multi_threaded, 0);
     {
-      int i;
-
       for (i = 0; i < cpi->encoding_thread_count; ++i) {
         vp8_sem_post(&cpi->h_event_start_encoding[i]);
         vp8_sem_post(&cpi->h_event_end_encoding[i]);
@@ -646,6 +645,9 @@ void vp8cx_remove_encoder_threads(VP8_COMP *cpi) {
     cpi->b_lpf_running = 0;
 
     /* free thread related resources */
+    for (i = 0; i < cpi->mt_current_mb_col_size; i++) {
+      vpx_atomic_destroy(&cpi->mt_current_mb_col[i]);
+    }
     vpx_free(cpi->mt_current_mb_col);
     cpi->mt_current_mb_col = NULL;
     cpi->mt_current_mb_col_size = 0;

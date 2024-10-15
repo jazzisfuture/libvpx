@@ -64,29 +64,58 @@ extern "C" {
 #endif  // defined(_MSC_VER)
 #endif  // atomic builtin availability check
 
+#include <pthread.h>
+#include <stdbool.h>
+
 // These are wrapped in a struct so that they are not easily accessed directly
 // on any platform (to discourage programmer errors by setting values directly).
 // This primitive MUST be initialized using vpx_atomic_init or VPX_ATOMIC_INIT
 // (NOT memset) and accessed through vpx_atomic_ functions.
 typedef struct vpx_atomic_int {
   volatile int value;
+  bool has_mutex;
+  pthread_mutex_t mutex;
+  pthread_cond_t cond;
 } vpx_atomic_int;
 
 #define VPX_ATOMIC_INIT(num) \
-  { num }
+  { num, 1, PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER }
 
 // Initialization of an atomic int, not thread safe.
-static INLINE void vpx_atomic_init(vpx_atomic_int *atomic, int value) {
+static INLINE void vpx_atomic_init(vpx_atomic_int *atomic, int value,
+                                   bool init_mutex) {
   atomic->value = value;
+  if (init_mutex) {
+    atomic->has_mutex = 1;
+    pthread_mutex_init(&atomic->mutex, NULL);
+    pthread_cond_init(&atomic->cond, NULL);
+  } else {
+    atomic->has_mutex = 0;
+  }
+}
+
+static INLINE void vpx_atomic_destroy(vpx_atomic_int *atomic) {
+  if (atomic->has_mutex) {
+    pthread_cond_destroy(&atomic->cond);
+    pthread_mutex_destroy(&atomic->mutex);
+    atomic->has_mutex = 0;
+  }
 }
 
 static INLINE void vpx_atomic_store_release(vpx_atomic_int *atomic, int value) {
+  if (atomic->has_mutex) {
+    pthread_mutex_lock(&atomic->mutex);
+  }
 #if defined(VPX_USE_ATOMIC_BUILTINS)
   __atomic_store_n(&atomic->value, value, __ATOMIC_RELEASE);
 #else
   vpx_atomic_memory_barrier();
   atomic->value = value;
 #endif  // defined(VPX_USE_ATOMIC_BUILTINS)
+  if (atomic->has_mutex) {
+    pthread_cond_broadcast(&atomic->cond);
+    pthread_mutex_unlock(&atomic->mutex);
+  }
 }
 
 static INLINE int vpx_atomic_load_acquire(const vpx_atomic_int *atomic) {
@@ -105,7 +134,7 @@ static INLINE int vpx_atomic_load_acquire(const vpx_atomic_int *atomic) {
 #endif /* CONFIG_OS_SUPPORT && CONFIG_MULTITHREAD */
 
 #ifdef __cplusplus
-}  // extern "C"
+}       // extern "C"
 #endif  // __cplusplus
 
 #endif  // VPX_VPX_UTIL_VPX_ATOMICS_H_

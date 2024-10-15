@@ -333,7 +333,7 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
 #if CONFIG_MULTITHREAD
   const int nsync = cpi->mt_sync_range;
   vpx_atomic_int rightmost_col = VPX_ATOMIC_INIT(cm->mb_cols + nsync);
-  const vpx_atomic_int *last_row_current_mb_col;
+  vpx_atomic_int *last_row_current_mb_col;
   vpx_atomic_int *current_mb_col = NULL;
 
   if (vpx_atomic_load_acquire(&cpi->b_multi_threaded) != 0) {
@@ -567,6 +567,7 @@ static void encode_mb_row(VP8_COMP *cpi, VP8_COMMON *cm, int mb_row,
     vpx_atomic_store_release(current_mb_col,
                              vpx_atomic_load_acquire(&rightmost_col));
   }
+  vpx_atomic_destroy(&rightmost_col);
 #endif
 
   /* this is to account for the border */
@@ -762,6 +763,8 @@ void vp8_encode_frame(VP8_COMP *cpi) {
                                 cpi->encoding_thread_count);
 
       if (cpi->mt_current_mb_col_size != cm->mb_rows) {
+        for (i = 0; i < cpi->mt_current_mb_col_size; ++i)
+          vpx_atomic_destroy(&cpi->mt_current_mb_col[i]);
         vpx_free(cpi->mt_current_mb_col);
         cpi->mt_current_mb_col = NULL;
         cpi->mt_current_mb_col_size = 0;
@@ -769,6 +772,8 @@ void vp8_encode_frame(VP8_COMP *cpi) {
             &cpi->common.error, cpi->mt_current_mb_col,
             vpx_malloc(sizeof(*cpi->mt_current_mb_col) * cm->mb_rows));
         cpi->mt_current_mb_col_size = cm->mb_rows;
+        for (i = 0; i < cm->mb_rows; ++i)
+          vpx_atomic_init(&cpi->mt_current_mb_col[i], -1, 1);
       }
       for (i = 0; i < cm->mb_rows; ++i)
         vpx_atomic_store_release(&cpi->mt_current_mb_col[i], -1);

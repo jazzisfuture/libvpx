@@ -101,20 +101,28 @@ static INLINE long long get_time(clockid_t clk) {
   return cur.tv_sec * 1000000000ll + cur.tv_nsec;
 }
 
-static INLINE void vp8_atomic_spin_wait(
-    int mb_col, const vpx_atomic_int *last_row_current_mb_col,
-    const int nsync) {
+static INLINE void vp8_atomic_spin_wait(int mb_col,
+                                        vpx_atomic_int *last_row_current_mb_col,
+                                        const int nsync) {
   long long stt = get_time(CLOCK_THREAD_CPUTIME_ID);
-  long long st = get_time(CLOCK_MONOTONIC), cnt=0;
+  long long st = get_time(CLOCK_MONOTONIC), cnt = 0;
+  if (mb_col <= (vpx_atomic_load_acquire(last_row_current_mb_col) - nsync)) {
+    return;
+  }
+  cnt++;
+  pthread_mutex_lock(&last_row_current_mb_col->mutex);
   while (mb_col > (vpx_atomic_load_acquire(last_row_current_mb_col) - nsync)) {
-    x86_pause_hint();
+    pthread_cond_wait(&last_row_current_mb_col->cond,
+                      &last_row_current_mb_col->mutex);
+    // x86_pause_hint();
     thread_sleep(0);
     cnt++;
   }
-  if(cnt){
+  pthread_mutex_unlock(&last_row_current_mb_col->mutex);
+  if (cnt) {
     long long ed = get_time(CLOCK_MONOTONIC);
     long long ett = get_time(CLOCK_THREAD_CPUTIME_ID);
-    log_vp8_spin_wait_hist(ed-st, cnt, ett - stt);
+    log_vp8_spin_wait_hist(ed - st, cnt, ett - stt);
   }
 }
 
