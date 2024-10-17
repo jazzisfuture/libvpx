@@ -16,6 +16,23 @@
       "message": "jzern@ Please take a look. This is related to (a dependency of) https://android-review.git.corp.google.com/c/platform/external/libvpx/+/3311378.",
       "revId": "24b568e6fa8a7493d6f21119ced6058fd0d4dfae",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "93769f58_26e47faa",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1273510
+      },
+      "writtenOn": "2024-10-17T22:09:00Z",
+      "side": 1,
+      "message": "Thanks for the quick review!",
+      "revId": "24b568e6fa8a7493d6f21119ced6058fd0d4dfae",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
