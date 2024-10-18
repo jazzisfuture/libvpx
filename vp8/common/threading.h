@@ -106,8 +106,10 @@ static INLINE void vp8_atomic_spin_wait(
     const int nsync) {
   long long stt = get_time(CLOCK_THREAD_CPUTIME_ID);
   long long st = get_time(CLOCK_MONOTONIC), cnt=0;
-  while (mb_col > (vpx_atomic_load_acquire(last_row_current_mb_col) - nsync)) {
-    x86_pause_hint();
+  int tmp;
+  while (mb_col > ((tmp = vpx_atomic_load_acquire(last_row_current_mb_col)) - nsync)) {
+    syscall(SYS_futex, &last_row_current_mb_col->value, FUTEX_WAIT, tmp, NULL, NULL, 0);
+    // x86_pause_hint();
     thread_sleep(0);
     cnt++;
   }
