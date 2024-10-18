@@ -257,7 +257,7 @@ static void mt_decode_mb_rows(VP8D_COMP *pbi, MACROBLOCKD *xd,
   VP8_COMMON *pc = &pbi->common;
   const int nsync = pbi->sync_range;
   const vpx_atomic_int first_row_no_sync_above =
-      VPX_ATOMIC_INIT(pc->mb_cols + nsync);
+      VPX_ATOMIC_INIT(pc->mb_cols + nsync, 1);
   int num_part = 1 << pbi->common.multi_token_partition;
   int last_mb_row = start_mb_row;
 
@@ -616,7 +616,7 @@ void vp8_decoder_create_threads(VP8D_COMP *pbi) {
   int core_count = 0;
   unsigned int ithread;
 
-  vpx_atomic_init(&pbi->b_multithreaded_rd, 0);
+  vpx_atomic_init(&pbi->b_multithreaded_rd, 0, 0);
   pbi->allocated_decoding_thread_count = 0;
 
   /* limit decoding threads to the max number of token partitions */
@@ -628,7 +628,7 @@ void vp8_decoder_create_threads(VP8D_COMP *pbi) {
   }
 
   if (core_count > 1) {
-    vpx_atomic_init(&pbi->b_multithreaded_rd, 1);
+    vpx_atomic_init(&pbi->b_multithreaded_rd, 1, 0);
     pbi->decoding_thread_count = core_count - 1;
 
     CALLOC_ARRAY(pbi->h_decoding_thread, pbi->decoding_thread_count);
@@ -761,7 +761,7 @@ void vp8mt_alloc_temp_buffers(VP8D_COMP *pbi, int width, int prev_mb_rows) {
     CHECK_MEM_ERROR(&pc->error, pbi->mt_current_mb_col,
                     vpx_malloc(sizeof(*pbi->mt_current_mb_col) * pc->mb_rows));
     for (i = 0; i < pc->mb_rows; ++i)
-      vpx_atomic_init(&pbi->mt_current_mb_col[i], 0);
+      vpx_atomic_init(&pbi->mt_current_mb_col[i], 0, 1);
 
     /* Allocate memory for above_row buffers. */
     CALLOC_ARRAY(pbi->mt_yabove_row, pc->mb_rows);

@@ -64,20 +64,27 @@ extern "C" {
 #endif  // defined(_MSC_VER)
 #endif  // atomic builtin availability check
 
+#include <stdbool.h>
+#include <limits.h>
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <linux/futex.h>
 // These are wrapped in a struct so that they are not easily accessed directly
 // on any platform (to discourage programmer errors by setting values directly).
 // This primitive MUST be initialized using vpx_atomic_init or VPX_ATOMIC_INIT
 // (NOT memset) and accessed through vpx_atomic_ functions.
 typedef struct vpx_atomic_int {
   volatile int value;
+  bool has_futex;
 } vpx_atomic_int;
 
-#define VPX_ATOMIC_INIT(num) \
-  { num }
+#define VPX_ATOMIC_INIT(num, has_futex) \
+  { num, has_futex }
 
 // Initialization of an atomic int, not thread safe.
-static INLINE void vpx_atomic_init(vpx_atomic_int *atomic, int value) {
+static INLINE void vpx_atomic_init(vpx_atomic_int *atomic, int value, bool has_futex) {
   atomic->value = value;
+  atomic->has_futex  = has_futex;
 }
 
 static INLINE void vpx_atomic_store_release(vpx_atomic_int *atomic, int value) {
@@ -87,6 +94,9 @@ static INLINE void vpx_atomic_store_release(vpx_atomic_int *atomic, int value) {
   vpx_atomic_memory_barrier();
   atomic->value = value;
 #endif  // defined(VPX_USE_ATOMIC_BUILTINS)
+  if (atomic->has_futex) {
+    syscall(SYS_futex, &atomic->value, FUTEX_WAKE_PRIVATE, INT_MAX, NULL, NULL, 0);
+  }
 }
 
 static INLINE int vpx_atomic_load_acquire(const vpx_atomic_int *atomic) {
