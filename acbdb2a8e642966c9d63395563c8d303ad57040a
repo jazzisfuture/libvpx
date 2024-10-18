@@ -35,6 +35,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "ff3af4fa_f5af4c7c",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2141,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-18T18:55:11Z",
+      "side": 1,
+      "message": "Looks like same issue would exist in vp8, could be looked at in a separate CL",
+      "parentUuid": "b2404b9c_73043ed0",
+      "revId": "acbdb2a8e642966c9d63395563c8d303ad57040a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "7a3c7d1f_adbfdcdc",
@@ -48,6 +66,24 @@
       "writtenOn": "2024-10-18T17:43:52Z",
       "side": 1,
       "message": "Change these two lines to:\n\n```\n    const int64_t max_rate \u003d\n        (int64_t)rc-\u003eavg_frame_bandwidth * oxcf-\u003erc_max_inter_bitrate_pct / 100;\n```",
+      "revId": "acbdb2a8e642966c9d63395563c8d303ad57040a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3eb17d0f_0b85cb64",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2177,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-18T18:55:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7a3c7d1f_adbfdcdc",
       "revId": "acbdb2a8e642966c9d63395563c8d303ad57040a",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
