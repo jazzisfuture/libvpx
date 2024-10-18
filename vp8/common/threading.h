@@ -86,6 +86,8 @@ static INLINE int vp8_sem_wait(vp8_sem_t *sem) {
 
 #if VPX_ARCH_X86 || VPX_ARCH_X86_64
 #include "vpx_ports/x86.h"
+#elif VPX_ARCH_ARM || VPX_ARCH_AARCH64
+#define x86_pause_hint() __asm__ __volatile__("yield \n\t")
 #else
 #define x86_pause_hint()
 #endif
@@ -108,8 +110,12 @@ static INLINE void vp8_atomic_spin_wait(
   long long st = get_time(CLOCK_MONOTONIC), cnt=0;
   int tmp;
   while (mb_col > ((tmp = vpx_atomic_load_acquire(last_row_current_mb_col)) - nsync)) {
-    syscall(SYS_futex, &last_row_current_mb_col->value, FUTEX_WAIT_PRIVATE, tmp, NULL, NULL, 0);
-    // x86_pause_hint();
+    if (cnt >= 128) {
+      syscall(SYS_futex, &last_row_current_mb_col->value, FUTEX_WAIT_PRIVATE, tmp, NULL, NULL, 0);
+    }
+    else {
+      x86_pause_hint();
+    }
     thread_sleep(0);
     cnt++;
   }
