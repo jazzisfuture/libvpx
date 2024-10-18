@@ -1,0 +1,55 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "265b0e61_177cf42c",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2133,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-18T17:43:52Z",
+      "side": 1,
+      "message": "Hmm... Apparently I did not port my libaom changes in https://aomedia-review.googlesource.com/c/aom/+/191861 to libvpx. I must have dropped the ball. Sorry.",
+      "revId": "acbdb2a8e642966c9d63395563c8d303ad57040a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "b2404b9c_73043ed0",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2141,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-18T17:43:52Z",
+      "side": 1,
+      "message": "Could you check if vp8/encoder/ratectrl.c needs these changes? Thanks.",
+      "revId": "acbdb2a8e642966c9d63395563c8d303ad57040a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "7a3c7d1f_adbfdcdc",
+        "filename": "vp9/encoder/vp9_ratectrl.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 2177,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-18T17:43:52Z",
+      "side": 1,
+      "message": "Change these two lines to:\n\n```\n    const int64_t max_rate \u003d\n        (int64_t)rc-\u003eavg_frame_bandwidth * oxcf-\u003erc_max_inter_bitrate_pct / 100;\n```",
+      "revId": "acbdb2a8e642966c9d63395563c8d303ad57040a",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
