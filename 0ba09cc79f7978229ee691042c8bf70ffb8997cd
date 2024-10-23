@@ -16,6 +16,24 @@
       "message": "This and the other blank line at 47 could be removed. I guess it\u0027s split because it wrapped. An alternative might be to indent the second line by 2 or 4 spaces.",
       "revId": "0ba09cc79f7978229ee691042c8bf70ffb8997cd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f2f280b9_bc840c47",
+        "filename": "CHANGELOG",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-23T13:29:52Z",
+      "side": 1,
+      "message": "Right. I have always tried to make the bug fix description fit in one line but this one seems to be impossible to do so...",
+      "parentUuid": "2b9d8286_ac2e20e7",
+      "revId": "0ba09cc79f7978229ee691042c8bf70ffb8997cd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
