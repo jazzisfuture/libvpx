@@ -16,6 +16,24 @@
       "message": "nit: I think it\u0027s better to separate the wait condition with atomic load/store, e.g. vp8_atomic_spin_signal(). This way, we can even gain a more fine grained control on when to signal the waiting futex instead of each store.",
       "revId": "5fe3588dfecb0a8b4b5a776486c29cf8260cbad5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "5b93f2a2_93840527",
+        "filename": "vpx_util/vpx_atomics.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1549872
+      },
+      "writtenOn": "2024-10-25T12:56:05Z",
+      "side": 1,
+      "message": "Agree. I\u0027ve done something similar locally but haven\u0027t run the test on all tested devices, so I still upload this version first.",
+      "parentUuid": "d7007ef3_a50ba6f6",
+      "revId": "5fe3588dfecb0a8b4b5a776486c29cf8260cbad5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
