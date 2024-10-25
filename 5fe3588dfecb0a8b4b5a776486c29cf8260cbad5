@@ -34,6 +34,24 @@
       "parentUuid": "d7007ef3_a50ba6f6",
       "revId": "5fe3588dfecb0a8b4b5a776486c29cf8260cbad5",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "df8246c0_c50b5ea7",
+        "filename": "vpx_util/vpx_atomics.h",
+        "patchSetId": 2
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1141149
+      },
+      "writtenOn": "2024-10-25T17:57:00Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "5b93f2a2_93840527",
+      "revId": "5fe3588dfecb0a8b4b5a776486c29cf8260cbad5",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
