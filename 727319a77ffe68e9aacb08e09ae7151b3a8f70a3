@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "85fcff9a_25889f07",
+        "filename": "test/svc_datarate_test.cc",
+        "patchSetId": 11
+      },
+      "lineNbr": 1365,
+      "author": {
+        "id": 1002219
+      },
+      "writtenOn": "2024-10-29T22:14:50Z",
+      "side": 1,
+      "message": "I wonder if using the RandomSource class would be enough for these rather than increasing the test data download size.",
+      "revId": "727319a77ffe68e9aacb08e09ae7151b3a8f70a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
