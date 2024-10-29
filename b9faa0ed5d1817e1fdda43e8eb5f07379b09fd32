@@ -36,6 +36,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "aa8181ad_1b73fb9b",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-29T21:22:42Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "027b2d67_f149c63a",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "2949f3b6_adfcdb8b",
@@ -85,6 +103,24 @@
       "side": 1,
       "message": "This didn\u0027t work, the cm-\u003emi_cols/rows is set in vp9_set_mi_size(), and uses the aligned width/height, so the prev is not always (cm-\u003emi_cols/rows + 1)/2",
       "parentUuid": "34db2570_403b3e0f",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "7343fd0e_525c64eb",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-29T21:22:42Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "70426d4d_c5fbe450",
       "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
@@ -303,6 +339,24 @@
       "side": 1,
       "message": "We need the mi_cols/rows for the previous encoded frame/layer, whereas the above is for the current frame/layer.",
       "parentUuid": "db401c3c_8974b9f2",
+      "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c854d608_349d0234",
+        "filename": "vp9/encoder/vp9_svc_layercontext.h",
+        "patchSetId": 5
+      },
+      "lineNbr": 211,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-29T21:22:42Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "4a003e7a_232ab568",
       "revId": "b9faa0ed5d1817e1fdda43e8eb5f07379b09fd32",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
