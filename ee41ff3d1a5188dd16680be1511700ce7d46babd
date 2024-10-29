@@ -123,6 +123,24 @@
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
     {
+      "unresolved": false,
+      "key": {
+        "uuid": "d4720db2_0c6bd25e",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 132,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-29T21:23:43Z",
+      "side": 1,
+      "message": "\u003e Update the patch and added comment.",
+      "parentUuid": "e5e4ca9e_47d13a51",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
       "unresolved": true,
       "key": {
         "uuid": "34e2eedf_023ef6f5",
@@ -154,6 +172,24 @@
       "side": 1,
       "message": "Could be a bug, In the latest patch (with the check on the mvs array) I don\u0027t seem to get the integer overflow issue again. But I think its good to keep the integer overflow check just in case.",
       "parentUuid": "34e2eedf_023ef6f5",
+      "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "2b85ee66_ed9d818c",
+        "filename": "vp9/encoder/vp9_pickmode.c",
+        "patchSetId": 2
+      },
+      "lineNbr": 139,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-10-29T21:23:43Z",
+      "side": 1,
+      "message": "Acknowledged",
+      "parentUuid": "ffb2d942_ddc4e417",
       "revId": "ee41ff3d1a5188dd16680be1511700ce7d46babd",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     },
