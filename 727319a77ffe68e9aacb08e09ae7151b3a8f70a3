@@ -16,6 +16,23 @@
       "message": "I wonder if using the RandomSource class would be enough for these rather than increasing the test data download size.",
       "revId": "727319a77ffe68e9aacb08e09ae7151b3a8f70a3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "03fc6e9d_2826bbf2",
+        "filename": "vp9/encoder/vp9_svc_layercontext.c",
+        "patchSetId": 11
+      },
+      "lineNbr": 988,
+      "author": {
+        "id": 1001562
+      },
+      "writtenOn": "2024-10-30T18:38:43Z",
+      "side": 1,
+      "message": "Marco: This `vp9_set_size_literal()` call updates `cpi-\u003ecommon.mi_stride`, `cpi-\u003ecommon.mi_rows`, and `cpi-\u003ecommon.mi_cols`. So I understand why lines 991-993 are moved after this `vp9_set_size_literal()` call.\n\nThe commit message mentions the current `spatial_layer_id` and the previous `spatial_layer_id`, which implies `svc-\u003espatial_layer_id` is updated. But I can\u0027t find where we update `svc-\u003espatial_layer_id`. Could you show me where that is done?",
+      "revId": "727319a77ffe68e9aacb08e09ae7151b3a8f70a3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ],
   "submitRequirementResults": [
