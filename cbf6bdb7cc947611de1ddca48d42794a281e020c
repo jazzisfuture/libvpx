@@ -16,6 +16,24 @@
       "message": "2024",
       "revId": "cbf6bdb7cc947611de1ddca48d42794a281e020c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "97f3ce3a_7a8d1d96",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-10-31T21:09:38Z",
+      "side": 1,
+      "message": "I have to delete the local tag and create a new one. So the merge is in another CL:\n\nhttps://chromium-review.googlesource.com/c/webm/libvpx/+/5982969",
+      "parentUuid": "88cc1371_2d141dfd",
+      "revId": "cbf6bdb7cc947611de1ddca48d42794a281e020c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
