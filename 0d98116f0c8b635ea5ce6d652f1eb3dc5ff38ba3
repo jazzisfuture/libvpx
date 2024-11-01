@@ -16,6 +16,24 @@
       "message": "Add some function level comment about what return values mean for this",
       "revId": "0d98116f0c8b635ea5ce6d652f1eb3dc5ff38ba3",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "95d36ea1_11628869",
+        "filename": "vp9/encoder/vp9_encodeframe.c",
+        "patchSetId": 16
+      },
+      "lineNbr": 967,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-11-01T16:16:14Z",
+      "side": 1,
+      "message": "Done.\n\nSeems strange that return 0 means do scale_partitioning, return 1 means don\u0027t (do variance-based). Should we switch that?",
+      "parentUuid": "84839e5d_f8bd171b",
+      "revId": "0d98116f0c8b635ea5ce6d652f1eb3dc5ff38ba3",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
