@@ -4641,6 +4641,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest,
     }
 #endif  // CONFIG_RATE_CTRL
     const GF_GROUP *gf_group = &cpi->twopass.gf_group;
+    int ext_rc_delta_q_uv = 0;
     if (cpi->ext_ratectrl.ready &&
         (cpi->ext_ratectrl.funcs.rc_type & VPX_RC_QP) != 0 &&
         cpi->ext_ratectrl.funcs.get_encodeframe_decision != NULL) {
@@ -4670,6 +4671,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest,
       if (encode_frame_decision.q_index != VPX_DEFAULT_Q) {
         q = encode_frame_decision.q_index;
       }
+      ext_rc_delta_q_uv = encode_frame_decision.delta_q_uv;
     }
 
     if (cpi->ext_ratectrl.ready && cpi->ext_ratectrl.log_file) {
@@ -4678,7 +4680,7 @@ static void encode_with_recode_loop(VP9_COMP *cpi, size_t *size, uint8_t *dest,
               gf_group->index, gf_group->update_type[gf_group->index], q);
     }
 
-    vp9_set_quantizer(cpi, q);
+    vp9_set_quantizer(cpi, q, ext_rc_delta_q_uv);
 
     if (loop_count == 0) setup_frame(cpi);
 
