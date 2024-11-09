@@ -16,6 +16,23 @@
       "message": "Could you please review this patch, thanks!",
       "revId": "a7863b9a2f01e5d22919a51c95cbc4a9c10fbb2c",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "3dcabe1e_41531684",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 3540642
+      },
+      "writtenOn": "2024-11-09T21:27:04Z",
+      "side": 1,
+      "message": "CCing original author...",
+      "revId": "a7863b9a2f01e5d22919a51c95cbc4a9c10fbb2c",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
