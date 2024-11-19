@@ -16,6 +16,24 @@
       "message": "Is there an upper bound that should be checked?",
       "revId": "3788e47db8e66b426d9f609335e8989276c0fd26",
       "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "32df0106_10e6261c",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 5
+      },
+      "lineNbr": 1883,
+      "author": {
+        "id": 1126910
+      },
+      "writtenOn": "2024-11-19T22:03:50Z",
+      "side": 1,
+      "message": "Don\u0027t think so, but added a check that num is smaller than den, since we can only scale down from original size.",
+      "parentUuid": "2ba7120f_0ee2691a",
+      "revId": "3788e47db8e66b426d9f609335e8989276c0fd26",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
     }
   ]
 }
