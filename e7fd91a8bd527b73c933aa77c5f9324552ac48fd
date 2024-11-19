@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "unresolved": true,
+      "key": {
+        "uuid": "ea29e2fb_777a48c2",
+        "filename": "vp9/vp9_cx_iface.c",
+        "patchSetId": 3
+      },
+      "lineNbr": 1884,
+      "author": {
+        "id": 1171444
+      },
+      "writtenOn": "2024-11-19T19:06:30Z",
+      "side": 1,
+      "message": "It\u0027s better to check before it\u0027s assigned to `lc-\u003escaling_factor_num/den` above.",
+      "range": {
+        "startLine": 1884,
+        "startChar": 10,
+        "endLine": 1884,
+        "endChar": 16
+      },
+      "revId": "e7fd91a8bd527b73c933aa77c5f9324552ac48fd",
+      "serverId": "3ce6091f-6c88-37e8-8c75-72f92ae8dfba"
+    }
+  ]
+}
