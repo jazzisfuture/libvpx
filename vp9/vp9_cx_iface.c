@@ -1880,6 +1880,11 @@ static vpx_codec_err_t ctrl_set_svc_parameters(vpx_codec_alg_priv_t *ctx,
       lc->min_q = params->min_quantizers[layer];
       lc->scaling_factor_num = params->scaling_factor_num[sl];
       lc->scaling_factor_den = params->scaling_factor_den[sl];
+      // Checks on valid scale factors.
+      if (params->scaling_factor_num[sl] < 1 ||
+          params->scaling_factor_den[sl] < 1) {
+        return VPX_CODEC_INVALID_PARAM;
+      }
       lc->speed = params->speed_per_layer[sl];
       lc->loopfilter_ctrl = params->loopfilter_ctrl[sl];
     }
